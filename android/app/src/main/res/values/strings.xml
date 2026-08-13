@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AspirantX</string>
+    <string name="title_activity_main">AspirantX</string>
+    <string name="package_name">com.aspirantx.app</string>
+    <string name="custom_url_scheme">com.aspirantx.app</string>
+</resources>
