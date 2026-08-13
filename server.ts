@@ -774,6 +774,26 @@ app.post('/api/collaboration/join-team', async (req, res) => {
     };
     teamApplicationsDb.push(application);
 
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('team_applications').upsert([{
+          id: application.id,
+          name: application.name,
+          email: application.email,
+          role: application.role,
+          bio: application.bio,
+          github: application.github,
+          linkedin: application.linkedin,
+          status: application.status,
+          data: application,
+          created_at: application.createdAt,
+          updated_at: application.createdAt
+        }], { onConflict: 'id' });
+      } catch (e) {
+        console.warn('Supabase team_applications upsert error:', e);
+      }
+    }
+
     // Add to office activity feed
     const act = {
       id: `act-${Date.now()}`,
@@ -809,8 +829,28 @@ app.get('/api/collaboration/office', (_req, res) => {
     team: adminTeamStore,
     activity: officeActivityFeed,
     tasks: adminTasksStore,
-    pendingUploads: pendingContentUploadsDb
+    pendingUploads: pendingContentUploadsDb,
+    applications: teamApplicationsDb
   });
+});
+
+app.get('/api/admin/team-applications', verifyAdminAuth, async (_req, res) => {
+  if (supabaseServer) {
+    try {
+      const { data, error } = await supabaseServer
+        .from('team_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        const apps = data.map((r: any) => r.data || r);
+        return res.json({ success: true, applications: apps });
+      }
+    } catch (e) {
+      console.warn('Supabase fetch team_applications error:', e);
+    }
+  }
+
+  return res.json({ success: true, applications: teamApplicationsDb });
 });
 
 app.post('/api/collaboration/update-status', async (req, res) => {
@@ -1377,6 +1417,41 @@ app.get('/api/user/study-sessions', async (req, res) => {
   }
   const userId = verifiedUser.sub || 'user_dev';
 
+  if (supabaseServer) {
+    try {
+      const { data, error } = await supabaseServer
+        .from('user_pomodoro_sessions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+      if (!error && data) {
+        const mapped = data.map((s: any) => ({
+          id: s.id,
+          userId: s.user_id,
+          subject: s.subject || 'General Study',
+          topic: s.topic || 'General Topic',
+          duration: Number(s.duration) || 25,
+          startTime: s.start_time,
+          endTime: s.end_time,
+          completedDuration: Number(s.completed_duration) || 0,
+          status: s.status || 'ACTIVE',
+          questionsAttempted: Number(s.questions_attempted) || 0,
+          correctAnswers: Number(s.correct_answers) || 0,
+          questionIds: Array.isArray(s.question_ids) ? s.question_ids : [],
+          questionSources: Array.isArray(s.question_sources) ? s.question_sources : [],
+          manualQuestions: Array.isArray(s.manual_questions) ? s.manual_questions : [],
+          selectedQuestions: Array.isArray(s.selected_questions) ? s.selected_questions : [],
+          accuracy: Number(s.accuracy) || 0,
+          xpEarned: Number(s.xp_earned) || 0,
+          createdAt: s.created_at || new Date().toISOString()
+        }));
+        return res.json({ success: true, sessions: mapped });
+      }
+    } catch (err) {
+      console.warn('Error fetching study sessions from Supabase:', err);
+    }
+  }
+
   const userSessions = userPomodoroSessionsDb.filter(s => s.userId === userId);
   return res.json({ success: true, sessions: userSessions });
 });
@@ -1445,17 +1520,41 @@ app.post('/api/user/study-sessions', async (req, res) => {
     userPomodoroSessionsDb.push(session);
   }
 
+  if (supabaseServer) {
+    try {
+      await supabaseServer.from('user_pomodoro_sessions').upsert([{
+        id: session.id,
+        user_id: session.userId,
+        subject: session.subject,
+        topic: session.topic,
+        duration: session.duration,
+        start_time: session.startTime,
+        end_time: session.endTime,
+        completed_duration: session.completedDuration,
+        status: session.status,
+        questions_attempted: session.questionsAttempted,
+        correct_answers: session.correctAnswers,
+        question_ids: session.questionIds,
+        question_sources: session.questionSources,
+        manual_questions: session.manualQuestions,
+        selected_questions: session.selectedQuestions,
+        accuracy: session.accuracy,
+        xp_earned: session.xpEarned,
+        created_at: session.createdAt
+      }], { onConflict: 'id' });
+    } catch (e) {
+      console.warn('Supabase pomodoro session upsert error:', e);
+    }
+  }
+
   return res.json({ success: true, session });
 });
 
 app.post('/api/user/study-sessions/:id/complete', async (req, res) => {
   const verifiedUser = await extractVerifiedUserFromReq(req);
-  if (!verifiedUser) {
-    return res.status(401).json({ error: 'Authentication Required' });
-  }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser?.sub || req.body.userId || 'guest';
   const { id } = req.params;
-  const { completedDuration, questionsAttempted, correctAnswers, accuracy } = req.body;
+  const { completedDuration, questionsAttempted, correctAnswers, accuracy, nodeId, nodeSource = 'official', subject, topic, subtopic } = req.body;
 
   // XP DEDUPLICATION CHECK (SERVER-SIDE IDEMPOTENCY)
   const isAlreadyProcessed = processedSessionsStore.has(id);
@@ -1497,7 +1596,32 @@ app.post('/api/user/study-sessions/:id/complete', async (req, res) => {
   }
 
   if (isAlreadyProcessed) {
-    // Return existing session without re-awarding XP!
+    // Persist completed state to Supabase even on retry
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('user_pomodoro_sessions').upsert([{
+          id: session.id,
+          user_id: session.userId,
+          subject: session.subject,
+          topic: session.topic,
+          duration: session.duration,
+          start_time: session.startTime,
+          end_time: session.endTime,
+          completed_duration: session.completedDuration,
+          status: session.status,
+          questions_attempted: session.questionsAttempted,
+          correct_answers: session.correctAnswers,
+          question_ids: session.questionIds,
+          question_sources: session.questionSources,
+          manual_questions: session.manualQuestions,
+          selected_questions: session.selectedQuestions,
+          accuracy: session.accuracy,
+          xp_earned: session.xpEarned,
+          created_at: session.createdAt
+        }], { onConflict: 'id' });
+      } catch (e) {}
+    }
+
     return res.json({
       success: true,
       session,
@@ -1514,6 +1638,33 @@ app.post('/api/user/study-sessions/:id/complete', async (req, res) => {
   const xpAwarded = Math.min(100, Math.max(10, Math.round((session.completedDuration / 60) * 2)));
   session.xpEarned = xpAwarded;
 
+  if (supabaseServer) {
+    try {
+      await supabaseServer.from('user_pomodoro_sessions').upsert([{
+        id: session.id,
+        user_id: session.userId,
+        subject: session.subject,
+        topic: session.topic,
+        duration: session.duration,
+        start_time: session.startTime,
+        end_time: session.endTime,
+        completed_duration: session.completedDuration,
+        status: session.status,
+        questions_attempted: session.questionsAttempted,
+        correct_answers: session.correctAnswers,
+        question_ids: session.questionIds,
+        question_sources: session.questionSources,
+        manual_questions: session.manualQuestions,
+        selected_questions: session.selectedQuestions,
+        accuracy: session.accuracy,
+        xp_earned: session.xpEarned,
+        created_at: session.createdAt
+      }], { onConflict: 'id' });
+    } catch (e) {
+      console.warn('Supabase pomodoro completion upsert error:', e);
+    }
+  }
+
   // Trigger streak update if session >= 5 minutes (300 seconds)
   let streakResult = null;
   if ((session.completedDuration || 0) >= 300 || (session.duration || 0) >= 5) {
@@ -1524,12 +1675,82 @@ app.post('/api/user/study-sessions/:id/complete', async (req, res) => {
     }
   }
 
+  // Handle optional syllabus time logging inside the SAME completion request
+  let syllabusTimeLogged = null;
+  let totalTimeForNode = 0;
+  const secondsLogged = Number(req.body.secondsLogged || completedDuration || (session.duration ? session.duration * 60 : 0)) || 0;
+
+  if (secondsLogged > 0 && (nodeId || subject || topic || subtopic)) {
+    try {
+      const logRecord = {
+        id: `stl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        user_id: userId,
+        node_id: nodeId || null,
+        node_source: nodeSource,
+        subject: subject || session.subject || '',
+        topic: topic || session.topic || '',
+        subtopic: subtopic || '',
+        seconds_logged: secondsLogged,
+        session_id: id,
+        created_at: new Date().toISOString()
+      };
+
+      if (!syllabusTimeLogsStore.has(userId)) syllabusTimeLogsStore.set(userId, []);
+      syllabusTimeLogsStore.get(userId)!.push(logRecord);
+
+      if (supabaseServer) {
+        await supabaseServer.from('syllabus_time_log').insert([logRecord]);
+      }
+
+      // Calculate total time for this node across all logs
+      const userLogs = syllabusTimeLogsStore.get(userId) || [];
+      totalTimeForNode = userLogs
+        .filter(l => (nodeId && l.node_id === nodeId) || (l.subject === (subject || session.subject) && l.subtopic === subtopic))
+        .reduce((sum, l) => sum + (l.seconds_logged || 0), 0);
+
+      // If personal syllabus node, increment time_studied_seconds
+      if (nodeSource === 'personal' && nodeId) {
+        const existingNode = personalSyllabusNodesStore.get(nodeId);
+        if (existingNode) {
+          existingNode.time_studied_seconds = (Number(existingNode.time_studied_seconds) || 0) + secondsLogged;
+          existingNode.updated_at = new Date().toISOString();
+          totalTimeForNode = Math.max(totalTimeForNode, existingNode.time_studied_seconds);
+        }
+        if (supabaseServer) {
+          const { data: currentData } = await supabaseServer
+            .from('personal_syllabus_nodes')
+            .select('time_studied_seconds')
+            .eq('id', nodeId)
+            .maybeSingle();
+          const newTime = ((Number(currentData?.time_studied_seconds)) || 0) + secondsLogged;
+          totalTimeForNode = Math.max(totalTimeForNode, newTime);
+          await supabaseServer
+            .from('personal_syllabus_nodes')
+            .update({ time_studied_seconds: newTime, updated_at: new Date().toISOString() })
+            .eq('id', nodeId);
+        }
+      }
+
+      syllabusTimeLogged = {
+        logged: true,
+        nodeId: nodeId || null,
+        nodeSource,
+        secondsLogged,
+        totalTimeForNode
+      };
+    } catch (stlErr) {
+      console.warn('Syllabus time logging on session complete error:', stlErr);
+    }
+  }
+
   return res.json({
     success: true,
     session,
     xpAwarded,
     alreadyAwarded: false,
     streak: streakResult,
+    syllabusTimeLogged,
+    totalTimeForNode,
     message: 'Session completed successfully and XP awarded.'
   });
 });
@@ -1554,6 +1775,33 @@ app.patch('/api/user/study-sessions/:id', async (req, res) => {
   if (req.body.completedDuration !== undefined) session.completedDuration = req.body.completedDuration;
   if (req.body.accuracy !== undefined) session.accuracy = req.body.accuracy;
 
+  if (supabaseServer) {
+    try {
+      await supabaseServer.from('user_pomodoro_sessions').upsert([{
+        id: session.id,
+        user_id: session.userId,
+        subject: session.subject,
+        topic: session.topic,
+        duration: session.duration,
+        start_time: session.startTime,
+        end_time: session.endTime,
+        completed_duration: session.completedDuration,
+        status: session.status,
+        questions_attempted: session.questionsAttempted,
+        correct_answers: session.correctAnswers,
+        question_ids: session.questionIds,
+        question_sources: session.questionSources,
+        manual_questions: session.manualQuestions,
+        selected_questions: session.selectedQuestions,
+        accuracy: session.accuracy,
+        xp_earned: session.xpEarned,
+        created_at: session.createdAt
+      }], { onConflict: 'id' });
+    } catch (e) {
+      console.warn('Supabase pomodoro patch error:', e);
+    }
+  }
+
   return res.json({ success: true, session });
 });
 
@@ -1571,6 +1819,15 @@ app.delete('/api/user/study-sessions/:id', async (req, res) => {
       return res.status(403).json({ error: 'Forbidden: Cannot delete session owned by another user' });
     }
     const removed = userPomodoroSessionsDb.splice(index, 1)[0];
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('user_pomodoro_sessions').delete().eq('id', id).eq('user_id', userId);
+      } catch (e) {
+        console.warn('Supabase pomodoro delete error:', e);
+      }
+    }
+
     return res.json({ success: true, session: removed });
   }
 
@@ -1578,6 +1835,23 @@ app.delete('/api/user/study-sessions/:id', async (req, res) => {
 });
 
 // ---------------- USER PROFILE & STREAK API ----------------
+/**
+ * Helper to check if a string is a valid UUID format (v1-v5)
+ */
+export function isValidUUID(str: string | null | undefined): boolean {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(str).trim());
+}
+
+/**
+ * Helper to return date string YYYY-MM-DD in India Standard Time (IST, UTC+5:30)
+ */
+export function getISTDateString(date = new Date()): string {
+  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+  const istDate = new Date(date.getTime() + istOffset);
+  return istDate.toISOString().split('T')[0];
+}
+
 /**
  * Authoritative Server-Side Streak Engine
  * Calculates streak_days and updates last_active_date in memory & Supabase user_profiles table.
@@ -1587,35 +1861,42 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
 
   const cleanId = String(userIdentifier).trim().toLowerCase();
   const isEmail = cleanId.includes('@');
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getISTDateString(new Date());
 
   const d = new Date();
   d.setDate(d.getDate() - 1);
-  const yesterdayStr = d.toISOString().split('T')[0];
+  const yesterdayStr = getISTDateString(d);
 
   let currentStreak = 1;
   let lastActive = '';
   let matchedSupabaseId: string | null = null;
   let matchedSupabaseEmail: string | null = null;
 
-  // 1. Try Supabase user_profiles
+  // 1. Try Supabase user_profiles (UUID-safe query)
   if (supabaseServer) {
     try {
-      const { data } = await supabaseServer
+      const orConditions: string[] = [];
+      if (isValidUUID(userIdentifier)) orConditions.push(`id.eq.${userIdentifier}`);
+      if (isValidUUID(cleanId) && cleanId !== userIdentifier) orConditions.push(`id.eq.${cleanId}`);
+      orConditions.push(`email.eq.${cleanId}`);
+
+      const { data, error } = await supabaseServer
         .from('user_profiles')
         .select('id, email, streak_days, last_active_date')
-        .or(`id.eq.${userIdentifier},id.eq.${cleanId},email.eq.${cleanId}`)
+        .or(orConditions.join(','))
         .limit(1)
         .maybeSingle();
 
-      if (data) {
+      if (error) {
+        console.warn('Supabase streak check error details:', error.message, 'code:', error.code);
+      } else if (data) {
         matchedSupabaseId = data.id || null;
         matchedSupabaseEmail = data.email || null;
         currentStreak = Number(data.streak_days) || 1;
         lastActive = data.last_active_date || '';
       }
-    } catch (e) {
-      console.warn('Supabase streak check warning:', e);
+    } catch (e: any) {
+      console.warn('Supabase streak check warning:', e?.message || e, 'code:', e?.code || '');
     }
   }
 
@@ -1682,22 +1963,30 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
     } as any);
   }
 
+  // 3. UUID-safe Supabase upsert
   if (supabaseServer) {
-    try {
-      const upsertData: Record<string, any> = {
-        id: targetUserId,
-        streak_days: newStreak,
-        last_active_date: todayStr,
-        updated_at: new Date().toISOString()
-      };
-      const userEmail = matchedSupabaseEmail || (isEmail ? cleanId : null);
-      if (userEmail) {
-        upsertData.email = userEmail;
-      }
+    if (!isValidUUID(targetUserId)) {
+      console.warn('Skipping Supabase upsert - non-UUID identifier, memory-only sync:', targetUserId);
+    } else {
+      try {
+        const upsertData: Record<string, any> = {
+          id: targetUserId,
+          streak_days: newStreak,
+          last_active_date: todayStr,
+          updated_at: new Date().toISOString()
+        };
+        const userEmail = matchedSupabaseEmail || (isEmail ? cleanId : null);
+        if (userEmail) {
+          upsertData.email = userEmail;
+        }
 
-      await supabaseServer.from('user_profiles').upsert(upsertData, { onConflict: 'id' });
-    } catch (e) {
-      console.warn('Supabase streak update warning:', e);
+        const { error } = await supabaseServer.from('user_profiles').upsert(upsertData, { onConflict: 'id' });
+        if (error) {
+          console.warn('Supabase streak update warning:', error.message, 'code:', error.code);
+        }
+      } catch (e: any) {
+        console.warn('Supabase streak update exception:', e?.message || e, 'code:', e?.code || '');
+      }
     }
   }
 
@@ -1720,7 +2009,7 @@ app.get('/api/user/profile', async (req, res) => {
   }
   const userId = verifiedUser.sub || 'user_dev';
 
-  if (supabaseServer) {
+  if (supabaseServer && isValidUUID(userId)) {
     try {
       const { data, error } = await supabaseServer
         .from('user_profiles')
@@ -1744,7 +2033,7 @@ app.get('/api/user/profile', async (req, res) => {
             stateName: data.state_name || 'All India',
             targetYear: data.target_year || 2026,
             streakDays: data.streak_days || 1,
-            lastActiveDate: data.last_active_date || new Date().toISOString().split('T')[0],
+            lastActiveDate: data.last_active_date || getISTDateString(),
             xp: data.xp || 0,
             coins: data.coins || 0,
             level: data.level || 1,
@@ -1766,7 +2055,7 @@ app.get('/api/user/profile', async (req, res) => {
       isProfileComplete: true,
       targetYear: 2026,
       streakDays: 1,
-      lastActiveDate: new Date().toISOString().split('T')[0],
+      lastActiveDate: getISTDateString(),
       xp: 0,
       coins: 0,
       level: 1
@@ -1785,7 +2074,7 @@ app.post('/api/user/profile', async (req, res) => {
   const chosenExam = targetExam || exam || 'NEET_UG';
   const complete = isProfileComplete !== undefined ? isProfileComplete : Boolean(chosenExam && chosenExam.trim());
 
-  if (supabaseServer) {
+  if (supabaseServer && isValidUUID(userId)) {
     try {
       await supabaseServer.from('user_profiles').upsert({
         id: userId,
@@ -2474,6 +2763,8 @@ const studyBuddyMatches = new Map<string, { roomId: string; user1Email: string; 
 const studyHeartbeatsStore = new Map<string, any[]>();
 const rewardMilestonesStore = new Map<string, any>();
 const rewardClaimsStore = new Map<string, any>();
+const personalSyllabusNodesStore = new Map<string, any>();
+const syllabusTimeLogsStore = new Map<string, any[]>();
 
 // User Error Logs System (Encrypted JSONB Store)
 export interface EncryptedErrorPayload {
@@ -2901,6 +3192,19 @@ let adminUsersDb: any[] = [
   }
 ];
 
+export interface AdminAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  examTags: string[];
+  priority: 'normal' | 'urgent';
+  isActive: boolean;
+  createdAt: string;
+  expiresAt: string | null;
+}
+
+const adminAnnouncementsStore = new Map<string, AdminAnnouncement>();
+
 let adminContentDb = {
   announcements: [
     {
@@ -3293,7 +3597,7 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
 
   const performHydration = async () => {
     const signal = controller.signal;
-    const [settingsRes, flagsRes, usersRes, contentRes, subsRes, groupsRes, postsRes, commentsRes, reportsRes, notifsRes, ordersRes, cbtRes, adRes, queueRes, matchesRes, heartbeatsRes, milestonesRes, claimsRes, syllabusRes, pyqsRes, questionsRes, utrRes] = await Promise.all([
+    const [settingsRes, flagsRes, usersRes, contentRes, subsRes, groupsRes, postsRes, commentsRes, reportsRes, notifsRes, ordersRes, cbtRes, adRes, queueRes, matchesRes, heartbeatsRes, milestonesRes, claimsRes, syllabusRes, pyqsRes, questionsRes, utrRes, announcementsRes, personalSyllabusRes, timeLogRes] = await Promise.all([
       supabaseServer.from('admin_settings').select('*').eq('id', 'global').abortSignal(signal).maybeSingle(),
       supabaseServer.from('feature_flags').select('*').abortSignal(signal),
       supabaseServer.from('admin_users').select('*').abortSignal(signal),
@@ -3316,6 +3620,9 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
       supabaseServer.from('pyqs').select('*').abortSignal(signal),
       supabaseServer.from('question_bank').select('*').abortSignal(signal),
       supabaseServer.from('utr_requests').select('*').abortSignal(signal),
+      supabaseServer.from('admin_announcements').select('*').abortSignal(signal),
+      supabaseServer.from('personal_syllabus_nodes').select('*').abortSignal(signal),
+      supabaseServer.from('syllabus_time_log').select('*').abortSignal(signal),
     ]);
 
     // Auto-seed if empty
@@ -3511,6 +3818,28 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
           if (rec.id) pendingUtrRequestsDb.set(rec.id, rec);
         }
       }
+      if (announcementsRes && announcementsRes.data && announcementsRes.data.length > 0) {
+        adminAnnouncementsStore.clear();
+        for (const r of announcementsRes.data) {
+          if (r.id && r.data) {
+            adminAnnouncementsStore.set(r.id, r.data);
+          }
+        }
+      }
+      if (personalSyllabusRes && personalSyllabusRes.data && personalSyllabusRes.data.length > 0) {
+        personalSyllabusNodesStore.clear();
+        for (const r of personalSyllabusRes.data) {
+          if (r.id) personalSyllabusNodesStore.set(r.id, r);
+        }
+      }
+      if (timeLogRes && timeLogRes.data && timeLogRes.data.length > 0) {
+        syllabusTimeLogsStore.clear();
+        for (const r of timeLogRes.data) {
+          const uid = r.user_id || 'guest';
+          if (!syllabusTimeLogsStore.has(uid)) syllabusTimeLogsStore.set(uid, []);
+          syllabusTimeLogsStore.get(uid)!.push(r);
+        }
+      }
       try {
         const { data: fbData } = await supabaseServer.from('feedback_reports').select('*');
         if (fbData && fbData.length > 0) {
@@ -3641,6 +3970,37 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
           }
         }
       } catch (_errLogErr) {}
+      try {
+        const { data: teamAppData } = await supabaseServer.from('team_applications').select('*');
+        if (teamAppData && teamAppData.length > 0) {
+          teamApplicationsDb = teamAppData.map((r: any) => r.data || r);
+        }
+      } catch (_teamAppErr) {}
+      try {
+        const { data: pomData } = await supabaseServer.from('user_pomodoro_sessions').select('*');
+        if (pomData && pomData.length > 0) {
+          userPomodoroSessionsDb = pomData.map((s: any) => ({
+            id: s.id,
+            userId: s.user_id,
+            subject: s.subject || 'General Study',
+            topic: s.topic || 'General Topic',
+            duration: Number(s.duration) || 25,
+            startTime: s.start_time,
+            endTime: s.end_time,
+            completedDuration: Number(s.completed_duration) || 0,
+            status: s.status || 'COMPLETED',
+            questionsAttempted: Number(s.questions_attempted) || 0,
+            correctAnswers: Number(s.correct_answers) || 0,
+            questionIds: Array.isArray(s.question_ids) ? s.question_ids : [],
+            questionSources: Array.isArray(s.question_sources) ? s.question_sources : [],
+            manualQuestions: Array.isArray(s.manual_questions) ? s.manual_questions : [],
+            selectedQuestions: Array.isArray(s.selected_questions) ? s.selected_questions : [],
+            accuracy: Number(s.accuracy) || 0,
+            xpEarned: Number(s.xp_earned) || 0,
+            createdAt: s.created_at || new Date().toISOString()
+          }));
+        }
+      } catch (_pomErr) {}
       lockRazorpayEnvironment();
       console.log(`[PRIMARY DB] Hydrated server state from Supabase Primary Database successfully.`);
     }
@@ -4033,7 +4393,7 @@ app.post('/api/payments/verify-payment', paymentRateLimiter, async (req, res) =>
       }
 
       const adminUser = adminUsersDb.find(u => u.email?.trim().toLowerCase() === cleanEmail);
-      if (adminUser?.id) {
+      if (adminUser?.id && isValidUUID(adminUser.id)) {
         await supabaseServer.from('user_profiles').upsert({
           id: adminUser.id,
           is_premium: true,
@@ -7159,6 +7519,189 @@ app.get('/api/admin/audit-logs', verifyAdminAuth, (_req, res) => {
   res.json(blockedAuditLogs);
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ADMIN ANNOUNCEMENTS ENDPOINTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 1. POST /api/admin/announcements — verifyAdminAuth + adminMutationLimiter
+app.post('/api/admin/announcements', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
+  try {
+    const { title, message, examTags = [], priority = 'normal', isActive = true, expiresAt = null } = req.body;
+
+    if (!title || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ error: 'Announcement title is required' });
+    }
+    if (!message || typeof message !== 'string' || !message.trim()) {
+      return res.status(400).json({ error: 'Announcement message is required' });
+    }
+
+    const id = `ann_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newAnnouncement: AdminAnnouncement = {
+      id,
+      title: title.trim(),
+      message: message.trim(),
+      examTags: Array.isArray(examTags) ? examTags : [],
+      priority: priority === 'urgent' ? 'urgent' : 'normal',
+      isActive: Boolean(isActive),
+      createdAt: new Date().toISOString(),
+      expiresAt: expiresAt ? String(expiresAt) : null,
+    };
+
+    adminAnnouncementsStore.set(id, newAnnouncement);
+
+    if (supabaseServer) {
+      const { error } = await supabaseServer.from('admin_announcements').upsert({
+        id,
+        data: newAnnouncement,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+      if (error) {
+        console.warn('[ANNOUNCEMENTS] Supabase save error:', error.message);
+      }
+    }
+
+    recordAdminAuditLog({
+      user: (req as any).adminEmail || DESIGNATED_ADMIN_EMAIL,
+      action: 'CREATE_ANNOUNCEMENT',
+      details: `Created announcement "${newAnnouncement.title}"`,
+      ip: (req as any).clientIp,
+      requestId: (req as any).requestId,
+      endpoint: req.originalUrl,
+      outcome: 'SUCCESS',
+      afterValue: JSON.stringify(newAnnouncement).substring(0, 100),
+    });
+
+    return res.json({ success: true, announcement: newAnnouncement });
+  } catch (err: any) {
+    console.error('Create announcement error:', err);
+    return res.status(500).json({ error: err?.message || 'Failed to create announcement' });
+  }
+});
+
+// 2. GET /api/admin/announcements — verifyAdminAuth
+app.get('/api/admin/announcements', verifyAdminAuth, (_req, res) => {
+  res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  const announcements = Array.from(adminAnnouncementsStore.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  return res.json({ success: true, announcements });
+});
+
+// 3. PATCH /api/admin/announcements/:id — verifyAdminAuth + adminMutationLimiter
+app.patch('/api/admin/announcements/:id', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const announcement = adminAnnouncementsStore.get(id);
+
+    if (!announcement) {
+      return res.status(404).json({ error: 'Announcement not found' });
+    }
+
+    const { title, message, examTags, priority, isActive, expiresAt } = req.body;
+
+    if (title !== undefined && typeof title === 'string') announcement.title = title.trim();
+    if (message !== undefined && typeof message === 'string') announcement.message = message.trim();
+    if (examTags !== undefined && Array.isArray(examTags)) announcement.examTags = examTags;
+    if (priority !== undefined) announcement.priority = priority === 'urgent' ? 'urgent' : 'normal';
+    if (isActive !== undefined) announcement.isActive = Boolean(isActive);
+    if (expiresAt !== undefined) announcement.expiresAt = expiresAt ? String(expiresAt) : null;
+
+    adminAnnouncementsStore.set(id, announcement);
+
+    if (supabaseServer) {
+      const { error } = await supabaseServer.from('admin_announcements').upsert({
+        id,
+        data: announcement,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+      if (error) {
+        console.warn('[ANNOUNCEMENTS] Supabase update error:', error.message);
+      }
+    }
+
+    recordAdminAuditLog({
+      user: (req as any).adminEmail || DESIGNATED_ADMIN_EMAIL,
+      action: 'UPDATE_ANNOUNCEMENT',
+      details: `Updated announcement "${announcement.id}"`,
+      ip: (req as any).clientIp,
+      requestId: (req as any).requestId,
+      endpoint: req.originalUrl,
+      outcome: 'SUCCESS',
+      afterValue: JSON.stringify(announcement).substring(0, 100),
+    });
+
+    return res.json({ success: true, announcement });
+  } catch (err: any) {
+    console.error('Update announcement error:', err);
+    return res.status(500).json({ error: err?.message || 'Failed to update announcement' });
+  }
+});
+
+// 4. DELETE /api/admin/announcements/:id — verifyAdminAuth + adminMutationLimiter
+app.delete('/api/admin/announcements/:id', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const exists = adminAnnouncementsStore.has(id);
+
+    if (!exists) {
+      return res.status(404).json({ error: 'Announcement not found' });
+    }
+
+    adminAnnouncementsStore.delete(id);
+
+    if (supabaseServer) {
+      const { error } = await supabaseServer.from('admin_announcements').delete().eq('id', id);
+      if (error) {
+        console.warn('[ANNOUNCEMENTS] Supabase delete error:', error.message);
+      }
+    }
+
+    recordAdminAuditLog({
+      user: (req as any).adminEmail || DESIGNATED_ADMIN_EMAIL,
+      action: 'DELETE_ANNOUNCEMENT',
+      details: `Deleted announcement "${id}"`,
+      ip: (req as any).clientIp,
+      requestId: (req as any).requestId,
+      endpoint: req.originalUrl,
+      outcome: 'SUCCESS',
+    });
+
+    return res.json({ success: true, message: 'Announcement deleted successfully' });
+  } catch (err: any) {
+    console.error('Delete announcement error:', err);
+    return res.status(500).json({ error: err?.message || 'Failed to delete announcement' });
+  }
+});
+
+// 5. GET /api/announcements — PUBLIC student-facing active announcements
+app.get('/api/announcements', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+
+  const now = new Date();
+  const examQuery = String(req.query.exam || '').trim().toLowerCase();
+
+  const activeAnnouncements = Array.from(adminAnnouncementsStore.values()).filter((ann) => {
+    if (!ann.isActive) return false;
+    if (ann.expiresAt && new Date(ann.expiresAt) <= now) return false;
+
+    if (examQuery) {
+      // If examTags is empty, it's for everyone
+      if (!ann.examTags || ann.examTags.length === 0) return true;
+      const normalizedExamQuery = examQuery.replace(/[\s_]/g, '');
+      return ann.examTags.some((tag) => {
+        const normalizedTag = tag.toLowerCase().replace(/[\s_]/g, '');
+        return normalizedTag === normalizedExamQuery || tag.toLowerCase() === examQuery;
+      });
+    }
+
+    return true;
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return res.json({ success: true, announcements: activeAnnouncements });
+});
+
 // High Security AI Moderation Middleware Endpoint
 app.post('/api/gemini/moderate', async (req, res) => {
   try {
@@ -8559,7 +9102,22 @@ app.get('/api/academic/syllabus', async (req, res) => {
         return normalizeExam(itemExam) === normalizeExam(exam);
       });
 
-      // If no syllabus nodes exist for this exam, generate them on the fly
+      // Check customExamsStore if no syllabus nodes exist in syllabusNodesStore for this exam
+      if (items.length === 0 && Array.isArray(customExamsStore)) {
+        const examParam = String(exam || '').toLowerCase();
+        const customMatch = customExamsStore.find(
+          (c) =>
+            (c.id && c.id.toLowerCase() === examParam) ||
+            (c.label && c.label.toLowerCase().includes(examParam)) ||
+            (c.name && c.name.toLowerCase().includes(examParam)) ||
+            (c.id && normalizeExam(c.id) === normalizeExam(exam))
+        );
+        if (customMatch && Array.isArray(customMatch.syllabus) && customMatch.syllabus.length > 0) {
+          items = customMatch.syllabus;
+        }
+      }
+
+      // If still no syllabus nodes exist for this exam, generate them on the fly
       if (items.length === 0) {
         const generated = generateRealisticSyllabus(exam);
         generated.forEach((node) => {
@@ -8578,17 +9136,279 @@ app.get('/api/academic/syllabus', async (req, res) => {
       const q = search.toLowerCase();
       items = items.filter(
         (i) =>
-          i.title.toLowerCase().includes(q) ||
-          i.subject.toLowerCase().includes(q) ||
-          i.chapter.toLowerCase().includes(q) ||
-          i.topic.toLowerCase().includes(q) ||
-          i.subtopic.toLowerCase().includes(q)
+          (i.title && i.title.toLowerCase().includes(q)) ||
+          (i.subject && i.subject.toLowerCase().includes(q)) ||
+          (i.chapter && i.chapter.toLowerCase().includes(q)) ||
+          (i.topic && i.topic.toLowerCase().includes(q)) ||
+          (i.subtopic && i.subtopic.toLowerCase().includes(q))
       );
     }
 
     res.json({ success: true, count: items.length, syllabus: items });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch syllabus nodes', details: err.message });
+  }
+});
+
+// Import items from official syllabus into personal_syllabus_nodes
+app.post('/api/syllabus/import-from-official', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'guest';
+    const { exam = 'UPSC_CSE', items = [] } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'items array is required' });
+    }
+
+    const imported: string[] = [];
+    const alreadyImported: string[] = [];
+    const rowsToInsert: any[] = [];
+
+    const existingNodes = Array.from(personalSyllabusNodesStore.values()).filter(
+      (n) => n.user_id === userId
+    );
+
+    for (const item of items) {
+      const officialNodeId = item.officialNodeId || item.id;
+      if (!officialNodeId) continue;
+
+      const isAlready = existingNodes.some(
+        (n) => n.origin_official_id === officialNodeId
+      );
+
+      if (isAlready) {
+        alreadyImported.push(officialNodeId);
+        continue;
+      }
+
+      const newId = `pers_node_imp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const nodeObj = {
+        id: newId,
+        user_id: userId,
+        exam,
+        subject: item.subject || 'General Subject',
+        chapter: item.chapter || item.topic || 'General Chapter',
+        topic: item.topic || '',
+        subtopic: item.subtopic || '',
+        origin_official_id: officialNodeId,
+        time_studied_seconds: 0,
+        stage: item.stage || 'Prelims',
+        weightage: item.weightage || 'Medium',
+        tags: item.tags || '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      personalSyllabusNodesStore.set(newId, nodeObj);
+      existingNodes.push(nodeObj);
+      rowsToInsert.push(nodeObj);
+      imported.push(officialNodeId);
+    }
+
+    if (supabaseServer && rowsToInsert.length > 0) {
+      try {
+        await supabaseServer.from('personal_syllabus_nodes').insert(rowsToInsert);
+      } catch (sbErr) {
+        console.warn('Failed to insert imported nodes into Supabase:', sbErr);
+      }
+    }
+
+    res.json({ success: true, imported, alreadyImported });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to import from official syllabus', details: err.message });
+  }
+});
+
+// Standalone endpoint for logging study time
+app.post('/api/syllabus/log-time', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'guest';
+    const { nodeId, nodeSource = 'official', subject, topic, subtopic, secondsLogged = 0, sessionId } = req.body;
+
+    const seconds = Number(secondsLogged) || 0;
+    if (seconds <= 0) {
+      return res.status(400).json({ error: 'secondsLogged must be > 0' });
+    }
+
+    const logRecord = {
+      id: `stl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      user_id: userId,
+      node_id: nodeId || null,
+      node_source: nodeSource,
+      subject: subject || '',
+      topic: topic || '',
+      subtopic: subtopic || '',
+      seconds_logged: seconds,
+      session_id: sessionId || null,
+      created_at: new Date().toISOString()
+    };
+
+    if (!syllabusTimeLogsStore.has(userId)) syllabusTimeLogsStore.set(userId, []);
+    syllabusTimeLogsStore.get(userId)!.push(logRecord);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('syllabus_time_log').insert([logRecord]);
+      } catch (sbErr) {
+        console.warn('Failed to insert syllabus_time_log in Supabase:', sbErr);
+      }
+    }
+
+    let totalTimeForNode = seconds;
+    if (nodeSource === 'personal' && nodeId) {
+      const existingNode = personalSyllabusNodesStore.get(nodeId);
+      if (existingNode) {
+        existingNode.time_studied_seconds = (Number(existingNode.time_studied_seconds) || 0) + seconds;
+        existingNode.updated_at = new Date().toISOString();
+        totalTimeForNode = existingNode.time_studied_seconds;
+      }
+      if (supabaseServer) {
+        const { data: currentData } = await supabaseServer
+          .from('personal_syllabus_nodes')
+          .select('time_studied_seconds')
+          .eq('id', nodeId)
+          .maybeSingle();
+        const newTime = (Number(currentData?.time_studied_seconds) || 0) + seconds;
+        totalTimeForNode = newTime;
+        await supabaseServer
+          .from('personal_syllabus_nodes')
+          .update({ time_studied_seconds: newTime, updated_at: new Date().toISOString() })
+          .eq('id', nodeId);
+      }
+    }
+
+    res.json({ success: true, secondsLogged: seconds, totalTimeForNode });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to log study time', details: err.message });
+  }
+});
+
+// GET node-wise study time summary
+app.get('/api/syllabus/time-summary', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = (req.query.userId as string) || verifiedUser?.sub || 'guest';
+    const nodeSource = req.query.nodeSource as string;
+
+    const summary: Record<string, number> = {};
+
+    let userLogs = syllabusTimeLogsStore.get(userId) || [];
+
+    if (supabaseServer) {
+      try {
+        let q = supabaseServer.from('syllabus_time_log').select('*').eq('user_id', userId);
+        if (nodeSource) q = q.eq('node_source', nodeSource);
+        const { data } = await q;
+        if (Array.isArray(data)) {
+          userLogs = data;
+        }
+      } catch (sbErr) {
+        console.warn('Supabase fetch time-summary error:', sbErr);
+      }
+    }
+
+    for (const log of userLogs) {
+      if (nodeSource && log.node_source && log.node_source !== nodeSource) continue;
+      const key = log.node_id || `${log.subject}|||${log.topic}|||${log.subtopic}`;
+      summary[key] = (summary[key] || 0) + (Number(log.seconds_logged) || 0);
+    }
+
+    res.json({ success: true, summary });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch time summary', details: err.message });
+  }
+});
+
+// GET/POST/DELETE Personal Syllabus Nodes
+app.get('/api/personal-syllabus', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = (req.query.userId as string) || verifiedUser?.sub || 'guest';
+    const exam = req.query.exam as string;
+
+    let nodes = Array.from(personalSyllabusNodesStore.values()).filter((n) => n.user_id === userId);
+
+    if (supabaseServer) {
+      try {
+        let q = supabaseServer.from('personal_syllabus_nodes').select('*').eq('user_id', userId);
+        if (exam) q = q.eq('exam', exam);
+        const { data } = await q;
+        if (Array.isArray(data)) nodes = data;
+      } catch (e) {}
+    } else if (exam) {
+      nodes = nodes.filter((n) => n.exam === exam);
+    }
+
+    res.json({ success: true, nodes });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch personal syllabus', details: err.message });
+  }
+});
+
+app.post('/api/personal-syllabus', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'guest';
+    const { nodes = [], exam = 'UPSC_CSE', subject } = req.body;
+
+    if (!Array.isArray(nodes)) {
+      return res.status(400).json({ error: 'nodes must be an array' });
+    }
+
+    const savedNodes: any[] = [];
+    for (const n of nodes) {
+      const nodeObj = {
+        id: n.id || `pers_node_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        user_id: userId,
+        exam: n.exam || exam,
+        subject: n.subject || subject || 'General Subject',
+        chapter: n.chapter || n.topic || 'General Chapter',
+        topic: n.topic || '',
+        subtopic: n.subtopic || '',
+        stage: n.stage || 'Prelims',
+        weightage: n.weightage || 'Medium',
+        tags: n.tags || '',
+        origin_official_id: n.origin_official_id || null,
+        time_studied_seconds: Number(n.time_studied_seconds) || 0,
+        updated_at: new Date().toISOString()
+      };
+      personalSyllabusNodesStore.set(nodeObj.id, nodeObj);
+      savedNodes.push(nodeObj);
+    }
+
+    if (supabaseServer && savedNodes.length > 0) {
+      try {
+        await supabaseServer.from('personal_syllabus_nodes').upsert(savedNodes);
+      } catch (sbErr) {
+        console.warn('Supabase upsert personal_syllabus_nodes error:', sbErr);
+      }
+    }
+
+    res.json({ success: true, nodes: savedNodes });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to save personal syllabus', details: err.message });
+  }
+});
+
+app.delete('/api/personal-syllabus/:id', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || 'guest';
+    const { id } = req.params;
+
+    personalSyllabusNodesStore.delete(id);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('personal_syllabus_nodes').delete().eq('id', id).eq('user_id', userId);
+      } catch (e) {}
+    }
+
+    res.json({ success: true, deletedId: id });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete personal syllabus node', details: err.message });
   }
 });
 
@@ -12037,60 +12857,226 @@ app.post('/api/academic/custom-exams', (req, res) => {
   }
 });
 
-app.get('/api/academic/syllabus', (req, res) => {
-  try {
-    const examParam = String(req.query.exam || '').toLowerCase();
-    const customMatch = customExamsStore.find(
-      (c) => c.id.toLowerCase() === examParam || (c.label && c.label.toLowerCase().includes(examParam)) || (c.name && c.name.toLowerCase().includes(examParam))
-    );
-    if (customMatch && Array.isArray(customMatch.syllabus) && customMatch.syllabus.length > 0) {
-      return res.json({ success: true, syllabus: customMatch.syllabus });
-    }
-    res.json({ success: true, syllabus: [] });
-  } catch (e: any) {
-    res.status(500).json({ error: 'Failed to fetch syllabus' });
-  }
-});
-
 // ----------------------------------------------------------------------------
 // 5. STUDENT DASHBOARD ANALYTICS API
 // ----------------------------------------------------------------------------
-app.get('/api/student/dashboard', (req, res) => {
+app.get('/api/student/dashboard', async (req, res) => {
   try {
+    const userId = (req.query.userId as string) || (req.query.user_id as string) || 'user_dev';
+    const exam = (req.query.exam as string) || 'NEET_UG';
+
+    // 1. Fetch user profile for streak & daily goal
+    let streakDays = 1;
+    let longestStreak = 1;
+    let dailyTargetHours = 8.0;
+
+    if (supabaseServer) {
+      try {
+        const { data: pData } = await supabaseServer
+          .from('user_profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+        if (pData) {
+          streakDays = pData.streak_days || pData.streakDays || 1;
+          longestStreak = pData.longest_streak || pData.longestStreak || streakDays;
+          if (pData.studyGoal) dailyTargetHours = parseFloat(pData.studyGoal) || 8.0;
+        }
+      } catch (_pErr) {}
+    } else {
+      const p = adminUsersDb.find((u: any) => u.id === userId || u.email === userId);
+      if (p) {
+        streakDays = p.streakDays || p.streak_days || 1;
+        longestStreak = p.longestStreak || p.longest_streak || streakDays;
+        if (p.studyGoal) dailyTargetHours = parseFloat(p.studyGoal) || 8.0;
+      }
+    }
+
+    // 2. Fetch completed study sessions
+    let userSessions: any[] = [];
+    if (supabaseServer) {
+      try {
+        const { data: sData } = await supabaseServer
+          .from('user_pomodoro_sessions')
+          .select('*')
+          .eq('user_id', userId);
+        if (sData) {
+          userSessions = sData;
+        }
+      } catch (_sErr) {}
+    } else {
+      userSessions = userPomodoroSessionsDb.filter(s => s.userId === userId);
+    }
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000);
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000);
+
+    let todayStudySeconds = 0;
+    let weeklyStudySeconds = 0;
+    let monthlyStudySeconds = 0;
+
+    const heatmapMap: Record<string, number> = {};
+
+    userSessions.forEach((s: any) => {
+      const durationSec = Number(s.completed_duration || s.completedDuration || s.duration * 60 || 0);
+      const createdAtStr = s.created_at || s.createdAt || s.start_time || s.startTime || new Date().toISOString();
+      const sDate = new Date(createdAtStr);
+      const dateKey = createdAtStr.split('T')[0];
+
+      if (dateKey === todayStr) {
+        todayStudySeconds += durationSec;
+      }
+      if (sDate >= sevenDaysAgo) {
+        weeklyStudySeconds += durationSec;
+        heatmapMap[dateKey] = Number(((heatmapMap[dateKey] || 0) + (durationSec / 3600)).toFixed(1));
+      }
+      if (sDate >= thirtyDaysAgo) {
+        monthlyStudySeconds += durationSec;
+      }
+    });
+
+    const todayStudyMinutes = Math.round(todayStudySeconds / 60);
+    const weeklyStudyHours = Number((weeklyStudySeconds / 3600).toFixed(1));
+    const monthlyStudyHours = Number((monthlyStudySeconds / 3600).toFixed(1));
+
+    // Heatmap array for last 7 days
+    const studyHeatmap: Array<{ date: string; hours: number }> = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const dKey = d.toISOString().split('T')[0];
+      studyHeatmap.push({
+        date: dKey,
+        hours: heatmapMap[dKey] || 0
+      });
+    }
+
+    // 3. Fetch syllabus progress (completed topics & total topics)
+    let topicsCompleted = 0;
+    let totalTopics = 120; // benchmark fallback total
+
+    if (supabaseServer) {
+      try {
+        const { data: nodes } = await supabaseServer
+          .from('personal_syllabus_nodes')
+          .select('id, time_studied_seconds')
+          .eq('user_id', userId)
+          .eq('exam', exam);
+        if (nodes && nodes.length > 0) {
+          totalTopics = nodes.length;
+          topicsCompleted = nodes.filter(n => Number(n.time_studied_seconds) > 0).length;
+        }
+      } catch (_nErr) {}
+    } else {
+      const pNodes = Array.from(personalSyllabusNodesStore.values()).filter((n: any) => (n.userId === userId || n.user_id === userId) && n.exam === exam);
+      if (pNodes.length > 0) {
+        totalTopics = pNodes.length;
+        topicsCompleted = pNodes.filter((n: any) => Number(n.time_studied_seconds || n.timeStudiedSeconds || 0) > 0).length;
+      }
+    }
+
+    const overallProgressPercent = totalTopics > 0 ? Math.min(100, Math.round((topicsCompleted / totalTopics) * 100)) : 0;
+
+    // 4. Exam target countdown
+    const examTargetDates: Record<string, string> = {
+      'NEET_UG': '2026-05-03',
+      'UPSC_CSE': '2026-05-24',
+      'JEE_MAIN': '2026-04-05',
+      'SSC_CGL': '2026-09-15',
+      'NDA_NA': '2026-04-19',
+      'CAT': '2026-11-29',
+    };
+
+    const targetDateStr = examTargetDates[exam] || '2026-09-01';
+    const targetDate = new Date(targetDateStr);
+    const diffMs = targetDate.getTime() - now.getTime();
+    const daysLeftForExam = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+    // 5. Fetch CBT test accuracy from cbt_results or cbtResultsStore
+    let cbtHistory: any[] = [];
+    if (supabaseServer) {
+      try {
+        const { data: cbtRow } = await supabaseServer
+          .from('cbt_results')
+          .select('data')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (cbtRow && Array.isArray(cbtRow.data)) {
+          cbtHistory = cbtRow.data;
+        }
+      } catch (_cbtErr) {}
+    }
+    if (cbtHistory.length === 0 && cbtResultsStore.has(userId)) {
+      cbtHistory = cbtResultsStore.get(userId) || [];
+    }
+
+    let testAccuracyPercent = 0;
+    if (Array.isArray(cbtHistory) && cbtHistory.length > 0) {
+      // Look at last 10 attempts for recent performance window
+      const recentAttempts = cbtHistory.slice(0, 10);
+      let totalCorrect = 0;
+      let totalAttempted = 0;
+
+      recentAttempts.forEach((res: any) => {
+        const correct = Number(res.correctCount || res.correct_count || 0);
+        const incorrect = Number(res.incorrectCount || res.incorrect_count || 0);
+        const attempted = correct + incorrect;
+        totalCorrect += correct;
+        totalAttempted += attempted;
+      });
+
+      if (totalAttempted > 0) {
+        testAccuracyPercent = Math.round((totalCorrect / totalAttempted) * 100);
+      } else {
+        const validAccuracies = recentAttempts
+          .map((r: any) => Number(r.accuracy))
+          .filter((acc: number) => !isNaN(acc) && acc >= 0);
+        if (validAccuracies.length > 0) {
+          testAccuracyPercent = Math.round(validAccuracies.reduce((a, b) => a + b, 0) / validAccuracies.length);
+        }
+      }
+    }
+
+    // 6. Dynamic AI suggestions based on telemetry
+    const aiSuggestions: string[] = [];
+    if (overallProgressPercent < 20) {
+      aiSuggestions.push(`Goal focus: Accelerate coverage for ${exam.replace(/_/g, ' ')} syllabus modules.`);
+    } else if (overallProgressPercent > 60) {
+      aiSuggestions.push(`Great momentum! Shift 40% of daily study time to full-length PYQ mock tests.`);
+    } else {
+      aiSuggestions.push(`On track! Maintain a daily target of ${dailyTargetHours} hours to finish ahead of exam.`);
+    }
+    if (streakDays >= 3) {
+      aiSuggestions.push(`🔥 ${streakDays}-day streak active! Keep up the daily discipline.`);
+    } else {
+      aiSuggestions.push(`Build momentum: Log at least 2 Pomodoro study sessions today to extend your streak.`);
+    }
+
     const dashboardData = {
-      todayStudyMinutes: 390, // 6.5 hours
-      weeklyStudyHours: 42.5,
-      monthlyStudyHours: 168.0,
-      currentStreak: 18,
-      longestStreak: 25,
-      topicsCompleted: 78,
-      totalTopics: 120,
-      overallProgressPercent: 65,
-      daysLeftForExam: 292,
-      estimatedCompletionDate: '2026-04-18',
-      dailyTargetHours: 10.0,
-      weeklyTargetTopics: 7,
-      monthlyTargetTopics: 30,
-      revisionProgressPercent: 82,
-      testAccuracyPercent: 78,
+      todayStudyMinutes,
+      weeklyStudyHours,
+      monthlyStudyHours,
+      currentStreak: streakDays,
+      longestStreak,
+      topicsCompleted,
+      totalTopics,
+      overallProgressPercent,
+      daysLeftForExam,
+      estimatedCompletionDate: new Date(now.getTime() + Math.max(10, Math.ceil((totalTopics - topicsCompleted) * 2 / Math.max(1, dailyTargetHours))) * 86400000).toISOString().split('T')[0],
+      dailyTargetHours,
+      weeklyTargetTopics: Math.ceil(totalTopics / 12),
+      monthlyTargetTopics: Math.ceil(totalTopics / 3),
+      revisionProgressPercent: Math.min(100, Math.round(overallProgressPercent * 0.7)),
+      testAccuracyPercent,
       rankTrend: [
-        { date: 'Jul 01', rank: 42 },
-        { date: 'Jul 10', rank: 28 },
-        { date: 'Jul 20', rank: 15 },
-        { date: 'Aug 01', rank: 8 }
+        { date: 'Mon', rank: Math.max(50, 1500 - topicsCompleted * 10) },
+        { date: 'Wed', rank: Math.max(40, 1300 - topicsCompleted * 10) },
+        { date: 'Fri', rank: Math.max(30, 1100 - topicsCompleted * 10) },
+        { date: 'Today', rank: Math.max(10, 900 - topicsCompleted * 10) },
       ],
-      studyHeatmap: [
-        { date: '2026-08-01', hours: 8.5 },
-        { date: '2026-08-02', hours: 10.0 },
-        { date: '2026-08-03', hours: 9.2 },
-        { date: '2026-08-04', hours: 10.5 },
-        { date: '2026-08-05', hours: 6.5 }
-      ],
-      aiSuggestions: [
-        'Maintain current 10 hrs/day pace to finish revision 35 days before exam!',
-        'Accuracy in Polity MCQs is high (84%). Focus next on Economy Monetary Policy.',
-        'Solve 1 Mains Answer daily for GS Paper 2 to boost structure score.'
-      ]
+      studyHeatmap,
+      aiSuggestions
     };
 
     res.json({ success: true, dashboard: dashboardData });
