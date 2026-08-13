@@ -13,7 +13,8 @@ import {
   Cpu, Wrench, Check, Copy, Terminal, Zap, XCircle, Radio, CreditCard, 
   Coins, DollarSign, Globe, Sliders, Receipt, Tv, HelpCircle, CheckCircle, Plus,
   Trash2, ToggleLeft, ToggleRight, AlertCircle, Send, CheckSquare, XSquare, UserCheck, UserX, Gift, Trophy,
-  MapPin, BookOpen, FileText, Upload, MessageSquare, Loader2, Mic
+  MapPin, BookOpen, FileText, Upload, MessageSquare, Loader2, Mic,
+  Megaphone, Edit2, Tag
 } from 'lucide-react';
 
 interface AdminPanelProps {
@@ -108,8 +109,161 @@ const INITIAL_ADMIN_USERS: AdminUserRecord[] = [
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFlagsUpdated, onOpenCustomizerModal }) => {
   const isAdmin = user?.role === 'ADMIN' || user?.email === 'ambujyadav0010@gmail.com';
-  const [activeAdminTab, setActiveAdminTab] = useState<'users' | 'pricing_razorpay' | 'adsense' | 'flags' | 'watchdog' | 'customizer' | 'team' | 'audit_logs' | 'content' | 'moderation' | 'bulk_pyq_upload' | 'reward_milestones' | 'cbt_management' | 'ingestion' | 'feedback_reports' | 'podcasts' | 'blog_management' | 'error_logs'>('users');
+  const [activeAdminTab, setActiveAdminTab] = useState<'users' | 'pricing_razorpay' | 'adsense' | 'flags' | 'watchdog' | 'customizer' | 'team' | 'audit_logs' | 'content' | 'moderation' | 'bulk_pyq_upload' | 'reward_milestones' | 'cbt_management' | 'ingestion' | 'feedback_reports' | 'podcasts' | 'blog_management' | 'error_logs' | 'announcements'>('users');
   const [showIngestionDashboard, setShowIngestionDashboard] = useState(false);
+
+  // Admin Announcements State
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState<boolean>(false);
+  const [submittingAnnouncement, setSubmittingAnnouncement] = useState<boolean>(false);
+  const [announcementStatusMsg, setAnnouncementStatusMsg] = useState<string | null>(null);
+  const [announcementErrorMsg, setAnnouncementErrorMsg] = useState<string | null>(null);
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState<string | null>(null);
+
+  const [annFormTitle, setAnnFormTitle] = useState<string>('');
+  const [annFormMessage, setAnnFormMessage] = useState<string>('');
+  const [annFormExamTags, setAnnFormExamTags] = useState<string[]>([]);
+  const [annFormPriority, setAnnFormPriority] = useState<'normal' | 'urgent'>('normal');
+  const [annFormIsActive, setAnnFormIsActive] = useState<boolean>(true);
+  const [annFormExpiresAt, setAnnFormExpiresAt] = useState<string>('');
+
+  const fetchAdminAnnouncements = async () => {
+    setLoadingAnnouncements(true);
+    setAnnouncementErrorMsg(null);
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('aspirantx_jwt_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/admin/announcements', { headers });
+      const json = await res.json();
+      if (json.success && Array.isArray(json.announcements)) {
+        setAnnouncements(json.announcements);
+      } else if (json.error) {
+        setAnnouncementErrorMsg(json.error);
+      }
+    } catch (err: any) {
+      setAnnouncementErrorMsg('Failed to load announcements');
+    } finally {
+      setLoadingAnnouncements(false);
+    }
+  };
+
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!annFormTitle.trim() || !annFormMessage.trim()) {
+      setAnnouncementErrorMsg('Title and Message are required');
+      return;
+    }
+
+    setSubmittingAnnouncement(true);
+    setAnnouncementStatusMsg(null);
+    setAnnouncementErrorMsg(null);
+
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('aspirantx_jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const payload = {
+        title: annFormTitle,
+        message: annFormMessage,
+        examTags: annFormExamTags,
+        priority: annFormPriority,
+        isActive: annFormIsActive,
+        expiresAt: annFormExpiresAt ? new Date(`${annFormExpiresAt}T23:59:59+05:30`).toISOString() : null
+      };
+
+      let res;
+      if (editingAnnouncementId) {
+        res = await fetch(`/api/admin/announcements/${editingAnnouncementId}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify(payload)
+        });
+      } else {
+        res = await fetch('/api/admin/announcements', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(payload)
+        });
+      }
+
+      const json = await res.json();
+      if (json.success) {
+        setAnnouncementStatusMsg(editingAnnouncementId ? '✅ Announcement updated!' : '✅ Announcement created!');
+        resetAnnForm();
+        fetchAdminAnnouncements();
+      } else {
+        setAnnouncementErrorMsg(json.error || 'Failed to save announcement');
+      }
+    } catch (err: any) {
+      setAnnouncementErrorMsg(err?.message || 'Error saving announcement');
+    } finally {
+      setSubmittingAnnouncement(false);
+    }
+  };
+
+  const handleToggleAnnouncementActive = async (ann: any) => {
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('aspirantx_jwt_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/admin/announcements/${ann.id}`, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ isActive: !ann.isActive })
+      });
+      const json = await res.json();
+      if (json.success) {
+        fetchAdminAnnouncements();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('aspirantx_jwt_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/admin/announcements/${id}`, {
+        method: 'DELETE',
+        headers
+      });
+      const json = await res.json();
+      if (json.success) {
+        setAnnouncementStatusMsg('🗑️ Announcement deleted');
+        fetchAdminAnnouncements();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const startEditAnnouncement = (ann: any) => {
+    setEditingAnnouncementId(ann.id);
+    setAnnFormTitle(ann.title);
+    setAnnFormMessage(ann.message);
+    setAnnFormExamTags(ann.examTags || []);
+    setAnnFormPriority(ann.priority || 'normal');
+    setAnnFormIsActive(ann.isActive);
+    setAnnFormExpiresAt(ann.expiresAt ? ann.expiresAt.substring(0, 10) : '');
+  };
+
+  const resetAnnForm = () => {
+    setEditingAnnouncementId(null);
+    setAnnFormTitle('');
+    setAnnFormMessage('');
+    setAnnFormExamTags([]);
+    setAnnFormPriority('normal');
+    setAnnFormIsActive(true);
+    setAnnFormExpiresAt('');
+  };
 
   // User Error Logs State
   const [errorLogs, setErrorLogs] = useState<any[]>([]);
@@ -1881,6 +2035,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
         >
           <ShieldAlert className="w-4 h-4 stroke-[2.5]" />
           <span>Error Logs</span>
+        </button>
+
+        {/* Announcements Tab Button */}
+        <button
+          onClick={() => {
+            setActiveAdminTab('announcements');
+            fetchAdminAnnouncements();
+          }}
+          className={`px-4 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
+            activeAdminTab === 'announcements'
+              ? 'bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20'
+              : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+          }`}
+        >
+          <Megaphone className="w-4 h-4 stroke-[2.5]" />
+          <span>Announcements</span>
         </button>
       </div>
 
@@ -5441,6 +5611,316 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─── ANNOUNCEMENTS PANEL ─── */}
+      {activeAdminTab === 'announcements' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Megaphone className="w-5 h-5 text-amber-400" />
+                <span>Admin Announcements Desk</span>
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                Create exam-targeted or platform-wide broadcast announcements for student dashboards.
+              </p>
+            </div>
+            <button
+              onClick={fetchAdminAnnouncements}
+              disabled={loadingAnnouncements}
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-2 transition-all"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loadingAnnouncements ? 'animate-spin' : ''}`} />
+              <span>Refresh Announcements</span>
+            </button>
+          </div>
+
+          {/* Status Messages */}
+          {announcementStatusMsg && (
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl flex items-center justify-between">
+              <span>{announcementStatusMsg}</span>
+              <button onClick={() => setAnnouncementStatusMsg(null)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+          )}
+          {announcementErrorMsg && (
+            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold rounded-xl flex items-center justify-between">
+              <span>{announcementErrorMsg}</span>
+              <button onClick={() => setAnnouncementErrorMsg(null)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+          )}
+
+          {/* Create / Edit Form */}
+          <div className="ax-card p-6 border-slate-800/80 bg-slate-900/60 rounded-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="text-sm font-black text-slate-200 flex items-center gap-2">
+                {editingAnnouncementId ? <Edit2 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
+                <span>{editingAnnouncementId ? 'Edit Announcement' : 'Create New Announcement'}</span>
+              </h3>
+              {editingAnnouncementId && (
+                <button
+                  type="button"
+                  onClick={resetAnnForm}
+                  className="text-xs text-slate-400 hover:text-white underline font-semibold"
+                >
+                  Cancel Edit (Create New)
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveAnnouncement} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Title */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Announcement Title <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={annFormTitle}
+                    onChange={(e) => setAnnFormTitle(e.target.value)}
+                    placeholder="e.g., JEE Main 2026 Registration Extended!"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-medium"
+                  />
+                </div>
+
+                {/* Priority & Status */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Priority Level
+                    </label>
+                    <select
+                      value={annFormPriority}
+                      onChange={(e) => setAnnFormPriority(e.target.value as 'normal' | 'urgent')}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-medium"
+                    >
+                      <option value="normal">Normal (📢 Standard)</option>
+                      <option value="urgent">Urgent (🚨 High Priority)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={annFormIsActive ? 'active' : 'inactive'}
+                      onChange={(e) => setAnnFormIsActive(e.target.value === 'active')}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-medium"
+                    >
+                      <option value="active">🟢 Active (Visible)</option>
+                      <option value="inactive">🔴 Inactive (Hidden)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Message */}
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Message Content <span className="text-rose-400">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={annFormMessage}
+                  onChange={(e) => setAnnFormMessage(e.target.value)}
+                  placeholder="Enter detailed announcement message for students..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-medium"
+                />
+              </div>
+
+              {/* Exam Targeting Tags */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Target Exams</span>
+                    <span className="text-slate-500 font-normal">(Leave all unchecked for Universal / All Students)</span>
+                  </label>
+                  {annFormExamTags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAnnFormExamTags([])}
+                      className="text-[11px] text-amber-400 hover:underline font-semibold"
+                    >
+                      Clear Selection ({annFormExamTags.length} selected)
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-950 border border-slate-800/80 rounded-xl max-h-36 overflow-y-auto scrollbar-thin">
+                  {EXAM_LIST.map((exam) => {
+                    const isSelected = annFormExamTags.includes(exam.id);
+                    return (
+                      <button
+                        type="button"
+                        key={exam.id}
+                        onClick={() => {
+                          if (isSelected) {
+                            setAnnFormExamTags(annFormExamTags.filter((t) => t !== exam.id));
+                          } else {
+                            setAnnFormExamTags([...annFormExamTags, exam.id]);
+                          }
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-amber-500 text-slate-950 shadow-sm shadow-amber-500/20'
+                            : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800'
+                        }`}
+                      >
+                        <span>{exam.label}</span>
+                        {isSelected && <span>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Expiry Date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Expiration Date <span className="text-slate-500 font-normal">(Optional — blank for Never Expires)</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={annFormExpiresAt}
+                    onChange={(e) => setAnnFormExpiresAt(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-amber-500 font-medium"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={submittingAnnouncement}
+                    className="flex-1 py-2.5 px-5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                  >
+                    {submittingAnnouncement ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    <span>{editingAnnouncementId ? 'Update Announcement' : 'Publish Announcement'}</span>
+                  </button>
+                  {editingAnnouncementId && (
+                    <button
+                      type="button"
+                      onClick={resetAnnForm}
+                      className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </div>
+            </form>
+          </div>
+
+          {/* Announcements List */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-black text-slate-300 flex items-center justify-between">
+              <span>All Announcements ({announcements.length})</span>
+            </h3>
+
+            {loadingAnnouncements ? (
+              <div className="p-8 text-center text-slate-400 text-xs font-semibold flex items-center justify-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                <span>Loading announcements...</span>
+              </div>
+            ) : announcements.length === 0 ? (
+              <div className="p-8 text-center bg-slate-900/40 border border-slate-800/80 rounded-2xl text-slate-400 text-xs font-medium">
+                No announcements created yet. Use the form above to publish your first announcement.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {announcements.map((ann) => (
+                  <div
+                    key={ann.id}
+                    className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+                      ann.priority === 'urgent'
+                        ? 'bg-rose-950/20 border-rose-500/40'
+                        : 'bg-slate-900/80 border-slate-800'
+                    }`}
+                  >
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {ann.priority === 'urgent' ? (
+                          <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 font-black text-[10px] uppercase tracking-wider">
+                            🚨 Urgent
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-black text-[10px] uppercase tracking-wider">
+                            📢 Normal
+                          </span>
+                        )}
+
+                        <span
+                          className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${
+                            ann.isActive
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700'
+                          }`}
+                        >
+                          {ann.isActive ? '🟢 Active' : '⚪ Inactive'}
+                        </span>
+
+                        {(!ann.examTags || ann.examTags.length === 0) ? (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold text-[10px]">
+                            🌐 Universal (All Exams)
+                          </span>
+                        ) : (
+                          ann.examTags.map((tag: string) => (
+                            <span key={tag} className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700 font-semibold text-[10px]">
+                              🏷️ {tag}
+                            </span>
+                          ))
+                        )}
+                      </div>
+
+                      <h4 className="text-sm font-bold text-slate-100">{ann.title}</h4>
+                      <p className="text-xs text-slate-300 leading-relaxed">{ann.message}</p>
+
+                      <div className="flex items-center gap-4 text-[11px] text-slate-400 pt-1 flex-wrap font-mono">
+                        <span>Created: {new Date(ann.createdAt).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>Expires: {ann.expiresAt ? new Date(ann.expiresAt).toLocaleDateString() : 'Never'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end md:self-center">
+                      <button
+                        onClick={() => handleToggleAnnouncementActive(ann)}
+                        title={ann.isActive ? 'Deactivate' : 'Activate'}
+                        className={`p-2 rounded-xl border text-xs font-bold transition-all ${
+                          ann.isActive
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
+                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {ann.isActive ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
+                      </button>
+
+                      <button
+                        onClick={() => startEditAnnouncement(ann)}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition-all"
+                        title="Edit Announcement"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteAnnouncement(ann.id)}
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all"
+                        title="Delete Announcement"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

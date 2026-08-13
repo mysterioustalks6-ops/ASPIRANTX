@@ -32,6 +32,7 @@ import {
 import { saveStudySessionLog, loadStudySessions, loadUserProfile } from '../lib/gamification';
 import { StudySession, CustomSubject, ManualQuestion, PomodoroQuestionRef } from '../types';
 import { INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK } from '../data/academicData';
+import { fetchOfficialSyllabus, fetchPersonalSyllabus } from '../lib/unifiedSyllabus';
 
 interface PomodoroTimerProps {
   userId?: string;
@@ -83,6 +84,19 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
   const [customSubjects, setCustomSubjects] = useState<CustomSubject[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>(currentPredefinedSubjects[0]);
   const [topicText, setTopicText] = useState<string>('');
+  
+  // --- Syllabus Linkage State ---
+  const [selectedSyllabusNodeId, setSelectedSyllabusNodeId] = useState<string | null>(null);
+  const [selectedNodeSource, setSelectedNodeSource] = useState<'official' | 'personal'>('official');
+  const [selectedSubtopic, setSelectedSubtopic] = useState<string>('');
+  const [syllabusOptions, setSyllabusOptions] = useState<Array<{
+    id: string;
+    source: 'official' | 'personal';
+    subject: string;
+    topic: string;
+    subtopic: string;
+    label: string;
+  }>>([]);
   
   // Custom Subject Modals
   const [showAddSubjectModal, setShowAddSubjectModal] = useState<boolean>(false);
@@ -160,10 +174,89 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
     } catch (e) {}
   };
 
+  // Load Syllabus nodes for current exam and user
+  const loadSyllabusOptions = async () => {
+    try {
+      const [offNodes, persNodes] = await Promise.all([
+        fetchOfficialSyllabus(selectedExam),
+        fetchPersonalSyllabus(userId, selectedExam)
+      ]);
+
+      const options: Array<{
+        id: string;
+        source: 'official' | 'personal';
+        subject: string;
+        topic: string;
+        subtopic: string;
+        label: string;
+      }> = [];
+
+      offNodes.forEach((node: any) => {
+        const subj = node.subject || node.category || 'General Subject';
+        const ch = node.chapter || node.topic || 'General Topic';
+        const sub = node.subtopic || node.title || ch;
+        options.push({
+          id: node.id || `off_${subj}_${ch}_${sub}`,
+          source: 'official',
+          subject: subj,
+          topic: ch,
+          subtopic: sub,
+          label: `(Official) ${subj} → ${ch} → ${sub}`
+        });
+      });
+
+      persNodes.forEach((node: any) => {
+        const subj = node.subject || 'My Subject';
+        const ch = node.chapter || node.topic || 'My Topic';
+        const sub = node.subtopic || node.title || ch;
+        options.push({
+          id: node.id || `pers_${subj}_${ch}_${sub}`,
+          source: 'personal',
+          subject: subj,
+          topic: ch,
+          subtopic: sub,
+          label: `(My Syllabus) ${subj} → ${ch} → ${sub}`
+        });
+      });
+
+      setSyllabusOptions(options);
+
+      if (topicId) {
+        const match = options.find((o) => o.id === topicId);
+        if (match) {
+          setSelectedSyllabusNodeId(match.id);
+          setSelectedNodeSource(match.source);
+          setSelectedSubject(match.subject);
+          setTopicText(`${match.topic} — ${match.subtopic}`);
+          setSelectedSubtopic(match.subtopic);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load syllabus options in PomodoroTimer:', e);
+    }
+  };
+
   useEffect(() => {
     fetchUserSubjects();
+    loadSyllabusOptions();
     loadStudySessions(userId).then(setSessions);
-  }, [userId]);
+  }, [userId, selectedExam]);
+
+  const handleSyllabusOptionSelect = (optId: string) => {
+    if (!optId) {
+      setSelectedSyllabusNodeId(null);
+      setSelectedSubtopic('');
+      return;
+    }
+    const match = syllabusOptions.find((o) => o.id === optId);
+    if (match) {
+      setSelectedSyllabusNodeId(match.id);
+      setSelectedNodeSource(match.source);
+      setSelectedSubject(match.subject);
+      setTopicText(`${match.topic} — ${match.subtopic}`);
+      setSelectedSubtopic(match.subtopic);
+    }
+  };
 
   // Restore Active Pomodoro Session State on page refresh / browser reopen
   useEffect(() => {
@@ -179,6 +272,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
           if (savedState.pomoMode) setPomoMode(savedState.pomoMode);
           if (savedState.selectedSubject) setSelectedSubject(savedState.selectedSubject);
           if (savedState.topicText) setTopicText(savedState.topicText);
+          if (savedState.selectedSyllabusNodeId) setSelectedSyllabusNodeId(savedState.selectedSyllabusNodeId);
+          if (savedState.selectedNodeSource) setSelectedNodeSource(savedState.selectedNodeSource);
+          if (savedState.selectedSubtopic) setSelectedSubtopic(savedState.selectedSubtopic);
           if (Array.isArray(savedState.attachedQuestions)) setAttachedQuestions(savedState.attachedQuestions);
         }
       }
@@ -197,12 +293,15 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
           pomoMode,
           selectedSubject,
           topicText,
+          selectedSyllabusNodeId,
+          selectedNodeSource,
+          selectedSubtopic,
           attachedQuestions,
           updatedAt: new Date().toISOString()
         }));
       } catch (e) {}
     }
-  }, [isPomoActive, pomoMinutes, pomoSeconds, selectedSubject, topicText, attachedQuestions]);
+  }, [isPomoActive, pomoMinutes, pomoSeconds, selectedSubject, topicText, selectedSyllabusNodeId, selectedNodeSource, selectedSubtopic, attachedQuestions]);
 
   // --- Custom Subject Actions ---
   const handleAddCustomSubject = async () => {
@@ -426,7 +525,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
     return () => clearInterval(interval);
   }, [isPomoActive, pomoMinutes, pomoSeconds]);
 
-  // Pomodoro Completion Handler with Server XP Deduplication
+  // Pomodoro Completion Handler with Server XP Deduplication and Inline Syllabus Time Logging
   const handlePomodoroFinish = async () => {
     if (pomoMode === 'focus') {
       const durationSeconds = selectedPomoDuration * 60;
@@ -446,8 +545,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
           body: JSON.stringify({
             subject: selectedSubject,
             topic: topicText || 'Study Sprint',
+            subtopic: selectedSubtopic || (topicText ? topicText.split('—').pop()?.trim() || topicText : ''),
+            nodeId: selectedSyllabusNodeId || null,
+            nodeSource: selectedNodeSource || 'official',
             duration: selectedPomoDuration,
             completedDuration: durationSeconds,
+            secondsLogged: durationSeconds,
             questionsAttempted: attachedQuestions.length,
             questionIds: attachedQuestions.map(q => q.id),
             questionSources: attachedQuestions.map(q => q.source),
@@ -461,6 +564,24 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
           const data = await res.json();
           if (data.success) {
             xpAwarded = data.xpAwarded;
+
+            // Dispatch event for syllabus time update
+            if (data.syllabusTimeLogged || data.totalTimeForNode !== undefined) {
+              window.dispatchEvent(
+                new CustomEvent('aspirantx_syllabus_time_updated', {
+                  detail: {
+                    nodeId: selectedSyllabusNodeId || (data.syllabusTimeLogged && data.syllabusTimeLogged.nodeId),
+                    nodeSource: selectedNodeSource || (data.syllabusTimeLogged && data.syllabusTimeLogged.nodeSource),
+                    secondsLogged: durationSeconds,
+                    subject: selectedSubject,
+                    topic: topicText,
+                    subtopic: selectedSubtopic,
+                    totalTimeForNode: data.totalTimeForNode || (data.syllabusTimeLogged && data.syllabusTimeLogged.totalTimeForNode)
+                  }
+                })
+              );
+            }
+
             if (data.streak && typeof data.streak.streakDays === 'number') {
               window.dispatchEvent(
                 new CustomEvent('aspirantx_streak_updated', {
@@ -506,6 +627,83 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
       setPomoMinutes(selectedPomoDuration);
       setPomoSeconds(0);
     }
+  };
+
+  // Stopwatch Session Completion Handler
+  const handleStopwatchFinish = async () => {
+    if (stopwatchSeconds <= 0) return;
+    setIsSaving(true);
+    const targetId = `stopwatch_${Date.now()}`;
+    const durationSeconds = stopwatchSeconds;
+
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/user/study-sessions/${targetId}/complete`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          subject: selectedSubject,
+          topic: topicText || 'Live Stopwatch Sprint',
+          subtopic: selectedSubtopic || (topicText ? topicText.split('—').pop()?.trim() || topicText : ''),
+          nodeId: selectedSyllabusNodeId || null,
+          nodeSource: selectedNodeSource || 'official',
+          duration: Math.round(durationSeconds / 60) || 1,
+          completedDuration: durationSeconds,
+          secondsLogged: durationSeconds,
+          questionsAttempted: attachedQuestions.length,
+          questionIds: attachedQuestions.map(q => q.id),
+          questionSources: attachedQuestions.map(q => q.source),
+          manualQuestions: attachedQuestions.filter(q => q.source === 'manual'),
+          selectedQuestions: attachedQuestions,
+          accuracy: 100
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          if (data.syllabusTimeLogged || data.totalTimeForNode !== undefined) {
+            window.dispatchEvent(
+              new CustomEvent('aspirantx_syllabus_time_updated', {
+                detail: {
+                  nodeId: selectedSyllabusNodeId || (data.syllabusTimeLogged && data.syllabusTimeLogged.nodeId),
+                  nodeSource: selectedNodeSource || (data.syllabusTimeLogged && data.syllabusTimeLogged.nodeSource),
+                  secondsLogged: durationSeconds,
+                  subject: selectedSubject,
+                  topic: topicText,
+                  subtopic: selectedSubtopic,
+                  totalTimeForNode: data.totalTimeForNode || (data.syllabusTimeLogged && data.syllabusTimeLogged.totalTimeForNode)
+                }
+              })
+            );
+          }
+          if (data.streak && typeof data.streak.streakDays === 'number') {
+            window.dispatchEvent(
+              new CustomEvent('aspirantx_streak_updated', {
+                detail: { streakDays: data.streak.streakDays, lastActiveDate: data.streak.lastActiveDate },
+              })
+            );
+          }
+        }
+      }
+    } catch (e) {}
+
+    await saveStudySessionLog({
+      userId,
+      subject: selectedSubject,
+      durationSeconds,
+      mode: 'stopwatch'
+    });
+
+    setIsSaving(false);
+    setIsStopwatchActive(false);
+    setStopwatchSeconds(0);
+
+    const updated = await loadStudySessions(userId);
+    setSessions(updated);
   };
 
   const handleDurationSelect = (mins: number) => {
@@ -645,16 +843,37 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                 )}
               </div>
 
-              {/* B) Topic / Chapter Input */}
+              {/* B) Topic / Chapter Input with Syllabus Subtopic Picker */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
-                  <BookOpen className="w-3.5 h-3.5 text-cyan-400" /> Topic / Chapter (Optional)
+                  <BookOpen className="w-3.5 h-3.5 text-cyan-400" /> Link Syllabus Sub-topic
                 </label>
+                
+                {syllabusOptions.length > 0 && (
+                  <select
+                    value={selectedSyllabusNodeId || ''}
+                    onChange={(e) => handleSyllabusOptionSelect(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 text-cyan-300 text-xs font-bold focus:outline-none focus:border-cyan-500 cursor-pointer mb-2"
+                  >
+                    <option value="">-- Optional: Select Syllabus Subtopic (Official / My Syllabus) --</option>
+                    {syllabusOptions.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
                 <input
                   type="text"
                   placeholder="e.g. Current Electricity, Organic Reactions, Modern History..."
                   value={topicText}
-                  onChange={(e) => setTopicText(e.target.value)}
+                  onChange={(e) => {
+                    setTopicText(e.target.value);
+                    if (!selectedSyllabusNodeId) {
+                      setSelectedSubtopic(e.target.value);
+                    }
+                  }}
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-white text-xs font-medium focus:outline-none focus:border-cyan-500 placeholder:text-slate-600"
                 />
               </div>
@@ -838,7 +1057,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
             {formatStopwatchTime(stopwatchSeconds)}
           </div>
 
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             {!isStopwatchActive ? (
               <button
                 onClick={() => setIsStopwatchActive(true)}
@@ -854,9 +1073,21 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                 <Pause className="w-4 h-4 fill-current" /> Pause
               </button>
             )}
+
+            {stopwatchSeconds > 0 && (
+              <button
+                onClick={handleStopwatchFinish}
+                disabled={isSaving}
+                className="px-6 py-3.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/20"
+              >
+                <CheckCircle2 className="w-4 h-4" /> Save & Log Time
+              </button>
+            )}
+
             <button
               onClick={() => { setIsStopwatchActive(false); setStopwatchSeconds(0); }}
               className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300"
+              title="Reset Stopwatch"
             >
               <RotateCcw className="w-4 h-4" />
             </button>

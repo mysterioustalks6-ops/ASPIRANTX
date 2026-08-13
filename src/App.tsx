@@ -1321,7 +1321,12 @@ export default function App() {
           user={user}
           isOpen={showProfileModal}
           onClose={() => setShowProfileModal(false)}
-          onProfileUpdated={(updated) => setUser(updated)}
+          onProfileUpdated={(updated) => {
+            setUser(updated);
+            if (updated.exam) {
+              handleExamChange(updated.exam);
+            }
+          }}
           onOpenReferralModal={() => {
             setShowProfileModal(false);
             setShowReferralModal(true);

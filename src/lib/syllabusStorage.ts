@@ -80,7 +80,18 @@ export async function saveCompletedSubtopicIds(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: userId || 'guest', activityType: 'syllabus_progress' })
-      }).catch(() => {});
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && typeof data.streakDays === 'number') {
+            window.dispatchEvent(
+              new CustomEvent('aspirantx_streak_updated', {
+                detail: { streakDays: data.streakDays, lastActiveDate: data.lastActiveDate },
+              })
+            );
+          }
+        })
+        .catch(() => {});
     } catch (e) {}
   }
 

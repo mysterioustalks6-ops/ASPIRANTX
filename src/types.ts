@@ -97,6 +97,8 @@ export interface SubTopic {
   estimatedHours: number; // Default 2.5 hours
   weightage?: 'High' | 'Medium' | 'Low';
   notes?: string;
+  origin_official_id?: string;
+  time_studied_seconds?: number;
 }
 
 export interface SyllabusTopic {

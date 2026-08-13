@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Clock, Flame, Target, TrendingUp, Award, 
-  Sparkles, BookOpen, BarChart3, Zap, ShieldCheck 
+  Sparkles, BookOpen, BarChart3, Zap, ShieldCheck, Megaphone, X 
 } from 'lucide-react';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
 import { OnboardingTour } from './OnboardingTour';
@@ -58,8 +58,50 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [data, setData] = useState<StudentDashboardData>(defaultDashboardData);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Student Announcements State
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('dismissed_announcements') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  const activeExamTag = selectedExam || userProfile.exam || 'NEET_UG';
+
   useEffect(() => {
-    fetchDashboardTelemetry();
+    fetchAnnouncements(activeExamTag);
+  }, [activeExamTag]);
+
+  const fetchAnnouncements = async (exam: string) => {
+    try {
+      const res = await fetch(`/api/announcements?exam=${encodeURIComponent(exam)}`, { cache: 'no-store' });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.announcements)) {
+          setAnnouncements(json.announcements);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch announcements:', err);
+    }
+  };
+
+  const handleDismissAnnouncement = (id: string) => {
+    const updated = [...dismissedIds, id];
+    setDismissedIds(updated);
+    try {
+      localStorage.setItem('dismissed_announcements', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const visibleAnnouncements = announcements.filter((ann) => !dismissedIds.includes(ann.id));
+
+  useEffect(() => {
+    fetchDashboardTelemetry(activeExamTag, userProfile.id);
 
     const handleStreakUpdated = (e: any) => {
       const { streakDays } = e.detail || {};
@@ -72,13 +114,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return () => {
       window.removeEventListener('aspirantx_streak_updated', handleStreakUpdated);
     };
-  }, []);
+  }, [activeExamTag, userProfile.id]);
 
-  const fetchDashboardTelemetry = async () => {
+  const fetchDashboardTelemetry = async (examTag: string, userId: string) => {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 1200);
-      const res = await fetch('/api/student/dashboard', { cache: 'no-store', signal: controller.signal }).catch(() => null);
+      const timer = setTimeout(() => controller.abort(), 3000);
+      const url = `/api/student/dashboard?userId=${encodeURIComponent(userId)}&exam=${encodeURIComponent(examTag)}`;
+      const res = await fetch(url, { cache: 'no-store', signal: controller.signal }).catch(() => null);
       clearTimeout(timer);
       if (res && res.ok) {
         const json = await res.json().catch(() => null);
@@ -158,6 +201,65 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ACTIVE ANNOUNCEMENTS BANNER */}
+      {visibleAnnouncements.length > 0 && (
+        <div className="space-y-3">
+          {visibleAnnouncements.map((ann) => (
+            <div
+              key={ann.id}
+              className={`p-4 rounded-2xl border transition-all relative flex items-start justify-between gap-4 shadow-lg ${
+                ann.priority === 'urgent'
+                  ? 'bg-rose-950/40 border-rose-500/80 shadow-rose-950/30 text-rose-100'
+                  : 'bg-indigo-950/30 border-indigo-500/50 shadow-indigo-950/20 text-indigo-100'
+              }`}
+            >
+              <div className="flex items-start gap-3 flex-1">
+                <div className="pt-0.5">
+                  {ann.priority === 'urgent' ? (
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                    </span>
+                  ) : (
+                    <Megaphone className="w-5 h-5 text-indigo-400 shrink-0" />
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`px-2 py-0.5 rounded-md font-black text-[10px] uppercase tracking-wider ${
+                        ann.priority === 'urgent'
+                          ? 'bg-rose-500 text-slate-950 shadow-sm shadow-rose-500/30'
+                          : 'bg-indigo-500 text-slate-950 shadow-sm shadow-indigo-500/30'
+                      }`}
+                    >
+                      {ann.priority === 'urgent' ? '🚨 URGENT ANNOUNCEMENT' : '📢 ANNOUNCEMENT'}
+                    </span>
+                    {ann.examTags && ann.examTags.length > 0 && (
+                      <span className="text-[10px] text-slate-400 font-semibold">
+                        Targeting: {ann.examTags.join(', ')}
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-sm font-bold text-white">{ann.title}</h3>
+                  <p className="text-xs text-slate-200 leading-relaxed">{ann.message}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleDismissAnnouncement(ann.id)}
+                className="p-1.5 rounded-xl hover:bg-slate-800/60 text-slate-400 hover:text-white transition-all shrink-0"
+                title="Dismiss Announcement"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* AdSense In-Feed Ad Banner */}
       <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />

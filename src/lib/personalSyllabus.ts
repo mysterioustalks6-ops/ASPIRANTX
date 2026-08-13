@@ -10,6 +10,8 @@ export interface PersonalSyllabusNode {
   stage?: string;
   weightage?: string;
   tags?: string;
+  origin_official_id?: string;
+  time_studied_seconds?: number;
   user_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -44,6 +46,8 @@ export async function getPersonalSyllabusNodes(
           stage: row.stage || '',
           weightage: row.weightage || '',
           tags: row.tags || '',
+          origin_official_id: row.origin_official_id || undefined,
+          time_studied_seconds: Number(row.time_studied_seconds) || 0,
           user_id: row.user_id,
           created_at: row.created_at,
           updated_at: row.updated_at,
@@ -163,6 +167,8 @@ export async function savePersonalSubjectSyllabus(
           stage: n.stage || 'Prelims',
           weightage: n.weightage || 'Medium',
           tags: n.tags || '',
+          origin_official_id: n.origin_official_id || null,
+          time_studied_seconds: n.time_studied_seconds || 0,
           updated_at: new Date().toISOString(),
         }));
 
@@ -243,9 +249,14 @@ export function parseCsvSyllabus(
     return { nodes: [], skippedOtherSubjectRows: 0, otherSubjectsFound: [] };
   }
 
+  // Strip common bullet/numbering markers from plain point-style lines
+  // e.g. "- Fundamental Rights", "* Topic", "• Topic", "1. Topic", "1) Topic"
+  const stripBulletPrefix = (line: string): string =>
+    line.replace(/^\s*(?:[-*•●▪‣◦]+|\d+[.)])\s+/, '').trim();
+
   const lines = csvContent
     .split(/\r?\n/)
-    .map((l) => l.trim())
+    .map((l) => stripBulletPrefix(l.trim()))
     .filter((l) => l.length > 0);
 
   if (lines.length === 0) {
