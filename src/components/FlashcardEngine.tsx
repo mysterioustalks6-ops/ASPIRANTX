@@ -1,0 +1,558 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  BookOpen, 
+  Sparkles, 
+  RotateCw, 
+  ChevronLeft, 
+  ChevronRight, 
+  Smile, 
+  Frown, 
+  CheckCircle,
+  HelpCircle,
+  Plus,
+  Info,
+  X,
+  Layers
+} from 'lucide-react';
+import { EXAM_LIST } from '../lib/examList';
+
+export interface Flashcard {
+  id: string;
+  exam: string;
+  category: string;
+  question: string;
+  answer: string;
+  hint: string;
+  isCustom?: boolean;
+}
+
+const SEED_FLASHCARDS: Flashcard[] = [
+  // NEET UG Decks
+  {
+    id: 'neet-f1',
+    exam: 'NEET_UG',
+    category: 'Biology — Human Physiology',
+    question: 'Kupffer cells kin organs me paaye jaate hain aur inka primary function kya hai?',
+    answer: 'Kupffer cells Liver ke sinusoids me paaye jane wale specialized Macrophages hote hain. Inka primary function micro-organisms, worn-out red blood cells (RBCs), aur foreign debris ko Phagocytosis ke dwara destroy karna hota hai.',
+    hint: 'Phagocytic liver macrophages'
+  },
+  {
+    id: 'neet-f2',
+    exam: 'NEET_UG',
+    category: 'Chemistry — Chemical Bonding',
+    question: 'XeF4 (Xenon Tetrafluoride) ki Molecular Geometry aur Hybridization kya hai?',
+    answer: 'XeF4 ki Hybridization sp3d2 hoti hai. Isme 4 Bond Pairs aur 2 Lone Pairs hote hain. Iski Electron Geometry Octahedral aur Molecular Geometry Square Planar hoti hai.',
+    hint: '2 Lone pairs occupy axial positions'
+  },
+  {
+    id: 'neet-f3',
+    exam: 'NEET_UG',
+    category: 'Physics — Electrostatics',
+    question: 'Electric dipole in a uniform electric field par net Force aur Torque kitna hota hai?',
+    answer: 'Uniform electric field me Electric dipole par Net Force hamesha zero (0) hota hai. Par Torque = p × E = p E sin(θ) act karta hai jo dipole ko field ke direction me align karne ki koshish karta hai.',
+    hint: 'Net Force = 0, Torque = p × E'
+  },
+
+  // NDA / NA Decks
+  {
+    id: 'nda-f1',
+    exam: 'NDA_NA',
+    category: 'General Ability — Physics',
+    question: 'Sound waves air me kaunsi type ki wave hoti hain aur vacuum me travel kyu nahi kar sakti?',
+    answer: 'Sound waves Mechanical Longitudinal Waves hoti hain. Inhe propagation ke liye material medium (compressions & rarefactions) ki zaroorat hoti hai, isliye ye vacuum me travel nahi kar sakti.',
+    hint: 'Speed of sound in air ≈ 343 m/s'
+  },
+  {
+    id: 'nda-f2',
+    exam: 'NDA_NA',
+    category: 'Mathematics — Matrices & Determinants',
+    question: 'If A is a square matrix of order n, then det(adj A) equals what in terms of det(A)?',
+    answer: 'det(adj A) = |A|^(n-1). For a 3x3 matrix (n=3), det(adj A) = |A|^2.',
+    hint: 'Power is (n - 1)'
+  },
+  {
+    id: 'nda-f3',
+    exam: 'NDA_NA',
+    category: 'General Knowledge — Indian History',
+    question: 'Battle of Plassey (1757) kis kis ke beech hui thi aur iska historic significance kya tha?',
+    answer: 'Battle of Plassey 23 June 1757 ko Nawab of Bengal (Siraj-ud-Daulah) aur British East India Company (Robert Clive) ke beech hui थी. Mir Jafar ki treachery ki wajah se Clive jeeta aur Bharat me British rule ki foundation padi.',
+    hint: 'Robert Clive vs Siraj-ud-Daulah'
+  },
+
+  // UPSC CSE Decks
+  {
+    id: 'upsc-f1',
+    exam: 'UPSC_CSE',
+    category: 'Indian Polity & Governance',
+    question: 'Writ of Habeas Corpus kya hota hai and iska literary meaning kya hai?',
+    answer: 'Habeas Corpus ka literary meaning hai "To have the body of". Ye writ court tab issue karta hai jab kisi person ko illegally detain kiya gaya ho. Court detaining authority ko direct karta hai ki detained person ko court ke samne produce kiya jaye.',
+    hint: 'Under Article 32 (Supreme Court) and Article 226 (High Courts)'
+  },
+  {
+    id: 'upsc-f2',
+    exam: 'UPSC_CSE',
+    category: 'Modern Indian History',
+    question: 'Swadeshi Movement ki formal start kab aur kis event ke response me hui thi?',
+    answer: 'Swadeshi Movement ki formal start 7 August 1905 ko Town Hall, Calcutta me Boycott Resolution pass hone ke sath hui thi. Ye Lord Curzon dwara announced Partition of Bengal (July 1905) ke response me shuru hua tha.',
+    hint: 'Lal-Bal-Pal led this movement in different parts of India'
+  },
+
+  // SSC CGL Decks
+  {
+    id: 'ssc-f1',
+    exam: 'SSC_CGL',
+    category: 'Quantitative Aptitude — Geometry',
+    question: 'Right-angled triangle me Inradius (r) aur Circumradius (R) ki lengths ka formula kya hota hai?',
+    answer: 'Right-angled triangle with sides a, b and hypotenuse c:\nInradius r = (a + b - c) / 2\nCircumradius R = c / 2 (Hypotenuse ka half).',
+    hint: 'Circumcentre lies at the midpoint of hypotenuse'
+  }
+];
+
+interface FlashcardEngineProps {
+  selectedExam?: string;
+  onExamChange?: (exam: string) => void;
+}
+
+export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ 
+  selectedExam = 'NEET_UG',
+  onExamChange 
+}) => {
+  const [cards, setCards] = useState<Flashcard[]>(() => {
+    try {
+      const saved = localStorage.getItem('aspirantx_custom_flashcards');
+      if (saved) {
+        const custom: Flashcard[] = JSON.parse(saved);
+        return [...SEED_FLASHCARDS, ...custom];
+      }
+    } catch {
+      // fallback
+    }
+    return SEED_FLASHCARDS;
+  });
+
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [isFlipped, setIsFlipped] = useState<boolean>(false);
+  const [showHint, setShowHint] = useState<boolean>(false);
+  const [showInfoDrawer, setShowInfoDrawer] = useState<boolean>(false);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+
+  // New card form state
+  const [newCategory, setNewCategory] = useState<string>('');
+  const [newQuestion, setNewQuestion] = useState<string>('');
+  const [newAnswer, setNewAnswer] = useState<string>('');
+  const [newHint, setNewHint] = useState<string>('');
+
+  // Review tracking status per card
+  const [reviews, setReviews] = useState<{ [cardId: string]: 'easy' | 'hard' }>(() => {
+    try {
+      const saved = localStorage.getItem('aspirantx_flashcard_reviews');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {};
+  });
+
+  // Helper for resilient exam key matching
+  const normalizeExamKey = (e: string) => {
+    let s = String(e || '').trim().toLowerCase().replace(/[\s-_]/g, '');
+    if (s.includes('nda') || s.includes('defence')) return 'nda';
+    if (s.includes('neet') || s.includes('medical')) return 'neet';
+    if (s.includes('upsc') || s.includes('civil') || s.includes('cse')) return 'upsc';
+    if (s.includes('ssc') || s.includes('cgl') || s.includes('staffselection')) return 'ssc';
+    return s;
+  };
+
+  // Filter cards by normalized exam ID with fallback
+  const matchedCards = cards.filter(c => c.exam === 'ALL' || normalizeExamKey(c.exam) === normalizeExamKey(selectedExam));
+  const examCards = matchedCards.length > 0 ? matchedCards : cards;
+  const filteredCards = examCards.filter(c => selectedCategory === 'ALL' || c.category === selectedCategory);
+
+  // Reset index when exam or category changes
+  useEffect(() => {
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setShowHint(false);
+  }, [selectedExam, selectedCategory]);
+
+  const categories = Array.from(new Set(examCards.map(c => c.category)));
+  const currentCard = filteredCards[currentIndex];
+
+  const handleNext = () => {
+    setIsFlipped(false);
+    setShowHint(false);
+    setTimeout(() => {
+      setCurrentIndex(prev => (filteredCards.length > 0 ? (prev + 1) % filteredCards.length : 0));
+    }, 150);
+  };
+
+  const handleFlip = () => {
+    setIsFlipped(prev => !prev);
+  };
+
+  const handlePrev = () => {
+    setIsFlipped(false);
+    setShowHint(false);
+    setTimeout(() => {
+      setCurrentIndex(prev => (filteredCards.length > 0 ? (prev - 1 + filteredCards.length) % filteredCards.length : 0));
+    }, 150);
+  };
+
+  const handleCreateCard = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQuestion.trim() || !newAnswer.trim()) return;
+
+    const newCard: Flashcard = {
+      id: `custom-${Date.now()}`,
+      exam: selectedExam,
+      category: newCategory.trim() || 'Custom Notes',
+      question: newQuestion,
+      answer: newAnswer,
+      hint: newHint || 'Custom user note',
+      isCustom: true
+    };
+
+    const updated = [...cards, newCard];
+    setCards(updated);
+
+    try {
+      const customOnly = updated.filter(c => c.isCustom);
+      localStorage.setItem('aspirantx_custom_flashcards', JSON.stringify(customOnly));
+    } catch {
+      // ignore
+    }
+
+    setNewCategory('');
+    setNewQuestion('');
+    setNewAnswer('');
+    setNewHint('');
+    setShowCreateModal(false);
+  };
+
+  const markReview = (status: 'easy' | 'hard') => {
+    if (!currentCard) return;
+    setReviews(prev => {
+      const next = { ...prev, [currentCard.id]: status };
+      try {
+        localStorage.setItem('aspirantx_flashcard_reviews', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    handleNext();
+  };
+
+  const easyCount = Object.values(reviews).filter(v => v === 'easy').length;
+  const hardCount = Object.values(reviews).filter(v => v === 'hard').length;
+
+  const currentExamLabel = EXAM_LIST.find(e => e.id === selectedExam)?.label || selectedExam.replace(/_/g, ' ');
+
+  return (
+    <div className="space-y-6">
+      {/* Top Header & Exam Switcher */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/60 border border-amber-500/30 rounded-2xl p-5 gap-4 backdrop-blur-md shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-slate-950 shadow-lg shrink-0 font-black">
+            <BookOpen className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl font-black text-white">Active Recall Flashcards</h1>
+              <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2.5 py-0.5 rounded-full border border-amber-500/40 font-black uppercase">
+                🎯 {currentExamLabel}
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              High-yield spaced repetition cards mapped strictly to <strong className="text-amber-300">{currentExamLabel}</strong>.
+            </p>
+          </div>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowInfoDrawer(prev => !prev)}
+            className="px-3 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-extrabold flex items-center gap-1.5 transition-all"
+          >
+            <Info className="w-4 h-4" />
+            <span>Why Use Flashcards?</span>
+          </button>
+
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Add Custom Card</span>
+          </button>
+        </div>
+      </div>
+
+      {/* "WHY USE FLASHCARDS?" SIDE INFORMATION PANEL */}
+      {showInfoDrawer && (
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-purple-950/60 via-slate-900 to-amber-950/40 border border-purple-500/40 space-y-3 relative text-left">
+          <button
+            onClick={() => setShowInfoDrawer(false)}
+            className="absolute top-4 right-4 p-1.5 rounded-lg bg-white/5 text-slate-400 hover:text-white"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm">
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>Why Active Recall Flashcards are Essential for Competitive Exams</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs text-slate-300 pt-1">
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <strong className="text-purple-300 block font-bold">🧠 1. Active Recall</strong>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Reading passive notes leads to an illusion of competence. Flashcards force your brain to actively retrieve information from memory.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <strong className="text-amber-300 block font-bold">📈 2. Spaced Repetition</strong>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Reviewing hard concepts right before you forget them flattens Ebbinghaus's Forgetting Curve and locks facts into long-term memory.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <strong className="text-emerald-300 block font-bold">⏱️ 3. High-Yield Revision</strong>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Perfect for 10-minute daily review sessions before solving PYQs or CBT mock papers to eliminate negative marking.
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+              <strong className="text-cyan-300 block font-bold">🎯 4. Exam Tailored</strong>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Every card is linked directly to {currentExamLabel} syllabus topics, equations, articles, and formulas.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category Filter & Deck Selector */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-black/40 border border-white/10">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
+          <span className="text-xs font-extrabold text-slate-400 uppercase shrink-0 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-amber-400" /> Deck Category:
+          </span>
+          <button
+            onClick={() => setSelectedCategory('ALL')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 ${
+              selectedCategory === 'ALL'
+                ? 'bg-amber-500 text-slate-950 shadow'
+                : 'bg-white/5 text-slate-400 hover:text-white'
+            }`}
+          >
+            All Decks ({examCards.length})
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 ${
+                selectedCategory === cat
+                  ? 'bg-amber-500 text-slate-950 shadow'
+                  : 'bg-white/5 text-slate-400 hover:text-white'
+              }`}
+            >
+              {cat} ({examCards.filter(c => c.category === cat).length})
+            </button>
+          ))}
+        </div>
+
+        <div className="text-xs text-amber-300 font-extrabold flex items-center gap-2">
+          <span>Reviewed: {easyCount + hardCount}</span>
+          <span className="text-emerald-400 font-bold">({easyCount} Easy</span>
+          <span className="text-rose-400 font-bold">• {hardCount} Hard)</span>
+        </div>
+      </div>
+
+      {/* Flashcard Active Viewer */}
+      {filteredCards.length === 0 ? (
+        <div className="p-12 text-center rounded-2xl bg-black/40 border border-white/10 space-y-3">
+          <HelpCircle className="w-10 h-10 text-amber-400 mx-auto animate-bounce" />
+          <h3 className="text-base font-bold text-white">No flashcards found for {currentExamLabel} in category "{selectedCategory}"</h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Click <strong>"+ Add Custom Card"</strong> above to create your own high-yield cards for this subject!
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="text-center text-xs font-extrabold text-slate-400">
+            Card {currentIndex + 1} of {filteredCards.length}
+          </div>
+
+          <div
+            onClick={handleFlip}
+            className={`min-h-[260px] p-8 rounded-3xl border transition-all duration-300 cursor-pointer select-none flex flex-col justify-between relative shadow-2xl ${
+              isFlipped
+                ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-purple-900/60 border-purple-500/50 text-purple-100'
+                : 'bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 border-amber-500/30 hover:border-amber-500/60 text-slate-100'
+            }`}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-black uppercase">
+                {currentCard.category}
+              </span>
+
+              <span className="text-[10px] text-slate-400 font-extrabold flex items-center gap-1">
+                <RotateCw className="w-3 h-3" /> Click anywhere to flip
+              </span>
+            </div>
+
+            <div className="my-6 text-center text-base sm:text-lg font-bold leading-relaxed whitespace-pre-line px-4">
+              {isFlipped ? (
+                <div className="space-y-2 text-left">
+                  <span className="text-xs text-emerald-400 font-extrabold block">✓ Model Answer & Explanation:</span>
+                  <div className="text-emerald-100 text-sm font-semibold">{currentCard.answer}</div>
+                </div>
+              ) : (
+                <div className="space-y-2 text-left">
+                  <span className="text-xs text-amber-400 font-extrabold block">❓ Active Recall Question:</span>
+                  <div className="text-white text-base font-extrabold">{currentCard.question}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Hint Drawer */}
+            <div className="flex items-center justify-between border-t border-white/10 pt-3">
+              {currentCard.hint ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowHint(!showHint);
+                  }}
+                  className="text-xs text-amber-400 hover:text-amber-300 underline font-extrabold flex items-center gap-1"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {showHint ? `Hint: ${currentCard.hint}` : 'Show Memory Hint'}
+                </button>
+              ) : <div />}
+
+              <span className="text-[10px] text-slate-500">
+                {isFlipped ? 'Answer View' : 'Question View'}
+              </span>
+            </div>
+          </div>
+
+          {/* Controls Bar */}
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <button
+              onClick={handlePrev}
+              className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-extrabold text-slate-300 flex items-center gap-1.5"
+            >
+              <ChevronLeft className="w-4 h-4" /> Previous Card
+            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => markReview('hard')}
+                className="px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-black flex items-center gap-1"
+                title="Mark for Spaced Repetition Review"
+              >
+                <Frown className="w-4 h-4" /> Hard
+              </button>
+              <button
+                onClick={() => markReview('easy')}
+                className="px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-black flex items-center gap-1"
+                title="Mastered"
+              >
+                <Smile className="w-4 h-4" /> Easy
+              </button>
+            </div>
+
+            <button
+              onClick={handleNext}
+              className="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-extrabold text-amber-300 flex items-center gap-1.5"
+            >
+              Next Card <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE CUSTOM FLASHCARD MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl text-left">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-amber-400" />
+                Add Custom Flashcard for {currentExamLabel}
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateCard} className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Subject / Category</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Physics — Thermodynamics"
+                  value={newCategory}
+                  onChange={e => setNewCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-white focus:border-amber-400 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Active Recall Question</label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. What is the first law of thermodynamics?"
+                  value={newQuestion}
+                  onChange={e => setNewQuestion(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-white focus:border-amber-400 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Model Answer / Formula</label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. ΔU = Q - W (Energy cannot be created or destroyed)"
+                  value={newAnswer}
+                  onChange={e => setNewAnswer(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-white focus:border-amber-400 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Memory Hint (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Conservation of Energy principle"
+                  value={newHint}
+                  onChange={e => setNewHint(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-white focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow"
+                >
+                  Save Card
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

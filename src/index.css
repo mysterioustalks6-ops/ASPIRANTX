@@ -1,0 +1,115 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* Design Tokens & Custom Surface Utilities (Linear/Stripe Style) */
+@layer utilities {
+  .shadow-card {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25), 0 1px 2px -1px rgba(0, 0, 0, 0.2);
+  }
+  .shadow-card-hover {
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(99, 102, 241, 0.15);
+  }
+  .shadow-modal {
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .ax-card {
+    background-color: #0f172a; /* slate-900 */
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem; /* rounded-2xl */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ax-card-interactive {
+    background-color: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .ax-card-interactive:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(99, 102, 241, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .ax-btn-primary {
+    background-color: #4f46e5; /* indigo-600 */
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem; /* rounded-xl */
+    transition: all 0.15s ease-in-out;
+  }
+  .ax-btn-primary:hover {
+    background-color: #4338ca; /* indigo-700 */
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  }
+
+  .ax-btn-secondary {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9; /* slate-100 */
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    transition: all 0.15s ease-in-out;
+  }
+  .ax-btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* Testbook-level Anti-Copy & Anti-Selection Styles */
+body, html, #root {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  background-color: #020617; /* slate-950 */
+  color: #f8fafc;
+}
+
+/* Allow text inputs and textareas to remain editable/selectable */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Prevent Screen Printing & PDF Generation */
+@media print {
+  body, html, #root {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
+/* Custom Sleek Scrollbar for Desktop & Engines */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.8);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.35) rgba(15, 23, 42, 0.8);
+}
