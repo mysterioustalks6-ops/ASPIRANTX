@@ -24,9 +24,11 @@ import {
   importFromOfficial,
   fetchSyllabusTimeSummary,
   savePersonalSubjectSyllabus,
+  saveAllPersonalSyllabusNodes,
   removePersonalSubject
 } from '../lib/unifiedSyllabus';
 import { PersonalSyllabusNode } from '../lib/personalSyllabus';
+import { MySyllabusDndTree } from './MySyllabusDndTree';
 import { 
   CheckCircle2, 
   Circle, 
@@ -593,13 +595,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
   const handleDeleteNode = async (subjectName: string, nodeId: string) => {
     const updated = personalRawNodes.filter((n) => n.id !== nodeId);
-    await savePersonalSubjectSyllabus(
-      userId,
-      selectedExam,
-      subjectName,
-      updated.filter((n) => n.subject.toLowerCase() === subjectName.toLowerCase())
-    );
-    loadData();
+    await saveAllPersonalSyllabusNodes(userId, selectedExam, updated);
+    setPersonalRawNodes(updated);
   };
 
   // Determine active topics list
@@ -872,20 +869,37 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       </div>
 
       {/* Topic List Render */}
-      <div className="space-y-4">
-        {filteredTopics.length === 0 ? (
-          <div className="p-12 text-center rounded-3xl bg-black/40 border border-white/10">
-            <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-300 font-bold">
-              {activeTab === 'official' ? 'No official topics match your filter' : 'No personal syllabus topics found'}
-            </p>
-            <p className="text-slate-500 text-xs mt-1">
-              {activeTab === 'personal'
-                ? 'Click "Add New Subject" above or import topics from the Official Syllabus tab!'
-                : 'Try clearing search or changing the stage filter.'}
-            </p>
-          </div>
-        ) : (
+      {activeTab === 'personal' ? (
+        <MySyllabusDndTree
+          rawNodes={personalRawNodes}
+          selectedExam={selectedExam}
+          userId={userId}
+          completedSubtopicIds={completedSubtopicIds}
+          timeSummary={timeSummary}
+          searchQuery={searchQuery}
+          activeStageFilter={activeStageFilter}
+          onToggleSubtopic={toggleSubtopicCompletion}
+          onToggleTopic={(nodes, title) => toggleParentTopicCompletion(personalTopics, title)}
+          onOpenAddSubject={openAddSubject}
+          onOpenAddTopic={(subj) => openAddTopic(subj)}
+          onOpenAddSubtopic={(subj, chap) => openAddSubtopic(subj, chap)}
+          onDeleteSubject={handleDeleteSubject}
+          onDeleteNode={handleDeleteNode}
+          onNodesChanged={(newNodes) => setPersonalRawNodes(newNodes)}
+        />
+      ) : (
+        <div className="space-y-4">
+          {filteredTopics.length === 0 ? (
+            <div className="p-12 text-center rounded-3xl bg-black/40 border border-white/10">
+              <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-300 font-bold">
+                No official topics match your filter
+              </p>
+              <p className="text-slate-500 text-xs mt-1">
+                Try clearing search or changing the stage filter.
+              </p>
+            </div>
+          ) : (
           filteredTopics.map((topic, topicIdx) => {
             const effectiveGuestLimit = guestLimit ?? Number(localStorage.getItem('aspirantx_guest_syllabus_limit') || 5);
             const isLockedForGuest = isGuest && topicIdx >= effectiveGuestLimit;
@@ -989,60 +1003,31 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                         </span>
 
                         {/* Official Syllabus Tab -> Bulk Import Button */}
-                        {activeTab === 'official' && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (isEntireTopicImported) return;
-                              const items = subList.map((s) => ({
-                                subject: topic.category,
-                                topic: topic.title,
-                                subtopic: s.title,
-                                officialNodeId: s.id,
-                                stage: topic.stage,
-                                weightage: topic.weightage
-                              }));
-                              handleImportNode(items);
-                            }}
-                            disabled={isEntireTopicImported}
-                            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer ${
-                              isEntireTopicImported
-                                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 opacity-70 cursor-not-allowed'
-                                : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
-                            }`}
-                          >
-                            <Download className="w-3 h-3" />
-                            {isEntireTopicImported ? '✓ In My Syllabus' : 'Import This Subject'}
-                          </button>
-                        )}
-
-                        {/* My Syllabus Tab -> Add Subtopic or Delete Subject */}
-                        {activeTab === 'personal' && (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openAddSubtopic(topic.category, topic.title);
-                              }}
-                              className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition-all flex items-center gap-1 cursor-pointer"
-                            >
-                              <Plus className="w-3 h-3" /> + Add Subtopic
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteSubject(topic.category);
-                              }}
-                              className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                              title="Delete Subject"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isEntireTopicImported) return;
+                            const items = subList.map((s) => ({
+                              subject: topic.category,
+                              topic: topic.title,
+                              subtopic: s.title,
+                              officialNodeId: s.id,
+                              stage: topic.stage,
+                              weightage: topic.weightage
+                            }));
+                            handleImportNode(items);
+                          }}
+                          disabled={isEntireTopicImported}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer ${
+                            isEntireTopicImported
+                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 opacity-70 cursor-not-allowed'
+                              : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
+                          }`}
+                        >
+                          <Download className="w-3 h-3" />
+                          {isEntireTopicImported ? '✓ In My Syllabus' : 'Import This Subject'}
+                        </button>
                       </div>
 
                       <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
@@ -1088,14 +1073,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                         <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                           <Layers className="w-3.5 h-3.5 text-[#00FF94]" /> Sub-topics Checklist ({subList.length})
                         </span>
-                        {activeTab === 'personal' && (
-                          <button
-                            onClick={() => openAddSubtopic(topic.category, topic.title)}
-                            className="text-[11px] font-bold text-purple-400 hover:underline flex items-center gap-1 cursor-pointer"
-                          >
-                            <Plus className="w-3 h-3" /> Add subtopic to this topic
-                          </button>
-                        )}
                       </div>
 
                       {subList.length === 0 ? (
@@ -1137,13 +1114,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                       {sub.title}
                                     </span>
 
-                                    {/* Imported Badge */}
-                                    {isImported && activeTab === 'personal' && (
-                                      <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
-                                        <Tag className="w-2.5 h-2.5" /> Imported from Official
-                                      </span>
-                                    )}
-
                                     {/* PHASE 5: Time Studied Badge */}
                                     {studiedSecs > 0 && (
                                       <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
@@ -1156,55 +1126,38 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
                                 <div className="flex items-center gap-2 shrink-0">
                                   {/* Official Syllabus Tab -> Single Subtopic Import Button */}
-                                  {activeTab === 'official' && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (isImported) return;
-                                        handleImportNode([{
-                                          subject: topic.category,
-                                          topic: topic.title,
-                                          subtopic: sub.title,
-                                          officialNodeId: sub.id,
-                                          stage: topic.stage,
-                                          weightage: topic.weightage
-                                        }]);
-                                      }}
-                                      disabled={isImported}
-                                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                                        isImported
-                                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 cursor-not-allowed opacity-80'
-                                          : 'bg-purple-600/80 hover:bg-purple-500 text-white shadow-md'
-                                      }`}
-                                    >
-                                      {importingNodeId === sub.id ? (
-                                        <span>Importing...</span>
-                                      ) : isImported ? (
-                                        <span>✓ In My Syllabus</span>
-                                      ) : (
-                                        <>
-                                          <Download className="w-3 h-3" />
-                                          <span>Import to My Syllabus</span>
-                                        </>
-                                      )}
-                                    </button>
-                                  )}
-
-                                  {/* Personal Syllabus Tab -> Delete Subtopic */}
-                                  {activeTab === 'personal' && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeleteNode(topic.category, sub.id);
-                                      }}
-                                      className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                                      title="Delete subtopic"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isImported) return;
+                                      handleImportNode([{
+                                        subject: topic.category,
+                                        topic: topic.title,
+                                        subtopic: sub.title,
+                                        officialNodeId: sub.id,
+                                        stage: topic.stage,
+                                        weightage: topic.weightage
+                                      }]);
+                                    }}
+                                    disabled={isImported}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                                      isImported
+                                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 cursor-not-allowed opacity-80'
+                                        : 'bg-purple-600/80 hover:bg-purple-500 text-white shadow-md'
+                                    }`}
+                                  >
+                                    {importingNodeId === sub.id ? (
+                                      <span>Importing...</span>
+                                    ) : isImported ? (
+                                      <span>✓ In My Syllabus</span>
+                                    ) : (
+                                      <>
+                                        <Download className="w-3 h-3" />
+                                        <span>Import to My Syllabus</span>
+                                      </>
+                                    )}
+                                  </button>
 
                                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-slate-400 border border-white/10 flex items-center gap-1">
                                     <Clock className="w-3 h-3 text-[#00FF94]" /> {sub.estimatedHours || 2.5} hrs
@@ -1230,6 +1183,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           })
         )}
       </div>
+    )}
 
       {/* Hierarchy Builder Modal for My Syllabus Tab */}
       <AnimatePresence>

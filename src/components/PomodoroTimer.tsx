@@ -33,6 +33,7 @@ import { saveStudySessionLog, loadStudySessions, loadUserProfile } from '../lib/
 import { StudySession, CustomSubject, ManualQuestion, PomodoroQuestionRef } from '../types';
 import { INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK } from '../data/academicData';
 import { fetchOfficialSyllabus, fetchPersonalSyllabus } from '../lib/unifiedSyllabus';
+import { PomodoroHistoryView } from './PomodoroHistoryView';
 
 interface PomodoroTimerProps {
   userId?: string;
@@ -78,7 +79,7 @@ const EXAM_SUBJECT_CHOICES: { [exam: string]: string[] } = {
 export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, selectedExam = 'NEET_UG' }) => {
   const currentPredefinedSubjects = EXAM_SUBJECT_CHOICES[selectedExam] || EXAM_SUBJECT_CHOICES['NEET_UG'];
 
-  const [activeTab, setActiveTab] = useState<'stopwatch' | 'pomodoro'>('pomodoro');
+  const [activeTab, setActiveTab] = useState<'stopwatch' | 'pomodoro' | 'history'>('pomodoro');
 
   // --- Subject & Topic State ---
   const [customSubjects, setCustomSubjects] = useState<CustomSubject[]>([]);
@@ -763,6 +764,16 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
           >
             <Clock className="w-4 h-4" /> Live Stopwatch
           </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'history'
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <History className="w-4 h-4" /> Study History
+          </button>
         </div>
 
         <div className="flex items-center gap-2">
@@ -1093,6 +1104,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
             </button>
           </div>
         </div>
+      )}
+
+      {/* --- HISTORY VIEW (TAB 3) --- */}
+      {activeTab === 'history' && (
+        <PomodoroHistoryView userId={userId} />
       )}
 
       {/* --- ADD CUSTOM SUBJECT MODAL --- */}

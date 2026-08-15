@@ -5,7 +5,6 @@ import {
   LayoutGrid, Sliders, ChevronRight
 } from 'lucide-react';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
-import { OnboardingTour } from './OnboardingTour';
 import { EXAM_LIST } from '../lib/examList';
 import { AdSenseBanner } from './AdSenseBanner';
 import { loadWorkspaceConfig, getActiveFeaturesInOrder, WorkspaceConfig, recordFeatureUsage } from '../lib/workspacePreferences';
@@ -133,14 +132,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Onboarding Tour */}
-      {onNavigate && onOpenProfileModal && (
-        <OnboardingTour
-          onNavigate={onNavigate}
-          onOpenProfileModal={onOpenProfileModal}
-        />
-      )}
-
       {/* HEADER BANNER */}
       <div className="ax-card p-6 border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

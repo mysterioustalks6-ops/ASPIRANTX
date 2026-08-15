@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, CheckCircle2, ArrowRight, X, Target, BookMarked, Award, Users } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Sparkles, CheckCircle2, ArrowRight, X } from 'lucide-react';
 
 interface OnboardingTourProps {
   onNavigate: (tab: any) => void;
   onOpenProfileModal: () => void;
+  onToggleSidebar?: () => void;
 }
 
-export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onNavigate, onOpenProfileModal }) => {
+export const OnboardingTour: React.FC<OnboardingTourProps> = ({
+  onNavigate,
+  onOpenProfileModal,
+  onToggleSidebar,
+}) => {
   const [dismissed, setDismissed] = useState<boolean>(() => {
     return localStorage.getItem('aspirantx_onboarding_dismissed') === 'true';
   });
@@ -15,7 +20,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onNavigate, onOp
   const [steps, setSteps] = useState([
     {
       id: 1,
-      title: '1. Choose Your Target Exam Goal',
+      title: '1. Target Exam Goal',
       desc: 'Set UPSC CSE, SSC CGL, or State PSC to customize syllabus topics and weightage.',
       completed: false,
       action: onOpenProfileModal,
@@ -23,7 +28,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onNavigate, onOp
     },
     {
       id: 2,
-      title: '2. Take a Free CBT Mock Test',
+      title: '2. CBT Mock Tests',
       desc: 'Experience real exam timer, negative marking, and instant AI analytics.',
       completed: false,
       action: () => onNavigate('cbt'),
@@ -31,7 +36,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onNavigate, onOp
     },
     {
       id: 3,
-      title: '3. Explore PYQ Bank (1991–2026)',
+      title: '3. PYQ Bank (1991–2026)',
       desc: 'Master 35+ years of authentic solved previous year questions.',
       completed: false,
       action: () => onNavigate('pyq'),
@@ -39,11 +44,47 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onNavigate, onOp
     },
     {
       id: 4,
-      title: '4. Join Community Study Circles',
-      desc: 'Collaborate with top rankers and chat with Gemini AI Study Mentor.',
+      title: '4. Weakness Diagnostic',
+      desc: 'Find your weak topics in 5 min with AI diagnostic analysis.',
+      completed: false,
+      action: () => onNavigate('weakness'),
+      actionLabel: 'Diagnose Weakness 🎯',
+    },
+    {
+      id: 5,
+      title: '5. Revision Flashcards',
+      desc: 'Master key concepts & formulas with spaced repetition revision decks.',
+      completed: false,
+      action: () => onNavigate('flashcards'),
+      actionLabel: 'Study Flashcards 🎴',
+    },
+    {
+      id: 6,
+      title: '6. Pomodoro Focus History',
+      desc: 'Track study sessions & view Day/Week/Month/Year focus stats.',
+      completed: false,
+      action: () => onNavigate('timer'),
+      actionLabel: 'Focus Timer ⏱️',
+    },
+    {
+      id: 7,
+      title: '7. Community Wallet & Karma',
+      desc: 'Earn reputation karma points, tip study tokens, and connect with rankers.',
       completed: false,
       action: () => onNavigate('community'),
-      actionLabel: 'Join Community 💬',
+      actionLabel: 'Karma & Wallet 💬',
+    },
+    {
+      id: 8,
+      title: '8. Sidebar Focus Toggle',
+      desc: 'Collapse the sidebar anytime for a distraction-free full workspace.',
+      completed: false,
+      action: () => {
+        if (onToggleSidebar) {
+          onToggleSidebar();
+        }
+      },
+      actionLabel: 'Toggle Sidebar ↔️',
     },
   ]);
 
@@ -75,7 +116,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({ onNavigate, onOp
           </div>
           <div>
             <h3 className="text-base font-black text-white">🚀 AspirantX Quickstart Checklist ({completedCount}/{steps.length} Completed)</h3>
-            <p className="text-xs text-slate-400">Complete these 4 steps to set up your high-performance ranker routine</p>
+            <p className="text-xs text-slate-400">Discover essential ranker tools & setup your optimal study workflow</p>
           </div>
         </div>
 
