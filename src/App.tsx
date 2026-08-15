@@ -132,6 +132,28 @@ export default function App() {
     localStorage.setItem('aspirantx_global_selected_exam', examId);
     setUser((prev) => (prev ? { ...prev, exam: examId } : prev));
 
+    // Keep the fast-path profile cache in sync too — checkAuthSession()
+    // reads THIS key first on every page load, before any network call.
+    // If it's not updated here, refresh will flash/revert to the old
+    // exam until (if ever) the background Supabase fetch corrects it.
+    if (user?.id) {
+      try {
+        const cacheKey = `aspirantx_profile_cache_${user.id}`;
+        const existingRaw = localStorage.getItem(cacheKey);
+        const existing = existingRaw ? JSON.parse(existingRaw) : {};
+        localStorage.setItem(cacheKey, JSON.stringify({
+          ...existing,
+          userId: user.id,
+          targetExam: examId,
+          exam: examId,
+          profileComplete: true,
+          updatedAt: new Date().toISOString(),
+        }));
+      } catch (err) {
+        logAuthDiagnostic('EXAM_CHANGE', 'failed to update fast profile cache', { error: String(err) });
+      }
+    }
+
     // Persist to backend so it survives a refresh — otherwise the
     // profile-authoritative useEffect above reverts it to the stale
     // DB value on next load.

@@ -1,126 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   AlertTriangle, 
-  CheckCircle, 
+  CheckCircle2, 
   XCircle, 
-  TrendingDown, 
-  TrendingUp, 
   Award, 
   BookOpen, 
+  Play, 
+  Zap, 
+  Target, 
+  RotateCw,
+  TrendingDown,
+  TrendingUp,
   HelpCircle,
-  Play,
-  Zap,
-  Target,
-  RotateCw
+  Sparkles,
+  BarChart3,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 import { EXAM_LIST } from '../lib/examList';
-
-interface DiagnosticQuestion {
-  id: number;
-  exam: string;
-  subject: string;
-  topic: string;
-  question: string;
-  answer?: string;
-  options: string[];
-  correctAnswer: number;
-  explanation: string;
-}
-
-const EXAM_DIAGNOSTIC_POOL: DiagnosticQuestion[] = [
-  // NEET UG Questions
-  {
-    id: 101,
-    exam: 'NEET_UG',
-    subject: 'Biology',
-    topic: 'Human Physiology — Digestion',
-    question: 'Bile juice me kaunsa digestive enzyme paaya jata hai?',
-    answer: 'Bile juice me koi digestive enzyme nahi hota. Par isme bile salts (Sodium glycocholate & taurocholate) hote hain jo fats ka emulsification karte hain.',
-    options: ['Lipase', 'Trypsin', 'No digestive enzyme', 'Amylase'],
-    correctAnswer: 2,
-    explanation: 'Bile juice released by liver contains bile pigments and salts but NO digestive enzymes. It aids fat emulsification.'
-  },
-  {
-    id: 102,
-    exam: 'NEET_UG',
-    subject: 'Chemistry',
-    topic: 'Organic Chemistry — Hydrocarbons',
-    question: 'Ozonlysis of propene followed by Zn/H2O reduction gives which products?',
-    options: ['Methanal + Ethanal', 'Ethanal + Ethanal', 'Propanal + Methanal', 'Methanal + Methanal'],
-    correctAnswer: 0,
-    explanation: 'Reductive ozonolysis of Propene (CH3-CH=CH2) breaks the double bond giving Methanal (HCHO) and Ethanal (CH3CHO).'
-  },
-  {
-    id: 103,
-    exam: 'NEET_UG',
-    subject: 'Physics',
-    topic: 'Ray Optics',
-    question: 'When light travels from an optically denser to a rarer medium, the Critical Angle depends on:',
-    options: ['Frequency of light only', 'Refractive index of media', 'Intensity of light', 'Angle of incidence'],
-    correctAnswer: 1,
-    explanation: 'Critical angle sin(ic) = 1 / μ, which depends directly on the relative refractive index of the two media.'
-  },
-
-  // NDA / NA Questions
-  {
-    id: 201,
-    exam: 'NDA_NA',
-    subject: 'Mathematics',
-    topic: 'Calculus — Differentiation',
-    question: 'What is the derivative of sin(x°) with respect to x?',
-    options: ['cos(x°)', '(π/180) cos(x°)', '-(π/180) cos(x°)', '180/π cos(x°)'],
-    correctAnswer: 1,
-    explanation: 'Convert degrees to radians: x° = πx / 180. Derivative of sin(πx/180) is (π/180) cos(πx/180) = (π/180) cos(x°).'
-  },
-  {
-    id: 202,
-    exam: 'NDA_NA',
-    subject: 'General Ability',
-    topic: 'Physics — Mechanics',
-    question: 'A heavy object and a light object have equal Kinetic Energy. Which one has greater momentum?',
-    options: ['The lighter object', 'The heavier object', 'Both have equal momentum', 'Depends on temperature'],
-    correctAnswer: 1,
-    explanation: 'Momentum p = √(2m K). Since kinetic energy K is equal, momentum p is directly proportional to √m. Thus heavier object has greater momentum.'
-  },
-
-  // UPSC CSE Questions
-  {
-    id: 301,
-    exam: 'UPSC_CSE',
-    subject: 'Polity',
-    topic: 'Preamble of the Constitution',
-    question: 'Which Amendment Act added the terms "Socialist", "Secular", and "Integrity" to the Preamble?',
-    options: ['38th Amendment Act', '42nd Amendment Act', '44th Amendment Act', '86th Amendment Act'],
-    correctAnswer: 1,
-    explanation: 'The 42nd Constitutional Amendment Act, 1976 added these three words to make India a Sovereign, Socialist, Secular, Democratic Republic.'
-  },
-  {
-    id: 302,
-    exam: 'UPSC_CSE',
-    subject: 'Economy',
-    topic: 'Monetary Policy',
-    question: 'When RBI wants to inject liquidity into the banking system, which action does it perform?',
-    options: ['Increases Repo Rate', 'Sells securities in OMO', 'Buys securities in OMO', 'Increases CRR'],
-    correctAnswer: 2,
-    explanation: 'Buying government securities in Open Market Operations (OMO) injects physical cash into the commercial banking system.'
-  },
-
-  // SSC CGL Questions
-  {
-    id: 401,
-    exam: 'SSC_CGL',
-    subject: 'Quantitative Aptitude',
-    topic: 'Number System',
-    question: 'What is the remainder when (7^19 + 2) is divided by 6?',
-    options: ['1', '2', '3', '0'],
-    correctAnswer: 2,
-    explanation: '7 ≡ 1 (mod 6). So 7^19 ≡ 1^19 ≡ 1 (mod 6). Thus (7^19 + 2) ≡ (1 + 2) = 3 (mod 6).'
-  }
-];
+import { DIAGNOSTIC_QUESTION_BANK, DiagnosticQuestion } from '../data/diagnosticQuestionBank';
 
 interface WeaknessDetectorProps {
   selectedExam?: string;
   onExamChange?: (exam: string) => void;
+}
+
+interface TopicDiagnostic {
+  topic: string;
+  subject: string;
+  total: number;
+  correct: number;
+  accuracy: number;
+  status: 'Needs Work' | 'Developing' | 'Strong';
 }
 
 export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
@@ -129,36 +40,56 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
 }) => {
   const normalizeExamKey = (e: string) => {
     let s = String(e || '').trim().toLowerCase().replace(/[\s-_]/g, '');
-    if (s.includes('nda') || s.includes('defence')) return 'nda';
-    if (s.includes('neet') || s.includes('medical')) return 'neet';
-    if (s.includes('upsc') || s.includes('civil') || s.includes('cse')) return 'upsc';
-    if (s.includes('ssc') || s.includes('cgl') || s.includes('staffselection')) return 'ssc';
+    if (s.includes('nda') || s.includes('defence') || s.includes('cds') || s.includes('afcat')) return 'nda';
+    if (s.includes('neet') || s.includes('medical') || s.includes('nursing') || s.includes('jenpas') || s.includes('aiims') || s.includes('bcece') || s.includes('pm')) return 'neet';
+    if (s.includes('jee') || s.includes('engineering') || s.includes('gate') || s.includes('jelet') || s.includes('jexpo') || s.includes('comedk') || s.includes('bitsat')) return 'jee';
+    if (s.includes('upsc') || s.includes('civil') || s.includes('cse') || s.includes('capf')) return 'upsc';
+    if (s.includes('uppsc') || s.includes('bpsc') || s.includes('wbcs') || s.includes('mppsc') || s.includes('rpsc') || s.includes('state') || s.includes('pcs')) return 'state_psc';
+    if (s.includes('ssc') || s.includes('cgl') || s.includes('chsl') || s.includes('mts') || s.includes('gd') || s.includes('cpo')) return 'ssc';
+    if (s.includes('ibps') || s.includes('sbi') || s.includes('bank') || s.includes('po') || s.includes('clerk') || s.includes('rbi')) return 'bank';
+    if (s.includes('rrb') || s.includes('railway') || s.includes('ntpc') || s.includes('alp')) return 'rrb';
+    if (s.includes('ctet') || s.includes('tet') || s.includes('ugc') || s.includes('bed') || s.includes('teach')) return 'ctet';
     return s;
   };
 
-  // Filter questions by active exam with normalized key matching
-  const matchedPool = EXAM_DIAGNOSTIC_POOL.filter(q => normalizeExamKey(q.exam) === normalizeExamKey(selectedExam));
-  const examPool = matchedPool.length > 0 ? matchedPool : EXAM_DIAGNOSTIC_POOL;
-  const examSubjects = Array.from(new Set(examPool.map(q => q.subject)));
+  // Filter questions by active exam with exact and normalized fallback matching
+  const examPool = useMemo(() => {
+    const exact = DIAGNOSTIC_QUESTION_BANK.filter(q => q.exam === selectedExam);
+    if (exact.length > 0) return exact;
+
+    const normalized = DIAGNOSTIC_QUESTION_BANK.filter(q => normalizeExamKey(q.exam) === normalizeExamKey(selectedExam));
+    if (normalized.length > 0) return normalized;
+
+    return DIAGNOSTIC_QUESTION_BANK;
+  }, [selectedExam]);
+
+  const examSubjects = useMemo(() => {
+    return Array.from(new Set(examPool.map(q => q.subject)));
+  }, [examPool]);
 
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [quizActive, setQuizActive] = useState<boolean>(false);
   const [answers, setAnswers] = useState<{ [qId: number]: number }>({});
   const [showResults, setShowResults] = useState<boolean>(false);
 
-  // Set default subject whenever exam changes
+  // Set default subject whenever exam or subject list changes
   useEffect(() => {
     if (examSubjects.length > 0) {
       setSelectedSubject(examSubjects[0]);
     } else {
-      setSelectedSubject('');
+      setSelectedSubject('ALL');
     }
     setQuizActive(false);
     setAnswers({});
     setShowResults(false);
-  }, [selectedExam]);
+  }, [selectedExam, examSubjects]);
 
-  const activeQuestions = examPool.filter(q => selectedSubject === 'ALL' || q.subject === selectedSubject);
+  const activeQuestions = useMemo(() => {
+    if (selectedSubject === 'ALL') {
+      return examPool;
+    }
+    return examPool.filter(q => q.subject === selectedSubject);
+  }, [examPool, selectedSubject]);
 
   const handleSelectOption = (qId: number, idx: number) => {
     setAnswers(prev => ({ ...prev, [qId]: idx }));
@@ -167,28 +98,68 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
   const calculateResults = () => {
     if (activeQuestions.length === 0) return;
     if (Object.keys(answers).length < activeQuestions.length) {
-      alert('Kripya sabhi questions ke answers select karein!');
+      alert('Please select an answer for every diagnostic question to receive a complete assessment.');
       return;
     }
     setShowResults(true);
   };
 
-  const getAccuracyRate = () => {
+  const overallAccuracy = useMemo(() => {
     if (activeQuestions.length === 0) return 0;
     let correct = 0;
     activeQuestions.forEach(q => {
       if (answers[q.id] === q.correctAnswer) correct++;
     });
     return Math.round((correct / activeQuestions.length) * 100);
-  };
+  }, [activeQuestions, answers]);
+
+  // Topic-Level Breakdown: Group by distinct topic and calculate accuracy and weakness level
+  const topicDiagnostics: TopicDiagnostic[] = useMemo(() => {
+    if (!showResults) return [];
+
+    const topicMap: Record<string, { topic: string; subject: string; total: number; correct: number }> = {};
+    activeQuestions.forEach(q => {
+      if (!topicMap[q.topic]) {
+        topicMap[q.topic] = { topic: q.topic, subject: q.subject, total: 0, correct: 0 };
+      }
+      topicMap[q.topic].total += 1;
+      if (answers[q.id] === q.correctAnswer) {
+        topicMap[q.topic].correct += 1;
+      }
+    });
+
+    const list: TopicDiagnostic[] = Object.values(topicMap).map(t => {
+      const acc = Math.round((t.correct / t.total) * 100);
+      let status: 'Needs Work' | 'Developing' | 'Strong' = 'Needs Work';
+      if (acc >= 80) status = 'Strong';
+      else if (acc >= 60) status = 'Developing';
+
+      return {
+        topic: t.topic,
+        subject: t.subject,
+        total: t.total,
+        correct: t.correct,
+        accuracy: acc,
+        status,
+      };
+    });
+
+    // Sort weakest-first (lowest accuracy first) so weak topics are highlighted immediately
+    list.sort((a, b) => a.accuracy - b.accuracy || b.total - a.total);
+    return list;
+  }, [showResults, activeQuestions, answers]);
+
+  const weakTopics = useMemo(() => {
+    return topicDiagnostics.filter(t => t.status === 'Needs Work');
+  }, [topicDiagnostics]);
 
   const currentExamLabel = EXAM_LIST.find(e => e.id === selectedExam)?.label || selectedExam.replace(/_/g, ' ');
 
   return (
     <div className="space-y-6 text-left">
       {/* Header bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/60 border border-rose-500/30 rounded-2xl p-5 gap-4 backdrop-blur-md shadow-xl">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/80 border border-rose-500/30 rounded-2xl p-5 gap-4 backdrop-blur-md shadow-xl">
+        <div className="flex items-center gap-3.5">
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-rose-500 to-pink-600 flex items-center justify-center text-white shadow-lg shrink-0 font-black">
             <AlertTriangle className="w-6 h-6 animate-pulse" />
           </div>
@@ -199,53 +170,90 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
                 🎯 {currentExamLabel}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Identifies syllabus gaps, negative marking risks, and weak topics for <strong className="text-rose-300">{currentExamLabel}</strong>.
+            <p className="text-xs text-slate-300 mt-0.5 font-medium">
+              Multi-topic precision test to uncover syllabus gaps, conceptual lag, and negative marking risks.
             </p>
           </div>
         </div>
 
         {/* Diagnostic Status Badge */}
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-xs text-rose-300 font-extrabold flex items-center gap-1.5">
-            <Zap className="w-3.5 h-3.5 text-rose-400" /> Diagnostic Test Pool: {examPool.length} Qs
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="px-3.5 py-2 rounded-xl bg-black/50 border border-rose-500/20 text-xs text-rose-300 font-extrabold flex items-center gap-2">
+            <Zap className="w-4 h-4 text-rose-400" />
+            <span>Pool: <strong className="text-white">{examPool.length}</strong> Qs ({examSubjects.length} Subjects)</span>
           </span>
         </div>
       </div>
 
       {/* Subject Filter Bar */}
-      <div className="p-4 rounded-2xl bg-black/40 border border-white/10 flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-slate-900/60 border border-white/10 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 overflow-x-auto pb-1 max-w-full">
-          <span className="text-xs font-extrabold text-slate-400 uppercase shrink-0">Subject Focus:</span>
-          {examSubjects.map(sub => (
-            <button
-              key={sub}
-              onClick={() => {
-                setSelectedSubject(sub);
-                setQuizActive(false);
-                setShowResults(false);
-                setAnswers({});
-              }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 ${
-                selectedSubject === sub
-                  ? 'bg-rose-600 text-white shadow'
-                  : 'bg-white/5 text-slate-400 hover:text-white'
-              }`}
-            >
-              {sub} ({examPool.filter(q => q.subject === sub).length})
-            </button>
-          ))}
+          <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-rose-400" /> Focus:
+          </span>
+
+          {/* ALL Subjects Mode */}
+          <button
+            onClick={() => {
+              setSelectedSubject('ALL');
+              setQuizActive(false);
+              setShowResults(false);
+              setAnswers({});
+            }}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 ${
+              selectedSubject === 'ALL'
+                ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40 ring-1 ring-rose-400/50'
+                : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            All Subjects ({examPool.length} Qs)
+          </button>
+
+          {/* Per-Subject Buttons */}
+          {examSubjects.map(sub => {
+            const count = examPool.filter(q => q.subject === sub).length;
+            const isSelected = selectedSubject === sub;
+            return (
+              <button
+                key={sub}
+                onClick={() => {
+                  setSelectedSubject(sub);
+                  setQuizActive(false);
+                  setShowResults(false);
+                  setAnswers({});
+                }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all shrink-0 ${
+                  isSelected
+                    ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40 ring-1 ring-rose-400/50'
+                    : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                }`}
+              >
+                {sub} ({count} Qs)
+              </button>
+            );
+          })}
         </div>
 
         {!quizActive && !showResults && activeQuestions.length > 0 && (
           <button
             onClick={() => setQuizActive(true)}
-            className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white text-xs font-black flex items-center gap-1.5 shadow"
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-600 to-rose-600 hover:from-rose-400 hover:to-pink-500 text-white text-xs font-black flex items-center gap-2 shadow-lg shadow-rose-950/50 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <Play className="w-3.5 h-3.5" /> Start Lag Diagnostic Test
+            <Play className="w-4 h-4 fill-current" />
+            <span>Start Diagnostic Test ({activeQuestions.length} Qs)</span>
           </button>
         )}
       </div>
+
+      {/* Fallback Notice when Subject has < 5 Questions */}
+      {activeQuestions.length > 0 && activeQuestions.length < 5 && (
+        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3 text-amber-200 text-xs">
+          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+          <span>
+            <strong>Limited Question Bank Notice:</strong> Only {activeQuestions.length} diagnostic {activeQuestions.length === 1 ? 'question is' : 'questions are'} available for this selection yet — results may be less precise. More questions are being indexed.
+          </span>
+        </div>
+      )}
 
       {/* Main Diagnostic Area */}
       {activeQuestions.length === 0 ? (
@@ -258,50 +266,190 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
         </div>
       ) : showResults ? (
         /* Diagnostic Results Card */
-        <div className="p-6 rounded-2xl bg-slate-900/90 border border-rose-500/40 space-y-6 shadow-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="p-6 rounded-2xl bg-slate-900 border border-rose-500/40 space-y-7 shadow-2xl">
+          {/* Top Score Summary Header */}
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-5">
             <div>
               <h2 className="text-lg font-black text-white flex items-center gap-2">
                 <Award className="w-5 h-5 text-amber-400" />
-                {currentExamLabel} — {selectedSubject} Diagnostic Report
+                {currentExamLabel} — {selectedSubject === 'ALL' ? 'Comprehensive Multi-Subject' : selectedSubject} Diagnostic Report
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                AI diagnostic assessment based on your response precision.
+              <p className="text-xs text-slate-300 mt-1">
+                Evaluated across <strong className="text-white">{topicDiagnostics.length} distinct syllabus topics</strong> to detect concept lag and negative marking vulnerability.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 bg-slate-950/80 px-4 py-2.5 rounded-2xl border border-white/10">
               <div className="text-right">
-                <div className="text-2xl font-black text-rose-400">{getAccuracyRate()}%</div>
-                <div className="text-[10px] text-slate-400 font-extrabold uppercase">Subject Precision Rate</div>
+                <div className="text-2xl font-black text-rose-400">{overallAccuracy}%</div>
+                <div className="text-[10px] text-slate-400 font-extrabold uppercase">Overall Accuracy</div>
+              </div>
+              <div className="h-8 w-px bg-white/10" />
+              <div className="text-left">
+                <div className="text-sm font-black text-white">
+                  {activeQuestions.filter(q => answers[q.id] === q.correctAnswer).length} / {activeQuestions.length}
+                </div>
+                <div className="text-[10px] text-slate-400 font-extrabold uppercase">Questions Correct</div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h3 className="text-xs font-black text-white uppercase tracking-wider">Detailed Topic Diagnostic Breakdown</h3>
-            {activeQuestions.map(q => {
+          {/* Priority Remediation Alert for Weak Topics */}
+          {weakTopics.length > 0 ? (
+            <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/50 space-y-2">
+              <div className="flex items-center gap-2 text-rose-300 font-black text-xs">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>🎯 Priority Remediation Alert ({weakTopics.length} Critical Lag {weakTopics.length === 1 ? 'Area' : 'Areas'} Detected)</span>
+              </div>
+              <p className="text-xs text-slate-300">
+                You showed significant vulnerability in the following topics. Prioritize these in your study schedule and revision planner:
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {weakTopics.map(wt => (
+                  <span key={wt.topic} className="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-200 text-[11px] font-bold">
+                    ⚠️ {wt.topic} ({wt.accuracy}% accuracy)
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/50 space-y-1">
+              <div className="flex items-center gap-2 text-emerald-300 font-black text-xs">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Excellent Conceptual Mastery!</span>
+              </div>
+              <p className="text-xs text-slate-300">
+                No high-weakness topics detected in this diagnostic set. Maintain consistency with mock tests and spaced revision.
+              </p>
+            </div>
+          )}
+
+          {/* Detailed Topic-Level Breakdown Cards (Weakest First) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-rose-400" />
+                Topic-Level Weakness Breakdown (Weakest First)
+              </h3>
+              <span className="text-[10px] text-slate-400 font-bold">
+                Sorted by lowest accuracy
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {topicDiagnostics.map((td) => {
+                const isWeak = td.status === 'Needs Work';
+                const isModerate = td.status === 'Developing';
+                return (
+                  <div
+                    key={td.topic}
+                    className={`p-4 rounded-xl border transition-all ${
+                      isWeak
+                        ? 'bg-rose-950/20 border-rose-500/40'
+                        : isModerate
+                        ? 'bg-amber-950/20 border-amber-500/40'
+                        : 'bg-slate-950/60 border-emerald-500/30'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                          {td.subject}
+                        </span>
+                        <h4 className="text-xs font-bold text-white truncate" title={td.topic}>
+                          {td.topic}
+                        </h4>
+                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 border ${
+                          isWeak
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            : isModerate
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                        }`}
+                      >
+                        {td.status === 'Needs Work' ? '⚠️ Needs Work' : td.status === 'Developing' ? '⚡ Developing' : '✓ Strong'}
+                      </span>
+                    </div>
+
+                    {/* Topic Progress Bar */}
+                    <div className="mt-3 space-y-1">
+                      <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
+                        <span>Precision: {td.correct}/{td.total} correct</span>
+                        <span className={isWeak ? 'text-rose-400 font-bold' : isModerate ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
+                          {td.accuracy}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            isWeak ? 'bg-rose-500' : isModerate ? 'bg-amber-500' : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${Math.max(5, td.accuracy)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Question Review & Solutions */}
+          <div className="space-y-4 pt-2">
+            <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-purple-400" />
+              Detailed Solutions & Remediation Notes
+            </h3>
+
+            {activeQuestions.map((q, idx) => {
               const selectedOpt = answers[q.id];
               const isCorrect = selectedOpt === q.correctAnswer;
 
               return (
-                <div key={q.id} className="p-4 rounded-xl bg-black/50 border border-white/10 space-y-2">
+                <div key={q.id} className="p-4 rounded-xl bg-black/60 border border-white/10 space-y-2.5">
                   <div className="flex items-center justify-between text-xs border-b border-white/5 pb-2">
-                    <span className="font-extrabold text-slate-300">{q.topic}</span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black ${isCorrect ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
-                      {isCorrect ? '✓ STRENGTH DETECTED' : '⚠️ HIGH WEAKNESS LAG'}
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-slate-400">Q{idx + 1}.</span>
+                      <span className="font-extrabold text-slate-200">{q.topic}</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black flex items-center gap-1 ${
+                      isCorrect ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                    }`}>
+                      {isCorrect ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                      {isCorrect ? 'STRENGTH DETECTED' : 'HIGH WEAKNESS LAG'}
                     </span>
                   </div>
 
-                  <p className="text-xs font-semibold text-white mt-1">{q.question}</p>
-                  <p className="text-[11px] text-slate-400 leading-relaxed bg-purple-950/30 p-2.5 rounded-lg border border-purple-500/20">
-                    <strong className="text-purple-300">Solution & Remediation:</strong> {q.explanation}
+                  <p className="text-xs font-semibold text-white leading-relaxed">{q.question}</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+                    <div className={`p-2 rounded-lg border ${
+                      isCorrect ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200' : 'bg-rose-950/30 border-rose-500/40 text-rose-200'
+                    }`}>
+                      <span className="text-[10px] text-slate-400 block font-bold">Your Selection:</span>
+                      <span>{selectedOpt !== undefined ? `${String.fromCharCode(65 + selectedOpt)}. ${q.options[selectedOpt]}` : 'Unanswered'}</span>
+                    </div>
+
+                    {!isCorrect && (
+                      <div className="p-2 rounded-lg border bg-emerald-950/30 border-emerald-500/40 text-emerald-200">
+                        <span className="text-[10px] text-emerald-400 block font-bold">Correct Option:</span>
+                        <span>{String.fromCharCode(65 + q.correctAnswer)}. {q.options[q.correctAnswer]}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-slate-300 leading-relaxed bg-purple-950/30 p-3 rounded-lg border border-purple-500/20 mt-2">
+                    <strong className="text-purple-300 block mb-0.5">💡 Remediation & Concept Logic:</strong>
+                    {q.explanation}
                   </p>
                 </div>
               );
             })}
           </div>
 
+          {/* Action buttons */}
           <div className="flex justify-end gap-3 pt-2">
             <button
               onClick={() => {
@@ -309,23 +457,40 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
                 setQuizActive(true);
                 setAnswers({});
               }}
-              className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all"
             >
-              <RotateCw className="w-3.5 h-3.5" /> Retest Weak Areas
+              <RotateCw className="w-4 h-4" /> Retest Diagnostic Pool
             </button>
           </div>
         </div>
       ) : quizActive ? (
         /* Quiz Active Cards */
         <div className="space-y-4">
+          <div className="p-3 bg-slate-900/90 border border-rose-500/30 rounded-xl flex items-center justify-between text-xs text-slate-300">
+            <span className="font-bold flex items-center gap-2">
+              <Zap className="w-4 h-4 text-rose-400" />
+              Answered: <strong className="text-white">{Object.keys(answers).length} of {activeQuestions.length}</strong>
+            </span>
+            <span className="text-[11px] text-slate-400">
+              Targeting: <span className="text-rose-300 font-bold">{selectedSubject === 'ALL' ? 'All Subjects' : selectedSubject}</span>
+            </span>
+          </div>
+
           {activeQuestions.map((q, qIdx) => (
-            <div key={q.id} className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <span className="text-xs font-black text-rose-400">Question {qIdx + 1} of {activeQuestions.length}</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-slate-400 font-extrabold">{q.topic}</span>
+            <div key={q.id} className="p-5 rounded-2xl bg-slate-900/80 border border-white/10 space-y-3 shadow-md">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                <span className="text-xs font-black text-rose-400 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-rose-500/20 flex items-center justify-center text-[10px] text-rose-300 border border-rose-500/30 font-bold">
+                    {qIdx + 1}
+                  </span>
+                  Question {qIdx + 1} of {activeQuestions.length}
+                </span>
+                <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-white/5 text-slate-300 font-bold border border-white/10">
+                  {q.topic}
+                </span>
               </div>
 
-              <div className="text-sm font-semibold text-white">{q.question}</div>
+              <div className="text-sm font-semibold text-white leading-relaxed">{q.question}</div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
                 {q.options.map((opt, optIdx) => {
@@ -334,14 +499,20 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
                     <button
                       key={optIdx}
                       onClick={() => handleSelectOption(q.id, optIdx)}
-                      className={`p-3 rounded-xl border text-left text-xs transition-all ${
+                      className={`p-3 rounded-xl border text-left text-xs transition-all flex items-start gap-2.5 ${
                         isSelected
-                          ? 'bg-rose-500/20 border-rose-500/50 text-rose-200 font-bold'
-                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                          ? 'bg-rose-500/20 border-rose-500/60 text-rose-100 font-bold ring-1 ring-rose-400/40'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:text-white'
                       }`}
                     >
-                      <strong className="mr-2 text-slate-400">{String.fromCharCode(65 + optIdx)}.</strong>
-                      {typeof opt === 'string' ? opt : ((opt as any)?.text ?? '')}
+                      <span className={`w-5 h-5 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 ${
+                        isSelected ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {String.fromCharCode(65 + optIdx)}
+                      </span>
+                      <span className="leading-snug pt-0.5">
+                        {typeof opt === 'string' ? opt : ((opt as any)?.text ?? '')}
+                      </span>
                     </button>
                   );
                 })}
@@ -349,22 +520,52 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
             </div>
           ))}
 
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-between pt-2">
+            <button
+              onClick={() => {
+                setQuizActive(false);
+                setAnswers({});
+              }}
+              className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-all"
+            >
+              Cancel
+            </button>
+
             <button
               onClick={calculateResults}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white font-black text-xs shadow-lg"
+              disabled={Object.keys(answers).length < activeQuestions.length}
+              className={`px-6 py-2.5 rounded-xl text-white font-black text-xs shadow-lg transition-all flex items-center gap-2 ${
+                Object.keys(answers).length >= activeQuestions.length
+                  ? 'bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 hover:scale-[1.02]'
+                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+              }`}
             >
-              Analyze Lag Diagnostic Results →
+              <span>Analyze Lag Diagnostic Results</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       ) : (
-        <div className="p-8 text-center rounded-2xl bg-black/30 border border-white/5 space-y-3 text-slate-400 text-xs">
-          <Target className="w-8 h-8 text-rose-400 mx-auto animate-pulse" />
-          <h3 className="text-sm font-bold text-white">Click "Start Lag Diagnostic Test" to evaluate {currentExamLabel} ({selectedSubject}) precision</h3>
-          <p className="text-slate-400 max-w-md mx-auto">
-            Our AI diagnostic engine will analyze your answer speed, accuracy, and negative marking risk across all syllabus modules.
-          </p>
+        <div className="p-8 text-center rounded-2xl bg-slate-900/60 border border-white/10 space-y-4 text-slate-300 text-xs">
+          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mx-auto text-rose-400">
+            <Target className="w-7 h-7 animate-pulse" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-white">
+              Ready to Evaluate {currentExamLabel} ({selectedSubject === 'ALL' ? 'All Subjects' : selectedSubject}) Conceptual Precision?
+            </h3>
+            <p className="text-slate-400 max-w-md mx-auto leading-relaxed">
+              Our AI diagnostic test analyzes your responses across {activeQuestions.length} high-yield topic modules to isolate your weak areas and generate a targeted remediation strategy.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setQuizActive(true)}
+            className="px-6 py-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-400 hover:to-pink-500 text-white font-black text-xs shadow-lg shadow-rose-950/50 inline-flex items-center gap-2 transition-all hover:scale-105"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            <span>Launch {activeQuestions.length}-Question Diagnostic Test</span>
+          </button>
         </div>
       )}
     </div>
