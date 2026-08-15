@@ -17,7 +17,9 @@ import {
   MessageSquare,
   Lock as LockIcon,
   ThumbsUp,
-  Download
+  Download,
+  ArrowBigUp,
+  ArrowBigDown
 } from 'lucide-react';
 
 interface CommunityChatProps {
@@ -347,18 +349,42 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
     }
   };
 
-  // Like a message
-  const handleLikeMessage = (msgId: string) => {
+  // Upvote/Downvote a message (Reddit-style Karma voting)
+  const handleVoteMessage = async (msg: RoomMessage, voteType: 'up' | 'down') => {
+    const isCurrentUser = user && msg.senderId === user.id;
+    if (isCurrentUser) {
+      return; // Self-voting prevented
+    }
+
+    const voteDelta = voteType === 'up' ? 1 : -1;
     setMessages((prev) => {
       const roomMsgs = prev[activeRoom] || [];
       const updated = roomMsgs.map((m) => {
-        if (m.id === msgId) {
-          return { ...m, likes: (m.likes || 0) + 1 };
+        if (m.id === msg.id) {
+          const currentLikes = m.likes || 0;
+          return { ...m, likes: currentLikes + voteDelta };
         }
         return m;
       });
       return { ...prev, [activeRoom]: updated };
     });
+
+    // Also trigger karma API backend if not bot
+    if (msg.senderId && msg.senderId !== 'bot' && !msg.isBot) {
+      try {
+        await fetch('/api/karma/vote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            voterId: user?.id || 'usr_guest_101',
+            targetType: 'comment',
+            targetId: msg.id,
+            targetOwnerId: msg.senderId,
+            vote: voteDelta,
+          }),
+        });
+      } catch (e) {}
+    }
   };
 
   return (
@@ -617,15 +643,48 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
                       )}
                     </div>
 
-                    {/* Upvote/Like Action */}
+                    {/* Reddit-style Karma Upvote/Downvote Action */}
                     <div className={`flex items-center gap-2 text-[10px] ${isCurrentUser ? 'justify-end' : ''}`}>
-                      <button
-                        onClick={() => handleLikeMessage(msg.id)}
-                        className="text-slate-500 hover:text-cyan-400 transition-colors flex items-center gap-1"
-                      >
-                        <ThumbsUp className="w-3 h-3" />
-                        <span>{msg.likes || 0}</span>
-                      </button>
+                      <div className="flex items-center bg-slate-900/90 rounded-lg p-0.5 border border-slate-800">
+                        <button
+                          onClick={() => handleVoteMessage(msg, 'up')}
+                          disabled={isCurrentUser}
+                          className={`p-1 rounded transition-colors flex items-center ${
+                            isCurrentUser
+                              ? 'opacity-40 cursor-not-allowed text-slate-500'
+                              : 'text-slate-400 hover:text-orange-400 hover:bg-orange-950/40'
+                          }`}
+                          title={isCurrentUser ? 'Cannot vote on your own message' : 'Upvote (Helpful study response)'}
+                        >
+                          <ArrowBigUp className="w-3.5 h-3.5" />
+                        </button>
+                        <span
+                          className={`px-1.5 font-bold text-[10px] min-w-[16px] text-center ${
+                            (msg.likes || 0) > 0
+                              ? 'text-orange-400'
+                              : (msg.likes || 0) < 0
+                              ? 'text-cyan-400'
+                              : 'text-slate-400'
+                          }`}
+                        >
+                          {msg.likes || 0}
+                        </span>
+                        <button
+                          onClick={() => handleVoteMessage(msg, 'down')}
+                          disabled={isCurrentUser}
+                          className={`p-1 rounded transition-colors flex items-center ${
+                            isCurrentUser
+                              ? 'opacity-40 cursor-not-allowed text-slate-500'
+                              : 'text-slate-400 hover:text-cyan-400 hover:bg-cyan-950/40'
+                          }`}
+                          title={isCurrentUser ? 'Cannot vote on your own message' : 'Downvote (Unhelpful or off-topic)'}
+                        >
+                          <ArrowBigDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {isCurrentUser && (
+                        <span className="text-[9px] text-slate-500 italic">Author Karma</span>
+                      )}
                     </div>
                   </div>
                 </div>

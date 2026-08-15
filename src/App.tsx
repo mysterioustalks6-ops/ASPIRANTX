@@ -69,6 +69,18 @@ export const DESIGNATED_ADMIN_EMAIL = 'ambujyadav0010@gmail.com';
 
 export default function App() {
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return localStorage.getItem('aspirantx_sidebar_collapsed') === 'true';
+  });
+
+  const handleToggleSidebarCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('aspirantx_sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   // selectedExam: persist in localStorage so exam choice survives page refresh
   const [selectedExam, setSelectedExam] = useState<string>(() => {
     return localStorage.getItem('aspirantx_global_selected_exam') || 'NEET_UG';
@@ -978,6 +990,8 @@ export default function App() {
         customizer={customizer}
         selectedExam={selectedExam}
         onExamChange={handleExamChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={handleToggleSidebarCollapse}
       />
 
       {/* Main Content Dashboard Area */}

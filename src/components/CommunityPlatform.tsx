@@ -4,7 +4,7 @@ import {
   Paperclip, Send, AlertCircle, ShieldCheck, CheckCircle2, ThumbsUp, 
   HelpCircle, MoreHorizontal, Filter, X, Sparkles, UserPlus, UserCheck,
   FileText, Download, Trash2, ArrowUpRight, BarChart2, Radio, Check,
-  Coins, Wallet, Zap, ArrowBigUp, ArrowBigDown
+  Coins, Wallet, Zap, ArrowBigUp, ArrowBigDown, Flame
 } from 'lucide-react';
 import { CommunityGroup, CommunityPost, CommunityComment, UserProfile } from '../types';
 import { CommunityChat } from './CommunityChat';
@@ -204,6 +204,53 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
     } catch (err) {
       console.error('Failed to vote:', err);
       showToast('Network error while voting.');
+    }
+  };
+
+  const handleVoteComment = async (postId: string, commentId: string, commentAuthorId: string, voteType: 'up' | 'down') => {
+    // Client-side self-voting check
+    if (commentAuthorId && commentAuthorId === (userProfile.id || 'usr_guest_101')) {
+      showToast('You cannot vote on your own comment.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/community/comments/${commentId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voteType,
+          userId: userProfile.id || 'usr_guest_101',
+          authorId: commentAuthorId,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setExpandedPostComments((prev) => {
+          const list = prev[postId] || [];
+          return {
+            ...prev,
+            [postId]: list.map((c) =>
+              c.id === commentId
+                ? {
+                    ...c,
+                    score: data.score,
+                    upvotesCount: data.upvotesCount,
+                    downvotesCount: data.downvotesCount,
+                    userVote: data.userVote,
+                    likesCount: data.likesCount,
+                    isLiked: data.isLiked,
+                  }
+                : c
+            ),
+          };
+        });
+      } else {
+        showToast(data.error || 'Unable to register comment vote.');
+      }
+    } catch (err) {
+      console.error('Failed to vote comment:', err);
+      showToast('Network error while voting on comment.');
     }
   };
 
@@ -487,13 +534,13 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
           onClick={() => setActiveSubTab('wallet')}
           className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 ${
             activeSubTab === 'wallet'
-              ? 'border-amber-500 text-amber-600 bg-amber-50/50'
+              ? 'border-orange-500 text-orange-600 bg-orange-50/50'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
-          <Coins className="w-4 h-4 text-amber-500 fill-amber-400" />
-          <span>🪙 Token Hub & Payouts</span>
-          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black">Razorpay</span>
+          <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+          <span>Reddit Karma & Wallet</span>
+          <span className="px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full text-[10px] font-black">Reputation</span>
         </button>
 
         <button
@@ -964,24 +1011,84 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                             <div className="text-xs text-slate-400 py-2">No comments yet. Write the first answer or peer review!</div>
                           ) : (
                             <div className="space-y-3">
-                              {commentsList.map((cmt) => (
-                                <div key={cmt.id} className="bg-white p-3 rounded-xl border border-slate-200 space-y-1 shadow-xs">
-                                  <div className="flex justify-between items-center">
-                                    <div className="flex items-center space-x-2">
-                                      <img
-                                        src={cmt.authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
-                                        alt={cmt.authorName}
-                                        className="w-6 h-6 rounded-full object-cover"
-                                      />
-                                      <span className="font-bold text-xs text-slate-900">{cmt.authorName}</span>
+                              {commentsList.map((cmt) => {
+                                const isSelfComment = cmt.authorId === (userProfile.id || 'usr_guest_101');
+                                const commentScore = cmt.score ?? (cmt.likesCount || 0);
+
+                                return (
+                                  <div key={cmt.id} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center space-x-2">
+                                        <img
+                                          src={cmt.authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                                          alt={cmt.authorName}
+                                          className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                                        />
+                                        <div className="flex items-center space-x-1.5">
+                                          <span className="font-bold text-xs text-slate-900">{cmt.authorName}</span>
+                                          {isSelfComment && (
+                                            <span className="px-1.5 py-0.2 text-[9px] font-bold bg-indigo-50 text-indigo-600 rounded">You</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] text-slate-400">
+                                        {new Date(cmt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
                                     </div>
-                                    <span className="text-[10px] text-slate-400">
-                                      {new Date(cmt.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+
+                                    <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed pl-8">{cmt.content}</p>
+
+                                    {/* COMMENT KARMA & VOTING CONTROLS */}
+                                    <div className="flex items-center justify-between pl-8 pt-1">
+                                      <div className="flex items-center bg-slate-100/90 rounded-lg p-0.5 border border-slate-200">
+                                        <button
+                                          onClick={() => handleVoteComment(post.id, cmt.id, cmt.authorId, 'up')}
+                                          disabled={isSelfComment}
+                                          className={`p-1 rounded-md transition-all flex items-center ${
+                                            isSelfComment
+                                              ? 'opacity-40 cursor-not-allowed text-slate-400'
+                                              : cmt.userVote === 'up'
+                                              ? 'text-orange-600 bg-orange-100 font-bold shadow-xs'
+                                              : 'text-slate-500 hover:text-orange-600 hover:bg-slate-200/70'
+                                          }`}
+                                          title={isSelfComment ? 'Cannot vote on your own comment' : 'Upvote comment'}
+                                        >
+                                          <ArrowBigUp className={`w-3.5 h-3.5 ${cmt.userVote === 'up' ? 'fill-orange-600' : ''}`} />
+                                        </button>
+
+                                        <span
+                                          className={`px-1.5 text-[11px] font-black min-w-[20px] text-center ${
+                                            commentScore > 0
+                                              ? 'text-orange-600'
+                                              : commentScore < 0
+                                              ? 'text-indigo-600'
+                                              : 'text-slate-600'
+                                          }`}
+                                        >
+                                          {commentScore}
+                                        </span>
+
+                                        <button
+                                          onClick={() => handleVoteComment(post.id, cmt.id, cmt.authorId, 'down')}
+                                          disabled={isSelfComment}
+                                          className={`p-1 rounded-md transition-all flex items-center ${
+                                            isSelfComment
+                                              ? 'opacity-40 cursor-not-allowed text-slate-400'
+                                              : cmt.userVote === 'down'
+                                              ? 'text-indigo-600 bg-indigo-100 font-bold shadow-xs'
+                                              : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-200/70'
+                                          }`}
+                                          title={isSelfComment ? 'Cannot vote on your own comment' : 'Downvote comment'}
+                                        >
+                                          <ArrowBigDown className={`w-3.5 h-3.5 ${cmt.userVote === 'down' ? 'fill-indigo-600' : ''}`} />
+                                        </button>
+                                      </div>
+
+                                      <span className="text-[10px] text-slate-400 font-medium">Karma Answer</span>
+                                    </div>
                                   </div>
-                                  <p className="text-xs text-slate-700 whitespace-pre-line pl-8">{cmt.content}</p>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           )}
 

@@ -564,6 +564,26 @@ export interface PayoutRecord {
   rejectionReason?: string | null;
 }
 
+export interface KarmaVoteRecord {
+  id: string;
+  voterId: string;
+  targetType: 'post' | 'comment';
+  targetId: string;
+  targetOwnerId: string;
+  vote: 1 | -1;
+  targetTitle?: string;
+  createdAt: string;
+}
+
+export interface UserKarma {
+  userId: string;
+  postKarma: number;
+  commentKarma: number;
+  totalKarma: number;
+  updatedAt?: string;
+  recentVotes?: KarmaVoteRecord[];
+}
+
 export interface CommunityComment {
   id: string;
   postId: string;
@@ -572,7 +592,12 @@ export interface CommunityComment {
   authorAvatar?: string;
   content: string;
   createdAt: string;
+  score?: number;
+  upvotesCount?: number;
+  downvotesCount?: number;
+  userVote?: 'up' | 'down' | null;
   likesCount: number;
+  isLiked?: boolean;
   parentId?: string;
   mentions?: string[];
 }
