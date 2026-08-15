@@ -57,6 +57,17 @@ const paymentRateLimiter = rateLimit({
   message: { error: 'Payment rate limit exceeded: Too many payment attempts from this IP address.' },
 });
 
+const aiRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    error: 'Rate limit exceeded: Too many AI requests. Please wait a few minutes before trying AI syllabus organization again.',
+  },
+});
+
 app.use('/api/', globalApiLimiter);
 
 // Explicit HTTP GET handler for AdSense verification (ads.txt)
@@ -651,11 +662,16 @@ async function updateGlobalAdminSettings(body: any, updatedBy = 'Admin') {
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0-enterprise',
     supabaseUrl: Boolean(process.env.VITE_SUPABASE_URL),
     supabaseKey: Boolean(process.env.VITE_SUPABASE_ANON_KEY),
     isSupabaseDbConfigured,
     supabaseServerExists: Boolean(supabaseServer),
-    timestamp: new Date().toISOString(),
+    supabaseConnected: Boolean(supabaseServer),
+    memoryUsage: process.memoryUsage(),
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
   });
 });
@@ -6694,73 +6710,7 @@ app.get('/api/admin/users', verifyAdminAuth, async (_req, res) => {
   }
 });
 
-app.put('/api/admin/users/:email', adminMutationLimiter, verifyAdminAuth, (req, res) => {
-  const targetEmail = decodeURIComponent(req.params.email || '').trim().toLowerCase();
-  const { role, status, isPremium } = req.body;
 
-  if (!targetEmail) {
-    return res.status(400).json({ error: 'Target email parameter is required' });
-  }
-
-  let user = adminUsersDb.find((u) => u.email.toLowerCase() === targetEmail);
-  if (!user) {
-    user = {
-      id: `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      name: targetEmail.split('@')[0],
-      email: targetEmail,
-      exam: 'UPSC CSE 2026',
-      role: role || 'USER',
-      isPremium: Boolean(isPremium),
-      planName: isPremium ? 'PRO PASS' : 'FREE',
-      streakDays: 1,
-      xp: 100,
-      coins: 50,
-      level: 1,
-      completedTopicsCount: 0,
-      joinedAt: new Date().toISOString(),
-      status: status || 'ACTIVE',
-    };
-    adminUsersDb.push(user);
-  } else {
-    if (role) user.role = role;
-    if (status) user.status = status;
-    if (isPremium !== undefined) {
-      user.isPremium = Boolean(isPremium);
-      user.planName = user.isPremium ? 'PRO PASS' : 'FREE';
-    }
-  }
-
-  if (user.isPremium) {
-    serverSubscriptionsDb.set(targetEmail, {
-      userEmail: targetEmail,
-      planId: 'monthly',
-      isPremium: true,
-      activatedAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-      paymentId: `admin_pay_${Date.now()}`,
-      orderId: `admin_ord_${Date.now()}`,
-      verificationMethod: 'ADMIN_VERIFIED',
-      amountPaid: 0,
-      currency: 'INR',
-    });
-  } else {
-    serverSubscriptionsDb.delete(targetEmail);
-  }
-
-  saveAdminStoreToDisk();
-
-  recordAdminAuditLog({
-    user: (req as any).adminEmail || DESIGNATED_ADMIN_EMAIL,
-    action: 'UPDATE_USER_ROLE',
-    details: `Updated ${targetEmail} role to ${user.role}, status to ${user.status}, premium to ${user.isPremium}`,
-    ip: (req as any).clientIp,
-    requestId: (req as any).requestId,
-    endpoint: req.originalUrl,
-    outcome: 'SUCCESS',
-  });
-
-  return res.json({ success: true, user });
-});
 
 // ============================================================================
 // STARTUP TEAM DELEGATION & RBAC (Role-Based Access Control) API
@@ -7412,14 +7362,6 @@ app.get('/api/admin/live-users', verifyAdminAuth, (_req, res) => {
 // ADMIN USER MANAGEMENT ENDPOINTS (PERSISTENT DISK STORED)
 // =========================================================================
 
-// GET Admin Users Directory
-app.get('/api/admin/users', (_req, res) => {
-  res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.json({ users: adminUsersDb });
-});
-
 // POST Sync or Update Entire Admin Users List
 app.post('/api/admin/users', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   const { users } = req.body;
@@ -7448,7 +7390,7 @@ app.post('/api/admin/users', adminMutationLimiter, verifyAdminAuth, async (req, 
 
 // PUT Update Single Admin User
 app.put('/api/admin/users/:email', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
-  const targetEmail = String(req.params.email).trim().toLowerCase();
+  const targetEmail = decodeURIComponent(String(req.params.email || '')).trim().toLowerCase();
   const updates = req.body;
 
   let found = false;
@@ -8029,6 +7971,136 @@ app.post('/api/gemini/chat', async (req, res) => {
       details: error.message || 'Unknown server error',
     });
   }
+});
+
+// AI Auto-Organize Syllabus Endpoint (POST /api/syllabus/ai-organize)
+app.post('/api/syllabus/ai-organize', aiRateLimiter, async (req, res) => {
+  try {
+    const { rawText, content, defaultExam = 'UPSC_CSE', defaultSubject = 'Custom Subject' } = req.body;
+
+    let inputText = typeof rawText === 'string' ? rawText.trim() : (typeof content === 'string' ? content.trim() : '');
+
+    if (!inputText) {
+      return res.status(400).json({
+        success: false,
+        error: 'No syllabus rawText or Google Sheets link provided',
+      });
+    }
+
+    // Truncate input to safe length (12,000 chars)
+    const truncatedText = inputText.slice(0, 12000);
+
+    const ai = getGeminiClient();
+
+    if (!ai) {
+      return res.status(503).json({
+        success: false,
+        error: 'AI service unavailable. Please try manual column mapping.',
+      });
+    }
+
+    const systemInstruction = `You are organizing a raw, possibly messy study syllabus dump into a clean 4-level hierarchy: Subject → Chapter → Topic → Subtopic. Group related rows under the correct subject even if the file mixes multiple subjects (e.g. 'Physical Geography 1', 'Human Geography1' are both under subject 'Geography' — normalize near-duplicate/messy subject names into one canonical subject name where obviously the same subject). Infer chapter/topic/subtopic levels from indentation, numbering, or content structure if headers aren't labeled. If a row has no clear subject, use the provided defaultSubject. Output ONLY valid JSON, nothing else.`;
+
+    const promptText = `Parse and auto-organize the following raw syllabus text for exam "${defaultExam}" (Default Subject fallback: "${defaultSubject}") into structured nodes.
+
+STRICT REQUIREMENTS:
+Output ONLY a JSON object with a top-level key "nodes" containing an array of objects. Do NOT include any markdown code blocks, backticks, or explanatory text.
+
+Target JSON Schema:
+{
+  "nodes": [
+    {
+      "subject": "Canonical Subject Name",
+      "chapter": "Chapter or Module Name",
+      "topic": "Main Topic Name",
+      "subtopic": "Subtopic or Micro-detail Name",
+      "stage": "Prelims" | "Mains" | "Foundation" | "Advanced",
+      "weightage": "Low" | "Medium" | "High"
+    }
+  ]
+}
+
+Raw Syllabus Content:
+${truncatedText}`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.7-flash',
+      contents: promptText,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        temperature: 0.1,
+      },
+    });
+
+    const replyText = response.text || '';
+    let parsedJson: any = null;
+
+    try {
+      const cleaned = replyText.replace(/```json/gi, '').replace(/```/g, '').trim();
+      parsedJson = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error('Failed to parse Gemini response as JSON:', parseErr, replyText);
+      return res.json({
+        success: false,
+        error: 'AI could not parse this syllabus, try manual mapping',
+      });
+    }
+
+    // Validate nodes structure
+    let nodesArray: any[] = [];
+    if (parsedJson && Array.isArray(parsedJson.nodes)) {
+      nodesArray = parsedJson.nodes;
+    } else if (Array.isArray(parsedJson)) {
+      nodesArray = parsedJson;
+    } else {
+      return res.json({
+        success: false,
+        error: 'AI returned malformed JSON structure, try manual mapping',
+      });
+    }
+
+    if (nodesArray.length === 0) {
+      return res.json({
+        success: false,
+        error: 'AI returned an empty syllabus array, try manual mapping',
+      });
+    }
+
+    const formattedNodes = nodesArray.map((item, idx) => ({
+      id: `pers_node_ai_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+      exam: defaultExam,
+      subject: (item.subject || defaultSubject || 'Custom Subject').trim(),
+      chapter: (item.chapter || item.topic || 'General Chapter').trim(),
+      topic: (item.topic || item.chapter || '').trim(),
+      subtopic: (item.subtopic || item.topic || item.chapter || '').trim(),
+      stage: item.stage || 'Prelims',
+      weightage: item.weightage || 'Medium',
+      tags: item.tags || '',
+    }));
+
+    const subjectsFound = Array.from(
+      new Set(formattedNodes.map((n) => n.subject).filter(Boolean))
+    );
+
+    return res.json({
+      success: true,
+      nodes: formattedNodes,
+      subjectsFound,
+    });
+  } catch (error: any) {
+    console.error('Error in /api/syllabus/ai-organize:', error);
+    return res.json({
+      success: false,
+      error: 'AI could not parse this syllabus, try manual mapping',
+    });
+  }
+});
+
+// Alias for backwards compatibility
+app.post('/api/gemini/parse-syllabus', (req, res, next) => {
+  req.url = '/api/syllabus/ai-organize';
+  return app._router.handle(req, res, next);
 });
 
 // =========================================================================
@@ -11205,6 +11277,9 @@ const userNotificationsStore = new Map<string, any[]>(); // userId -> notificati
 const userWalletsStore = new Map<string, any>(); // userId -> Wallet
 const userPayoutsStore = new Map<string, any[]>(); // userId -> PayoutRecord[]
 const allPayoutsStore = new Map<string, any>(); // payoutId -> PayoutRecord
+const communityBookmarksStore = new Map<string, boolean>(); // `${userId}:${postId}` -> boolean
+const communityPollVotesStore = new Map<string, string>(); // `${userId}:${postId}` -> optionId
+const communityGroupMembershipsStore = new Map<string, boolean>(); // `${userId}:${groupId}` -> boolean
 
 // Reddit-Style User Karma Stores
 const userKarmaStore = new Map<string, { userId: string; postKarma: number; commentKarma: number; totalKarma: number; updatedAt: string }>();
@@ -12537,9 +12612,18 @@ app.get('/api/academic/leaderboard', (req, res) => {
 // ----------------------------------------------------------------------------
 // 3. ENTERPRISE COMMUNITY PLATFORM API
 // ----------------------------------------------------------------------------
-app.get('/api/community/groups', (_req, res) => {
+app.get('/api/community/groups', async (req, res) => {
   try {
-    const groups = Array.from(communityGroupsStore.values());
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const callerUserId = verifiedUser?.sub || (req.query.userId as string) || 'usr_guest_101';
+
+    const groups = Array.from(communityGroupsStore.values()).map((g) => {
+      const isJoined = communityGroupMembershipsStore.get(`${callerUserId}:${g.id}`) || false;
+      return {
+        ...g,
+        isJoined,
+      };
+    });
     res.json({ success: true, groups });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch groups' });
@@ -12548,6 +12632,11 @@ app.get('/api/community/groups', (_req, res) => {
 
 app.post('/api/community/groups', async (req, res) => {
   try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to create a group' });
+    }
+    const creatorId = verifiedUser.sub;
     const { name, description, exam = 'UPSC_CSE', category = 'public', icon = 'Users' } = req.body;
     if (!name || !description) {
       return res.status(400).json({ error: 'Name and description are required' });
@@ -12559,11 +12648,11 @@ app.post('/api/community/groups', async (req, res) => {
       category,
       exam,
       memberCount: 1,
-      isJoined: true,
-      isPinned: false,
       icon,
     };
     communityGroupsStore.set(newGroup.id, newGroup);
+    communityGroupMembershipsStore.set(`${creatorId}:${newGroup.id}`, true);
+
     if (supabaseServer) {
       try {
         const { error } = await supabaseServer.from('community_groups').upsert([{ id: newGroup.id, data: newGroup, updated_at: new Date().toISOString() }], { onConflict: 'id' });
@@ -12572,7 +12661,7 @@ app.post('/api/community/groups', async (req, res) => {
         console.error('[SUPABASE GROUP UPSERT EXCEPTION]', e?.message || e);
       }
     }
-    res.json({ success: true, group: newGroup });
+    res.json({ success: true, group: { ...newGroup, isJoined: true } });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to create group' });
   }
@@ -12580,23 +12669,37 @@ app.post('/api/community/groups', async (req, res) => {
 
 app.post('/api/community/groups/:id/join', async (req, res) => {
   try {
-    const group = communityGroupsStore.get(req.params.id);
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to join or leave groups' });
+    }
+    const userId = verifiedUser.sub;
+    const groupId = req.params.id;
+    const group = communityGroupsStore.get(groupId);
     if (!group) return res.status(404).json({ error: 'Group not found' });
 
-    group.isJoined = !group.isJoined;
-    group.memberCount += group.isJoined ? 1 : -1;
-    if (group.memberCount < 0) group.memberCount = 0;
+    const key = `${userId}:${groupId}`;
+    const isCurrentlyJoined = communityGroupMembershipsStore.get(key) || false;
+    const isJoined = !isCurrentlyJoined;
+
+    if (isJoined) {
+      communityGroupMembershipsStore.set(key, true);
+      group.memberCount = (group.memberCount || 0) + 1;
+    } else {
+      communityGroupMembershipsStore.delete(key);
+      group.memberCount = Math.max(0, (group.memberCount || 1) - 1);
+    }
     communityGroupsStore.set(group.id, group);
+
     if (supabaseServer) {
       try {
-        const { error } = await supabaseServer.from('community_groups').upsert([{ id: group.id, data: group, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-        if (error) console.error('[SUPABASE GROUP JOIN FAILURE]', error.message);
+        await supabaseServer.from('community_groups').upsert([{ id: group.id, data: group, updated_at: new Date().toISOString() }], { onConflict: 'id' });
       } catch (e: any) {
         console.error('[SUPABASE GROUP JOIN EXCEPTION]', e?.message || e);
       }
     }
 
-    res.json({ success: true, isJoined: group.isJoined, memberCount: group.memberCount });
+    res.json({ success: true, isJoined, memberCount: group.memberCount });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to toggle group membership' });
   }
@@ -12623,12 +12726,6 @@ app.get('/api/community/posts', async (req, res) => {
       posts = posts.filter((p) => p.groupId === groupId);
     }
 
-    if (filter === 'bookmarked') {
-      posts = posts.filter((p) => p.isBookmarked);
-    } else if (filter === 'my_posts') {
-      posts = posts.filter((p) => p.authorId === callerUserId || (callerUserId === 'usr_guest_101' && p.authorId === 'usr_curr'));
-    }
-
     if (tag) {
       posts = posts.filter((p) =>
         Array.isArray(p.tags) && p.tags.some((t: string) => t.toLowerCase().includes(tag))
@@ -12644,7 +12741,7 @@ app.get('/api/community/posts', async (req, res) => {
       );
     }
 
-    // Attach caller-specific vote status and score
+    // Attach caller-specific vote status, score, bookmark status, and poll vote status
     posts = posts.map((p) => {
       const kVoteKey = `${callerUserId}:post:${p.id}`;
       const kVote = karmaVotesStore.get(kVoteKey);
@@ -12653,6 +12750,10 @@ app.get('/api/community/posts', async (req, res) => {
       const upvotes = p.upvotesCount ?? p.likesCount ?? 0;
       const downvotes = p.downvotesCount ?? 0;
       const score = p.score ?? (upvotes - downvotes);
+      const isBookmarked = communityBookmarksStore.get(`${callerUserId}:${p.id}`) || false;
+
+      const userVotedOptionId = p.poll ? communityPollVotesStore.get(`${callerUserId}:${p.id}`) : undefined;
+      const poll = p.poll ? { ...p.poll, userVotedOptionId } : undefined;
 
       return {
         ...p,
@@ -12661,9 +12762,17 @@ app.get('/api/community/posts', async (req, res) => {
         downvotesCount: downvotes,
         userVote,
         isLiked: userVote === 'up',
-        likesCount: upvotes
+        likesCount: upvotes,
+        isBookmarked,
+        poll,
       };
     });
+
+    if (filter === 'bookmarked') {
+      posts = posts.filter((p) => p.isBookmarked);
+    } else if (filter === 'my_posts') {
+      posts = posts.filter((p) => p.authorId === callerUserId || (callerUserId === 'usr_guest_101' && p.authorId === 'usr_curr'));
+    }
 
     if (sort === 'popular') {
       posts.sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -12682,7 +12791,10 @@ app.get('/api/community/posts', async (req, res) => {
 app.post('/api/community/posts', async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const authorId = verifiedUser?.sub || req.body.authorId || 'usr_guest_101';
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to create a post' });
+    }
+    const authorId = verifiedUser.sub;
 
     const { groupId, title, content, tags, authorName = 'Aspirant', authorAvatar, attachments, poll } = req.body;
     if (!title || !content) {
@@ -12981,7 +13093,10 @@ app.post('/api/community/posts/:id/vote', async (req, res) => {
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to vote on posts.' });
+    }
+    const userId = verifiedUser.sub;
     const { voteType } = req.body; // 'up' or 'down'
 
     if (voteType !== 'up' && voteType !== 'down') {
@@ -13080,7 +13195,10 @@ app.post('/api/community/comments/:id/vote', async (req, res) => {
   try {
     const commentId = req.params.id;
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to vote on comments.' });
+    }
+    const userId = verifiedUser.sub;
     const { voteType, authorId: reqAuthorId } = req.body;
 
     if (voteType !== 'up' && voteType !== 'down') {
@@ -13194,47 +13312,41 @@ app.post('/api/community/comments/:id/vote', async (req, res) => {
   }
 });
 
-// Legacy like alias
-app.post('/api/community/posts/:id/like', async (req, res) => {
-  req.body.voteType = 'up';
-  const post = communityPostsStore.get(req.params.id);
-  if (!post) return res.status(404).json({ error: 'Post not found' });
-
-  post.isLiked = !post.isLiked;
-  post.likesCount += post.isLiked ? 1 : -1;
-  if (post.likesCount < 0) post.likesCount = 0;
-  post.upvotesCount = post.likesCount;
-  post.score = (post.upvotesCount || 0) - (post.downvotesCount || 0);
-  communityPostsStore.set(post.id, post);
-
-  if (supabaseServer) {
-    try {
-      const { error } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      if (error) console.error('[SUPABASE LIKE UPSERT FAILURE]', error.message);
-    } catch (e: any) {
-      console.error('[SUPABASE LIKE UPSERT EXCEPTION]', e?.message || e);
-    }
-  }
-  res.json({ success: true, isLiked: post.isLiked, likesCount: post.likesCount, score: post.score });
-});
-
 app.post('/api/community/posts/:id/bookmark', async (req, res) => {
   try {
-    const post = communityPostsStore.get(req.params.id);
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to bookmark posts.' });
+    }
+    const userId = verifiedUser.sub;
+    const postId = req.params.id;
+    const post = communityPostsStore.get(postId);
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    post.isBookmarked = !post.isBookmarked;
-    communityPostsStore.set(post.id, post);
+    const bmKey = `${userId}:${postId}`;
+    const isBookmarked = !communityBookmarksStore.get(bmKey);
+
+    if (isBookmarked) {
+      communityBookmarksStore.set(bmKey, true);
+    } else {
+      communityBookmarksStore.delete(bmKey);
+    }
+
     if (supabaseServer) {
       try {
-        const { error } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-        if (error) console.error('[SUPABASE BOOKMARK UPSERT FAILURE]', error.message);
+        if (isBookmarked) {
+          await supabaseServer.from('community_bookmarks').upsert([
+            { user_id: userId, post_id: postId, created_at: new Date().toISOString() }
+          ], { onConflict: 'user_id,post_id' });
+        } else {
+          await supabaseServer.from('community_bookmarks').delete().match({ user_id: userId, post_id: postId });
+        }
       } catch (e: any) {
         console.error('[SUPABASE BOOKMARK UPSERT EXCEPTION]', e?.message || e);
       }
     }
 
-    res.json({ success: true, isBookmarked: post.isBookmarked });
+    res.json({ success: true, isBookmarked });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to toggle bookmark' });
   }
@@ -13242,33 +13354,47 @@ app.post('/api/community/posts/:id/bookmark', async (req, res) => {
 
 app.post('/api/community/posts/:id/poll-vote', async (req, res) => {
   try {
-    const post = communityPostsStore.get(req.params.id);
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to vote in polls.' });
+    }
+    const userId = verifiedUser.sub;
+    const postId = req.params.id;
+    const post = communityPostsStore.get(postId);
     if (!post || !post.poll) return res.status(404).json({ error: 'Post or poll not found' });
 
     const { optionId } = req.body;
     const option = post.poll.options.find((o: any) => o.id === optionId);
     if (!option) return res.status(400).json({ error: 'Invalid option ID' });
 
-    if (post.poll.userVotedOptionId) {
-      const prevOption = post.poll.options.find((o: any) => o.id === post.poll.userVotedOptionId);
-      if (prevOption && prevOption.votes > 0) prevOption.votes--;
-      if (post.poll.totalVotes > 0) post.poll.totalVotes--;
-    }
+    const voteKey = `${userId}:${postId}`;
+    const prevVotedOptionId = communityPollVotesStore.get(voteKey);
 
-    option.votes++;
-    post.poll.totalVotes++;
-    post.poll.userVotedOptionId = optionId;
-    communityPostsStore.set(post.id, post);
-    if (supabaseServer) {
-      try {
-        const { error } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-        if (error) console.error('[SUPABASE POLL VOTE UPSERT FAILURE]', error.message);
-      } catch (e: any) {
-        console.error('[SUPABASE POLL VOTE UPSERT EXCEPTION]', e?.message || e);
+    if (prevVotedOptionId !== optionId) {
+      if (prevVotedOptionId) {
+        const prevOption = post.poll.options.find((o: any) => o.id === prevVotedOptionId);
+        if (prevOption && prevOption.votes > 0) prevOption.votes--;
+        if (post.poll.totalVotes > 0) post.poll.totalVotes--;
+      }
+
+      option.votes = (option.votes || 0) + 1;
+      post.poll.totalVotes = (post.poll.totalVotes || 0) + 1;
+      communityPollVotesStore.set(voteKey, optionId);
+      communityPostsStore.set(post.id, post);
+
+      if (supabaseServer) {
+        try {
+          await supabaseServer.from('community_poll_votes').upsert([
+            { user_id: userId, post_id: postId, option_id: optionId, created_at: new Date().toISOString() }
+          ], { onConflict: 'user_id,post_id' });
+          await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        } catch (e: any) {
+          console.error('[SUPABASE POLL VOTE UPSERT EXCEPTION]', e?.message || e);
+        }
       }
     }
 
-    res.json({ success: true, poll: post.poll });
+    res.json({ success: true, poll: { ...post.poll, userVotedOptionId: optionId } });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to record poll vote' });
   }
@@ -13330,7 +13456,10 @@ app.post('/api/community/posts/:id/comments', async (req, res) => {
   try {
     const postId = req.params.id;
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const authorId = verifiedUser?.sub || req.body.authorId || 'usr_guest_101';
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to comment.' });
+    }
+    const authorId = verifiedUser.sub;
 
     const { content, authorName = 'Aspirant', authorAvatar } = req.body;
     if (!content || !content.trim()) {
@@ -13344,7 +13473,7 @@ app.post('/api/community/posts/:id/comments', async (req, res) => {
       id: 'cmt_' + Date.now(),
       postId,
       authorId,
-      authorName: authorName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Aspirant'),
+      authorName: authorName || verifiedUser.email.split('@')[0] || 'Aspirant',
       authorAvatar: authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
       content: content.trim(),
       createdAt: new Date().toISOString(),
@@ -13379,6 +13508,17 @@ app.post('/api/community/posts/:id/comments', async (req, res) => {
 app.delete('/api/community/posts/:id', async (req, res) => {
   try {
     const postId = req.params.id;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to delete posts.' });
+    }
+    const post = communityPostsStore.get(postId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+
+    if (post.authorId !== verifiedUser.sub && verifiedUser.role !== 'ADMIN' && verifiedUser.email?.toLowerCase() !== DESIGNATED_ADMIN_EMAIL.toLowerCase()) {
+      return res.status(403).json({ error: 'Forbidden. You can only delete your own posts.' });
+    }
+
     communityPostsStore.delete(postId);
     communityCommentsStore.delete(postId);
     if (supabaseServer) {
@@ -13399,12 +13539,16 @@ app.delete('/api/community/posts/:id', async (req, res) => {
 
 app.post('/api/community/reports', async (req, res) => {
   try {
-    const { contentType, contentId, reason, reporterName = 'User' } = req.body;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to report content.' });
+    }
+    const { contentType, contentId, reason, reporterName } = req.body;
     const report = {
       id: 'rep_' + Date.now(),
       contentType,
       contentId,
-      reporterName,
+      reporterName: reporterName || verifiedUser.email.split('@')[0] || 'User',
       reason,
       status: 'pending',
       createdAt: new Date().toISOString(),
@@ -13433,8 +13577,11 @@ app.post('/api/community/posts/:id/tip', async (req, res) => {
   try {
     const postId = req.params.id;
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const senderId = verifiedUser?.sub || req.body.senderId || 'usr_guest_101';
-    const senderName = req.body.senderName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Aspirant');
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to tip study tokens.' });
+    }
+    const senderId = verifiedUser.sub;
+    const senderName = req.body.senderName || (verifiedUser.email ? verifiedUser.email.split('@')[0] : 'Aspirant');
     const { amount = 10 } = req.body;
     const tipAmount = Math.max(1, Math.min(500, Number(amount) || 10));
 
@@ -14616,18 +14763,6 @@ app.post('/api/admin/moderation/action', adminMutationLimiter, verifyAdminAuth, 
 // ----------------------------------------------------------------------------
 // 7. ENTERPRISE HEALTH, METRICS & BACKUP DISASTER RECOVERY APIs
 // ----------------------------------------------------------------------------
-app.get('/api/health', (_req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0-enterprise',
-    supabaseConnected: Boolean(supabaseServer),
-    memoryUsage: process.memoryUsage()
-  });
-});
-
 app.get('/api/metrics', (_req, res) => {
   res.json({
     success: true,
