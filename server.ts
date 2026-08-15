@@ -9240,21 +9240,25 @@ app.post('/api/syllabus/ai-organize', aiRateLimiter, async (req, res) => {
       });
     }
 
-    const systemInstruction = `You are organizing a raw, possibly messy study syllabus dump into a clean 4-level hierarchy: Subject → Chapter → Topic → Subtopic. Group related rows under the correct subject even if the file mixes multiple subjects (e.g. 'Physical Geography 1', 'Human Geography1' are both under subject 'Geography' — normalize near-duplicate/messy subject names into one canonical subject name where obviously the same subject). Infer chapter/topic/subtopic levels from indentation, numbering, or content structure if headers aren't labeled. If a row has no clear subject, use the provided defaultSubject. Output ONLY valid JSON, nothing else.`;
+    const systemInstruction = `You are a strict syllabus STRUCTURE classifier. Your ONLY job is to take raw, possibly messy syllabus text and assign each line/item into a 4-level hierarchy position: Subject → Chapter → Topic → Subtopic.
 
-    const promptText = `Parse and auto-organize the following raw syllabus text for exam "${defaultExam}" (Default Subject fallback: "${defaultSubject}") into structured nodes.
+ABSOLUTE RULES — DO NOT VIOLATE:
+1. NEVER rewrite, rephrase, paraphrase, summarize, expand, shorten, translate, or "correct" any topic/chapter/subtopic text. Copy it EXACTLY as it appears in the input, character-for-character (trimming only leading/trailing whitespace).
+2. The ONLY normalization you may do is grouping OBVIOUSLY identical subjects that are just formatting variants of the same word — e.g. 'Physical Geography 1' and 'Human Geography1' both clearly belong under a subject the user is calling 'Geography' — group these under ONE subject label PICKED FROM the user's own text (use the most common or cleanest variant that already appears in the input; do NOT invent a subject name that never appears in the input).
+3. Do not merge, split, reorder, or drop any topic/subtopic content. If the input has 40 distinct topic lines, your output must contain all 40 as distinct nodes — you are re-organizing structure, not summarizing content.
+4. If you genuinely cannot tell whether something is a chapter, topic, or subtopic, default to the most granular available level (subtopic) rather than guessing and potentially altering meaning by misclassifying.
+5. Output ONLY valid JSON, nothing else — no markdown, no explanation.`;
 
-STRICT REQUIREMENTS:
-Output ONLY a JSON object with a top-level key "nodes" containing an array of objects. Do NOT include any markdown code blocks, backticks, or explanatory text.
+    const promptText = `Classify (do NOT rewrite) the following raw syllabus text for exam "${defaultExam}" (Default Subject fallback if a row has no identifiable subject: "${defaultSubject}") into structured nodes. Copy all topic/chapter/subtopic text EXACTLY as given — you are only deciding WHICH HIERARCHY LEVEL each piece of text belongs to, never changing the text itself.
 
 Target JSON Schema:
 {
   "nodes": [
     {
-      "subject": "Canonical Subject Name",
-      "chapter": "Chapter or Module Name",
-      "topic": "Main Topic Name",
-      "subtopic": "Subtopic or Micro-detail Name",
+      "subject": "Subject name — copied or grouped from input, never invented",
+      "chapter": "Chapter/Module — EXACT text from input",
+      "topic": "Topic — EXACT text from input",
+      "subtopic": "Subtopic — EXACT text from input",
       "stage": "Prelims" | "Mains" | "Foundation" | "Advanced",
       "weightage": "Low" | "Medium" | "High"
     }
@@ -9270,7 +9274,7 @@ ${truncatedText}`;
       config: {
         systemInstruction,
         responseMimeType: 'application/json',
-        temperature: 0.1,
+        temperature: 0,
       },
     });
 
@@ -9305,6 +9309,20 @@ ${truncatedText}`;
       return res.json({
         success: false,
         error: 'AI returned an empty syllabus array, try manual mapping',
+      });
+    }
+
+    // Sanity check: verify node count against distinct input line count to catch AI over-summarization
+    const rawLines = truncatedText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    const distinctLineCount = new Set(rawLines).size;
+
+    if (distinctLineCount > 0 && nodesArray.length < distinctLineCount * 0.7) {
+      return res.json({
+        success: false,
+        error: 'AI output looks incomplete compared to your input — try manual column mapping instead for exact control.',
       });
     }
 
