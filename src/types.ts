@@ -502,11 +502,16 @@ export interface CommunityPost {
   content: string;
   tags: string[];
   createdAt: string;
+  score?: number;
+  upvotesCount?: number;
+  downvotesCount?: number;
+  userVote?: 'up' | 'down' | null;
   likesCount: number;
   repliesCount: number;
   isLiked?: boolean;
   isBookmarked?: boolean;
   isPinned?: boolean;
+  tippedCoins?: number;
   attachments?: RoomMessageAttachment[];
   poll?: {
     question: string;
@@ -514,6 +519,49 @@ export interface CommunityPost {
     totalVotes: number;
     userVotedOptionId?: string;
   };
+}
+
+export interface WalletTransaction {
+  id: string;
+  type: 'reward_streak' | 'reward_cbt' | 'reward_helpful_post' | 'tip_received' | 'tip_sent' | 'conversion' | 'payout';
+  amount: number;
+  description: string;
+  createdAt: string;
+}
+
+export interface WalletData {
+  balance: number;
+  held?: number;
+  totalEarned: number;
+  totalSpent: number;
+  inrRate: number;
+  inrValue: number;
+  minPayoutCoins: number;
+  transactions: WalletTransaction[];
+}
+
+export interface PayoutRecord {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  userName?: string;
+  coins: number;
+  inrAmount: number;
+  payoutMethod: 'upi' | 'bank';
+  payoutDetails: {
+    upiId?: string;
+    accountHolder?: string;
+    accountNumber?: string;
+    ifsc?: string;
+  };
+  status: 'pending_admin_review' | 'paid' | 'rejected' | string;
+  gateway: string;
+  rzpReferenceId?: string | null;
+  transferReference?: string | null;
+  createdAt: string;
+  processedAt?: string | null;
+  processedBy?: string | null;
+  rejectionReason?: string | null;
 }
 
 export interface CommunityComment {

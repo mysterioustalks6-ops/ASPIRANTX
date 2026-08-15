@@ -3,10 +3,12 @@ import {
   Users, MessageSquare, Heart, Bookmark, Pin, Share2, Plus, Search, 
   Paperclip, Send, AlertCircle, ShieldCheck, CheckCircle2, ThumbsUp, 
   HelpCircle, MoreHorizontal, Filter, X, Sparkles, UserPlus, UserCheck,
-  FileText, Download, Trash2, ArrowUpRight, BarChart2, Radio, Check
+  FileText, Download, Trash2, ArrowUpRight, BarChart2, Radio, Check,
+  Coins, Wallet, Zap, ArrowBigUp, ArrowBigDown
 } from 'lucide-react';
 import { CommunityGroup, CommunityPost, CommunityComment, UserProfile } from '../types';
 import { CommunityChat } from './CommunityChat';
+import { CommunityWallet } from './CommunityWallet';
 
 interface CommunityPlatformProps {
   userProfile: UserProfile;
@@ -16,7 +18,7 @@ interface CommunityPlatformProps {
 
 export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfile, selectedExam = 'NEET_UG', onOpenPremium }) => {
   // Navigation & View Mode
-  const [activeSubTab, setActiveSubTab] = useState<'forum' | 'chat_rooms'>('forum');
+  const [activeSubTab, setActiveSubTab] = useState<'forum' | 'wallet' | 'chat_rooms'>('forum');
 
   // Groups & Posts state
   const [groups, setGroups] = useState<CommunityGroup[]>([]);
@@ -36,6 +38,11 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
   const [openCommentSectionPostId, setOpenCommentSectionPostId] = useState<string | null>(null);
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({});
   const [submittingCommentPostId, setSubmittingCommentPostId] = useState<string | null>(null);
+
+  // Tipping State
+  const [tippingPost, setTippingPost] = useState<CommunityPost | null>(null);
+  const [tipAmount, setTipAmount] = useState<number>(10);
+  const [isTipping, setIsTipping] = useState<boolean>(false);
 
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
@@ -164,20 +171,44 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
     }
   };
 
-  const handleLikePost = async (postId: string) => {
+  const handleVotePost = async (postId: string, voteType: 'up' | 'down') => {
     try {
-      const res = await fetch(`/api/community/posts/${postId}/like`, { method: 'POST' });
+      const res = await fetch(`/api/community/posts/${postId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          voteType,
+          userId: userProfile.id || 'usr_guest_101',
+        }),
+      });
       const data = await res.json();
       if (data.success) {
         setPosts((prev) =>
           prev.map((p) =>
-            p.id === postId ? { ...p, isLiked: data.isLiked, likesCount: data.likesCount } : p
+            p.id === postId
+              ? {
+                  ...p,
+                  score: data.score,
+                  upvotesCount: data.upvotesCount,
+                  downvotesCount: data.downvotesCount,
+                  userVote: data.userVote,
+                  isLiked: data.isLiked,
+                  likesCount: data.likesCount,
+                }
+              : p
           )
         );
+      } else {
+        showToast(data.error || 'Unable to register vote.');
       }
     } catch (err) {
-      console.error('Failed to toggle like:', err);
+      console.error('Failed to vote:', err);
+      showToast('Network error while voting.');
     }
+  };
+
+  const handleLikePost = async (postId: string) => {
+    return handleVotePost(postId, 'up');
   };
 
   const handleBookmarkPost = async (postId: string) => {
@@ -290,6 +321,35 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
       showToast('Discussion link & title copied to clipboard!');
     } else {
       showToast('Share: ' + post.title);
+    }
+  };
+
+  const handleTipPost = async (post: CommunityPost, amount: number) => {
+    setIsTipping(true);
+    try {
+      const res = await fetch(`/api/community/posts/${post.id}/tip`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderId: userProfile.id,
+          senderName: userProfile.name,
+          amount,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPosts((prev) =>
+          prev.map((p) => (p.id === post.id ? { ...p, tippedCoins: (p.tippedCoins || 0) + amount } : p))
+        );
+        showToast(data.message || `Tipped ${amount} coins to ${post.authorName}!`);
+        setTippingPost(null);
+      } else {
+        showToast(data.error || 'Failed to tip coins.');
+      }
+    } catch (err) {
+      showToast('Network error while tipping.');
+    } finally {
+      setIsTipping(false);
     }
   };
 
@@ -424,6 +484,19 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
         </button>
 
         <button
+          onClick={() => setActiveSubTab('wallet')}
+          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 ${
+            activeSubTab === 'wallet'
+              ? 'border-amber-500 text-amber-600 bg-amber-50/50'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Coins className="w-4 h-4 text-amber-500 fill-amber-400" />
+          <span>🪙 Token Hub & Payouts</span>
+          <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black">Razorpay</span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('chat_rooms')}
           className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 ${
             activeSubTab === 'chat_rooms'
@@ -439,6 +512,11 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
       {/* VIEW MODE 1: LIVE CHAT ROOMS */}
       {activeSubTab === 'chat_rooms' && (
         <CommunityChat user={userProfile} onOpenPremium={onOpenPremium} />
+      )}
+
+      {/* VIEW MODE 2: TOKEN HUB & WALLET */}
+      {activeSubTab === 'wallet' && (
+        <CommunityWallet userProfile={userProfile} onOpenPremium={onOpenPremium} />
       )}
 
       {/* VIEW MODE 2: DISCUSSIONS FORUM */}
@@ -800,17 +878,44 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                       {/* ACTIONS BAR */}
                       <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-semibold text-slate-500">
                         <div className="flex items-center space-x-3">
-                          <button
-                            onClick={() => handleLikePost(post.id)}
-                            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all ${
-                              post.isLiked
-                                ? 'text-rose-600 bg-rose-50 font-bold'
-                                : 'hover:bg-slate-50 text-slate-600'
-                            }`}
-                          >
-                            <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-rose-600' : ''}`} />
-                            <span>{post.likesCount} Likes</span>
-                          </button>
+                          {/* REDDIT-STYLE UPVOTE / SCORE / DOWNVOTE */}
+                          <div className="flex items-center bg-slate-100/90 rounded-xl p-0.5 border border-slate-200">
+                            <button
+                              onClick={() => handleVotePost(post.id, 'up')}
+                              className={`p-1.5 rounded-lg transition-all flex items-center ${
+                                post.userVote === 'up' || (post.userVote === undefined && post.isLiked)
+                                  ? 'text-orange-600 bg-orange-100 font-black shadow-xs'
+                                  : 'text-slate-500 hover:text-orange-600 hover:bg-slate-200/70'
+                              }`}
+                              title="Upvote (Helpful/High Quality)"
+                            >
+                              <ArrowBigUp className={`w-4 h-4 ${post.userVote === 'up' || (post.userVote === undefined && post.isLiked) ? 'fill-orange-600' : ''}`} />
+                            </button>
+
+                            <span
+                              className={`px-2 text-xs font-black min-w-[28px] text-center ${
+                                (post.score ?? post.likesCount ?? 0) > 0
+                                  ? 'text-orange-600'
+                                  : (post.score ?? post.likesCount ?? 0) < 0
+                                  ? 'text-indigo-600'
+                                  : 'text-slate-600'
+                              }`}
+                            >
+                              {post.score ?? post.likesCount ?? 0}
+                            </span>
+
+                            <button
+                              onClick={() => handleVotePost(post.id, 'down')}
+                              className={`p-1.5 rounded-lg transition-all flex items-center ${
+                                post.userVote === 'down'
+                                  ? 'text-indigo-600 bg-indigo-100 font-black shadow-xs'
+                                  : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-200/70'
+                              }`}
+                              title="Downvote (Low Quality/Irrelevant)"
+                            >
+                              <ArrowBigDown className={`w-4 h-4 ${post.userVote === 'down' ? 'fill-indigo-600' : ''}`} />
+                            </button>
+                          </div>
 
                           <button
                             onClick={() => handleToggleComments(post.id)}
@@ -822,6 +927,15 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                           >
                             <MessageSquare className="w-4 h-4" />
                             <span>{post.repliesCount || 0} Replies</span>
+                          </button>
+
+                          <button
+                            onClick={() => setTippingPost(post)}
+                            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl transition-all text-amber-600 bg-amber-50 hover:bg-amber-100 font-bold border border-amber-200/60"
+                            title="Tip study tokens to author"
+                          >
+                            <Coins className="w-4 h-4 fill-amber-400 text-amber-600" />
+                            <span>{post.tippedCoins ? `${post.tippedCoins} Tipped` : 'Tip Coins'}</span>
                           </button>
                         </div>
 
@@ -1186,6 +1300,75 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                 className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md"
               >
                 Submit Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: TIP STUDY COINS TO AUTHOR */}
+      {tippingPost && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Coins className="w-5 h-5 fill-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-extrabold text-white">Tip Study Tokens</h3>
+                  <p className="text-[11px] text-slate-400">Reward {tippingPost.authorName} for high-yield content</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTippingPost(null)}
+                className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800/80 space-y-1">
+              <p className="text-xs font-bold text-slate-200 line-clamp-1">"{tippingPost.title}"</p>
+              <p className="text-[11px] text-slate-400">Author receives 100% of tipped tokens instantly.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300">Select Coin Amount:</label>
+              <div className="grid grid-cols-4 gap-2">
+                {[5, 10, 25, 50].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setTipAmount(amt)}
+                    className={`py-2 rounded-xl border text-xs font-extrabold transition-all flex flex-col items-center justify-center ${
+                      tipAmount === amt
+                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20'
+                        : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <span>🪙 {amt}</span>
+                    <span className="text-[9px] font-normal opacity-80">₹{(amt * 0.1).toFixed(1)}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setTippingPost(null)}
+                className="flex-1 py-2.5 bg-slate-800 text-slate-300 hover:text-white font-bold text-xs rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTipPost(tippingPost, tipAmount)}
+                disabled={isTipping}
+                className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 disabled:opacity-50"
+              >
+                {isTipping ? 'Transferring...' : `Send 🪙 ${tipAmount} Coins`}
               </button>
             </div>
           </div>

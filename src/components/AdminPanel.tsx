@@ -109,7 +109,7 @@ const INITIAL_ADMIN_USERS: AdminUserRecord[] = [
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFlagsUpdated, onOpenCustomizerModal }) => {
   const isAdmin = user?.role === 'ADMIN' || user?.email === 'ambujyadav0010@gmail.com';
-  const [activeAdminTab, setActiveAdminTab] = useState<'users' | 'pricing_razorpay' | 'adsense' | 'flags' | 'watchdog' | 'customizer' | 'team' | 'audit_logs' | 'content' | 'moderation' | 'bulk_pyq_upload' | 'reward_milestones' | 'cbt_management' | 'ingestion' | 'feedback_reports' | 'podcasts' | 'blog_management' | 'error_logs' | 'announcements'>('users');
+  const [activeAdminTab, setActiveAdminTab] = useState<'users' | 'pricing_razorpay' | 'adsense' | 'flags' | 'watchdog' | 'customizer' | 'team' | 'audit_logs' | 'content' | 'moderation' | 'bulk_pyq_upload' | 'reward_milestones' | 'cbt_management' | 'ingestion' | 'feedback_reports' | 'podcasts' | 'blog_management' | 'error_logs' | 'announcements' | 'community_payouts'>('users');
   const [showIngestionDashboard, setShowIngestionDashboard] = useState(false);
 
   // Admin Announcements State
@@ -755,6 +755,116 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
       }
     } catch (e) {
       alert('Error processing claim.');
+    }
+  };
+
+  // Community Payouts & Escrow Settlement State
+  const [adminPayouts, setAdminPayouts] = useState<any[]>([]);
+  const [loadingPayouts, setLoadingPayouts] = useState<boolean>(false);
+  const [payoutStatusFilter, setPayoutStatusFilter] = useState<'all' | 'pending_admin_review' | 'paid' | 'rejected'>('all');
+  const [payoutPendingCount, setPayoutPendingCount] = useState<number>(0);
+  const [payoutActionMsg, setPayoutActionMsg] = useState<string | null>(null);
+  const [payoutActionError, setPayoutActionError] = useState<string | null>(null);
+  const [processingPayoutId, setProcessingPayoutId] = useState<string | null>(null);
+  const [payoutTransferRefs, setPayoutTransferRefs] = useState<Record<string, string>>({});
+  const [rejectReasonModal, setRejectReasonModal] = useState<{ isOpen: boolean; payout: any | null; reason: string }>({
+    isOpen: false,
+    payout: null,
+    reason: '',
+  });
+
+  const fetchAdminPayouts = async (statusFilter = payoutStatusFilter) => {
+    setLoadingPayouts(true);
+    setPayoutActionError(null);
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/admin/payouts?status=${statusFilter}`, { headers });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAdminPayouts(data.payouts || []);
+        setPayoutPendingCount(data.pendingCount || 0);
+      } else {
+        setPayoutActionError(data.error || 'Failed to load community payouts.');
+      }
+    } catch (err: any) {
+      setPayoutActionError('Network error while loading payouts.');
+    } finally {
+      setLoadingPayouts(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeAdminTab === 'community_payouts') {
+      fetchAdminPayouts();
+    }
+  }, [activeAdminTab, payoutStatusFilter]);
+
+  const handleApprovePayout = async (payoutId: string) => {
+    const transferReference = (payoutTransferRefs[payoutId] || '').trim() || 'Manual UPI Transfer Confirmed';
+    setProcessingPayoutId(payoutId);
+    setPayoutActionMsg(null);
+    setPayoutActionError(null);
+
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/admin/payouts/${payoutId}/approve`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ transferReference }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPayoutActionMsg(`✅ Payout ${payoutId} approved & marked as Paid! Escrow cleared.`);
+        fetchAdminPayouts();
+      } else {
+        setPayoutActionError(data.error || 'Failed to approve payout.');
+      }
+    } catch (err: any) {
+      setPayoutActionError(err?.message || 'Error processing payout approval.');
+    } finally {
+      setProcessingPayoutId(null);
+    }
+  };
+
+  const handleRejectPayoutSubmit = async () => {
+    if (!rejectReasonModal.payout) return;
+    const payoutId = rejectReasonModal.payout.id;
+    const reason = rejectReasonModal.reason.trim() || 'Account or UPI verification failed';
+
+    setProcessingPayoutId(payoutId);
+    setPayoutActionMsg(null);
+    setPayoutActionError(null);
+
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/admin/payouts/${payoutId}/reject`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ rejectionReason: reason }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setPayoutActionMsg(`✅ Payout rejected. 🪙 ${data.refundedCoins || rejectReasonModal.payout.coins} tokens automatically refunded to student wallet.`);
+        setRejectReasonModal({ isOpen: false, payout: null, reason: '' });
+        fetchAdminPayouts();
+      } else {
+        setPayoutActionError(data.error || 'Failed to reject payout.');
+      }
+    } catch (err: any) {
+      setPayoutActionError(err?.message || 'Error processing payout rejection.');
+    } finally {
+      setProcessingPayoutId(null);
     }
   };
 
@@ -2052,6 +2162,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
           <Megaphone className="w-4 h-4 stroke-[2.5]" />
           <span>Announcements</span>
         </button>
+
+        {/* Community Payouts Escrow Management Tab Button */}
+        {hasPermission('canManageFinance') && (
+          <button
+            onClick={() => {
+              setActiveAdminTab('community_payouts');
+              fetchAdminPayouts();
+            }}
+            className={`px-4 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeAdminTab === 'community_payouts'
+                ? 'bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/20'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <Coins className="w-4 h-4 stroke-[2.5]" />
+            <span>Community Payouts</span>
+            {payoutPendingCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white animate-pulse">
+                {payoutPendingCount}
+              </span>
+            )}
+          </button>
+        )}
       </div>
 
       {/* ─── BLOG & CONTENT REQUESTS PANEL ─── */}
@@ -5920,6 +6053,388 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── COMMUNITY PAYOUTS & ESCROW SETTLEMENT DESK ─── */}
+      {activeAdminTab === 'community_payouts' && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <Coins className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-white flex items-center gap-2">
+                    Community Token Escrow & Payout Desk
+                  </h2>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Review student coin withdrawal requests, verify UPI/Bank details, and disburse real earnings.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => fetchAdminPayouts()}
+                disabled={loadingPayouts}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-slate-700"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingPayouts ? 'animate-spin' : ''}`} />
+                <span>Refresh Payouts</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Alert Messages */}
+          {payoutActionMsg && (
+            <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 p-4 rounded-2xl flex items-center justify-between gap-3 animate-fadeIn">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <p className="text-xs font-bold">{payoutActionMsg}</p>
+              </div>
+              <button onClick={() => setPayoutActionMsg(null)} className="text-slate-400 hover:text-white text-xs font-bold">
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {payoutActionError && (
+            <div className="bg-rose-500/10 border border-rose-500/30 text-rose-300 p-4 rounded-2xl flex items-center justify-between gap-3 animate-fadeIn">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                <p className="text-xs font-bold">{payoutActionError}</p>
+              </div>
+              <button onClick={() => setPayoutActionError(null)} className="text-slate-400 hover:text-white text-xs font-bold">
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-white">{payoutPendingCount}</div>
+                <div className="text-xs text-slate-400 font-semibold">Pending Admin Review</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-white">
+                  {adminPayouts.filter(p => p.status === 'paid').length}
+                </div>
+                <div className="text-xs text-slate-400 font-semibold">Paid & Settled</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                <DollarSign className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xl font-black text-white">
+                  ₹{adminPayouts.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amountInr || 0), 0)}
+                </div>
+                <div className="text-xs text-slate-400 font-semibold">Total Disbursed to Students</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex items-center gap-2 bg-slate-950/40 p-1.5 rounded-xl border border-slate-800 w-fit">
+            <button
+              onClick={() => {
+                setPayoutStatusFilter('all');
+                fetchAdminPayouts('all');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                payoutStatusFilter === 'all'
+                  ? 'bg-slate-800 text-white shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              All Records ({adminPayouts.length})
+            </button>
+            <button
+              onClick={() => {
+                setPayoutStatusFilter('pending_admin_review');
+                fetchAdminPayouts('pending_admin_review');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                payoutStatusFilter === 'pending_admin_review'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              ⏳ Pending Review ({payoutPendingCount})
+            </button>
+            <button
+              onClick={() => {
+                setPayoutStatusFilter('paid');
+                fetchAdminPayouts('paid');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                payoutStatusFilter === 'paid'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              ✅ Settled & Paid
+            </button>
+            <button
+              onClick={() => {
+                setPayoutStatusFilter('rejected');
+                fetchAdminPayouts('rejected');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                payoutStatusFilter === 'rejected'
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 shadow'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              ❌ Rejected & Refunded
+            </button>
+          </div>
+
+          {/* Payouts List */}
+          {loadingPayouts ? (
+            <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+              <p className="text-xs font-bold">Fetching community payout records...</p>
+            </div>
+          ) : adminPayouts.length === 0 ? (
+            <div className="p-12 text-center bg-slate-900/50 rounded-2xl border border-slate-800 text-slate-400">
+              <Coins className="w-10 h-10 mx-auto mb-3 opacity-30 text-emerald-400" />
+              <p className="text-sm font-bold text-slate-300">No payout requests found</p>
+              <p className="text-xs text-slate-500 mt-1">
+                {payoutStatusFilter === 'pending_admin_review'
+                  ? 'Great job! All student payout requests have been reviewed and settled.'
+                  : 'When students request coin withdrawals from their Community Wallet, they will appear here for verification.'}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {adminPayouts.map((payout) => (
+                <div
+                  key={payout.id}
+                  className={`p-5 rounded-2xl border transition-all ${
+                    payout.status === 'pending_admin_review'
+                      ? 'bg-amber-950/10 border-amber-500/30 shadow-lg shadow-amber-500/5'
+                      : payout.status === 'paid'
+                      ? 'bg-slate-900/60 border-emerald-500/30'
+                      : 'bg-slate-900/40 border-slate-800 opacity-75'
+                  }`}
+                >
+                  <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+                    {/* Left: User & Payout Info */}
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="font-mono text-xs font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md">
+                          #{payout.id}
+                        </span>
+
+                        {payout.status === 'pending_admin_review' && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> Escrow Held • Pending Review
+                          </span>
+                        )}
+
+                        {payout.status === 'paid' && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Settled & Paid
+                          </span>
+                        )}
+
+                        {payout.status === 'rejected' && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1">
+                            <XCircle className="w-3 h-3" /> Rejected & Refunded
+                          </span>
+                        )}
+
+                        <span className="text-[11px] text-slate-500 font-mono">
+                          {new Date(payout.requestedAt).toLocaleString()}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="text-xl font-black text-white flex items-center gap-1.5">
+                          <span className="text-amber-400">🪙 {payout.coins.toLocaleString()} Coins</span>
+                          <span className="text-slate-400 text-sm font-normal">→</span>
+                          <span className="text-emerald-400 font-extrabold">₹{payout.amountInr} INR</span>
+                        </div>
+                      </div>
+
+                      {/* Beneficiary & Payment Method Card */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-950/70 p-3.5 rounded-xl border border-white/5 font-mono">
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase font-bold">Student Account</div>
+                          <div className="text-slate-200 font-bold mt-0.5">{payout.userName || 'Student'}</div>
+                          <div className="text-slate-400 text-[11px]">{payout.userEmail || payout.userId}</div>
+                        </div>
+
+                        <div>
+                          <div className="text-slate-500 text-[10px] uppercase font-bold">
+                            Destination ({payout.method === 'upi' ? '⚡ UPI Transfer' : '🏦 Bank NEFT/IMPS'})
+                          </div>
+                          {payout.method === 'upi' ? (
+                            <div className="text-emerald-400 font-bold mt-0.5 select-all flex items-center gap-1.5">
+                              <span>VPA: {payout.destinationDetails?.upiId || 'N/A'}</span>
+                            </div>
+                          ) : (
+                            <div className="text-slate-300 mt-0.5 space-y-0.5">
+                              <div>A/C: <span className="font-bold text-white select-all">{payout.destinationDetails?.accountNumber || 'N/A'}</span></div>
+                              <div>IFSC: <span className="font-bold text-white select-all">{payout.destinationDetails?.ifscCode || 'N/A'}</span></div>
+                              <div>Name: <span className="text-slate-300">{payout.destinationDetails?.accountHolderName || 'N/A'}</span></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Processed Metadata for Paid/Rejected */}
+                      {payout.status === 'paid' && payout.transferReference && (
+                        <div className="text-[11px] text-emerald-400 font-mono flex items-center gap-2">
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Bank/UPI Ref: <strong>{payout.transferReference}</strong></span>
+                          <span>• Processed by {payout.processedBy || 'Admin'}</span>
+                        </div>
+                      )}
+
+                      {payout.status === 'rejected' && payout.rejectionReason && (
+                        <div className="text-[11px] text-rose-400 font-mono flex items-center gap-2">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>Reason: {payout.rejectionReason}</span>
+                          <span>• Tokens refunded to wallet</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right: Actions for Pending Reviews */}
+                    {payout.status === 'pending_admin_review' && (
+                      <div className="w-full lg:w-72 bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3 shrink-0">
+                        <div>
+                          <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                            Transfer Reference / UTR
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="e.g. UPI-99881122 or UTR..."
+                            value={payoutTransferRefs[payout.id] || ''}
+                            onChange={(e) => setPayoutTransferRefs({ ...payoutTransferRefs, [payout.id]: e.target.value })}
+                            className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleApprovePayout(payout.id)}
+                            disabled={processingPayoutId === payout.id}
+                            className="flex-1 px-3 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                          >
+                            {processingPayoutId === payout.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            )}
+                            <span>Approve & Settle</span>
+                          </button>
+
+                          <button
+                            onClick={() => setRejectReasonModal({ isOpen: true, payout, reason: '' })}
+                            disabled={processingPayoutId === payout.id}
+                            className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold text-xs rounded-lg transition-all disabled:opacity-50"
+                            title="Reject and return escrow coins"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Reject Payout Reason Modal */}
+      {rejectReasonModal.isOpen && rejectReasonModal.payout && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">Reject Payout & Refund Coins</h3>
+                  <p className="text-[11px] text-slate-400">Tokens will be immediately returned to student wallet</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRejectReasonModal({ isOpen: false, payout: null, reason: '' })}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <XSquare className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-slate-950/60 p-3 rounded-xl border border-white/5 text-xs space-y-1">
+              <div className="text-slate-400">
+                Amount: <strong className="text-amber-400">🪙 {rejectReasonModal.payout.coins} Coins</strong> (₹{rejectReasonModal.payout.amountInr})
+              </div>
+              <div className="text-slate-400">
+                Student: <strong className="text-white">{rejectReasonModal.payout.userName}</strong> ({rejectReasonModal.payout.userEmail})
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 block">
+                Reason for Rejection *
+              </label>
+              <textarea
+                rows={3}
+                placeholder="e.g. Invalid UPI ID / Name on bank account does not match..."
+                value={rejectReasonModal.reason}
+                onChange={(e) => setRejectReasonModal({ ...rejectReasonModal, reason: e.target.value })}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-rose-500 placeholder-slate-600"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setRejectReasonModal({ isOpen: false, payout: null, reason: '' })}
+                className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRejectPayoutSubmit}
+                disabled={processingPayoutId === rejectReasonModal.payout.id}
+                className="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20 disabled:opacity-50"
+              >
+                {processingPayoutId === rejectReasonModal.payout.id ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                <span>Confirm Rejection & Refund</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

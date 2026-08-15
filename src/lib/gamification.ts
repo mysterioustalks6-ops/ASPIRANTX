@@ -11,7 +11,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   exam: '',
   targetYear: 2026,
   streakDays: 1,
-  lastActiveDate: new Date().toISOString().split('T')[0],
+  lastActiveDate: getISTDateString(),
   isPremium: false,
   studyHoursToday: 0,
   xp: 0,
@@ -21,10 +21,23 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
 };
 
 /**
- * Calculates and updates daily study streak based on last active date
+  * Standard IST date helper matching server-side streak engine
+  */
+export function getISTDateString(date = new Date()): string {
+  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+  const istDate = new Date(date.getTime() + istOffset);
+  return istDate.toISOString().split('T')[0];
+}
+
+/**
+ * Calculates and updates daily study streak based on last active date in IST
  */
 export function updateDailyStreak(profile: UserProfile): { updatedProfile: UserProfile; streakIncremented: boolean } {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getISTDateString(new Date());
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const yesterdayStr = getISTDateString(d);
+
   const lastActive = profile.lastActiveDate || '';
   const currentStreak = Math.max(1, profile.streakDays || 1);
 
@@ -42,12 +55,7 @@ export function updateDailyStreak(profile: UserProfile): { updatedProfile: UserP
     };
   }
 
-  const todayDate = new Date(todayStr);
-  const lastDate = new Date(lastActive);
-  const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 1) {
+  if (lastActive === yesterdayStr) {
     // Consecutive daily study! Increment streak and grant +20 XP bonus
     const newStreak = currentStreak + 1;
     const newXP = (profile.xp || 0) + 20;
@@ -62,7 +70,7 @@ export function updateDailyStreak(profile: UserProfile): { updatedProfile: UserP
       },
       streakIncremented: true,
     };
-  } else if (diffDays > 1) {
+  } else {
     // Missed one or more days, reset streak to 1
     return {
       updatedProfile: {
@@ -73,11 +81,6 @@ export function updateDailyStreak(profile: UserProfile): { updatedProfile: UserP
       streakIncremented: false,
     };
   }
-
-  return {
-    updatedProfile: { ...profile, streakDays: currentStreak, lastActiveDate: todayStr },
-    streakIncremented: false,
-  };
 }
 
 /**

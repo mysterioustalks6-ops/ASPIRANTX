@@ -110,9 +110,24 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       }
     };
 
+    const handleGamificationUpdated = () => {
+      fetchDashboardTelemetry(activeExamTag, userProfile.id);
+    };
+
+    const handleSyllabusUpdated = () => {
+      fetchDashboardTelemetry(activeExamTag, userProfile.id);
+    };
+
     window.addEventListener('aspirantx_streak_updated', handleStreakUpdated);
+    window.addEventListener('aspirantx_gamification_updated', handleGamificationUpdated);
+    window.addEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdated);
+    window.addEventListener('aspirantx_syllabus_time_updated', handleSyllabusUpdated);
+
     return () => {
       window.removeEventListener('aspirantx_streak_updated', handleStreakUpdated);
+      window.removeEventListener('aspirantx_gamification_updated', handleGamificationUpdated);
+      window.removeEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdated);
+      window.removeEventListener('aspirantx_syllabus_time_updated', handleSyllabusUpdated);
     };
   }, [activeExamTag, userProfile.id]);
 

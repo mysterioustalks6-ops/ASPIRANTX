@@ -71,55 +71,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navGroups = [
     {
+      key: 'core',
+      title: 'Main Dashboard',
+      items: [
+        { id: 'dashboard' as ActiveTab, label: 'Student Dashboard', icon: Target, badge: 'Overview' },
+        { id: 'syllabus' as ActiveTab, label: 'Syllabus Tracker', icon: BookOpen, badge: 'Live Track' },
+        { id: 'tasks' as ActiveTab, label: 'Study Planner', icon: CheckSquare, badge: 'Tasks' },
+        { id: 'timer' as ActiveTab, label: 'Pomodoro Timer', icon: Timer, badge: 'Focus' },
+      ]
+    },
+    {
       key: 'practice',
-      title: 'Practice & Prep',
+      title: 'Practice & Exam Prep',
       items: [
         { id: 'cbt' as ActiveTab, label: 'CBT Mock Tests', icon: Award, badge: 'Real Exam' },
         { id: 'pyq' as ActiveTab, label: 'PYQ Bank (35+ Yrs)', icon: BookMarked, badge: '1991–2026' },
         { id: 'question_bank' as ActiveTab, label: 'Question Bank', icon: HelpCircle, badge: 'Practice' },
-        { id: 'syllabus' as ActiveTab, label: 'Syllabus Tracker', icon: BookOpen, badge: 'Track' },
+        { id: 'flashcards' as ActiveTab, label: 'Flashcards Recall', icon: Sparkles, badge: 'Spaced' },
         { id: 'library' as ActiveTab, label: 'Reference Library', icon: BookOpen, badge: 'NCERT' },
-        { id: 'flashcards' as ActiveTab, label: 'Flashcards Recall', icon: BookMarked, badge: 'Spaced' },
       ]
     },
     {
       key: 'ai_community',
-      title: 'AI & Peer Learning',
+      title: 'AI & Community',
       items: [
         { id: 'chat' as ActiveTab, label: 'AI Mentor & Chat', icon: MessageSquare, badge: 'Gemini AI' },
-        { id: 'community' as ActiveTab, label: 'Community Forum', icon: Users, badge: 'Circles' },
+        { id: 'community' as ActiveTab, label: 'Community Feed', icon: Users, badge: 'Tokens' },
         { id: 'study_buddy' as ActiveTab, label: '1-on-1 Study Buddy', icon: Users, badge: 'Peer' },
-        { id: 'teachers' as ActiveTab, label: 'Teacher Portal', icon: Users, badge: 'Live Class' },
+        { id: 'podcasts' as ActiveTab, label: 'Topper Podcasts', icon: Mic, badge: 'Audio' },
+        { id: 'blog' as ActiveTab, label: 'Editorial & Blog Desk', icon: BookOpen, badge: 'Daily' },
       ]
     },
     {
-      key: 'analytics_productivity',
-      title: 'Productivity & Stats',
+      key: 'analytics',
+      title: 'Rankings & Diagnostics',
       items: [
-        { id: 'timer' as ActiveTab, label: 'Pomodoro Timer', icon: Timer, badge: 'Focus' },
-        { id: 'tasks' as ActiveTab, label: 'Study Tasks', icon: CheckSquare, badge: 'Planner' },
-        { id: 'dashboard' as ActiveTab, label: 'Student Telemetry', icon: Target, badge: 'Analytics' },
         { id: 'leaderboard' as ActiveTab, label: 'All-India Ranker Board', icon: Flame, badge: 'Rankings' },
-        { id: 'weakness' as ActiveTab, label: 'Lag Detector', icon: HelpCircle, badge: 'Diagnosis' },
+        { id: 'weakness' as ActiveTab, label: 'AI Lag Detector', icon: BarChart3, badge: 'Diagnosis' },
+        { id: 'eligibility' as ActiveTab, label: 'Eligibility Calculator', icon: ShieldCheck, badge: 'Check' },
       ]
     },
     {
       key: 'resources_perks',
-      title: 'Resources & Rewards',
+      title: 'Membership & Rewards',
       items: [
         { id: 'reward_milestones' as ActiveTab, label: 'Reward Milestones', icon: Gift, badge: 'Perks' },
-        { id: 'podcasts' as ActiveTab, label: 'Topper Podcast', icon: Mic, badge: 'Audio' },
-        { id: 'blog' as ActiveTab, label: 'Editorial & Blog Desk', icon: BookOpen, badge: 'Daily' },
-        { id: 'eligibility' as ActiveTab, label: 'Eligibility Check', icon: ShieldCheck, badge: 'Calculator' },
-        { id: 'collaboration' as ActiveTab, label: 'Partner & Sponsor', icon: Handshake, badge: 'Collab' },
-        { id: 'feedback' as ActiveTab, label: 'Feedback & Bugs', icon: MessageSquare, badge: 'Report' },
         { id: 'premium' as ActiveTab, label: 'Monetization / PRO', icon: Crown, badge: 'Plans' },
         ...(!(user?.isPremium && user?.premiumSource === 'paid') ? [{
           id: 'earn_premium' as ActiveTab,
           label: 'Earn Free PRO',
-          icon: Gift,
+          icon: Sparkles,
           badge: 'Free PRO'
         }] : []),
+        { id: 'teachers' as ActiveTab, label: 'Teacher Portal', icon: Users, badge: 'Live Class' },
+        { id: 'collaboration' as ActiveTab, label: 'Partner & Sponsor', icon: Handshake, badge: 'Collab' },
+        { id: 'feedback' as ActiveTab, label: 'Feedback & Support', icon: MessageSquare, badge: 'Help' },
       ]
     }
   ];
