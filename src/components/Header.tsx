@@ -190,8 +190,12 @@ export const Header: React.FC<HeaderProps> = ({
           {isFullscreen ? <Minimize className="w-4 h-4 text-indigo-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
         </button>
 
-        {/* Notification Bell */}
-        <NotificationCenter onNavigate={onNavigate} />
+        {/* Notification Bell with Merged Announcements */}
+        <NotificationCenter 
+          onNavigate={onNavigate} 
+          selectedExam={selectedExam || user?.exam || 'NEET_UG'} 
+          userId={user?.id || user?.email || 'default_user'} 
+        />
 
         {/* Profile Avatar */}
         <button

@@ -131,6 +131,25 @@ export default function App() {
     setSelectedExam(examId);
     localStorage.setItem('aspirantx_global_selected_exam', examId);
     setUser((prev) => (prev ? { ...prev, exam: examId } : prev));
+
+    // Persist to backend so it survives a refresh — otherwise the
+    // profile-authoritative useEffect above reverts it to the stale
+    // DB value on next load.
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        await fetch('/api/user/set-exam', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
+          },
+          body: JSON.stringify({ exam: examId, email: user?.email }),
+        });
+      } catch (err) {
+        logAuthDiagnostic('EXAM_CHANGE', 'failed to persist exam change to backend', { error: String(err) });
+      }
+    })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     const hash = window.location.hash.replace('#', '');
@@ -887,6 +906,9 @@ export default function App() {
         onComplete={async (updatedProfile) => {
           const finalProfile: UserProfile = { ...updatedProfile, isProfileComplete: true };
           await saveUserProfile(finalProfile);
+          if (finalProfile.exam) {
+            handleExamChange(finalProfile.exam);
+          }
           setUser(finalProfile);
         }}
       />
@@ -1019,7 +1041,9 @@ export default function App() {
         />
 
         {/* Dashboard Main Scroll Workspace */}
-        <main className="flex-1 p-4 md:p-8 space-y-8 max-w-7xl w-full mx-auto">
+        <main className={`flex-1 p-4 md:p-8 space-y-8 w-full mx-auto transition-all duration-200 ${
+          isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
+        }`}>
           {activeTab === 'dashboard' && (
             <>
               {/* Top Announcement Ticker (Customizable) */}

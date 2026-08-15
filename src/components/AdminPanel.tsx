@@ -194,6 +194,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
         setAnnouncementStatusMsg(editingAnnouncementId ? '✅ Announcement updated!' : '✅ Announcement created!');
         resetAnnForm();
         fetchAdminAnnouncements();
+        window.dispatchEvent(new CustomEvent('aspirantx_announcements_updated'));
       } else {
         setAnnouncementErrorMsg(json.error || 'Failed to save announcement');
       }
@@ -218,6 +219,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
       const json = await res.json();
       if (json.success) {
         fetchAdminAnnouncements();
+        window.dispatchEvent(new CustomEvent('aspirantx_announcements_updated'));
       }
     } catch (err) {
       console.error(err);
@@ -239,6 +241,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
       if (json.success) {
         setAnnouncementStatusMsg('🗑️ Announcement deleted');
         fetchAdminAnnouncements();
+        window.dispatchEvent(new CustomEvent('aspirantx_announcements_updated'));
       }
     } catch (err) {
       console.error(err);

@@ -3,7 +3,7 @@
  */
 
 export function logAuthDiagnostic(
-  category: 'AUTH' | 'PROFILE' | 'NAVIGATION',
+  category: 'AUTH' | 'PROFILE' | 'NAVIGATION' | 'EXAM_CHANGE',
   message: string,
   details?: Record<string, any>
 ) {

@@ -607,10 +607,13 @@ export interface AppNotification {
   userId: string;
   title: string;
   message: string;
-  type: 'study_reminder' | 'revision' | 'goal' | 'exam_countdown' | 'mock_test' | 'community' | 'ai_suggestion' | 'pyq_alert' | 'system';
+  type: 'study_reminder' | 'revision' | 'goal' | 'exam_countdown' | 'mock_test' | 'community' | 'ai_suggestion' | 'pyq_alert' | 'system' | 'announcement';
   read: boolean;
   createdAt: string;
   actionUrl?: string;
+  priority?: 'normal' | 'urgent';
+  examTags?: string[];
+  isAnnouncement?: boolean;
 }
 
 export interface StudentDashboardData {
