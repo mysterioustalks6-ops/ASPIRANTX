@@ -1871,51 +1871,57 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
   let lastActive = '';
   let matchedSupabaseId: string | null = null;
   let matchedSupabaseEmail: string | null = null;
+  let supabaseRecordFound = false;
 
-  // 1. Try Supabase user_profiles (UUID-safe query)
+  // 1. Try Supabase user_profiles (UUID-safe query) — Authoritative Source of Truth
   if (supabaseServer) {
     try {
       const orConditions: string[] = [];
       if (isValidUUID(userIdentifier)) orConditions.push(`id.eq.${userIdentifier}`);
       if (isValidUUID(cleanId) && cleanId !== userIdentifier) orConditions.push(`id.eq.${cleanId}`);
-      orConditions.push(`email.eq.${cleanId}`);
+      if (isEmail) orConditions.push(`email.eq.${cleanId}`);
 
-      const { data, error } = await supabaseServer
-        .from('user_profiles')
-        .select('id, email, streak_days, last_active_date')
-        .or(orConditions.join(','))
-        .limit(1)
-        .maybeSingle();
+      if (orConditions.length > 0) {
+        const { data, error } = await supabaseServer
+          .from('user_profiles')
+          .select('id, email, streak_days, last_active_date')
+          .or(orConditions.join(','))
+          .limit(1)
+          .maybeSingle();
 
-      if (error) {
-        console.warn('Supabase streak check error details:', error.message, 'code:', error.code);
-      } else if (data) {
-        matchedSupabaseId = data.id || null;
-        matchedSupabaseEmail = data.email || null;
-        currentStreak = Number(data.streak_days) || 1;
-        lastActive = data.last_active_date || '';
+        if (error) {
+          console.warn('Supabase streak check error details:', error.message, 'code:', error.code);
+        } else if (data) {
+          supabaseRecordFound = true;
+          matchedSupabaseId = data.id || null;
+          matchedSupabaseEmail = data.email || null;
+          currentStreak = Number(data.streak_days) || 1;
+          lastActive = data.last_active_date || '';
+        }
       }
     } catch (e: any) {
       console.warn('Supabase streak check warning:', e?.message || e, 'code:', e?.code || '');
     }
   }
 
-  // 2. Memory user lookup fallback / sync
+  // 2. Memory user lookup fallback ONLY when Supabase has no record or is disabled
   let memoryUser = adminUsersDb.find(u => 
     (u.id && (u.id === userIdentifier || u.id.toLowerCase() === cleanId || (matchedSupabaseId && u.id === matchedSupabaseId))) ||
     (u.email && (u.email.toLowerCase() === cleanId || (matchedSupabaseEmail && u.email.toLowerCase() === matchedSupabaseEmail.toLowerCase())))
   );
 
-  if (memoryUser) {
-    if (!lastActive) lastActive = memoryUser.lastActiveDate || memoryUser.last_active_date || '';
-    if (!currentStreak || currentStreak === 1) currentStreak = Number(memoryUser.streakDays) || 1;
+  if (!supabaseRecordFound && memoryUser) {
+    lastActive = memoryUser.lastActiveDate || memoryUser.last_active_date || '';
+    currentStreak = Number(memoryUser.streakDays) || 1;
   }
 
-  // Resolve true target ID (ensure email is never used as the ID)
-  let targetUserId = matchedSupabaseId || memoryUser?.id || '';
+  // Resolve true target ID (ensure email is never used as the ID if UUID exists)
+  let targetUserId = matchedSupabaseId || (memoryUser?.id && isValidUUID(memoryUser.id) ? memoryUser.id : '');
 
   if (!targetUserId) {
-    if (isEmail) {
+    if (isValidUUID(userIdentifier)) {
+      targetUserId = userIdentifier;
+    } else if (isEmail) {
       targetUserId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     } else {
       targetUserId = userIdentifier;
@@ -1931,14 +1937,14 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
   } else if (lastActive === yesterdayStr) {
     newStreak = currentStreak + 1;
   } else {
+    // Missed one or more days
     newStreak = 1;
   }
 
   lastActive = todayStr;
 
-  // Update or sync memory store
+  // Update memory store for caching
   if (memoryUser) {
-    memoryUser.id = targetUserId;
     memoryUser.streakDays = newStreak;
     memoryUser.lastActiveDate = todayStr;
     memoryUser.last_active_date = todayStr;
@@ -1963,14 +1969,13 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
     } as any);
   }
 
-  // 3. UUID-safe Supabase upsert
+  // 3. UUID-safe Supabase update/upsert
   if (supabaseServer) {
-    if (!isValidUUID(targetUserId)) {
-      console.warn('Skipping Supabase upsert - non-UUID identifier, memory-only sync:', targetUserId);
-    } else {
+    const finalUserId = matchedSupabaseId || (isValidUUID(targetUserId) ? targetUserId : null);
+    if (finalUserId) {
       try {
         const upsertData: Record<string, any> = {
-          id: targetUserId,
+          id: finalUserId,
           streak_days: newStreak,
           last_active_date: todayStr,
           updated_at: new Date().toISOString()
@@ -1987,6 +1992,13 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
       } catch (e: any) {
         console.warn('Supabase streak update exception:', e?.message || e, 'code:', e?.code || '');
       }
+    } else if (isEmail && cleanId) {
+      try {
+        await supabaseServer
+          .from('user_profiles')
+          .update({ streak_days: newStreak, last_active_date: todayStr, updated_at: new Date().toISOString() })
+          .eq('email', cleanId);
+      } catch (e) {}
     }
   }
 
@@ -7523,6 +7535,23 @@ app.get('/api/admin/audit-logs', verifyAdminAuth, (_req, res) => {
 // ADMIN ANNOUNCEMENTS ENDPOINTS
 // ─────────────────────────────────────────────────────────────────────────────
 
+async function hydrateAnnouncementsFromSupabase() {
+  if (!supabaseServer) return;
+  try {
+    const { data, error } = await supabaseServer.from('admin_announcements').select('*');
+    if (!error && Array.isArray(data)) {
+      adminAnnouncementsStore.clear();
+      for (const row of data) {
+        if (row.id && row.data) {
+          adminAnnouncementsStore.set(row.id, row.data);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[ANNOUNCEMENTS] Error hydrating from Supabase:', err);
+  }
+}
+
 // 1. POST /api/admin/announcements — verifyAdminAuth + adminMutationLimiter
 app.post('/api/admin/announcements', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   try {
@@ -7579,9 +7608,10 @@ app.post('/api/admin/announcements', adminMutationLimiter, verifyAdminAuth, asyn
 });
 
 // 2. GET /api/admin/announcements — verifyAdminAuth
-app.get('/api/admin/announcements', verifyAdminAuth, (_req, res) => {
+app.get('/api/admin/announcements', verifyAdminAuth, async (_req, res) => {
   res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
+  await hydrateAnnouncementsFromSupabase();
   const announcements = Array.from(adminAnnouncementsStore.values()).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -7592,6 +7622,7 @@ app.get('/api/admin/announcements', verifyAdminAuth, (_req, res) => {
 app.patch('/api/admin/announcements/:id', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    await hydrateAnnouncementsFromSupabase();
     const announcement = adminAnnouncementsStore.get(id);
 
     if (!announcement) {
@@ -7642,6 +7673,7 @@ app.patch('/api/admin/announcements/:id', adminMutationLimiter, verifyAdminAuth,
 app.delete('/api/admin/announcements/:id', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    await hydrateAnnouncementsFromSupabase();
     const exists = adminAnnouncementsStore.has(id);
 
     if (!exists) {
@@ -7675,9 +7707,11 @@ app.delete('/api/admin/announcements/:id', adminMutationLimiter, verifyAdminAuth
 });
 
 // 5. GET /api/announcements — PUBLIC student-facing active announcements
-app.get('/api/announcements', (req, res) => {
+app.get('/api/announcements', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
+
+  await hydrateAnnouncementsFromSupabase();
 
   const now = new Date();
   const examQuery = String(req.query.exam || '').trim().toLowerCase();
@@ -11094,9 +11128,13 @@ const cbtResultsStore = new Map<string, any[]>(); // userId -> CbtExamResult[]
 const adminCbtExamsStore = new Map<string, any>(); // admin-conducted live exams
 const communityGroupsStore = new Map<string, any>();
 const communityPostsStore = new Map<string, any>();
+const communityVotesStore = new Map<string, { id: string; postId: string; userId: string; voteType: 'up' | 'down'; createdAt: string }>(); // `${postId}:${userId}`
 const communityCommentsStore = new Map<string, any[]>(); // postId -> comment[]
 const communityReportsStore = new Map<string, any>();
 const userNotificationsStore = new Map<string, any[]>(); // userId -> notification[]
+const userWalletsStore = new Map<string, any>(); // userId -> Wallet
+const userPayoutsStore = new Map<string, any[]>(); // userId -> PayoutRecord[]
+const allPayoutsStore = new Map<string, any>(); // payoutId -> PayoutRecord
 
 
 // Initialize CBT default tests
@@ -11294,6 +11332,202 @@ const DEFAULT_CBT_MOCKS = [
 DEFAULT_CBT_MOCKS.forEach((m) => cbtTestsStore.set(m.id, m));
 
 // Initialize Community Default Groups & Posts
+const DEFAULT_COMMUNITY_GROUPS = [
+  {
+    id: 'grp_upsc_general',
+    name: 'UPSC CSE 2026 Strategy & Mentorship',
+    description: 'Comprehensive discussions on Prelims & Mains GS Strategy, optional papers, daily answer writing, and topper notes.',
+    exam: 'UPSC_CSE',
+    category: 'public',
+    icon: 'Target',
+    membersCount: 1420,
+    postsCount: 56,
+    isJoined: true,
+    rules: [
+      'Be respectful and constructive.',
+      'Cite sources for current affairs and notes.',
+      'No spamming or self-promotion.'
+    ]
+  },
+  {
+    id: 'grp_neet_aiims',
+    name: 'NEET UG 2026 AIIMS Mission 700+',
+    description: 'High-yield NCERT Biology mnemonics, Physics numericals shortcuts, Organic Chemistry reaction charts, and mock test post-mortems.',
+    exam: 'NEET_UG',
+    category: 'public',
+    icon: 'Sparkles',
+    membersCount: 2310,
+    postsCount: 88,
+    isJoined: true,
+    rules: ['Strictly stick to NCERT syllabus.', 'Share verified formulas only.']
+  },
+  {
+    id: 'grp_jee_advanced',
+    name: 'JEE Advanced 2026 Problem Solvers',
+    description: 'Challenging physics mechanics problems, Irodov discussion, advanced calculus problem threads, and JEE ranking strategies.',
+    exam: 'JEE_MAIN',
+    category: 'public',
+    icon: 'Zap',
+    membersCount: 1890,
+    postsCount: 42,
+    isJoined: false,
+    rules: ['Provide complete step-by-step solutions when sharing doubts.']
+  }
+];
+
+const DEFAULT_COMMUNITY_POSTS = [
+  {
+    id: 'post_upsc_1',
+    groupId: 'grp_upsc_general',
+    groupName: 'UPSC CSE 2026 Strategy & Mentorship',
+    title: 'High-Yield Modern Indian History (1857–1947) Timeline & Spectrum Micro-Notes',
+    content: 'Fellow Aspirants! Here is a concise 5-page revision matrix covering all Governor-Generals, Congress sessions, Peasant movements, and Constitutional milestones. Perfect for quick Prelims revision before CBT tests!\n\nKey Highlights:\n• Charter Acts 1773–1853 summary\n• Revolutionary Phase I & II comparisons\n• Round Table Conferences key attendees',
+    authorName: 'Aarav Sharma (AIR 48 Aspirant)',
+    authorAvatar: '',
+    authorBadge: 'Topper Contributor',
+    authorId: 'usr_topper_aarav',
+    exam: 'UPSC_CSE',
+    category: 'notes',
+    tags: ['History', 'ModernIndia', 'Prelims2026', 'HighYield'],
+    score: 142,
+    upvotesCount: 142,
+    downvotesCount: 0,
+    likesCount: 142,
+    isLiked: false,
+    isBookmarked: false,
+    isPinned: true,
+    tippedCoins: 65,
+    repliesCount: 18,
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+  },
+  {
+    id: 'post_neet_1',
+    groupId: 'grp_neet_aiims',
+    groupName: 'NEET UG 2026 AIIMS Mission 700+',
+    title: 'Complete Genetics & Molecular Biology Formula & Pedigree Analysis Cheat Sheet',
+    content: 'Consolidated all Hardy-Weinberg equilibrium problem variations, dihybrid cross phenotypic & genotypic ratios, and pedigree chart decision trees into one place. Hope this saves you 15+ marks in Botany/Zoology!',
+    authorName: 'Dr. Tanya Verma (AIIMS New Delhi Aspirant)',
+    authorAvatar: '',
+    authorBadge: 'Biology Mentor',
+    authorId: 'usr_mentor_tanya',
+    exam: 'NEET_UG',
+    category: 'notes',
+    tags: ['Genetics', 'NEETBiology', 'NCERT', 'Mnemonics'],
+    score: 218,
+    upvotesCount: 218,
+    downvotesCount: 0,
+    likesCount: 218,
+    isLiked: false,
+    isBookmarked: false,
+    isPinned: true,
+    tippedCoins: 120,
+    repliesCount: 34,
+    createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
+  }
+];
+
+DEFAULT_COMMUNITY_GROUPS.forEach((g) => communityGroupsStore.set(g.id, g));
+DEFAULT_COMMUNITY_POSTS.forEach((p) => communityPostsStore.set(p.id, p));
+
+async function hydrateCommunityPostsFromSupabase() {
+  if (!supabaseServer) return;
+  try {
+    const { data: postsData, error: postsErr } = await supabaseServer.from('community_posts').select('*');
+    if (postsErr) {
+      console.error('[HYDRATION COMMUNITY POSTS FAILURE]', postsErr.message);
+    } else if (Array.isArray(postsData) && postsData.length > 0) {
+      postsData.forEach((row: any) => {
+        const item = row.data || row;
+        if (item && item.id) {
+          communityPostsStore.set(item.id, item);
+        }
+      });
+    }
+
+    const { data: votesData, error: votesErr } = await supabaseServer.from('community_votes').select('*');
+    if (votesErr) {
+      console.error('[HYDRATION COMMUNITY VOTES FAILURE]', votesErr.message);
+    } else if (Array.isArray(votesData) && votesData.length > 0) {
+      votesData.forEach((row: any) => {
+        const item = row.data || row;
+        const key = row.key || (item.postId && item.userId ? `${item.postId}:${item.userId}` : item.id);
+        if (key && item) {
+          communityVotesStore.set(key, item);
+        }
+      });
+    }
+
+    const { data: groupsData, error: groupsErr } = await supabaseServer.from('community_groups').select('*');
+    if (groupsErr) {
+      console.error('[HYDRATION COMMUNITY GROUPS FAILURE]', groupsErr.message);
+    } else if (Array.isArray(groupsData) && groupsData.length > 0) {
+      groupsData.forEach((row: any) => {
+        const item = row.data || row;
+        if (item && item.id) {
+          communityGroupsStore.set(item.id, item);
+        }
+      });
+    }
+  } catch (e: any) {
+    console.error('[HYDRATION COMMUNITY ERROR]', e?.message || e);
+  }
+}
+
+async function hydrateWalletsFromSupabase(userId?: string) {
+  if (!supabaseServer) return;
+  try {
+    let query = supabaseServer.from('user_wallets').select('*');
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error('[HYDRATION WALLETS FAILURE]', error.message);
+    } else if (Array.isArray(data) && data.length > 0) {
+      data.forEach((row: any) => {
+        const uid = row.user_id;
+        const wData = row.data || row;
+        if (uid && wData) {
+          userWalletsStore.set(uid, wData);
+        }
+      });
+    }
+  } catch (e: any) {
+    console.error('[HYDRATION WALLETS ERROR]', e?.message || e);
+  }
+}
+
+async function hydratePayoutsFromSupabase() {
+  if (!supabaseServer) return;
+  try {
+    const { data, error } = await supabaseServer.from('user_payouts').select('*').order('created_at', { ascending: false });
+    if (error) {
+      console.error('[HYDRATION PAYOUTS FAILURE]', error.message);
+    } else if (Array.isArray(data) && data.length > 0) {
+      data.forEach((row: any) => {
+        const payout = row.data || row;
+        if (payout && payout.id) {
+          allPayoutsStore.set(payout.id, payout);
+          const uId = payout.userId || row.user_id;
+          if (uId) {
+            const userList = userPayoutsStore.get(uId) || [];
+            if (!userList.some((p: any) => p.id === payout.id)) {
+              userList.push(payout);
+              userPayoutsStore.set(uId, userList);
+            }
+          }
+        }
+      });
+    }
+  } catch (e: any) {
+    console.error('[HYDRATION PAYOUTS ERROR]', e?.message || e);
+  }
+}
+
+// Initial background hydrations
+hydrateCommunityPostsFromSupabase().catch((err) => console.error('[INIT HYDRATE COMMUNITY ERROR]', err));
+hydrateWalletsFromSupabase().catch((err) => console.error('[INIT HYDRATE WALLETS ERROR]', err));
+hydratePayoutsFromSupabase().catch((err) => console.error('[INIT HYDRATE PAYOUTS ERROR]', err));
 
 
 // Initialize Default User Notifications
@@ -12177,8 +12411,11 @@ app.post('/api/community/groups', async (req, res) => {
     communityGroupsStore.set(newGroup.id, newGroup);
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_groups').upsert([{ id: newGroup.id, data: newGroup, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+        const { error } = await supabaseServer.from('community_groups').upsert([{ id: newGroup.id, data: newGroup, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (error) console.error('[SUPABASE GROUP UPSERT FAILURE]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE GROUP UPSERT EXCEPTION]', e?.message || e);
+      }
     }
     res.json({ success: true, group: newGroup });
   } catch (err: any) {
@@ -12197,8 +12434,11 @@ app.post('/api/community/groups/:id/join', async (req, res) => {
     communityGroupsStore.set(group.id, group);
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_groups').upsert([{ id: group.id, data: group, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+        const { error } = await supabaseServer.from('community_groups').upsert([{ id: group.id, data: group, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (error) console.error('[SUPABASE GROUP JOIN FAILURE]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE GROUP JOIN EXCEPTION]', e?.message || e);
+      }
     }
 
     res.json({ success: true, isJoined: group.isJoined, memberCount: group.memberCount });
@@ -12207,13 +12447,20 @@ app.post('/api/community/groups/:id/join', async (req, res) => {
   }
 });
 
-app.get('/api/community/posts', (req, res) => {
+app.get('/api/community/posts', async (req, res) => {
   try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const callerUserId = verifiedUser?.sub || (req.query.userId as string) || 'usr_guest_101';
+
     const groupId = req.query.groupId as string;
     const search = (req.query.search as string || '').toLowerCase().trim();
     const tag = (req.query.tag as string || '').toLowerCase().trim();
     const filter = (req.query.filter as string || 'all').toLowerCase().trim();
     const sort = (req.query.sort as string || 'recent').toLowerCase().trim();
+
+    if (communityPostsStore.size <= 2 && supabaseServer) {
+      await hydrateCommunityPostsFromSupabase().catch(() => {});
+    }
 
     let posts = Array.from(communityPostsStore.values());
 
@@ -12224,7 +12471,7 @@ app.get('/api/community/posts', (req, res) => {
     if (filter === 'bookmarked') {
       posts = posts.filter((p) => p.isBookmarked);
     } else if (filter === 'my_posts') {
-      posts = posts.filter((p) => p.authorId === 'usr_curr');
+      posts = posts.filter((p) => p.authorId === callerUserId || (callerUserId === 'usr_guest_101' && p.authorId === 'usr_curr'));
     }
 
     if (tag) {
@@ -12238,12 +12485,33 @@ app.get('/api/community/posts', (req, res) => {
         p.title.toLowerCase().includes(search) ||
         p.content.toLowerCase().includes(search) ||
         (Array.isArray(p.tags) && p.tags.some((t: string) => t.toLowerCase().includes(search))) ||
-        p.authorName.toLowerCase().includes(search)
+        (p.authorName && p.authorName.toLowerCase().includes(search))
       );
     }
 
+    // Attach caller-specific vote status and score
+    posts = posts.map((p) => {
+      const voteKey = `${p.id}:${callerUserId}`;
+      const userVoteRecord = communityVotesStore.get(voteKey);
+      const userVote = userVoteRecord ? userVoteRecord.voteType : null;
+
+      const upvotes = p.upvotesCount ?? p.likesCount ?? 0;
+      const downvotes = p.downvotesCount ?? 0;
+      const score = p.score ?? (upvotes - downvotes);
+
+      return {
+        ...p,
+        score,
+        upvotesCount: upvotes,
+        downvotesCount: downvotes,
+        userVote,
+        isLiked: userVote === 'up',
+        likesCount: upvotes
+      };
+    });
+
     if (sort === 'popular') {
-      posts.sort((a, b) => (b.likesCount || 0) - (a.likesCount || 0));
+      posts.sort((a, b) => (b.score || 0) - (a.score || 0));
     } else if (sort === 'discussed') {
       posts.sort((a, b) => (b.repliesCount || 0) - (a.repliesCount || 0));
     } else {
@@ -12258,7 +12526,10 @@ app.get('/api/community/posts', (req, res) => {
 
 app.post('/api/community/posts', async (req, res) => {
   try {
-    const { groupId, title, content, tags, authorName = 'Aspirant', attachments, poll } = req.body;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const authorId = verifiedUser?.sub || req.body.authorId || 'usr_guest_101';
+
+    const { groupId, title, content, tags, authorName = 'Aspirant', authorAvatar, attachments, poll } = req.body;
     if (!title || !content) {
       return res.status(400).json({ error: 'Title and content are required' });
     }
@@ -12283,15 +12554,18 @@ app.post('/api/community/posts', async (req, res) => {
       id: 'post_' + Date.now(),
       groupId: group.id,
       groupName: group.name,
-      authorId: 'usr_curr',
-      authorName,
-      authorAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-      authorRole: 'Aspirant',
+      authorId,
+      authorName: authorName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Aspirant'),
+      authorAvatar: authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+      authorRole: verifiedUser?.role || 'Aspirant',
       title,
       content,
       tags: tags && tags.length > 0 ? tags : ['Discussion'],
       createdAt: new Date().toISOString(),
-      likesCount: 0,
+      score: 1,
+      upvotesCount: 1,
+      downvotesCount: 0,
+      likesCount: 1,
       repliesCount: 0,
       isLiked: false,
       isBookmarked: false,
@@ -12303,8 +12577,11 @@ app.post('/api/community/posts', async (req, res) => {
     communityPostsStore.set(newPost.id, newPost);
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_posts').upsert([{ id: newPost.id, data: newPost, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+        const { error } = await supabaseServer.from('community_posts').upsert([{ id: newPost.id, data: newPost, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (error) console.error('[SUPABASE POST UPSERT FAILURE]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE POST UPSERT EXCEPTION]', e?.message || e);
+      }
     }
     res.json({ success: true, post: newPost });
   } catch (err: any) {
@@ -12312,25 +12589,166 @@ app.post('/api/community/posts', async (req, res) => {
   }
 });
 
-app.post('/api/community/posts/:id/like', async (req, res) => {
+// Reddit-style Upvote/Downvote Endpoint
+app.post('/api/community/posts/:id/vote', async (req, res) => {
   try {
-    const post = communityPostsStore.get(req.params.id);
+    const postId = req.params.id;
+    const post = communityPostsStore.get(postId);
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    post.isLiked = !post.isLiked;
-    post.likesCount += post.isLiked ? 1 : -1;
-    if (post.likesCount < 0) post.likesCount = 0;
-    communityPostsStore.set(post.id, post);
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    const { voteType } = req.body; // 'up' or 'down'
+
+    if (voteType !== 'up' && voteType !== 'down') {
+      return res.status(400).json({ error: 'Invalid vote type. Must be "up" or "down".' });
     }
 
-    res.json({ success: true, isLiked: post.isLiked, likesCount: post.likesCount });
+    // STRICT: Self-voting block!
+    const postAuthorId = post.authorId || post.author?.id;
+    if (postAuthorId && (postAuthorId === userId || (verifiedUser && postAuthorId === verifiedUser.sub))) {
+      return res.status(403).json({ error: 'Self-voting is not allowed. You cannot vote on your own post.' });
+    }
+
+    const voteKey = `${postId}:${userId}`;
+    const existingVote = communityVotesStore.get(voteKey);
+
+    let newVoteType: 'up' | 'down' | null = voteType;
+    let upDelta = 0;
+    let downDelta = 0;
+
+    if (existingVote) {
+      if (existingVote.voteType === voteType) {
+        // Toggle off / cancel vote
+        communityVotesStore.delete(voteKey);
+        newVoteType = null;
+        if (voteType === 'up') upDelta = -1;
+        else downDelta = -1;
+      } else {
+        // Switch vote
+        communityVotesStore.set(voteKey, {
+          id: existingVote.id,
+          postId,
+          userId,
+          voteType,
+          createdAt: new Date().toISOString(),
+        });
+        if (voteType === 'up') {
+          upDelta = 1;
+          downDelta = -1;
+        } else {
+          upDelta = -1;
+          downDelta = 1;
+        }
+      }
+    } else {
+      // New vote
+      communityVotesStore.set(voteKey, {
+        id: `vote_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        postId,
+        userId,
+        voteType,
+        createdAt: new Date().toISOString(),
+      });
+      if (voteType === 'up') upDelta = 1;
+      else downDelta = 1;
+    }
+
+    post.upvotesCount = Math.max(0, (post.upvotesCount ?? post.likesCount ?? 0) + upDelta);
+    post.downvotesCount = Math.max(0, (post.downvotesCount ?? 0) + downDelta);
+    post.score = post.upvotesCount - post.downvotesCount;
+    post.likesCount = post.upvotesCount;
+    post.isLiked = newVoteType === 'up';
+
+    communityPostsStore.set(post.id, post);
+
+    // Reward post author if net positive upvote
+    if (upDelta > 0 && postAuthorId) {
+      let authorWallet = userWalletsStore.get(postAuthorId);
+      if (!authorWallet && supabaseServer) {
+        try {
+          const { data, error } = await supabaseServer.from('user_wallets').select('data').eq('user_id', postAuthorId).maybeSingle();
+          if (error) console.error('[SUPABASE GET AUTHOR WALLET FAILURE]', error.message);
+          if (data?.data) authorWallet = data.data;
+        } catch (e: any) {
+          console.error('[SUPABASE GET AUTHOR WALLET EXCEPTION]', e?.message || e);
+        }
+      }
+      if (!authorWallet) {
+        authorWallet = { balance: 100, held: 0, totalEarned: 100, totalSpent: 0, transactions: [] };
+      }
+      authorWallet.balance = (authorWallet.balance || 0) + 2; // +2 study tokens per upvote
+      authorWallet.totalEarned = (authorWallet.totalEarned || 0) + 2;
+      authorWallet.transactions.unshift({
+        id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: 'reward_helpful_post',
+        amount: 2,
+        description: `Earned 2 Study Tokens from community upvote on "${post.title.substring(0, 35)}..."`,
+        createdAt: new Date().toISOString()
+      });
+      userWalletsStore.set(postAuthorId, authorWallet);
+      if (supabaseServer) {
+        try {
+          const { error } = await supabaseServer.from('user_wallets').upsert([{ user_id: postAuthorId, data: authorWallet, updated_at: new Date().toISOString() }], { onConflict: 'user_id' });
+          if (error) console.error('[SUPABASE AUTHOR WALLET REWARD FAILURE]', error.message);
+        } catch (e: any) {
+          console.error('[SUPABASE AUTHOR WALLET REWARD EXCEPTION]', e?.message || e);
+        }
+      }
+    }
+
+    if (supabaseServer) {
+      try {
+        const { error: postErr } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (postErr) console.error('[SUPABASE POST VOTE UPSERT FAILURE]', postErr.message);
+        if (newVoteType) {
+          const { error: voteErr } = await supabaseServer.from('community_votes').upsert([{ key: voteKey, post_id: postId, user_id: userId, vote_type: newVoteType, updated_at: new Date().toISOString() }], { onConflict: 'key' });
+          if (voteErr) console.error('[SUPABASE VOTE UPSERT FAILURE]', voteErr.message);
+        } else {
+          const { error: delErr } = await supabaseServer.from('community_votes').delete().eq('key', voteKey);
+          if (delErr) console.error('[SUPABASE VOTE DELETE FAILURE]', delErr.message);
+        }
+      } catch (e: any) {
+        console.error('[SUPABASE VOTE OPERATION EXCEPTION]', e?.message || e);
+      }
+    }
+
+    res.json({
+      success: true,
+      score: post.score,
+      upvotesCount: post.upvotesCount,
+      downvotesCount: post.downvotesCount,
+      userVote: newVoteType,
+      likesCount: post.likesCount,
+      isLiked: post.isLiked
+    });
   } catch (err: any) {
-    res.status(500).json({ error: 'Failed to toggle like' });
+    res.status(500).json({ error: 'Failed to record vote' });
   }
+});
+
+// Legacy like alias
+app.post('/api/community/posts/:id/like', async (req, res) => {
+  req.body.voteType = 'up';
+  const post = communityPostsStore.get(req.params.id);
+  if (!post) return res.status(404).json({ error: 'Post not found' });
+
+  post.isLiked = !post.isLiked;
+  post.likesCount += post.isLiked ? 1 : -1;
+  if (post.likesCount < 0) post.likesCount = 0;
+  post.upvotesCount = post.likesCount;
+  post.score = (post.upvotesCount || 0) - (post.downvotesCount || 0);
+  communityPostsStore.set(post.id, post);
+
+  if (supabaseServer) {
+    try {
+      const { error } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+      if (error) console.error('[SUPABASE LIKE UPSERT FAILURE]', error.message);
+    } catch (e: any) {
+      console.error('[SUPABASE LIKE UPSERT EXCEPTION]', e?.message || e);
+    }
+  }
+  res.json({ success: true, isLiked: post.isLiked, likesCount: post.likesCount, score: post.score });
 });
 
 app.post('/api/community/posts/:id/bookmark', async (req, res) => {
@@ -12342,8 +12760,11 @@ app.post('/api/community/posts/:id/bookmark', async (req, res) => {
     communityPostsStore.set(post.id, post);
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+        const { error } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (error) console.error('[SUPABASE BOOKMARK UPSERT FAILURE]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE BOOKMARK UPSERT EXCEPTION]', e?.message || e);
+      }
     }
 
     res.json({ success: true, isBookmarked: post.isBookmarked });
@@ -12373,8 +12794,11 @@ app.post('/api/community/posts/:id/poll-vote', async (req, res) => {
     communityPostsStore.set(post.id, post);
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+        const { error } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (error) console.error('[SUPABASE POLL VOTE UPSERT FAILURE]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE POLL VOTE UPSERT EXCEPTION]', e?.message || e);
+      }
     }
 
     res.json({ success: true, poll: post.poll });
@@ -12396,6 +12820,9 @@ app.get('/api/community/posts/:id/comments', (req, res) => {
 app.post('/api/community/posts/:id/comments', async (req, res) => {
   try {
     const postId = req.params.id;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const authorId = verifiedUser?.sub || req.body.authorId || 'usr_guest_101';
+
     const { content, authorName = 'Aspirant', authorAvatar } = req.body;
     if (!content || !content.trim()) {
       return res.status(400).json({ error: 'Comment content cannot be empty' });
@@ -12407,8 +12834,8 @@ app.post('/api/community/posts/:id/comments', async (req, res) => {
     const newComment = {
       id: 'cmt_' + Date.now(),
       postId,
-      authorId: 'usr_curr',
-      authorName,
+      authorId,
+      authorName: authorName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Aspirant'),
       authorAvatar: authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
       content: content.trim(),
       createdAt: new Date().toISOString(),
@@ -12425,9 +12852,13 @@ app.post('/api/community/posts/:id/comments', async (req, res) => {
 
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_comments').upsert([{ post_id: postId, data: existing, updated_at: new Date().toISOString() }], { onConflict: 'post_id' });
-        await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+        const { error: cmtErr } = await supabaseServer.from('community_comments').upsert([{ post_id: postId, data: existing, updated_at: new Date().toISOString() }], { onConflict: 'post_id' });
+        if (cmtErr) console.error('[SUPABASE COMMENT UPSERT FAILURE]', cmtErr.message);
+        const { error: postErr } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (postErr) console.error('[SUPABASE POST REPLIES COUNT UPSERT FAILURE]', postErr.message);
+      } catch (e: any) {
+        console.error('[SUPABASE COMMENT UPSERT EXCEPTION]', e?.message || e);
+      }
     }
 
     res.json({ success: true, comment: newComment, repliesCount: post.repliesCount });
@@ -12443,9 +12874,13 @@ app.delete('/api/community/posts/:id', async (req, res) => {
     communityCommentsStore.delete(postId);
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_posts').delete().eq('id', postId);
-        await supabaseServer.from('community_comments').delete().eq('post_id', postId);
-      } catch (e) {}
+        const { error: postErr } = await supabaseServer.from('community_posts').delete().eq('id', postId);
+        if (postErr) console.error('[SUPABASE POST DELETE FAILURE]', postErr.message);
+        const { error: cmtErr } = await supabaseServer.from('community_comments').delete().eq('post_id', postId);
+        if (cmtErr) console.error('[SUPABASE COMMENTS DELETE FAILURE]', cmtErr.message);
+      } catch (e: any) {
+        console.error('[SUPABASE POST DELETE EXCEPTION]', e?.message || e);
+      }
     }
     res.json({ success: true, deletedPostId: postId });
   } catch (err: any) {
@@ -12468,12 +12903,557 @@ app.post('/api/community/reports', async (req, res) => {
     communityReportsStore.set(report.id, report);
     if (supabaseServer) {
       try {
-        await supabaseServer.from('community_reports').upsert([{ id: report.id, data: report, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-      } catch (e) {}
+        const { error } = await supabaseServer.from('community_reports').upsert([{ id: report.id, data: report, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (error) console.error('[SUPABASE REPORT UPSERT FAILURE]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE REPORT UPSERT EXCEPTION]', e?.message || e);
+      }
     }
     res.json({ success: true, report });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to log abuse report' });
+  }
+});
+
+// ----------------------------------------------------------------------------
+// COMMUNITY TOKEN ECONOMY & PAYOUT ENGINE (ESCROW + ADMIN AUDIT)
+// ----------------------------------------------------------------------------
+
+// Tip tokens/coins to a post author
+app.post('/api/community/posts/:id/tip', async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const senderId = verifiedUser?.sub || req.body.senderId || 'usr_guest_101';
+    const senderName = req.body.senderName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Aspirant');
+    const { amount = 10 } = req.body;
+    const tipAmount = Math.max(1, Math.min(500, Number(amount) || 10));
+
+    const post = communityPostsStore.get(postId);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const recipientId = post.authorId || post.author?.id || 'author';
+    const recipientName = post.authorName || post.author?.name || 'Author';
+
+    if (senderId === recipientId) {
+      return res.status(400).json({ error: 'You cannot tip your own post.' });
+    }
+
+    // Hydrate wallets if needed
+    if (!userWalletsStore.has(senderId) && supabaseServer) {
+      await hydrateWalletsFromSupabase(senderId);
+    }
+    if (!userWalletsStore.has(recipientId) && supabaseServer) {
+      await hydrateWalletsFromSupabase(recipientId);
+    }
+
+    let senderWallet = userWalletsStore.get(senderId) || {
+      balance: 100,
+      held: 0,
+      totalEarned: 100,
+      totalSpent: 0,
+      transactions: []
+    };
+
+    if (senderWallet.balance < tipAmount) {
+      return res.status(400).json({ error: `Insufficient coins in wallet (Available: 🪙 ${senderWallet.balance}).` });
+    }
+
+    // Update post tipped count
+    post.tippedCoins = (post.tippedCoins || 0) + tipAmount;
+    communityPostsStore.set(post.id, post);
+
+    // Update sender wallet
+    senderWallet.balance = Math.max(0, (senderWallet.balance || 0) - tipAmount);
+    senderWallet.totalSpent = (senderWallet.totalSpent || 0) + tipAmount;
+    senderWallet.transactions.unshift({
+      id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      type: 'tip_sent',
+      amount: -tipAmount,
+      description: `Tipped ${tipAmount} coins to ${recipientName} for "${post.title.substring(0, 30)}..."`,
+      createdAt: new Date().toISOString()
+    });
+    userWalletsStore.set(senderId, senderWallet);
+
+    // Update recipient wallet
+    let recipientWallet = userWalletsStore.get(recipientId) || {
+      balance: 150,
+      held: 0,
+      totalEarned: 150,
+      totalSpent: 0,
+      transactions: []
+    };
+    recipientWallet.balance = (recipientWallet.balance || 0) + tipAmount;
+    recipientWallet.totalEarned = (recipientWallet.totalEarned || 0) + tipAmount;
+    recipientWallet.transactions.unshift({
+      id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      type: 'tip_received',
+      amount: tipAmount,
+      description: `Received ${tipAmount} coins tip from ${senderName} on "${post.title.substring(0, 30)}..."`,
+      createdAt: new Date().toISOString()
+    });
+    userWalletsStore.set(recipientId, recipientWallet);
+
+    if (supabaseServer) {
+      try {
+        const { error: postErr } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (postErr) console.error('[SUPABASE TIP POST UPDATE FAILURE]', postErr.message);
+        const { error: walletErr } = await supabaseServer.from('user_wallets').upsert([
+          { user_id: senderId, data: senderWallet, updated_at: new Date().toISOString() },
+          { user_id: recipientId, data: recipientWallet, updated_at: new Date().toISOString() }
+        ], { onConflict: 'user_id' });
+        if (walletErr) console.error('[SUPABASE TIP WALLET UPDATE FAILURE]', walletErr.message);
+      } catch (e: any) {
+        console.error('[SUPABASE TIP UPDATE EXCEPTION]', e?.message || e);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully tipped ${tipAmount} coins to ${recipientName}!`,
+      tippedCoins: post.tippedCoins,
+      senderBalance: senderWallet.balance
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to process tip' });
+  }
+});
+
+// GET /api/user/wallet
+app.get('/api/user/wallet', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || (req.query.userId as string) || 'usr_guest_101';
+    let wallet = userWalletsStore.get(userId);
+
+    if (!wallet && supabaseServer) {
+      try {
+        const { data, error } = await supabaseServer.from('user_wallets').select('data').eq('user_id', userId).maybeSingle();
+        if (error) console.error('[SUPABASE GET WALLET FAILURE]', error.message);
+        if (data?.data) {
+          wallet = data.data;
+          userWalletsStore.set(userId, wallet);
+        }
+      } catch (e: any) {
+        console.error('[SUPABASE GET WALLET EXCEPTION]', e?.message || e);
+      }
+    }
+
+    if (!wallet) {
+      wallet = {
+        balance: 250,
+        held: 0,
+        totalEarned: 350,
+        totalSpent: 100,
+        transactions: [
+          {
+            id: 'tx_init_1',
+            type: 'reward_streak',
+            amount: 50,
+            description: '5-Day Study Streak Milestone Bonus',
+            createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
+          },
+          {
+            id: 'tx_init_2',
+            type: 'reward_cbt',
+            amount: 100,
+            description: 'NEET Full Mock Test #1 Completion Bonus',
+            createdAt: new Date(Date.now() - 86400000).toISOString()
+          },
+          {
+            id: 'tx_init_3',
+            type: 'reward_helpful_post',
+            amount: 100,
+            description: 'Community Upvote & Notes Contribution Reward',
+            createdAt: new Date().toISOString()
+          }
+        ]
+      };
+      userWalletsStore.set(userId, wallet);
+    }
+
+    const inrRate = 0.10; // 10 coins = ₹1 INR (100 coins = ₹10)
+    res.json({
+      success: true,
+      wallet: {
+        ...wallet,
+        held: wallet.held || 0,
+        inrRate,
+        inrValue: Math.round(wallet.balance * inrRate * 100) / 100,
+        minPayoutCoins: 500
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch wallet' });
+  }
+});
+
+// POST /api/user/wallet/convert
+app.post('/api/user/wallet/convert', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    const { conversionType = 'pro_days', coins = 100 } = req.body;
+    const coinAmount = Number(coins) || 100;
+
+    let wallet = userWalletsStore.get(userId) || { balance: 250, held: 0, totalEarned: 250, totalSpent: 0, transactions: [] };
+    if (wallet.balance < coinAmount) {
+      return res.status(400).json({ error: 'Insufficient coins in wallet.' });
+    }
+
+    wallet.balance -= coinAmount;
+    wallet.totalSpent = (wallet.totalSpent || 0) + coinAmount;
+
+    let rewardDesc = '';
+    if (conversionType === 'pro_days') {
+      const days = Math.floor(coinAmount / 100) || 1;
+      rewardDesc = `Converted ${coinAmount} Coins into ${days} Day(s) of AspirantX PRO Access`;
+    } else {
+      const inr = Math.round(coinAmount * 0.10);
+      rewardDesc = `Converted ${coinAmount} Coins to ₹${inr} Instant Study Credit`;
+    }
+
+    wallet.transactions.unshift({
+      id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      type: 'conversion',
+      amount: -coinAmount,
+      description: rewardDesc,
+      createdAt: new Date().toISOString()
+    });
+
+    userWalletsStore.set(userId, wallet);
+    if (supabaseServer) {
+      try {
+        const { error } = await supabaseServer.from('user_wallets').upsert([{ user_id: userId, data: wallet, updated_at: new Date().toISOString() }], { onConflict: 'user_id' });
+        if (error) console.error('[SUPABASE WALLET CONVERT FAILURE]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE WALLET CONVERT EXCEPTION]', e?.message || e);
+      }
+    }
+
+    res.json({ success: true, message: rewardDesc, updatedWallet: wallet });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Conversion failed' });
+  }
+});
+
+// POST /api/user/wallet/payout-request (Escrow + Admin Review Flow)
+app.post('/api/user/wallet/payout-request', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    const userEmail = verifiedUser?.email || req.body.userEmail || 'aspirant@example.com';
+    const userName = req.body.userName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Aspirant');
+
+    const { coins, payoutMethod = 'upi', payoutDetails } = req.body;
+    const coinAmount = Number(coins);
+
+    if (!coinAmount || coinAmount < 500) {
+      return res.status(400).json({ error: 'Minimum payout threshold is 500 coins (₹50 INR).' });
+    }
+
+    if (!userWalletsStore.has(userId) && supabaseServer) {
+      await hydrateWalletsFromSupabase(userId);
+    }
+
+    let wallet = userWalletsStore.get(userId) || {
+      balance: 600,
+      held: 0,
+      totalEarned: 600,
+      totalSpent: 0,
+      transactions: []
+    };
+
+    if (wallet.balance < coinAmount) {
+      return res.status(400).json({ error: `Insufficient coin balance. Available: 🪙 ${wallet.balance} Coins, Requested: 🪙 ${coinAmount} Coins.` });
+    }
+
+    const inrAmount = Math.round(coinAmount * 0.10); // ₹0.10 per coin
+
+    // Escrow: deduct from balance, add to held escrow
+    wallet.balance -= coinAmount;
+    wallet.held = (wallet.held || 0) + coinAmount;
+    wallet.totalSpent = (wallet.totalSpent || 0) + coinAmount;
+
+    const payoutId = `payout_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const payoutRecord = {
+      id: payoutId,
+      userId,
+      userEmail,
+      userName,
+      coins: coinAmount,
+      inrAmount,
+      payoutMethod: payoutMethod === 'bank' ? 'bank' : 'upi',
+      payoutDetails: {
+        upiId: payoutDetails?.upiId || '',
+        accountHolder: payoutDetails?.accountHolder || userName || 'Aspirant',
+        accountNumber: payoutDetails?.accountNumber ? `••••${payoutDetails.accountNumber.slice(-4)}` : '',
+        ifsc: payoutDetails?.ifsc || '',
+      },
+      status: 'pending_admin_review', // STRICT: Honest pending review status!
+      gateway: 'Manual UPI/Bank Transfer (Admin Reviewed)',
+      rzpReferenceId: null, // STRICT: No fake fabricated IDs!
+      transferReference: null,
+      createdAt: new Date().toISOString(),
+      processedAt: null,
+      processedBy: null,
+      rejectionReason: null,
+    };
+
+    wallet.transactions.unshift({
+      id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      type: 'payout',
+      amount: -coinAmount,
+      description: `Payout Request (₹${inrAmount} INR via ${payoutMethod.toUpperCase()}) - Placed in Escrow for Admin Review`,
+      createdAt: new Date().toISOString()
+    });
+
+    userWalletsStore.set(userId, wallet);
+    allPayoutsStore.set(payoutId, payoutRecord);
+
+    const existingPayouts = userPayoutsStore.get(userId) || [];
+    existingPayouts.unshift(payoutRecord);
+    userPayoutsStore.set(userId, existingPayouts);
+
+    if (supabaseServer) {
+      try {
+        const { error: walletErr } = await supabaseServer.from('user_wallets').upsert([{ user_id: userId, data: wallet, updated_at: new Date().toISOString() }], { onConflict: 'user_id' });
+        if (walletErr) console.error('[SUPABASE PAYOUT WALLET ESCROW FAILURE]', walletErr.message);
+        const { error: payoutErr } = await supabaseServer.from('user_payouts').upsert([{ id: payoutId, user_id: userId, data: payoutRecord, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (payoutErr) console.error('[SUPABASE PAYOUT RECORD UPSERT FAILURE]', payoutErr.message);
+      } catch (e: any) {
+        console.error('[SUPABASE PAYOUT REQUEST EXCEPTION]', e?.message || e);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Payout request for ₹${inrAmount} submitted! 🪙 ${coinAmount} tokens placed in escrow pending admin review.`,
+      payout: payoutRecord,
+      updatedBalance: wallet.balance,
+      heldBalance: wallet.held
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Payout request failed' });
+  }
+});
+
+// GET /api/user/wallet/payouts
+app.get('/api/user/wallet/payouts', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || (req.query.userId as string) || 'usr_guest_101';
+    
+    if (allPayoutsStore.size === 0 && supabaseServer) {
+      await hydratePayoutsFromSupabase();
+    }
+
+    const payouts = userPayoutsStore.get(userId) || [];
+    res.json({ success: true, payouts });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch payouts' });
+  }
+});
+
+// ----------------------------------------------------------------------------
+// ADMIN COMMUNITY PAYOUT REVIEW & APPROVAL/REJECTION ENDPOINTS
+// ----------------------------------------------------------------------------
+
+// GET /api/admin/payouts
+app.get('/api/admin/payouts', verifyAdminAuth, async (req: any, res: any) => {
+  try {
+    if (allPayoutsStore.size === 0 && supabaseServer) {
+      await hydratePayoutsFromSupabase();
+    }
+    const statusFilter = (req.query.status as string || '').toLowerCase().trim();
+    let payouts = Array.from(allPayoutsStore.values());
+    if (statusFilter && statusFilter !== 'all') {
+      payouts = payouts.filter((p) => String(p.status).toLowerCase() === statusFilter);
+    }
+    payouts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const pendingCount = Array.from(allPayoutsStore.values()).filter((p) => p.status === 'pending_admin_review').length;
+    res.json({ success: true, payouts, pendingCount });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch admin payouts' });
+  }
+});
+
+// POST /api/admin/payouts/:id/approve
+app.post('/api/admin/payouts/:id/approve', verifyAdminAuth, adminMutationLimiter, async (req: any, res: any) => {
+  try {
+    const payoutId = req.params.id;
+    const { transferReference = 'UPI/Bank Transfer Approved' } = req.body;
+
+    let payout = allPayoutsStore.get(payoutId);
+    if (!payout && supabaseServer) {
+      try {
+        const { data, error } = await supabaseServer.from('user_payouts').select('data').eq('id', payoutId).maybeSingle();
+        if (error) console.error('[SUPABASE GET PAYOUT FOR APPROVAL FAILURE]', error.message);
+        if (data?.data) payout = data.data;
+      } catch (e: any) {
+        console.error('[SUPABASE GET PAYOUT FOR APPROVAL EXCEPTION]', e?.message || e);
+      }
+    }
+
+    if (!payout) return res.status(404).json({ error: 'Payout record not found' });
+    if (payout.status !== 'pending_admin_review') {
+      return res.status(400).json({ error: `Payout is already ${payout.status}` });
+    }
+
+    payout.status = 'paid';
+    payout.processedAt = new Date().toISOString();
+    payout.processedBy = req.adminEmail || 'Admin';
+    payout.transferReference = String(transferReference).trim();
+    payout.gateway = 'Manual UPI/Bank Transfer (Verified & Settled)';
+
+    allPayoutsStore.set(payoutId, payout);
+
+    // Update user payout list
+    const userId = payout.userId;
+    const userPayoutList = userPayoutsStore.get(userId) || [];
+    const idx = userPayoutList.findIndex((p) => p.id === payoutId);
+    if (idx >= 0) userPayoutList[idx] = payout;
+    else userPayoutList.unshift(payout);
+    userPayoutsStore.set(userId, userPayoutList);
+
+    // Settle escrow: deduct from held
+    let wallet = userWalletsStore.get(userId);
+    if (!wallet && supabaseServer) {
+      await hydrateWalletsFromSupabase(userId);
+      wallet = userWalletsStore.get(userId);
+    }
+    if (wallet) {
+      wallet.held = Math.max(0, (wallet.held || 0) - payout.coins);
+      wallet.transactions.unshift({
+        id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: 'payout',
+        amount: 0,
+        description: `Payout Approved & Paid (₹${payout.inrAmount} INR via ${payout.payoutMethod.toUpperCase()}) - Ref: ${payout.transferReference}`,
+        createdAt: new Date().toISOString()
+      });
+      userWalletsStore.set(userId, wallet);
+    }
+
+    if (supabaseServer) {
+      try {
+        const { error: pErr } = await supabaseServer.from('user_payouts').upsert([{ id: payoutId, user_id: userId, data: payout, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (pErr) console.error('[SUPABASE PAYOUT APPROVE UPDATE FAILURE]', pErr.message);
+        if (wallet) {
+          const { error: wErr } = await supabaseServer.from('user_wallets').upsert([{ user_id: userId, data: wallet, updated_at: new Date().toISOString() }], { onConflict: 'user_id' });
+          if (wErr) console.error('[SUPABASE WALLET SETTLE UPDATE FAILURE]', wErr.message);
+        }
+      } catch (e: any) {
+        console.error('[SUPABASE PAYOUT APPROVE EXCEPTION]', e?.message || e);
+      }
+    }
+
+    recordAdminAuditLog({
+      user: req.adminEmail || 'Admin',
+      action: 'ADMIN_PAYOUT_APPROVED',
+      details: `Approved payout ${payoutId} of ₹${payout.inrAmount} (🪙 ${payout.coins} coins) for user ${userId}. Transfer Ref: ${payout.transferReference}`,
+      ip: req.clientIp || '127.0.0.1',
+      requestId: req.requestId || `req_${Date.now()}`,
+      endpoint: req.originalUrl,
+      outcome: 'SUCCESS'
+    });
+
+    res.json({ success: true, message: `Payout ${payoutId} approved and marked as Paid.`, payout });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to approve payout' });
+  }
+});
+
+// POST /api/admin/payouts/:id/reject
+app.post('/api/admin/payouts/:id/reject', verifyAdminAuth, adminMutationLimiter, async (req: any, res: any) => {
+  try {
+    const payoutId = req.params.id;
+    const { rejectionReason = 'Incorrect account or UPI details provided' } = req.body;
+
+    let payout = allPayoutsStore.get(payoutId);
+    if (!payout && supabaseServer) {
+      try {
+        const { data, error } = await supabaseServer.from('user_payouts').select('data').eq('id', payoutId).maybeSingle();
+        if (error) console.error('[SUPABASE GET PAYOUT FOR REJECT FAILURE]', error.message);
+        if (data?.data) payout = data.data;
+      } catch (e: any) {
+        console.error('[SUPABASE GET PAYOUT FOR REJECT EXCEPTION]', e?.message || e);
+      }
+    }
+
+    if (!payout) return res.status(404).json({ error: 'Payout record not found' });
+    if (payout.status !== 'pending_admin_review') {
+      return res.status(400).json({ error: `Payout is already ${payout.status}` });
+    }
+
+    const reason = String(rejectionReason).trim() || 'Details verification failed';
+    payout.status = 'rejected';
+    payout.processedAt = new Date().toISOString();
+    payout.processedBy = req.adminEmail || 'Admin';
+    payout.rejectionReason = reason;
+
+    allPayoutsStore.set(payoutId, payout);
+
+    const userId = payout.userId;
+    const userPayoutList = userPayoutsStore.get(userId) || [];
+    const idx = userPayoutList.findIndex((p) => p.id === payoutId);
+    if (idx >= 0) userPayoutList[idx] = payout;
+    else userPayoutList.unshift(payout);
+    userPayoutsStore.set(userId, userPayoutList);
+
+    // Refund escrowed tokens back to user's available balance!
+    let wallet = userWalletsStore.get(userId);
+    if (!wallet && supabaseServer) {
+      await hydrateWalletsFromSupabase(userId);
+      wallet = userWalletsStore.get(userId);
+    }
+    if (wallet) {
+      wallet.held = Math.max(0, (wallet.held || 0) - payout.coins);
+      wallet.balance = (wallet.balance || 0) + payout.coins;
+      wallet.totalSpent = Math.max(0, (wallet.totalSpent || 0) - payout.coins);
+      wallet.transactions.unshift({
+        id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        type: 'conversion',
+        amount: payout.coins,
+        description: `Refund: Payout of ₹${payout.inrAmount} rejected (${reason}) - 🪙 ${payout.coins} Coins restored to balance`,
+        createdAt: new Date().toISOString()
+      });
+      userWalletsStore.set(userId, wallet);
+    }
+
+    if (supabaseServer) {
+      try {
+        const { error: pErr } = await supabaseServer.from('user_payouts').upsert([{ id: payoutId, user_id: userId, data: payout, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (pErr) console.error('[SUPABASE PAYOUT REJECT UPDATE FAILURE]', pErr.message);
+        if (wallet) {
+          const { error: wErr } = await supabaseServer.from('user_wallets').upsert([{ user_id: userId, data: wallet, updated_at: new Date().toISOString() }], { onConflict: 'user_id' });
+          if (wErr) console.error('[SUPABASE WALLET REFUND UPDATE FAILURE]', wErr.message);
+        }
+      } catch (e: any) {
+        console.error('[SUPABASE PAYOUT REJECT EXCEPTION]', e?.message || e);
+      }
+    }
+
+    recordAdminAuditLog({
+      user: req.adminEmail || 'Admin',
+      action: 'ADMIN_PAYOUT_REJECTED',
+      details: `Rejected payout ${payoutId} for user ${userId}. Reason: ${reason}. Refunded 🪙 ${payout.coins} coins to user wallet.`,
+      ip: req.clientIp || '127.0.0.1',
+      requestId: req.requestId || `req_${Date.now()}`,
+      endpoint: req.originalUrl,
+      outcome: 'SUCCESS'
+    });
+
+    res.json({
+      success: true,
+      message: `Payout rejected and 🪙 ${payout.coins} tokens refunded to user's wallet.`,
+      payout,
+      refundedCoins: payout.coins
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to reject payout' });
   }
 });
 
