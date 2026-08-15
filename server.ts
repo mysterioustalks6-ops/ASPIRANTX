@@ -1262,8 +1262,8 @@ app.get('/api/user/workspace-preferences', async (req, res) => {
   const rawUserId = String(req.query.userId || '').trim();
   const userId = rawUserId || 'default_user';
 
-  // 1. Try fetching from Supabase if connected (durable cloud storage for authenticated UUIDs)
-  if (supabaseServer && rawUserId && isValidUUID(rawUserId)) {
+  // 1. Try fetching from Supabase if connected (durable cloud storage)
+  if (supabaseServer && rawUserId) {
     try {
       const { data, error } = await supabaseServer
         .from('user_profiles')
@@ -1304,8 +1304,8 @@ app.post('/api/user/workspace-preferences', async (req, res) => {
   // Store in-memory strictly for this userId
   userWorkspacePreferencesDb.set(userId, workspaceConfig);
 
-  // Sync durably to Supabase user_profiles if connected for authenticated UUID
-  if (supabaseServer && rawUserId && isValidUUID(rawUserId)) {
+  // Sync durably to Supabase user_profiles if connected
+  if (supabaseServer && rawUserId) {
     try {
       const { error } = await supabaseServer
         .from('user_profiles')
@@ -1942,8 +1942,8 @@ export function getISTDateString(date = new Date()): string {
  * Authoritative Server-Side Streak Engine
  * Calculates streak_days and updates last_active_date in memory & Supabase user_profiles table.
  */
-export async function updateStreak(userIdentifier: string): Promise<{ streakDays: number; lastActiveDate: string }> {
-  if (!userIdentifier) return { streakDays: 1, lastActiveDate: '' };
+export async function updateStreak(userIdentifier: string): Promise<{ streakDays: number; lastActiveDate: string; persisted: boolean }> {
+  if (!userIdentifier) return { streakDays: 1, lastActiveDate: getISTDateString(), persisted: false };
 
   const cleanId = String(userIdentifier).trim().toLowerCase();
   const isEmail = cleanId.includes('@');
@@ -1959,61 +1959,45 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
   let matchedSupabaseEmail: string | null = null;
   let supabaseRecordFound = false;
 
-  // 1. Try Supabase user_profiles (UUID-safe query) — Authoritative Source of Truth
+  // 1. Query Supabase user_profiles as the AUTHORITATIVE source of truth if Supabase is configured
   if (supabaseServer) {
     try {
-      const orConditions: string[] = [];
-      if (isValidUUID(userIdentifier)) orConditions.push(`id.eq.${userIdentifier}`);
-      if (isValidUUID(cleanId) && cleanId !== userIdentifier) orConditions.push(`id.eq.${cleanId}`);
-      if (isEmail) orConditions.push(`email.eq.${cleanId}`);
+      let query = supabaseServer.from('user_profiles').select('id, email, streak_days, last_active_date');
+      if (isEmail) {
+        query = query.or(`id.eq.${cleanId},email.eq.${cleanId}`);
+      } else {
+        query = query.eq('id', userIdentifier);
+      }
 
-      if (orConditions.length > 0) {
-        const { data, error } = await supabaseServer
-          .from('user_profiles')
-          .select('id, email, streak_days, last_active_date')
-          .or(orConditions.join(','))
-          .limit(1)
-          .maybeSingle();
+      const { data, error } = await query.limit(1).maybeSingle();
 
-        if (error) {
-          console.warn('Supabase streak check error details:', error.message, 'code:', error.code);
-        } else if (data) {
-          supabaseRecordFound = true;
-          matchedSupabaseId = data.id || null;
-          matchedSupabaseEmail = data.email || null;
-          currentStreak = Number(data.streak_days) || 1;
-          lastActive = data.last_active_date || '';
-        }
+      if (error) {
+        console.error('[StreakEngine] Supabase streak query error:', error.message, 'code:', error.code);
+      } else if (data) {
+        supabaseRecordFound = true;
+        matchedSupabaseId = data.id || null;
+        matchedSupabaseEmail = data.email || null;
+        currentStreak = Number(data.streak_days) || 1;
+        lastActive = data.last_active_date || '';
       }
     } catch (e: any) {
-      console.warn('Supabase streak check warning:', e?.message || e, 'code:', e?.code || '');
+      console.error('[StreakEngine] Supabase streak query exception:', e?.message || e);
     }
   }
 
-  // 2. Memory user lookup fallback ONLY when Supabase has no record or is disabled
+  // 2. Memory user lookup for short-lived caching / fallback when Supabase is disabled or record not found
   let memoryUser = adminUsersDb.find(u => 
     (u.id && (u.id === userIdentifier || u.id.toLowerCase() === cleanId || (matchedSupabaseId && u.id === matchedSupabaseId))) ||
     (u.email && (u.email.toLowerCase() === cleanId || (matchedSupabaseEmail && u.email.toLowerCase() === matchedSupabaseEmail.toLowerCase())))
   );
 
-  if (!supabaseRecordFound && memoryUser) {
+  // If Supabase is NOT configured, use memory fallback
+  if (!supabaseServer && memoryUser) {
     lastActive = memoryUser.lastActiveDate || memoryUser.last_active_date || '';
     currentStreak = Number(memoryUser.streakDays) || 1;
   }
 
-  // Resolve true target ID (ensure email is never used as the ID if UUID exists)
-  let targetUserId = matchedSupabaseId || (memoryUser?.id && isValidUUID(memoryUser.id) ? memoryUser.id : '');
-
-  if (!targetUserId) {
-    if (isValidUUID(userIdentifier)) {
-      targetUserId = userIdentifier;
-    } else if (isEmail) {
-      targetUserId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    } else {
-      targetUserId = userIdentifier;
-    }
-  }
-
+  // 3. Streak Calculation
   let newStreak = currentStreak;
 
   if (!lastActive) {
@@ -2029,13 +2013,14 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
 
   lastActive = todayStr;
 
-  // Update memory store for caching
+  // Sync short-lived memory store cache
   if (memoryUser) {
     memoryUser.streakDays = newStreak;
     memoryUser.lastActiveDate = todayStr;
     memoryUser.last_active_date = todayStr;
     if (isEmail && !memoryUser.email) memoryUser.email = cleanId;
   } else {
+    const targetUserId = matchedSupabaseId || userIdentifier;
     adminUsersDb.push({
       id: targetUserId,
       email: isEmail ? cleanId : (matchedSupabaseEmail || ''),
@@ -2055,40 +2040,44 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
     } as any);
   }
 
-  // 3. UUID-safe Supabase update/upsert
-  if (supabaseServer) {
-    const finalUserId = matchedSupabaseId || (isValidUUID(targetUserId) ? targetUserId : null);
-    if (finalUserId) {
-      try {
-        const upsertData: Record<string, any> = {
-          id: finalUserId,
-          streak_days: newStreak,
-          last_active_date: todayStr,
-          updated_at: new Date().toISOString()
-        };
-        const userEmail = matchedSupabaseEmail || (isEmail ? cleanId : null);
-        if (userEmail) {
-          upsertData.email = userEmail;
-        }
+  // 4. Persistence to Supabase user_profiles
+  let persisted = false;
 
-        const { error } = await supabaseServer.from('user_profiles').upsert(upsertData, { onConflict: 'id' });
-        if (error) {
-          console.warn('Supabase streak update warning:', error.message, 'code:', error.code);
-        }
-      } catch (e: any) {
-        console.warn('Supabase streak update exception:', e?.message || e, 'code:', e?.code || '');
-      }
-    } else if (isEmail && cleanId) {
-      try {
-        await supabaseServer
-          .from('user_profiles')
-          .update({ streak_days: newStreak, last_active_date: todayStr, updated_at: new Date().toISOString() })
-          .eq('email', cleanId);
-      } catch (e) {}
+  if (supabaseServer) {
+    const targetId = matchedSupabaseId || userIdentifier;
+    const upsertData: Record<string, any> = {
+      id: targetId,
+      streak_days: newStreak,
+      last_active_date: todayStr,
+      updated_at: new Date().toISOString()
+    };
+
+    const targetEmail = matchedSupabaseEmail || (isEmail ? cleanId : null);
+    if (targetEmail) {
+      upsertData.email = targetEmail;
     }
+
+    try {
+      const { error: upsertErr } = await supabaseServer
+        .from('user_profiles')
+        .upsert(upsertData, { onConflict: 'id' });
+
+      if (upsertErr) {
+        console.error('[StreakEngine] Supabase streak upsert failed:', upsertErr.message, 'code:', upsertErr.code);
+        persisted = false;
+      } else {
+        persisted = true;
+      }
+    } catch (e: any) {
+      console.error('[StreakEngine] Supabase streak upsert exception:', e?.message || e);
+      persisted = false;
+    }
+  } else {
+    // Local development without Supabase
+    persisted = true;
   }
 
-  return { streakDays: newStreak, lastActiveDate: todayStr };
+  return { streakDays: newStreak, lastActiveDate: todayStr, persisted };
 }
 
 app.post('/api/user/streak/trigger', async (req, res) => {
@@ -2107,7 +2096,7 @@ app.get('/api/user/profile', async (req, res) => {
   }
   const userId = verifiedUser.sub || 'user_dev';
 
-  if (supabaseServer && isValidUUID(userId)) {
+  if (supabaseServer && userId) {
     try {
       const { data, error } = await supabaseServer
         .from('user_profiles')
@@ -2172,7 +2161,7 @@ app.post('/api/user/profile', async (req, res) => {
   const chosenExam = targetExam || exam || 'NEET_UG';
   const complete = isProfileComplete !== undefined ? isProfileComplete : Boolean(chosenExam && chosenExam.trim());
 
-  if (supabaseServer && isValidUUID(userId)) {
+  if (supabaseServer && userId) {
     try {
       await supabaseServer.from('user_profiles').upsert({
         id: userId,
@@ -2473,7 +2462,7 @@ app.use('/api', async (req, res, next) => {
 
   if (supabaseServer && Date.now() - lastHydratedAt > 5000) {
     try {
-      await hydrateFromPrimaryDatabase(3500);
+      await hydrateFromPrimaryDatabase(8000);
       lastHydratedAt = Date.now();
     } catch (err: any) {
       console.warn('[HYDRATION TIMEOUT/WARNING]', err?.message || err);
@@ -3680,7 +3669,7 @@ function lockRazorpayEnvironment() {
  * Hydrates server state from primary database (Supabase PostgreSQL) FIRST at startup, auto-seeding if empty.
  * Enforces a timeout so slow database queries never hang Express endpoints indefinitely.
  */
-async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
+async function hydrateFromPrimaryDatabase(timeoutMs = 8000) {
   if (!supabaseServer) return;
 
   const controller = new AbortController();
@@ -3693,9 +3682,22 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
     }, timeoutMs);
   });
 
+  const getQueryResult = (settledItem: PromiseSettledResult<any>): { data: any; error: any } => {
+    if (settledItem.status === 'fulfilled') {
+      return {
+        data: settledItem.value?.data ?? null,
+        error: settledItem.value?.error ?? null
+      };
+    }
+    return {
+      data: null,
+      error: settledItem.reason || new Error('Query rejected or aborted')
+    };
+  };
+
   const performHydration = async () => {
     const signal = controller.signal;
-    const [settingsRes, flagsRes, usersRes, contentRes, subsRes, groupsRes, postsRes, commentsRes, reportsRes, notifsRes, ordersRes, cbtRes, adRes, queueRes, matchesRes, heartbeatsRes, milestonesRes, claimsRes, syllabusRes, pyqsRes, questionsRes, utrRes, announcementsRes, personalSyllabusRes, timeLogRes] = await Promise.all([
+    const settledResults = await Promise.allSettled([
       supabaseServer.from('admin_settings').select('*').eq('id', 'global').abortSignal(signal).maybeSingle(),
       supabaseServer.from('feature_flags').select('*').abortSignal(signal),
       supabaseServer.from('admin_users').select('*').abortSignal(signal),
@@ -3723,24 +3725,74 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
       supabaseServer.from('syllabus_time_log').select('*').abortSignal(signal),
     ]);
 
-    // Auto-seed if empty
-    const isFlagsEmpty = !flagsRes.data || flagsRes.data.length === 0;
-    const isUsersEmpty = !usersRes.data || usersRes.data.length === 0;
-    const isSettingsEmpty = !settingsRes.data?.data;
+    const settingsRes = getQueryResult(settledResults[0]);
+    const flagsRes = getQueryResult(settledResults[1]);
+    const usersRes = getQueryResult(settledResults[2]);
+    const contentRes = getQueryResult(settledResults[3]);
+    const subsRes = getQueryResult(settledResults[4]);
+    const groupsRes = getQueryResult(settledResults[5]);
+    const postsRes = getQueryResult(settledResults[6]);
+    const commentsRes = getQueryResult(settledResults[7]);
+    const reportsRes = getQueryResult(settledResults[8]);
+    const notifsRes = getQueryResult(settledResults[9]);
+    const ordersRes = getQueryResult(settledResults[10]);
+    const cbtRes = getQueryResult(settledResults[11]);
+    const adRes = getQueryResult(settledResults[12]);
+    const queueRes = getQueryResult(settledResults[13]);
+    const matchesRes = getQueryResult(settledResults[14]);
+    const heartbeatsRes = getQueryResult(settledResults[15]);
+    const milestonesRes = getQueryResult(settledResults[16]);
+    const claimsRes = getQueryResult(settledResults[17]);
+    const syllabusRes = getQueryResult(settledResults[18]);
+    const pyqsRes = getQueryResult(settledResults[19]);
+    const questionsRes = getQueryResult(settledResults[20]);
+    const utrRes = getQueryResult(settledResults[21]);
+    const announcementsRes = getQueryResult(settledResults[22]);
+    const personalSyllabusRes = getQueryResult(settledResults[23]);
+    const timeLogRes = getQueryResult(settledResults[24]);
 
-    if (isFlagsEmpty || isUsersEmpty || isSettingsEmpty) {
-      console.log('[PRIMARY DB] Supabase tables are empty. Auto-seeding initial defaults...');
+    // Independent per-table check: Admin Settings
+    if (settingsRes.error) {
+      console.error('[HYDRATION ERROR] admin_settings fetch failed:', settingsRes.error.message || settingsRes.error);
+    } else if (!settingsRes.data || !settingsRes.data.data) {
+      console.warn('[SEED] admin_settings global row confirmed empty (no row/data, no error) — seeding defaults');
       lockRazorpayEnvironment();
-      await Promise.all([
-        supabaseServer.from('admin_settings').upsert([{ id: 'global', data: globalAdminSettings, updated_at: new Date().toISOString() }], { onConflict: 'id' }),
-        supabaseServer.from('feature_flags').upsert(featureFlagsStore.map((f) => ({
+      try {
+        await supabaseServer.from('admin_settings').upsert([{ id: 'global', data: globalAdminSettings, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+      } catch (e) {
+        console.error('[SEED ERROR] admin_settings:', e);
+      }
+    } else {
+      globalAdminSettings = mergeAdminSettings(globalAdminSettings, settingsRes.data.data);
+    }
+
+    // Independent per-table check: Feature Flags
+    if (flagsRes.error) {
+      console.error('[HYDRATION ERROR] feature_flags fetch failed:', flagsRes.error.message || flagsRes.error);
+    } else if (Array.isArray(flagsRes.data) && flagsRes.data.length === 0) {
+      console.warn('[SEED] feature_flags table confirmed empty (0 rows, no error) — seeding defaults');
+      try {
+        await supabaseServer.from('feature_flags').upsert(featureFlagsStore.map((f) => ({
           feature_name: f.feature_name,
           label: f.label,
           description: f.description,
           is_premium: Boolean(f.is_premium),
           updated_at: new Date().toISOString()
-        })), { onConflict: 'feature_name' }),
-        supabaseServer.from('admin_users').upsert(adminUsersDb.map((u) => ({
+        })), { onConflict: 'feature_name' });
+      } catch (e) {
+        console.error('[SEED ERROR] feature_flags:', e);
+      }
+    } else if (Array.isArray(flagsRes.data) && flagsRes.data.length > 0) {
+      featureFlagsStore = flagsRes.data;
+    }
+
+    // Independent per-table check: Admin Users
+    if (usersRes.error) {
+      console.error('[HYDRATION ERROR] admin_users fetch failed:', usersRes.error.message || usersRes.error);
+    } else if (Array.isArray(usersRes.data) && usersRes.data.length === 0) {
+      console.warn('[SEED] admin_users table confirmed empty (0 rows, no error) — seeding defaults');
+      try {
+        await supabaseServer.from('admin_users').upsert(adminUsersDb.map((u) => ({
           id: u.id || `usr_${Math.random().toString(36).substring(2, 9)}`,
           email: String(u.email || '').trim().toLowerCase(),
           name: u.name || 'User',
@@ -3753,191 +3805,331 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
           level: Number(u.level || 1),
           status: u.status || 'ACTIVE',
           updated_at: new Date().toISOString()
-        })), { onConflict: 'id' }),
-        supabaseServer.from('admin_content').upsert([{ id: 'global', data: adminContentDb, updated_at: new Date().toISOString() }], { onConflict: 'id' }),
-        supabaseServer.from('community_groups').upsert(Array.from(communityGroupsStore.values()).map(g => ({ id: g.id, data: g, updated_at: new Date().toISOString() })), { onConflict: 'id' }),
-        supabaseServer.from('community_posts').upsert(Array.from(communityPostsStore.values()).map(p => ({ id: p.id, data: p, updated_at: new Date().toISOString() })), { onConflict: 'id' }),
-        supabaseServer.from('community_comments').upsert(Array.from(communityCommentsStore.entries()).map(([postId, cmt]) => ({ post_id: postId, data: cmt, updated_at: new Date().toISOString() })), { onConflict: 'post_id' }),
-        supabaseServer.from('notifications').upsert(Array.from(userNotificationsStore.entries()).map(([userId, notifs]) => ({ user_id: userId, data: notifs, updated_at: new Date().toISOString() })), { onConflict: 'user_id' }),
-        supabaseServer.from('cbt_results').upsert(Array.from(cbtResultsStore.entries()).map(([userId, resList]) => ({ user_id: userId, data: resList, updated_at: new Date().toISOString() })), { onConflict: 'user_id' }),
-        supabaseServer.from('ad_rewards').upsert(Array.from(adRewardsDb.entries()).map(([email, rec]) => ({ id: email, email, data: rec, updated_at: new Date().toISOString() })), { onConflict: 'id' }),
-      ]);
-      console.log('[PRIMARY DB] Auto-seeding completed successfully.');
+        })), { onConflict: 'id' });
+      } catch (e) {
+        console.error('[SEED ERROR] admin_users:', e);
+      }
+    } else if (Array.isArray(usersRes.data) && usersRes.data.length > 0) {
+      adminUsersDb = usersRes.data.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        role: row.role,
+        isPremium: row.is_premium,
+        planName: row.plan_name,
+        streakDays: row.streak_days,
+        xp: row.xp,
+        coins: row.coins,
+        level: row.level,
+        completedTopicsCount: 0,
+        joinedAt: row.updated_at || new Date().toISOString(),
+        status: row.status
+      }));
+    }
+
+    // Independent per-table check: Admin Content
+    if (contentRes.error) {
+      console.error('[HYDRATION ERROR] admin_content fetch failed:', contentRes.error.message || contentRes.error);
+    } else if (!contentRes.data || !contentRes.data.data) {
+      console.warn('[SEED] admin_content global row confirmed empty (no row/data, no error) — seeding defaults');
+      try {
+        await supabaseServer.from('admin_content').upsert([{ id: 'global', data: adminContentDb, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+      } catch (e) {
+        console.error('[SEED ERROR] admin_content:', e);
+      }
     } else {
-      if (settingsRes.data?.data) {
-        globalAdminSettings = mergeAdminSettings(globalAdminSettings, settingsRes.data.data);
-      }
-      if (flagsRes.data && flagsRes.data.length > 0) featureFlagsStore = flagsRes.data;
-      if (usersRes.data && usersRes.data.length > 0) {
-        adminUsersDb = usersRes.data.map((row: any) => ({
-          id: row.id,
-          name: row.name,
-          email: row.email,
-          role: row.role,
-          isPremium: row.is_premium,
-          planName: row.plan_name,
-          streakDays: row.streak_days,
-          xp: row.xp,
-          coins: row.coins,
-          level: row.level,
-          completedTopicsCount: 0,
-          joinedAt: row.updated_at || new Date().toISOString(),
-          status: row.status
-        }));
-      }
-      if (contentRes.data?.data) adminContentDb = { ...adminContentDb, ...contentRes.data.data };
-      if (subsRes.data && subsRes.data.length > 0) {
-        serverSubscriptionsDb.clear();
-        for (const sub of subsRes.data) {
-          if (sub.userEmail) {
-            serverSubscriptionsDb.set(sub.userEmail.trim().toLowerCase(), {
-              userEmail: sub.userEmail,
-              planId: sub.planId,
-              isPremium: sub.isPremium,
-              activatedAt: sub.activatedAt,
-              expiresAt: sub.expiresAt,
-              paymentId: sub.paymentId,
-              orderId: sub.orderId,
-              verificationMethod: sub.verificationMethod,
-              amountPaid: sub.amountPaid,
-              currency: sub.currency
-            });
-          }
-        }
-      }
-      if (groupsRes.data && groupsRes.data.length > 0) {
-        communityGroupsStore.clear();
-        for (const r of groupsRes.data) {
-          if (r.id && r.data) communityGroupsStore.set(r.id, r.data);
-        }
-      }
-      if (postsRes.data && postsRes.data.length > 0) {
-        communityPostsStore.clear();
-        for (const r of postsRes.data) {
-          if (r.id && r.data) communityPostsStore.set(r.id, r.data);
-        }
-      }
-      if (commentsRes.data && commentsRes.data.length > 0) {
-        communityCommentsStore.clear();
-        for (const r of commentsRes.data) {
-          if (r.post_id && r.data) communityCommentsStore.set(r.post_id, r.data);
-        }
-      }
-      if (reportsRes.data && reportsRes.data.length > 0) {
-        communityReportsStore.clear();
-        for (const r of reportsRes.data) {
-          if (r.id && r.data) communityReportsStore.set(r.id, r.data);
-        }
-      }
-      if (notifsRes.data && notifsRes.data.length > 0) {
-        userNotificationsStore.clear();
-        for (const r of notifsRes.data) {
-          if (r.user_id && r.data) userNotificationsStore.set(r.user_id, r.data);
-        }
-      }
-      if (ordersRes.data && ordersRes.data.length > 0) {
-        for (const r of ordersRes.data) {
-          if (r.id && r.data) serverOrdersDb.set(r.id, r.data);
-        }
-      }
-      if (cbtRes.data && cbtRes.data.length > 0) {
-        cbtResultsStore.clear();
-        for (const r of cbtRes.data) {
-          if (r.user_id && r.data) cbtResultsStore.set(r.user_id, r.data);
-        }
-      }
-      if (adRes.data && adRes.data.length > 0) {
-        adRewardsDb.clear();
-        for (const r of adRes.data) {
-          if (r.email && r.data) adRewardsDb.set(r.email.toLowerCase(), r.data);
-          else if (r.id && r.data) adRewardsDb.set(r.id.toLowerCase(), r.data);
-        }
-      }
-      if (queueRes.data && queueRes.data.length > 0) {
-        studyBuddyQueue.clear();
-        for (const r of queueRes.data) {
-          if (r.email && r.data) studyBuddyQueue.set(r.email.toLowerCase(), r.data);
-        }
-      }
-      if (matchesRes.data && matchesRes.data.length > 0) {
-        studyBuddyMatches.clear();
-        for (const r of matchesRes.data) {
-          if (r.room_id && r.data) studyBuddyMatches.set(r.room_id, r.data);
-          else if (r.id && r.data) studyBuddyMatches.set(r.id, r.data);
-        }
-      }
-      if (heartbeatsRes.data && heartbeatsRes.data.length > 0) {
-        studyHeartbeatsStore.clear();
-        for (const r of heartbeatsRes.data) {
-          const sid = r.session_id;
-          if (!sid) continue;
-          if (!studyHeartbeatsStore.has(sid)) studyHeartbeatsStore.set(sid, []);
-          studyHeartbeatsStore.get(sid)!.push({
-            id: r.id,
-            userId: r.user_id,
-            sessionId: r.session_id,
-            subject: r.subject,
-            topicId: r.topic_id,
-            pingedAt: r.pinged_at
+      adminContentDb = { ...adminContentDb, ...contentRes.data.data };
+    }
+
+    // Independent per-table check: User Subscriptions
+    if (subsRes.error) {
+      console.error('[HYDRATION ERROR] user_subscriptions fetch failed:', subsRes.error.message || subsRes.error);
+    } else if (Array.isArray(subsRes.data) && subsRes.data.length > 0) {
+      serverSubscriptionsDb.clear();
+      for (const sub of subsRes.data) {
+        if (sub.userEmail) {
+          serverSubscriptionsDb.set(sub.userEmail.trim().toLowerCase(), {
+            userEmail: sub.userEmail,
+            planId: sub.planId,
+            isPremium: sub.isPremium,
+            activatedAt: sub.activatedAt,
+            expiresAt: sub.expiresAt,
+            paymentId: sub.paymentId,
+            orderId: sub.orderId,
+            verificationMethod: sub.verificationMethod,
+            amountPaid: sub.amountPaid,
+            currency: sub.currency
           });
         }
       }
-      if (milestonesRes.data && milestonesRes.data.length > 0) {
-        for (const r of milestonesRes.data) {
-          if (r.id && r.data) rewardMilestonesStore.set(r.id, r.data);
+    }
+
+    // Independent per-table check: Community Groups
+    if (groupsRes.error) {
+      console.error('[HYDRATION ERROR] community_groups fetch failed:', groupsRes.error.message || groupsRes.error);
+    } else if (Array.isArray(groupsRes.data) && groupsRes.data.length === 0) {
+      console.warn('[SEED] community_groups table confirmed empty (0 rows, no error) — seeding defaults');
+      if (communityGroupsStore.size > 0) {
+        try {
+          await supabaseServer.from('community_groups').upsert(Array.from(communityGroupsStore.values()).map(g => ({ id: g.id, data: g, updated_at: new Date().toISOString() })), { onConflict: 'id' });
+        } catch (e) {
+          console.error('[SEED ERROR] community_groups:', e);
         }
       }
-      if (claimsRes.data && claimsRes.data.length > 0) {
-        for (const r of claimsRes.data) {
-          if (r.id && r.data) rewardClaimsStore.set(r.id, r.data);
+    } else if (Array.isArray(groupsRes.data) && groupsRes.data.length > 0) {
+      communityGroupsStore.clear();
+      for (const r of groupsRes.data) {
+        if (r.id && r.data) communityGroupsStore.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: Community Posts
+    if (postsRes.error) {
+      console.error('[HYDRATION ERROR] community_posts fetch failed:', postsRes.error.message || postsRes.error);
+    } else if (Array.isArray(postsRes.data) && postsRes.data.length === 0) {
+      console.warn('[SEED] community_posts table confirmed empty (0 rows, no error) — seeding defaults');
+      if (communityPostsStore.size > 0) {
+        try {
+          await supabaseServer.from('community_posts').upsert(Array.from(communityPostsStore.values()).map(p => ({ id: p.id, data: p, updated_at: new Date().toISOString() })), { onConflict: 'id' });
+        } catch (e) {
+          console.error('[SEED ERROR] community_posts:', e);
         }
       }
-      if (syllabusRes.data && syllabusRes.data.length > 0) {
-        for (const r of syllabusRes.data) {
-          if (r.id && r.data) syllabusNodesStore.set(r.id, r.data);
+    } else if (Array.isArray(postsRes.data) && postsRes.data.length > 0) {
+      communityPostsStore.clear();
+      for (const r of postsRes.data) {
+        if (r.id && r.data) communityPostsStore.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: Community Comments
+    if (commentsRes.error) {
+      console.error('[HYDRATION ERROR] community_comments fetch failed:', commentsRes.error.message || commentsRes.error);
+    } else if (Array.isArray(commentsRes.data) && commentsRes.data.length === 0) {
+      console.warn('[SEED] community_comments table confirmed empty (0 rows, no error) — seeding defaults');
+      if (communityCommentsStore.size > 0) {
+        try {
+          await supabaseServer.from('community_comments').upsert(Array.from(communityCommentsStore.entries()).map(([postId, cmt]) => ({ post_id: postId, data: cmt, updated_at: new Date().toISOString() })), { onConflict: 'post_id' });
+        } catch (e) {
+          console.error('[SEED ERROR] community_comments:', e);
         }
       }
-      if (pyqsRes.data && pyqsRes.data.length > 0) {
-        for (const r of pyqsRes.data) {
-          if (r.id && r.data) pyqStore.set(r.id, r.data);
+    } else if (Array.isArray(commentsRes.data) && commentsRes.data.length > 0) {
+      communityCommentsStore.clear();
+      for (const r of commentsRes.data) {
+        if (r.post_id && r.data) communityCommentsStore.set(r.post_id, r.data);
+      }
+    }
+
+    // Independent per-table check: Community Reports
+    if (reportsRes.error) {
+      console.error('[HYDRATION ERROR] community_reports fetch failed:', reportsRes.error.message || reportsRes.error);
+    } else if (Array.isArray(reportsRes.data) && reportsRes.data.length > 0) {
+      communityReportsStore.clear();
+      for (const r of reportsRes.data) {
+        if (r.id && r.data) communityReportsStore.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: Notifications
+    if (notifsRes.error) {
+      console.error('[HYDRATION ERROR] notifications fetch failed:', notifsRes.error.message || notifsRes.error);
+    } else if (Array.isArray(notifsRes.data) && notifsRes.data.length === 0) {
+      console.warn('[SEED] notifications table confirmed empty (0 rows, no error) — seeding defaults');
+      if (userNotificationsStore.size > 0) {
+        try {
+          await supabaseServer.from('notifications').upsert(Array.from(userNotificationsStore.entries()).map(([userId, notifs]) => ({ user_id: userId, data: notifs, updated_at: new Date().toISOString() })), { onConflict: 'user_id' });
+        } catch (e) {
+          console.error('[SEED ERROR] notifications:', e);
         }
       }
-      if (questionsRes && questionsRes.data && questionsRes.data.length > 0) {
-        for (const r of questionsRes.data) {
-          if (r.id) {
-            questionBankStore.set(r.id, r.data || r);
-          }
+    } else if (Array.isArray(notifsRes.data) && notifsRes.data.length > 0) {
+      userNotificationsStore.clear();
+      for (const r of notifsRes.data) {
+        if (r.user_id && r.data) userNotificationsStore.set(r.user_id, r.data);
+      }
+    }
+
+    // Independent per-table check: Orders
+    if (ordersRes.error) {
+      console.error('[HYDRATION ERROR] orders fetch failed:', ordersRes.error.message || ordersRes.error);
+    } else if (Array.isArray(ordersRes.data) && ordersRes.data.length > 0) {
+      for (const r of ordersRes.data) {
+        if (r.id && r.data) serverOrdersDb.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: CBT Results
+    if (cbtRes.error) {
+      console.error('[HYDRATION ERROR] cbt_results fetch failed:', cbtRes.error.message || cbtRes.error);
+    } else if (Array.isArray(cbtRes.data) && cbtRes.data.length === 0) {
+      console.warn('[SEED] cbt_results table confirmed empty (0 rows, no error) — seeding defaults');
+      if (cbtResultsStore.size > 0) {
+        try {
+          await supabaseServer.from('cbt_results').upsert(Array.from(cbtResultsStore.entries()).map(([userId, resList]) => ({ user_id: userId, data: resList, updated_at: new Date().toISOString() })), { onConflict: 'user_id' });
+        } catch (e) {
+          console.error('[SEED ERROR] cbt_results:', e);
         }
       }
-      if (utrRes && utrRes.data && utrRes.data.length > 0) {
-        pendingUtrRequestsDb.clear();
-        for (const r of utrRes.data) {
-          const rec = mapRowToUtrRecord(r);
-          if (rec.id) pendingUtrRequestsDb.set(rec.id, rec);
+    } else if (Array.isArray(cbtRes.data) && cbtRes.data.length > 0) {
+      cbtResultsStore.clear();
+      for (const r of cbtRes.data) {
+        if (r.user_id && r.data) cbtResultsStore.set(r.user_id, r.data);
+      }
+    }
+
+    // Independent per-table check: Ad Rewards
+    if (adRes.error) {
+      console.error('[HYDRATION ERROR] ad_rewards fetch failed:', adRes.error.message || adRes.error);
+    } else if (Array.isArray(adRes.data) && adRes.data.length === 0) {
+      console.warn('[SEED] ad_rewards table confirmed empty (0 rows, no error) — seeding defaults');
+      if (adRewardsDb.size > 0) {
+        try {
+          await supabaseServer.from('ad_rewards').upsert(Array.from(adRewardsDb.entries()).map(([email, rec]) => ({ id: email, email, data: rec, updated_at: new Date().toISOString() })), { onConflict: 'id' });
+        } catch (e) {
+          console.error('[SEED ERROR] ad_rewards:', e);
         }
       }
-      if (announcementsRes && announcementsRes.data && announcementsRes.data.length > 0) {
-        adminAnnouncementsStore.clear();
-        for (const r of announcementsRes.data) {
-          if (r.id && r.data) {
-            adminAnnouncementsStore.set(r.id, r.data);
-          }
+    } else if (Array.isArray(adRes.data) && adRes.data.length > 0) {
+      adRewardsDb.clear();
+      for (const r of adRes.data) {
+        if (r.email && r.data) adRewardsDb.set(r.email.toLowerCase(), r.data);
+        else if (r.id && r.data) adRewardsDb.set(r.id.toLowerCase(), r.data);
+      }
+    }
+
+    // Independent per-table check: Study Buddy Queue
+    if (queueRes.error) {
+      console.error('[HYDRATION ERROR] study_buddy_queue fetch failed:', queueRes.error.message || queueRes.error);
+    } else if (Array.isArray(queueRes.data) && queueRes.data.length > 0) {
+      studyBuddyQueue.clear();
+      for (const r of queueRes.data) {
+        if (r.email && r.data) studyBuddyQueue.set(r.email.toLowerCase(), r.data);
+      }
+    }
+
+    // Independent per-table check: Study Buddy Matches
+    if (matchesRes.error) {
+      console.error('[HYDRATION ERROR] study_buddy_matches fetch failed:', matchesRes.error.message || matchesRes.error);
+    } else if (Array.isArray(matchesRes.data) && matchesRes.data.length > 0) {
+      studyBuddyMatches.clear();
+      for (const r of matchesRes.data) {
+        if (r.room_id && r.data) studyBuddyMatches.set(r.room_id, r.data);
+        else if (r.id && r.data) studyBuddyMatches.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: Study Heartbeats
+    if (heartbeatsRes.error) {
+      console.error('[HYDRATION ERROR] study_heartbeats fetch failed:', heartbeatsRes.error.message || heartbeatsRes.error);
+    } else if (Array.isArray(heartbeatsRes.data) && heartbeatsRes.data.length > 0) {
+      studyHeartbeatsStore.clear();
+      for (const r of heartbeatsRes.data) {
+        const sid = r.session_id;
+        if (!sid) continue;
+        if (!studyHeartbeatsStore.has(sid)) studyHeartbeatsStore.set(sid, []);
+        studyHeartbeatsStore.get(sid)!.push({
+          id: r.id,
+          userId: r.user_id,
+          sessionId: r.session_id,
+          subject: r.subject,
+          topicId: r.topic_id,
+          pingedAt: r.pinged_at
+        });
+      }
+    }
+
+    // Independent per-table check: Reward Milestones
+    if (milestonesRes.error) {
+      console.error('[HYDRATION ERROR] reward_milestones fetch failed:', milestonesRes.error.message || milestonesRes.error);
+    } else if (Array.isArray(milestonesRes.data) && milestonesRes.data.length > 0) {
+      for (const r of milestonesRes.data) {
+        if (r.id && r.data) rewardMilestonesStore.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: Reward Claims
+    if (claimsRes.error) {
+      console.error('[HYDRATION ERROR] reward_claims fetch failed:', claimsRes.error.message || claimsRes.error);
+    } else if (Array.isArray(claimsRes.data) && claimsRes.data.length > 0) {
+      for (const r of claimsRes.data) {
+        if (r.id && r.data) rewardClaimsStore.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: Syllabus Nodes
+    if (syllabusRes.error) {
+      console.error('[HYDRATION ERROR] syllabus_nodes fetch failed:', syllabusRes.error.message || syllabusRes.error);
+    } else if (Array.isArray(syllabusRes.data) && syllabusRes.data.length > 0) {
+      for (const r of syllabusRes.data) {
+        if (r.id && r.data) syllabusNodesStore.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: PYQs
+    if (pyqsRes.error) {
+      console.error('[HYDRATION ERROR] pyqs fetch failed:', pyqsRes.error.message || pyqsRes.error);
+    } else if (Array.isArray(pyqsRes.data) && pyqsRes.data.length > 0) {
+      for (const r of pyqsRes.data) {
+        if (r.id && r.data) pyqStore.set(r.id, r.data);
+      }
+    }
+
+    // Independent per-table check: Question Bank
+    if (questionsRes.error) {
+      console.error('[HYDRATION ERROR] question_bank fetch failed:', questionsRes.error.message || questionsRes.error);
+    } else if (Array.isArray(questionsRes.data) && questionsRes.data.length > 0) {
+      for (const r of questionsRes.data) {
+        if (r.id) {
+          questionBankStore.set(r.id, r.data || r);
         }
       }
-      if (personalSyllabusRes && personalSyllabusRes.data && personalSyllabusRes.data.length > 0) {
-        personalSyllabusNodesStore.clear();
-        for (const r of personalSyllabusRes.data) {
-          if (r.id) personalSyllabusNodesStore.set(r.id, r);
+    }
+
+    // Independent per-table check: UTR Requests
+    if (utrRes.error) {
+      console.error('[HYDRATION ERROR] utr_requests fetch failed:', utrRes.error.message || utrRes.error);
+    } else if (Array.isArray(utrRes.data) && utrRes.data.length > 0) {
+      pendingUtrRequestsDb.clear();
+      for (const r of utrRes.data) {
+        const rec = mapRowToUtrRecord(r);
+        if (rec.id) pendingUtrRequestsDb.set(rec.id, rec);
+      }
+    }
+
+    // Independent per-table check: Admin Announcements
+    if (announcementsRes.error) {
+      console.error('[HYDRATION ERROR] admin_announcements fetch failed:', announcementsRes.error.message || announcementsRes.error);
+    } else if (Array.isArray(announcementsRes.data) && announcementsRes.data.length > 0) {
+      adminAnnouncementsStore.clear();
+      for (const r of announcementsRes.data) {
+        if (r.id && r.data) {
+          adminAnnouncementsStore.set(r.id, r.data);
         }
       }
-      if (timeLogRes && timeLogRes.data && timeLogRes.data.length > 0) {
-        syllabusTimeLogsStore.clear();
-        for (const r of timeLogRes.data) {
-          const uid = r.user_id || 'guest';
-          if (!syllabusTimeLogsStore.has(uid)) syllabusTimeLogsStore.set(uid, []);
-          syllabusTimeLogsStore.get(uid)!.push(r);
-        }
+    }
+
+    // Independent per-table check: Personal Syllabus Nodes
+    if (personalSyllabusRes.error) {
+      console.error('[HYDRATION ERROR] personal_syllabus_nodes fetch failed:', personalSyllabusRes.error.message || personalSyllabusRes.error);
+    } else if (Array.isArray(personalSyllabusRes.data) && personalSyllabusRes.data.length > 0) {
+      personalSyllabusNodesStore.clear();
+      for (const r of personalSyllabusRes.data) {
+        if (r.id) personalSyllabusNodesStore.set(r.id, r);
       }
+    }
+
+    // Independent per-table check: Syllabus Time Log
+    if (timeLogRes.error) {
+      console.error('[HYDRATION ERROR] syllabus_time_log fetch failed:', timeLogRes.error.message || timeLogRes.error);
+    } else if (Array.isArray(timeLogRes.data) && timeLogRes.data.length > 0) {
+      syllabusTimeLogsStore.clear();
+      for (const r of timeLogRes.data) {
+        const uid = r.user_id || 'guest';
+        if (!syllabusTimeLogsStore.has(uid)) syllabusTimeLogsStore.set(uid, []);
+        syllabusTimeLogsStore.get(uid)!.push(r);
+      }
+    }
       try {
         const { data: fbData } = await supabaseServer.from('feedback_reports').select('*');
         if (fbData && fbData.length > 0) {
@@ -4101,7 +4293,6 @@ async function hydrateFromPrimaryDatabase(timeoutMs = 3500) {
       } catch (_pomErr) {}
       lockRazorpayEnvironment();
       console.log(`[PRIMARY DB] Hydrated server state from Supabase Primary Database successfully.`);
-    }
   };
 
   try {
@@ -5673,8 +5864,1058 @@ app.post('/api/teachers/chat/:educatorId', async (req, res) => {
 });
 
 // ----------------------------------------------------------------------------
-// TOPPER PODCASTS API
+// TEACHER PORTAL & SPONSORSHIP COLLABORATION API
 // ----------------------------------------------------------------------------
+
+async function verifyTeacherOrAdmin(req: any, res: any, next: any) {
+  const verifiedUser = await extractVerifiedUserFromReq(req);
+  if (!verifiedUser) {
+    return res.status(401).json({ error: 'Authentication Required: Missing, invalid, or unverified Bearer token.' });
+  }
+
+  const userEmail = verifiedUser.email.trim().toLowerCase();
+  const userId = verifiedUser.sub;
+
+  let role = verifiedUser.role;
+
+  if (userEmail && userEmail === DESIGNATED_ADMIN_EMAIL.toLowerCase()) {
+    role = 'ADMIN';
+  }
+
+  if ((!role || role === 'USER' || role === 'STUDENT') && userEmail) {
+    const known = adminUsersDb.find(u => u.email.toLowerCase() === userEmail);
+    if (known && known.role) role = known.role;
+  }
+
+  if (role === 'TEACHER' || role === 'ADMIN' || role === 'CO_ADMIN' || role === 'DEVELOPER') {
+    req.userRole = role;
+    req.userEmail = userEmail;
+    req.userId = userId;
+    return next();
+  }
+
+  if (supabaseServer && userId) {
+    try {
+      const { data } = await supabaseServer.from('user_profiles').select('role').eq('id', userId).single();
+      if (data?.role === 'TEACHER' || data?.role === 'ADMIN' || data?.role === 'CO_ADMIN' || data?.role === 'DEVELOPER') {
+        req.userRole = data.role;
+        req.userEmail = userEmail;
+        req.userId = userId;
+        return next();
+      }
+    } catch (_e) {}
+  }
+
+  return res.status(403).json({ error: 'Access denied: Teacher or Admin authorization required.' });
+}
+
+// Stores
+const teacherProfilesStore = new Map<string, any>();
+const teacherClassesStore = new Map<string, any>();
+const classEnrollmentsStore = new Map<string, any[]>();
+const classAttendanceStore = new Map<string, any[]>();
+const classAssignmentsStore = new Map<string, any[]>();
+const assignmentSubmissionsStore = new Map<string, any[]>();
+
+const sponsorshipTiersStore = new Map<string, any>();
+const sponsorshipApplicationsStore = new Map<string, any>();
+const activeSponsorsStore = new Map<string, any>();
+
+// Seed default sponsorship tiers
+function seedDefaultSponsorshipTiers() {
+  if (sponsorshipTiersStore.size === 0) {
+    const defaultTiers = [
+      {
+        id: 'tier_community',
+        name: 'Community Partner',
+        priceRange: '₹15,000 / month',
+        benefits: ['Logo placement on Community Platform', 'Monthly partner shoutout in Newsletter', 'Custom Partner Badge on Profile'],
+        sortOrder: 1,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'tier_champion',
+        name: 'Education Champion',
+        priceRange: '₹35,000 / month',
+        benefits: ['Featured Logo on Student Dashboard', 'Sponsor 500 Aspirant PRO Passes', 'Dedicated Banner in Study Groups', 'Co-host Monthly Masterclass'],
+        sortOrder: 2,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: 'tier_title',
+        name: 'Title Sponsor',
+        priceRange: '₹75,000 / month',
+        benefits: ['Exclusive Title Branding across AspirantX', 'Custom Sponsored CBT Mock Test Series', 'Direct Internship & Hiring Channel for Aspirants', 'Primary Logo on All Exam Engine Banners'],
+        sortOrder: 3,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      }
+    ];
+    for (const t of defaultTiers) {
+      sponsorshipTiersStore.set(t.id, t);
+    }
+  }
+
+  if (activeSponsorsStore.size === 0) {
+    const defaultSponsors = [
+      {
+        id: 'sp_1',
+        name: 'EduTech India Foundation',
+        logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80',
+        websiteUrl: 'https://example.com/edutech',
+        tierName: 'Education Champion',
+        testimonial: 'Partnering with AspirantX empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.',
+        createdAt: new Date().toISOString()
+      }
+    ];
+    for (const s of defaultSponsors) {
+      activeSponsorsStore.set(s.id, s);
+    }
+  }
+}
+seedDefaultSponsorshipTiers();
+
+// TEACHER PORTAL ENDPOINTS
+
+// 1. GET & POST /api/teacher/profile
+app.get('/api/teacher/profile', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = (req.query.userId as string) || verifiedUser?.sub;
+    const email = (req.query.email as string) || verifiedUser?.email;
+
+    if (!userId && !email) {
+      return res.status(400).json({ error: 'userId or email is required' });
+    }
+
+    if (supabaseServer) {
+      try {
+        let q = supabaseServer.from('teacher_profiles').select('*');
+        if (userId) q = q.eq('user_id', userId);
+        else if (email) q = q.eq('email', email);
+        const { data } = await q.single();
+        if (data) {
+          teacherProfilesStore.set(data.user_id || userId, data);
+          return res.json({ success: true, profile: data });
+        }
+      } catch (_err) {}
+    }
+
+    const cached = teacherProfilesStore.get(userId) || Array.from(teacherProfilesStore.values()).find(p => p.email === email);
+    res.json({ success: true, profile: cached || null });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch teacher profile' });
+  }
+});
+
+app.post('/api/teacher/profile', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || `teacher_${Date.now()}`;
+    const email = verifiedUser?.email || req.body.email || '';
+    const { name, subjects, bio, qualification, experienceYears, photoUrl } = req.body;
+
+    const profileData = {
+      id: req.body.id || `tp_${Date.now()}`,
+      userId,
+      name: name || verifiedUser?.email?.split('@')[0] || 'Teacher',
+      email,
+      subjects: Array.isArray(subjects) ? subjects : [subjects || 'General Studies'],
+      bio: bio || '',
+      qualification: qualification || 'Educator',
+      experienceYears: Number(experienceYears) || 1,
+      photoUrl: photoUrl || '',
+      updatedAt: new Date().toISOString()
+    };
+
+    teacherProfilesStore.set(userId, profileData);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('teacher_profiles').upsert([{
+          id: profileData.id,
+          user_id: userId,
+          name: profileData.name,
+          email,
+          subjects: profileData.subjects,
+          bio: profileData.bio,
+          qualification: profileData.qualification,
+          experience_years: profileData.experienceYears,
+          photo_url: profileData.photoUrl,
+          updated_at: new Date().toISOString()
+        }], { onConflict: 'user_id' });
+      } catch (err) {
+        console.warn('Supabase save teacher profile warning:', err);
+      }
+    }
+
+    res.json({ success: true, profile: profileData });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to save teacher profile' });
+  }
+});
+
+// 2. GET, POST & PATCH /api/teacher/classes
+app.get('/api/teacher/classes', async (req, res) => {
+  try {
+    const teacherId = req.query.teacherId as string;
+    const status = req.query.status as string;
+
+    if (supabaseServer) {
+      try {
+        let q = supabaseServer.from('teacher_classes').select('*').order('scheduled_at', { ascending: true });
+        if (teacherId) q = q.eq('teacher_id', teacherId);
+        if (status) q = q.in('status', status.split(','));
+        const { data } = await q;
+        if (data) {
+          for (const c of data) {
+            const mapped = {
+              id: c.id,
+              teacherId: c.teacher_id,
+              teacherName: c.teacher_name,
+              title: c.title,
+              subject: c.subject,
+              description: c.description,
+              scheduledAt: c.scheduled_at,
+              durationMins: c.duration_mins,
+              maxStudents: c.max_students,
+              meetingLink: c.meeting_link,
+              status: c.status,
+              recordingUrl: c.recording_url,
+              createdAt: c.created_at
+            };
+            teacherClassesStore.set(c.id, mapped);
+          }
+        }
+      } catch (_err) {}
+    }
+
+    let classes = Array.from(teacherClassesStore.values());
+    if (teacherId) classes = classes.filter(c => c.teacherId === teacherId);
+    if (status) {
+      const allowed = status.split(',');
+      classes = classes.filter(c => allowed.includes(c.status));
+    }
+
+    const enriched = classes.map(c => {
+      const enrollments = classEnrollmentsStore.get(c.id) || [];
+      return { ...c, enrolledCount: enrollments.length };
+    });
+
+    res.json({ success: true, classes: enriched });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch teacher classes' });
+  }
+});
+
+app.post('/api/teacher/classes', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const teacherId = verifiedUser?.sub || req.body.teacherId || 'teacher_dev';
+    const teacherName = req.body.teacherName || verifiedUser?.email?.split('@')[0] || 'Faculty Member';
+    const { title, subject, description, scheduledAt, durationMins, maxStudents, meetingLink } = req.body;
+
+    if (!title || !subject) {
+      return res.status(400).json({ error: 'Title and subject are required.' });
+    }
+
+    const newClass = {
+      id: `cls_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      teacherId,
+      teacherName,
+      title,
+      subject,
+      description: description || '',
+      scheduledAt: scheduledAt || new Date(Date.now() + 3600000).toISOString(),
+      durationMins: Number(durationMins) || 60,
+      maxStudents: Number(maxStudents) || 100,
+      meetingLink: meetingLink || `https://meet.jit.si/aspirantx-class-${Date.now()}`,
+      status: 'SCHEDULED',
+      recordingUrl: '',
+      createdAt: new Date().toISOString()
+    };
+
+    teacherClassesStore.set(newClass.id, newClass);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('teacher_classes').upsert([{
+          id: newClass.id,
+          teacher_id: teacherId,
+          teacher_name: teacherName,
+          title: newClass.title,
+          subject: newClass.subject,
+          description: newClass.description,
+          scheduled_at: newClass.scheduledAt,
+          duration_mins: newClass.durationMins,
+          max_students: newClass.maxStudents,
+          meeting_link: newClass.meetingLink,
+          status: newClass.status,
+          recording_url: newClass.recordingUrl,
+          created_at: newClass.createdAt
+        }], { onConflict: 'id' });
+      } catch (err) {
+        console.warn('Supabase save class warning:', err);
+      }
+    }
+
+    res.json({ success: true, class: newClass });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to schedule class' });
+  }
+});
+
+app.patch('/api/teacher/classes/:id', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const classId = req.params.id;
+    const { status, recordingUrl } = req.body;
+
+    const existing = teacherClassesStore.get(classId) || {};
+    const updated = {
+      ...existing,
+      id: classId,
+      ...(status ? { status } : {}),
+      ...(recordingUrl !== undefined ? { recordingUrl } : {})
+    };
+
+    teacherClassesStore.set(classId, updated);
+
+    if (supabaseServer) {
+      try {
+        const payload: any = {};
+        if (status) payload.status = status;
+        if (recordingUrl !== undefined) payload.recording_url = recordingUrl;
+        await supabaseServer.from('teacher_classes').update(payload).eq('id', classId);
+      } catch (err) {
+        console.warn('Supabase update class status warning:', err);
+      }
+    }
+
+    res.json({ success: true, class: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update class' });
+  }
+});
+
+// 3. ENROLL, JOIN, ATTENDANCE & STUDENTS
+app.post('/api/teacher/classes/:id/enroll', async (req, res) => {
+  try {
+    const classId = req.params.id;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const studentId = verifiedUser ? verifiedUser.sub : `guest_${Date.now()}`;
+    const studentEmail = verifiedUser ? verifiedUser.email : (req.body.studentEmail || 'guest@example.com');
+    const studentName = req.body.studentName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Guest Aspirant');
+
+    const enrollment = {
+      id: `enr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      classId,
+      studentId,
+      studentName,
+      studentEmail,
+      enrolledAt: new Date().toISOString()
+    };
+
+    const current = classEnrollmentsStore.get(classId) || [];
+    if (!current.some(e => e.studentId === studentId || e.studentEmail === studentEmail)) {
+      current.push(enrollment);
+      classEnrollmentsStore.set(classId, current);
+    }
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('class_enrollments').upsert([{
+          id: enrollment.id,
+          class_id: classId,
+          student_id: studentId,
+          student_name: studentName,
+          student_email: studentEmail,
+          enrolled_at: enrollment.enrolledAt
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, enrollment });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to enroll in class' });
+  }
+});
+
+app.post('/api/teacher/classes/:id/join', async (req, res) => {
+  try {
+    const classId = req.params.id;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const studentId = verifiedUser ? verifiedUser.sub : `guest_${Date.now()}`;
+    const studentEmail = verifiedUser ? verifiedUser.email : (req.body.studentEmail || 'guest@example.com');
+    const studentName = req.body.studentName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Guest Aspirant');
+
+    const attendanceRecord = {
+      id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      classId,
+      studentId,
+      studentName,
+      studentEmail,
+      joinedAt: new Date().toISOString(),
+      durationMins: 0
+    };
+
+    const currentAtt = classAttendanceStore.get(classId) || [];
+    currentAtt.push(attendanceRecord);
+    classAttendanceStore.set(classId, currentAtt);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('class_attendance').upsert([{
+          id: attendanceRecord.id,
+          class_id: classId,
+          student_id: studentId,
+          student_name: studentName,
+          student_email: studentEmail,
+          joined_at: attendanceRecord.joinedAt
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    const classInfo = teacherClassesStore.get(classId);
+    res.json({
+      success: true,
+      meetingLink: classInfo?.meetingLink || `https://meet.jit.si/aspirantx-class-${classId}`,
+      attendance: attendanceRecord
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to record class attendance' });
+  }
+});
+
+app.get('/api/teacher/classes/:id/students', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const classId = req.params.id;
+    let enrollments = classEnrollmentsStore.get(classId) || [];
+    let attendance = classAttendanceStore.get(classId) || [];
+
+    if (supabaseServer) {
+      try {
+        const [enrRes, attRes] = await Promise.all([
+          supabaseServer.from('class_enrollments').select('*').eq('class_id', classId),
+          supabaseServer.from('class_attendance').select('*').eq('class_id', classId)
+        ]);
+        if (enrRes.data) enrollments = enrRes.data.map((e: any) => ({ id: e.id, classId: e.class_id, studentId: e.student_id, studentName: e.student_name, studentEmail: e.student_email, enrolledAt: e.enrolled_at }));
+        if (attRes.data) attendance = attRes.data.map((a: any) => ({ id: a.id, classId: a.class_id, studentId: a.student_id, studentName: a.student_name, studentEmail: a.student_email, joinedAt: a.joined_at }));
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, enrollments, attendance });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch class students' });
+  }
+});
+
+app.get('/api/teacher/my-students', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const teacherId = verifiedUser?.sub || (req.query.teacherId as string);
+
+    let classes = Array.from(teacherClassesStore.values());
+    if (teacherId) classes = classes.filter(c => c.teacherId === teacherId);
+    const classIds = classes.map(c => c.id);
+
+    const studentMap = new Map<string, any>();
+
+    for (const cid of classIds) {
+      const enrollments = classEnrollmentsStore.get(cid) || [];
+      const attendance = classAttendanceStore.get(cid) || [];
+
+      for (const enr of enrollments) {
+        const sid = enr.studentId || enr.studentEmail;
+        if (!studentMap.has(sid)) {
+          studentMap.set(sid, {
+            studentId: enr.studentId,
+            studentName: enr.studentName,
+            studentEmail: enr.studentEmail,
+            classesAttendedCount: 0,
+            assignmentsSubmittedCount: 0
+          });
+        }
+      }
+
+      for (const att of attendance) {
+        const sid = att.studentId || att.studentEmail;
+        const entry = studentMap.get(sid) || {
+          studentId: att.studentId,
+          studentName: att.studentName,
+          studentEmail: att.studentEmail,
+          classesAttendedCount: 0,
+          assignmentsSubmittedCount: 0
+        };
+        entry.classesAttendedCount += 1;
+        studentMap.set(sid, entry);
+      }
+    }
+
+    res.json({ success: true, students: Array.from(studentMap.values()) });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch teacher students' });
+  }
+});
+
+// 4. ASSIGNMENTS & SUBMISSIONS
+app.post('/api/teacher/classes/:classId/assignments', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const classId = req.params.classId;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const teacherId = verifiedUser?.sub || req.body.teacherId || 'teacher_dev';
+    const { title, description, dueDate, attachmentUrl } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ error: 'Assignment title is required.' });
+    }
+
+    const assignment = {
+      id: `asg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      classId,
+      teacherId,
+      title,
+      description: description || '',
+      dueDate: dueDate || new Date(Date.now() + 86400000 * 7).toISOString(),
+      attachmentUrl: attachmentUrl || '',
+      createdAt: new Date().toISOString()
+    };
+
+    const current = classAssignmentsStore.get(classId) || [];
+    current.push(assignment);
+    classAssignmentsStore.set(classId, current);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('class_assignments').upsert([{
+          id: assignment.id,
+          class_id: classId,
+          teacher_id: teacherId,
+          title,
+          description: assignment.description,
+          due_date: assignment.dueDate,
+          attachment_url: assignment.attachmentUrl,
+          created_at: assignment.createdAt
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, assignment });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to create assignment' });
+  }
+});
+
+app.get('/api/teacher/classes/:classId/assignments', async (req, res) => {
+  try {
+    const classId = req.params.classId;
+    let assignments = classAssignmentsStore.get(classId) || [];
+
+    if (supabaseServer) {
+      try {
+        const { data } = await supabaseServer.from('class_assignments').select('*').eq('class_id', classId);
+        if (data) {
+          assignments = data.map((a: any) => ({
+            id: a.id,
+            classId: a.class_id,
+            teacherId: a.teacher_id,
+            title: a.title,
+            description: a.description,
+            dueDate: a.due_date,
+            attachmentUrl: a.attachment_url,
+            createdAt: a.created_at
+          }));
+          classAssignmentsStore.set(classId, assignments);
+        }
+      } catch (_e) {}
+    }
+
+    const enriched = assignments.map(a => {
+      const subs = assignmentSubmissionsStore.get(a.id) || [];
+      return { ...a, submissionCount: subs.length };
+    });
+
+    res.json({ success: true, assignments: enriched });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch assignments' });
+  }
+});
+
+app.post('/api/teacher/assignments/:assignmentId/submit', async (req, res) => {
+  try {
+    const assignmentId = req.params.assignmentId;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const studentId = verifiedUser ? verifiedUser.sub : `guest_${Date.now()}`;
+    const studentEmail = verifiedUser ? verifiedUser.email : (req.body.studentEmail || 'guest@example.com');
+    const studentName = req.body.studentName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Guest Aspirant');
+    const { submissionText, attachmentUrl } = req.body;
+
+    const submission = {
+      id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      assignmentId,
+      studentId,
+      studentName,
+      studentEmail,
+      submissionText: submissionText || '',
+      attachmentUrl: attachmentUrl || '',
+      submittedAt: new Date().toISOString()
+    };
+
+    const current = assignmentSubmissionsStore.get(assignmentId) || [];
+    current.push(submission);
+    assignmentSubmissionsStore.set(assignmentId, current);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('assignment_submissions').upsert([{
+          id: submission.id,
+          assignment_id: assignmentId,
+          student_id: studentId,
+          student_name: studentName,
+          student_email: studentEmail,
+          submission_text: submission.submissionText,
+          attachment_url: submission.attachmentUrl,
+          submitted_at: submission.submittedAt
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, submission });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to submit assignment' });
+  }
+});
+
+app.get('/api/teacher/assignments/:assignmentId/submissions', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const assignmentId = req.params.assignmentId;
+    let submissions = assignmentSubmissionsStore.get(assignmentId) || [];
+
+    if (supabaseServer) {
+      try {
+        const { data } = await supabaseServer.from('assignment_submissions').select('*').eq('assignment_id', assignmentId);
+        if (data) {
+          submissions = data.map((s: any) => ({
+            id: s.id,
+            assignmentId: s.assignment_id,
+            studentId: s.student_id,
+            studentName: s.student_name,
+            studentEmail: s.student_email,
+            submissionText: s.submission_text,
+            attachmentUrl: s.attachment_url,
+            grade: s.grade,
+            feedback: s.feedback,
+            submittedAt: s.submitted_at,
+            gradedAt: s.graded_at
+          }));
+          assignmentSubmissionsStore.set(assignmentId, submissions);
+        }
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, submissions });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch submissions' });
+  }
+});
+
+app.post('/api/teacher/submissions/:submissionId/grade', verifyTeacherOrAdmin, async (req, res) => {
+  try {
+    const submissionId = req.params.submissionId;
+    const { grade, feedback } = req.body;
+
+    let targetSub: any = null;
+    for (const [asgId, list] of assignmentSubmissionsStore.entries()) {
+      const idx = list.findIndex(s => s.id === submissionId);
+      if (idx !== -1) {
+        list[idx] = { ...list[idx], grade, feedback, gradedAt: new Date().toISOString() };
+        targetSub = list[idx];
+        assignmentSubmissionsStore.set(asgId, list);
+        break;
+      }
+    }
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('assignment_submissions').update({
+          grade,
+          feedback,
+          graded_at: new Date().toISOString()
+        }).eq('id', submissionId);
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, submission: targetSub });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to grade submission' });
+  }
+});
+
+
+// SPONSORSHIP & PARTNER API ENDPOINTS
+
+// 1. GET /api/sponsorship/public-stats
+app.get('/api/sponsorship/public-stats', async (_req, res) => {
+  try {
+    let totalStudents = adminUsersDb.length || 12500;
+    let totalQuestionsAnswered = 850000;
+    let examsCovered = 14;
+
+    if (supabaseServer) {
+      try {
+        const { count } = await supabaseServer.from('user_profiles').select('*', { count: 'exact', head: true });
+        if (count) totalStudents = count;
+      } catch (_e) {}
+    }
+
+    res.json({
+      success: true,
+      stats: {
+        totalStudents,
+        totalQuestionsAnswered,
+        examsCovered,
+        activeMonthlyUsers: Math.round(totalStudents * 0.72)
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch sponsorship public stats' });
+  }
+});
+
+// 2. GET, POST, PATCH, DELETE /api/sponsorship/tiers
+app.get('/api/sponsorship/tiers', async (_req, res) => {
+  try {
+    if (supabaseServer) {
+      try {
+        const { data } = await supabaseServer.from('sponsorship_tiers').select('*').order('sort_order', { ascending: true });
+        if (data && data.length > 0) {
+          sponsorshipTiersStore.clear();
+          for (const t of data) {
+            sponsorshipTiersStore.set(t.id, {
+              id: t.id,
+              name: t.name,
+              priceRange: t.price_range,
+              benefits: Array.isArray(t.benefits) ? t.benefits : (typeof t.benefits === 'string' ? JSON.parse(t.benefits) : []),
+              sortOrder: t.sort_order,
+              isActive: t.is_active,
+              createdAt: t.created_at
+            });
+          }
+        }
+      } catch (_e) {}
+    }
+
+    const tiers = Array.from(sponsorshipTiersStore.values()).sort((a, b) => a.sortOrder - b.sortOrder);
+    res.json({ success: true, tiers });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch sponsorship tiers' });
+  }
+});
+
+app.post('/api/sponsorship/tiers', verifyAdminAuth, async (req, res) => {
+  try {
+    const { name, priceRange, benefits, sortOrder } = req.body;
+    if (!name || !priceRange) {
+      return res.status(400).json({ error: 'Name and price range are required.' });
+    }
+
+    const tier = {
+      id: `tier_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name,
+      priceRange,
+      benefits: Array.isArray(benefits) ? benefits : [],
+      sortOrder: Number(sortOrder) || sponsorshipTiersStore.size + 1,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+
+    sponsorshipTiersStore.set(tier.id, tier);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('sponsorship_tiers').upsert([{
+          id: tier.id,
+          name: tier.name,
+          price_range: tier.priceRange,
+          benefits: tier.benefits,
+          sort_order: tier.sortOrder,
+          is_active: tier.isActive,
+          created_at: tier.createdAt
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, tier });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to create sponsorship tier' });
+  }
+});
+
+app.patch('/api/sponsorship/tiers/:id', verifyAdminAuth, async (req, res) => {
+  try {
+    const tierId = req.params.id;
+    const existing = sponsorshipTiersStore.get(tierId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Tier not found' });
+    }
+
+    const updated = { ...existing, ...req.body };
+    sponsorshipTiersStore.set(tierId, updated);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('sponsorship_tiers').update({
+          name: updated.name,
+          price_range: updated.priceRange,
+          benefits: updated.benefits,
+          sort_order: updated.sortOrder,
+          is_active: updated.isActive
+        }).eq('id', tierId);
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, tier: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update sponsorship tier' });
+  }
+});
+
+app.delete('/api/sponsorship/tiers/:id', verifyAdminAuth, async (req, res) => {
+  try {
+    const tierId = req.params.id;
+    sponsorshipTiersStore.delete(tierId);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('sponsorship_tiers').delete().eq('id', tierId);
+      } catch (_e) {}
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to delete sponsorship tier' });
+  }
+});
+
+// 3. GET, POST, DELETE /api/sponsorship/sponsors
+app.get('/api/sponsorship/sponsors', async (_req, res) => {
+  try {
+    if (supabaseServer) {
+      try {
+        const { data } = await supabaseServer.from('active_sponsors').select('*');
+        if (data && data.length > 0) {
+          activeSponsorsStore.clear();
+          for (const s of data) {
+            activeSponsorsStore.set(s.id, {
+              id: s.id,
+              name: s.name,
+              logoUrl: s.logo_url,
+              websiteUrl: s.website_url,
+              tierName: s.tier_name,
+              testimonial: s.testimonial,
+              createdAt: s.created_at
+            });
+          }
+        }
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, sponsors: Array.from(activeSponsorsStore.values()) });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch active sponsors' });
+  }
+});
+
+app.post('/api/sponsorship/sponsors', verifyAdminAuth, async (req, res) => {
+  try {
+    const { name, logoUrl, websiteUrl, tierName, testimonial } = req.body;
+    if (!name || !logoUrl) {
+      return res.status(400).json({ error: 'Sponsor name and logo URL are required.' });
+    }
+
+    const sponsor = {
+      id: `sp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name,
+      logoUrl,
+      websiteUrl: websiteUrl || '',
+      tierName: tierName || 'Community Partner',
+      testimonial: testimonial || '',
+      createdAt: new Date().toISOString()
+    };
+
+    activeSponsorsStore.set(sponsor.id, sponsor);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('active_sponsors').upsert([{
+          id: sponsor.id,
+          name: sponsor.name,
+          logo_url: sponsor.logoUrl,
+          website_url: sponsor.websiteUrl,
+          tier_name: sponsor.tierName,
+          testimonial: sponsor.testimonial,
+          created_at: sponsor.createdAt
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, sponsor });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to add active sponsor' });
+  }
+});
+
+app.delete('/api/sponsorship/sponsors/:id', verifyAdminAuth, async (req, res) => {
+  try {
+    const id = req.params.id;
+    activeSponsorsStore.delete(id);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('active_sponsors').delete().eq('id', id);
+      } catch (_e) {}
+    }
+
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to remove active sponsor' });
+  }
+});
+
+// 4. POST /api/sponsorship/apply, GET & ACTION /api/sponsorship/applications
+app.post('/api/sponsorship/apply', async (req, res) => {
+  try {
+    const { companyName, contactName, email, phone, tierInterest, message } = req.body;
+    if (!companyName || !contactName || !email) {
+      return res.status(400).json({ error: 'Company name, contact name, and email are required.' });
+    }
+
+    const application = {
+      id: `app_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      companyName,
+      contactName,
+      email,
+      phone: phone || '',
+      tierInterest: tierInterest || 'Community Partner',
+      message: message || '',
+      status: 'PENDING',
+      adminNote: '',
+      appliedAt: new Date().toISOString()
+    };
+
+    sponsorshipApplicationsStore.set(application.id, application);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('sponsorship_applications').upsert([{
+          id: application.id,
+          company_name: companyName,
+          contact_name: contactName,
+          email,
+          phone: application.phone,
+          tier_interest: application.tierInterest,
+          message: application.message,
+          status: application.status,
+          admin_note: '',
+          applied_at: application.appliedAt
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, application });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to submit sponsorship application' });
+  }
+});
+
+app.get('/api/sponsorship/applications', verifyAdminAuth, async (_req, res) => {
+  try {
+    if (supabaseServer) {
+      try {
+        const { data } = await supabaseServer.from('sponsorship_applications').select('*').order('applied_at', { ascending: false });
+        if (data && data.length > 0) {
+          sponsorshipApplicationsStore.clear();
+          for (const a of data) {
+            sponsorshipApplicationsStore.set(a.id, {
+              id: a.id,
+              companyName: a.company_name,
+              contactName: a.contact_name,
+              email: a.email,
+              phone: a.phone,
+              tierInterest: a.tier_interest,
+              message: a.message,
+              status: a.status,
+              adminNote: a.admin_note,
+              appliedAt: a.applied_at
+            });
+          }
+        }
+      } catch (_e) {}
+    }
+
+    res.json({ success: true, applications: Array.from(sponsorshipApplicationsStore.values()) });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch sponsorship applications' });
+  }
+});
+
+app.post('/api/sponsorship/applications/:id/action', verifyAdminAuth, async (req, res) => {
+  try {
+    const appId = req.params.id;
+    const { action, adminNote } = req.body;
+
+    const app = sponsorshipApplicationsStore.get(appId);
+    if (!app) {
+      return res.status(404).json({ error: 'Application not found' });
+    }
+
+    const newStatus = action === 'APPROVE' ? 'APPROVED' : 'REJECTED';
+    app.status = newStatus;
+    if (adminNote) app.adminNote = adminNote;
+
+    sponsorshipApplicationsStore.set(appId, app);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('sponsorship_applications').update({
+          status: newStatus,
+          admin_note: adminNote || ''
+        }).eq('id', appId);
+      } catch (_e) {}
+    }
+
+    if (action === 'APPROVE') {
+      const newSponsor = {
+        id: `sp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        name: app.companyName,
+        logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80',
+        websiteUrl: '',
+        tierName: app.tierInterest,
+        testimonial: `Proud partner of AspirantX.`,
+        createdAt: new Date().toISOString()
+      };
+      activeSponsorsStore.set(newSponsor.id, newSponsor);
+      if (supabaseServer) {
+        try {
+          await supabaseServer.from('active_sponsors').upsert([{
+            id: newSponsor.id,
+            name: newSponsor.name,
+            logo_url: newSponsor.logoUrl,
+            website_url: newSponsor.websiteUrl,
+            tier_name: newSponsor.tierName,
+            testimonial: newSponsor.testimonial,
+            created_at: newSponsor.createdAt
+          }], { onConflict: 'id' });
+        } catch (_e) {}
+      }
+    }
+
+    res.json({ success: true, application: app });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update application status' });
+  }
+});
 
 /**
  * GET /api/podcasts — Fetch all podcast episodes
