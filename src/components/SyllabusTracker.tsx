@@ -238,15 +238,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       setPredictorSettings(loadPredictorSettings(userId));
     }
     init();
-
-    const handleProfileUpdate = () => {
-      init();
-    };
-
-    window.addEventListener('aspirantx_gamification_updated', handleProfileUpdate);
-    return () => {
-      window.removeEventListener('aspirantx_gamification_updated', handleProfileUpdate);
-    };
   }, [userId]);
 
   // Load syllabus nodes and time summary
@@ -352,6 +343,23 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
     if (isNowChecking) {
       await awardXPAndCoins(30, 10, 'Checked off Syllabus Sub-topic', userId);
+    }
+  };
+
+  const toggleParentTopicNodes = async (subtopicNodes: PersonalSyllabusNode[]) => {
+    if (!subtopicNodes || subtopicNodes.length === 0) return;
+    const allCurrentlyDone = subtopicNodes.every((n) => completedSubtopicIds.has(n.id));
+    const nextSet = new Set<string>(completedSubtopicIds);
+    subtopicNodes.forEach((n) => {
+      if (allCurrentlyDone) nextSet.delete(n.id);
+      else nextSet.add(n.id);
+    });
+    setCompletedSubtopicIds(nextSet);
+    setSyncState({ status: 'saving', message: 'Syncing progress...' });
+    const res = await saveCompletedSubtopicIds(nextSet, userId);
+    setSyncState(res);
+    if (!allCurrentlyDone) {
+      await awardXPAndCoins(30, 10, 'Checked off Syllabus Topic', userId);
     }
   };
 
@@ -879,7 +887,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           searchQuery={searchQuery}
           activeStageFilter={activeStageFilter}
           onToggleSubtopic={toggleSubtopicCompletion}
-          onToggleTopic={(nodes, title) => toggleParentTopicCompletion(personalTopics, title)}
+          onToggleTopic={(nodes) => toggleParentTopicNodes(nodes)}
           onOpenAddSubject={openAddSubject}
           onOpenAddTopic={(subj) => openAddTopic(subj)}
           onOpenAddSubtopic={(subj, chap) => openAddSubtopic(subj, chap)}
