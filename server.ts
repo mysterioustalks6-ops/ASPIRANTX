@@ -11136,6 +11136,15 @@ const userWalletsStore = new Map<string, any>(); // userId -> Wallet
 const userPayoutsStore = new Map<string, any[]>(); // userId -> PayoutRecord[]
 const allPayoutsStore = new Map<string, any>(); // payoutId -> PayoutRecord
 
+// Reddit-Style User Karma Stores
+const userKarmaStore = new Map<string, { userId: string; postKarma: number; commentKarma: number; totalKarma: number; updatedAt: string }>();
+const karmaVotesStore = new Map<string, { id: string; voterId: string; targetType: 'post' | 'comment'; targetId: string; targetOwnerId: string; vote: 1 | -1; createdAt: string }>();
+
+// Seed default karma records
+userKarmaStore.set('usr_mentor_tanya', { userId: 'usr_mentor_tanya', postKarma: 218, commentKarma: 45, totalKarma: 263, updatedAt: new Date().toISOString() });
+userKarmaStore.set('usr_curr', { userId: 'usr_curr', postKarma: 42, commentKarma: 18, totalKarma: 60, updatedAt: new Date().toISOString() });
+userKarmaStore.set('usr_guest_101', { userId: 'usr_guest_101', postKarma: 15, commentKarma: 5, totalKarma: 20, updatedAt: new Date().toISOString() });
+
 
 // Initialize CBT default tests
 const DEFAULT_CBT_MOCKS = [
@@ -11524,10 +11533,86 @@ async function hydratePayoutsFromSupabase() {
   }
 }
 
+async function hydrateKarmaFromSupabase(userId?: string) {
+  if (!supabaseServer) return;
+  try {
+    let karmaQuery = supabaseServer.from('user_karma').select('*');
+    if (userId) karmaQuery = karmaQuery.eq('user_id', userId);
+    const { data: kData, error: kErr } = await karmaQuery;
+    if (kErr) {
+      console.error('[HYDRATION USER KARMA FAILURE]', kErr.message);
+    } else if (Array.isArray(kData) && kData.length > 0) {
+      kData.forEach((row: any) => {
+        const uid = row.user_id;
+        if (uid) {
+          const postKarma = Number(row.post_karma) || 0;
+          const commentKarma = Number(row.comment_karma) || 0;
+          const totalKarma = Number(row.total_karma) ?? (postKarma + commentKarma);
+          userKarmaStore.set(uid, {
+            userId: uid,
+            postKarma,
+            commentKarma,
+            totalKarma,
+            updatedAt: row.updated_at || new Date().toISOString(),
+          });
+        }
+      });
+    }
+
+    let votesQuery = supabaseServer.from('karma_votes').select('*');
+    if (userId) votesQuery = votesQuery.or(`voter_id.eq.${userId},target_owner_id.eq.${userId}`);
+    const { data: vData, error: vErr } = await votesQuery;
+    if (vErr) {
+      console.error('[HYDRATION KARMA VOTES FAILURE]', vErr.message);
+    } else if (Array.isArray(vData) && vData.length > 0) {
+      vData.forEach((row: any) => {
+        const key = `${row.voter_id}:${row.target_type}:${row.target_id}`;
+        karmaVotesStore.set(key, {
+          id: row.id || key,
+          voterId: row.voter_id,
+          targetType: row.target_type,
+          targetId: row.target_id,
+          targetOwnerId: row.target_owner_id,
+          vote: row.vote,
+          createdAt: row.created_at || new Date().toISOString(),
+        });
+      });
+    }
+  } catch (e: any) {
+    console.error('[HYDRATION KARMA ERROR]', e?.message || e);
+  }
+}
+
+function recalculateUserKarma(userId: string) {
+  let postKarma = 0;
+  let commentKarma = 0;
+  karmaVotesStore.forEach((v) => {
+    if (v.targetOwnerId === userId) {
+      if (v.targetType === 'post') postKarma += v.vote;
+      else if (v.targetType === 'comment') commentKarma += v.vote;
+    }
+  });
+
+  const existing = userKarmaStore.get(userId);
+  const finalPost = karmaVotesStore.size > 0 ? postKarma : (existing?.postKarma ?? postKarma);
+  const finalComment = karmaVotesStore.size > 0 ? commentKarma : (existing?.commentKarma ?? commentKarma);
+
+  const record = {
+    userId,
+    postKarma: finalPost,
+    commentKarma: finalComment,
+    totalKarma: finalPost + finalComment,
+    updatedAt: new Date().toISOString(),
+  };
+  userKarmaStore.set(userId, record);
+  return record;
+}
+
 // Initial background hydrations
 hydrateCommunityPostsFromSupabase().catch((err) => console.error('[INIT HYDRATE COMMUNITY ERROR]', err));
 hydrateWalletsFromSupabase().catch((err) => console.error('[INIT HYDRATE WALLETS ERROR]', err));
 hydratePayoutsFromSupabase().catch((err) => console.error('[INIT HYDRATE PAYOUTS ERROR]', err));
+hydrateKarmaFromSupabase().catch((err) => console.error('[INIT HYDRATE KARMA ERROR]', err));
 
 
 // Initialize Default User Notifications
@@ -12491,9 +12576,9 @@ app.get('/api/community/posts', async (req, res) => {
 
     // Attach caller-specific vote status and score
     posts = posts.map((p) => {
-      const voteKey = `${p.id}:${callerUserId}`;
-      const userVoteRecord = communityVotesStore.get(voteKey);
-      const userVote = userVoteRecord ? userVoteRecord.voteType : null;
+      const kVoteKey = `${callerUserId}:post:${p.id}`;
+      const kVote = karmaVotesStore.get(kVoteKey);
+      const userVote = kVote ? (kVote.vote === 1 ? 'up' : 'down') : null;
 
       const upvotes = p.upvotesCount ?? p.likesCount ?? 0;
       const downvotes = p.downvotesCount ?? 0;
@@ -12589,7 +12674,236 @@ app.post('/api/community/posts', async (req, res) => {
   }
 });
 
-// Reddit-style Upvote/Downvote Endpoint
+// ============================================================================
+// REDDIT-STYLE KARMA & REPUTATION ENGINE (POST & COMMENT VOTING)
+// ============================================================================
+
+// Get user karma profile (Post Karma, Comment Karma, Total Karma, Recent Votes)
+app.get('/api/karma/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    if (!userId) return res.status(400).json({ success: false, error: 'User ID is required' });
+
+    await hydrateKarmaFromSupabase(userId);
+
+    let karma = userKarmaStore.get(userId);
+    if (!karma) {
+      karma = recalculateUserKarma(userId);
+    }
+
+    // Collect recent votes received or cast for activity feed
+    const recentVotes: any[] = [];
+    karmaVotesStore.forEach((v) => {
+      if (v.targetOwnerId === userId || v.voterId === userId) {
+        // Resolve target title/snippet if available
+        let targetTitle = v.targetType === 'post' ? 'Discussion Post' : 'Peer Comment';
+        if (v.targetType === 'post') {
+          const post = communityPostsStore.get(v.targetId);
+          if (post) targetTitle = post.title;
+        } else if (v.targetType === 'comment') {
+          for (const commentList of communityCommentsStore.values()) {
+            const found = commentList.find((c: any) => c.id === v.targetId);
+            if (found) {
+              targetTitle = found.content.substring(0, 40) + '...';
+              break;
+            }
+          }
+        }
+
+        recentVotes.push({
+          id: v.id,
+          voterId: v.voterId,
+          targetType: v.targetType,
+          targetId: v.targetId,
+          targetOwnerId: v.targetOwnerId,
+          vote: v.vote,
+          targetTitle,
+          createdAt: v.createdAt,
+        });
+      }
+    });
+    recentVotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.json({
+      success: true,
+      karma: {
+        ...karma,
+        recentVotes: recentVotes.slice(0, 20),
+      }
+    });
+  } catch (err: any) {
+    console.error('[GET KARMA ERROR]', err);
+    res.status(500).json({ success: false, error: 'Failed to fetch karma record' });
+  }
+});
+
+// Primary Karma Vote endpoint (Post & Comment voting with self-voting prevention)
+app.post('/api/karma/vote', adminMutationLimiter, async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const { voterId = verifiedUser?.sub || 'usr_guest_101', targetType, targetId, targetOwnerId, vote } = req.body;
+
+    if (!targetType || !targetId || !targetOwnerId) {
+      return res.status(400).json({ success: false, error: 'Target type, target ID, and target owner ID are required.' });
+    }
+
+    if (targetType !== 'post' && targetType !== 'comment') {
+      return res.status(400).json({ success: false, error: 'Invalid target type. Must be "post" or "comment".' });
+    }
+
+    // STRICT: Self-voting block!
+    if (voterId === targetOwnerId || (verifiedUser && verifiedUser.sub === targetOwnerId)) {
+      return res.status(400).json({ success: false, error: 'Self-voting is not allowed. You cannot vote on your own content.' });
+    }
+
+    const voteKey = `${voterId}:${targetType}:${targetId}`;
+    const existingVote = karmaVotesStore.get(voteKey);
+
+    let finalVote: 1 | -1 | 0 = 0;
+    const requestedVoteNum = Number(vote);
+    if (requestedVoteNum === 1 || requestedVoteNum === -1) {
+      if (existingVote && existingVote.vote === requestedVoteNum) {
+        // Cancel / toggle off vote
+        finalVote = 0;
+      } else {
+        finalVote = requestedVoteNum as 1 | -1;
+      }
+    } else {
+      finalVote = 0;
+    }
+
+    if (finalVote === 0) {
+      karmaVotesStore.delete(voteKey);
+      if (supabaseServer) {
+        try {
+          const { error } = await supabaseServer
+            .from('karma_votes')
+            .delete()
+            .match({ voter_id: voterId, target_type: targetType, target_id: targetId });
+          if (error) console.error('[SUPABASE KARMA VOTE DELETE ERROR]', error.message);
+        } catch (e: any) {
+          console.error('[SUPABASE KARMA VOTE DELETE EXCEPTION]', e?.message || e);
+        }
+      }
+    } else {
+      const voteRecord = {
+        id: existingVote?.id || `kvote_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        voterId,
+        targetType: targetType as 'post' | 'comment',
+        targetId,
+        targetOwnerId,
+        vote: finalVote,
+        createdAt: new Date().toISOString(),
+      };
+      karmaVotesStore.set(voteKey, voteRecord);
+
+      if (supabaseServer) {
+        try {
+          const { error } = await supabaseServer.from('karma_votes').upsert([
+            {
+              id: voteRecord.id,
+              voter_id: voterId,
+              target_type: targetType,
+              target_id: targetId,
+              target_owner_id: targetOwnerId,
+              vote: finalVote,
+              created_at: voteRecord.createdAt,
+            }
+          ], { onConflict: 'voter_id,target_type,target_id' });
+          if (error) console.error('[SUPABASE KARMA VOTE UPSERT ERROR]', error.message);
+        } catch (e: any) {
+          console.error('[SUPABASE KARMA VOTE UPSERT EXCEPTION]', e?.message || e);
+        }
+      }
+    }
+
+    // Recalculate target owner's karma accurately (exact SUM)
+    const updatedKarma = recalculateUserKarma(targetOwnerId);
+
+    if (supabaseServer) {
+      try {
+        const { error } = await supabaseServer.from('user_karma').upsert([
+          {
+            user_id: targetOwnerId,
+            post_karma: updatedKarma.postKarma,
+            comment_karma: updatedKarma.commentKarma,
+            updated_at: updatedKarma.updatedAt,
+          }
+        ], { onConflict: 'user_id' });
+        if (error) console.error('[SUPABASE USER KARMA UPSERT ERROR]', error.message);
+      } catch (e: any) {
+        console.error('[SUPABASE USER KARMA UPSERT EXCEPTION]', e?.message || e);
+      }
+    }
+
+    // Calculate aggregated item score from all active votes
+    let itemScore = 0;
+    let upvotesCount = 0;
+    let downvotesCount = 0;
+    karmaVotesStore.forEach((v) => {
+      if (v.targetType === targetType && v.targetId === targetId) {
+        itemScore += v.vote;
+        if (v.vote === 1) upvotesCount++;
+        else if (v.vote === -1) downvotesCount++;
+      }
+    });
+
+    // Update the in-memory post or comment
+    if (targetType === 'post') {
+      const post = communityPostsStore.get(targetId);
+      if (post) {
+        post.score = itemScore;
+        post.upvotesCount = upvotesCount;
+        post.downvotesCount = downvotesCount;
+        post.likesCount = upvotesCount;
+        post.userVote = finalVote === 1 ? 'up' : finalVote === -1 ? 'down' : null;
+        post.isLiked = finalVote === 1;
+        communityPostsStore.set(post.id, post);
+
+        if (supabaseServer) {
+          try {
+            await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+          } catch (e) {}
+        }
+      }
+    } else if (targetType === 'comment') {
+      // Find comment in communityCommentsStore and update
+      for (const [pId, comments] of communityCommentsStore.entries()) {
+        const comment = comments.find((c: any) => c.id === targetId);
+        if (comment) {
+          comment.score = itemScore;
+          comment.upvotesCount = upvotesCount;
+          comment.downvotesCount = downvotesCount;
+          comment.likesCount = upvotesCount;
+          comment.userVote = finalVote === 1 ? 'up' : finalVote === -1 ? 'down' : null;
+          comment.isLiked = finalVote === 1;
+          communityCommentsStore.set(pId, comments);
+
+          if (supabaseServer) {
+            try {
+              await supabaseServer.from('community_comments').upsert([{ post_id: pId, data: comments, updated_at: new Date().toISOString() }], { onConflict: 'post_id' });
+            } catch (e) {}
+          }
+          break;
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      userKarma: updatedKarma,
+      vote: finalVote === 1 ? 'up' : finalVote === -1 ? 'down' : null,
+      score: itemScore,
+      upvotesCount,
+      downvotesCount,
+    });
+  } catch (err: any) {
+    console.error('[KARMA VOTE EXCEPTION]', err);
+    res.status(500).json({ success: false, error: err?.message || 'Failed to process karma vote' });
+  }
+});
+
+// Reddit-style Upvote/Downvote Endpoint for Posts
 app.post('/api/community/posts/:id/vote', async (req, res) => {
   try {
     const postId = req.params.id;
@@ -12605,111 +12919,75 @@ app.post('/api/community/posts/:id/vote', async (req, res) => {
     }
 
     // STRICT: Self-voting block!
-    const postAuthorId = post.authorId || post.author?.id;
+    const postAuthorId = post.authorId || post.author?.id || 'author';
     if (postAuthorId && (postAuthorId === userId || (verifiedUser && postAuthorId === verifiedUser.sub))) {
       return res.status(403).json({ error: 'Self-voting is not allowed. You cannot vote on your own post.' });
     }
 
-    const voteKey = `${postId}:${userId}`;
-    const existingVote = communityVotesStore.get(voteKey);
+    const voteKey = `${userId}:post:${postId}`;
+    const existingVote = karmaVotesStore.get(voteKey);
 
-    let newVoteType: 'up' | 'down' | null = voteType;
-    let upDelta = 0;
-    let downDelta = 0;
+    const voteValue = voteType === 'up' ? 1 : -1;
+    let finalVote: 1 | -1 | 0 = voteValue;
 
-    if (existingVote) {
-      if (existingVote.voteType === voteType) {
-        // Toggle off / cancel vote
-        communityVotesStore.delete(voteKey);
-        newVoteType = null;
-        if (voteType === 'up') upDelta = -1;
-        else downDelta = -1;
-      } else {
-        // Switch vote
-        communityVotesStore.set(voteKey, {
-          id: existingVote.id,
-          postId,
-          userId,
-          voteType,
-          createdAt: new Date().toISOString(),
-        });
-        if (voteType === 'up') {
-          upDelta = 1;
-          downDelta = -1;
-        } else {
-          upDelta = -1;
-          downDelta = 1;
-        }
-      }
+    if (existingVote && existingVote.vote === voteValue) {
+      finalVote = 0;
+      karmaVotesStore.delete(voteKey);
     } else {
-      // New vote
-      communityVotesStore.set(voteKey, {
-        id: `vote_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        postId,
-        userId,
-        voteType,
+      karmaVotesStore.set(voteKey, {
+        id: existingVote?.id || `kvote_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        voterId: userId,
+        targetType: 'post',
+        targetId: postId,
+        targetOwnerId: postAuthorId,
+        vote: finalVote as 1 | -1,
         createdAt: new Date().toISOString(),
       });
-      if (voteType === 'up') upDelta = 1;
-      else downDelta = 1;
     }
 
-    post.upvotesCount = Math.max(0, (post.upvotesCount ?? post.likesCount ?? 0) + upDelta);
-    post.downvotesCount = Math.max(0, (post.downvotesCount ?? 0) + downDelta);
-    post.score = post.upvotesCount - post.downvotesCount;
-    post.likesCount = post.upvotesCount;
-    post.isLiked = newVoteType === 'up';
+    // Recalculate author karma
+    recalculateUserKarma(postAuthorId);
+
+    // Compute aggregated score
+    let score = 0;
+    let upvotesCount = 0;
+    let downvotesCount = 0;
+    karmaVotesStore.forEach((v) => {
+      if (v.targetType === 'post' && v.targetId === postId) {
+        score += v.vote;
+        if (v.vote === 1) upvotesCount++;
+        else if (v.vote === -1) downvotesCount++;
+      }
+    });
+
+    post.score = score;
+    post.upvotesCount = upvotesCount;
+    post.downvotesCount = downvotesCount;
+    post.likesCount = upvotesCount;
+    post.userVote = finalVote === 1 ? 'up' : finalVote === -1 ? 'down' : null;
+    post.isLiked = finalVote === 1;
 
     communityPostsStore.set(post.id, post);
 
-    // Reward post author if net positive upvote
-    if (upDelta > 0 && postAuthorId) {
-      let authorWallet = userWalletsStore.get(postAuthorId);
-      if (!authorWallet && supabaseServer) {
-        try {
-          const { data, error } = await supabaseServer.from('user_wallets').select('data').eq('user_id', postAuthorId).maybeSingle();
-          if (error) console.error('[SUPABASE GET AUTHOR WALLET FAILURE]', error.message);
-          if (data?.data) authorWallet = data.data;
-        } catch (e: any) {
-          console.error('[SUPABASE GET AUTHOR WALLET EXCEPTION]', e?.message || e);
-        }
-      }
-      if (!authorWallet) {
-        authorWallet = { balance: 100, held: 0, totalEarned: 100, totalSpent: 0, transactions: [] };
-      }
-      authorWallet.balance = (authorWallet.balance || 0) + 2; // +2 study tokens per upvote
-      authorWallet.totalEarned = (authorWallet.totalEarned || 0) + 2;
-      authorWallet.transactions.unshift({
-        id: `tx_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        type: 'reward_helpful_post',
-        amount: 2,
-        description: `Earned 2 Study Tokens from community upvote on "${post.title.substring(0, 35)}..."`,
-        createdAt: new Date().toISOString()
-      });
-      userWalletsStore.set(postAuthorId, authorWallet);
-      if (supabaseServer) {
-        try {
-          const { error } = await supabaseServer.from('user_wallets').upsert([{ user_id: postAuthorId, data: authorWallet, updated_at: new Date().toISOString() }], { onConflict: 'user_id' });
-          if (error) console.error('[SUPABASE AUTHOR WALLET REWARD FAILURE]', error.message);
-        } catch (e: any) {
-          console.error('[SUPABASE AUTHOR WALLET REWARD EXCEPTION]', e?.message || e);
-        }
-      }
-    }
-
     if (supabaseServer) {
       try {
-        const { error: postErr } = await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-        if (postErr) console.error('[SUPABASE POST VOTE UPSERT FAILURE]', postErr.message);
-        if (newVoteType) {
-          const { error: voteErr } = await supabaseServer.from('community_votes').upsert([{ key: voteKey, post_id: postId, user_id: userId, vote_type: newVoteType, updated_at: new Date().toISOString() }], { onConflict: 'key' });
-          if (voteErr) console.error('[SUPABASE VOTE UPSERT FAILURE]', voteErr.message);
+        await supabaseServer.from('community_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
+        if (finalVote === 0) {
+          await supabaseServer.from('karma_votes').delete().match({ voter_id: userId, target_type: 'post', target_id: postId });
         } else {
-          const { error: delErr } = await supabaseServer.from('community_votes').delete().eq('key', voteKey);
-          if (delErr) console.error('[SUPABASE VOTE DELETE FAILURE]', delErr.message);
+          await supabaseServer.from('karma_votes').upsert([
+            {
+              voter_id: userId,
+              target_type: 'post',
+              target_id: postId,
+              target_owner_id: postAuthorId,
+              vote: finalVote,
+              created_at: new Date().toISOString(),
+            }
+          ], { onConflict: 'voter_id,target_type,target_id' });
         }
       } catch (e: any) {
-        console.error('[SUPABASE VOTE OPERATION EXCEPTION]', e?.message || e);
+        console.error('[SUPABASE POST VOTE OPERATION EXCEPTION]', e?.message || e);
       }
     }
 
@@ -12718,12 +12996,131 @@ app.post('/api/community/posts/:id/vote', async (req, res) => {
       score: post.score,
       upvotesCount: post.upvotesCount,
       downvotesCount: post.downvotesCount,
-      userVote: newVoteType,
+      userVote: post.userVote,
       likesCount: post.likesCount,
       isLiked: post.isLiked
     });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to record vote' });
+  }
+});
+
+// Reddit-style Upvote/Downvote Endpoint for Comments
+app.post('/api/community/comments/:id/vote', async (req, res) => {
+  try {
+    const commentId = req.params.id;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    const { voteType, authorId: reqAuthorId } = req.body;
+
+    if (voteType !== 'up' && voteType !== 'down') {
+      return res.status(400).json({ error: 'Invalid vote type. Must be "up" or "down".' });
+    }
+
+    // Locate comment
+    let targetComment: any = null;
+    let targetPostId: string | null = null;
+    for (const [pId, comments] of communityCommentsStore.entries()) {
+      const found = comments.find((c: any) => c.id === commentId);
+      if (found) {
+        targetComment = found;
+        targetPostId = pId;
+        break;
+      }
+    }
+
+    const commentAuthorId = targetComment?.authorId || reqAuthorId || 'author';
+
+    // STRICT: Self-voting block!
+    if (commentAuthorId && (commentAuthorId === userId || (verifiedUser && commentAuthorId === verifiedUser.sub))) {
+      return res.status(403).json({ error: 'Self-voting is not allowed. You cannot vote on your own comment.' });
+    }
+
+    const voteKey = `${userId}:comment:${commentId}`;
+    const existingVote = karmaVotesStore.get(voteKey);
+
+    const voteValue = voteType === 'up' ? 1 : -1;
+    let finalVote: 1 | -1 | 0 = voteValue;
+
+    if (existingVote && existingVote.vote === voteValue) {
+      finalVote = 0;
+      karmaVotesStore.delete(voteKey);
+    } else {
+      karmaVotesStore.set(voteKey, {
+        id: existingVote?.id || `kvote_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        voterId: userId,
+        targetType: 'comment',
+        targetId: commentId,
+        targetOwnerId: commentAuthorId,
+        vote: finalVote as 1 | -1,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    // Recalculate author karma
+    recalculateUserKarma(commentAuthorId);
+
+    // Compute aggregated comment score
+    let score = 0;
+    let upvotesCount = 0;
+    let downvotesCount = 0;
+    karmaVotesStore.forEach((v) => {
+      if (v.targetType === 'comment' && v.targetId === commentId) {
+        score += v.vote;
+        if (v.vote === 1) upvotesCount++;
+        else if (v.vote === -1) downvotesCount++;
+      }
+    });
+
+    if (targetComment && targetPostId) {
+      targetComment.score = score;
+      targetComment.upvotesCount = upvotesCount;
+      targetComment.downvotesCount = downvotesCount;
+      targetComment.likesCount = upvotesCount;
+      targetComment.userVote = finalVote === 1 ? 'up' : finalVote === -1 ? 'down' : null;
+      targetComment.isLiked = finalVote === 1;
+      const comments = communityCommentsStore.get(targetPostId) || [];
+      communityCommentsStore.set(targetPostId, comments);
+
+      if (supabaseServer) {
+        try {
+          await supabaseServer.from('community_comments').upsert([{ post_id: targetPostId, data: comments, updated_at: new Date().toISOString() }], { onConflict: 'post_id' });
+        } catch (e) {}
+      }
+    }
+
+    if (supabaseServer) {
+      try {
+        if (finalVote === 0) {
+          await supabaseServer.from('karma_votes').delete().match({ voter_id: userId, target_type: 'comment', target_id: commentId });
+        } else {
+          await supabaseServer.from('karma_votes').upsert([
+            {
+              voter_id: userId,
+              target_type: 'comment',
+              target_id: commentId,
+              target_owner_id: commentAuthorId,
+              vote: finalVote,
+              created_at: new Date().toISOString(),
+            }
+          ], { onConflict: 'voter_id,target_type,target_id' });
+        }
+      } catch (e: any) {
+        console.error('[SUPABASE COMMENT VOTE OPERATION EXCEPTION]', e?.message || e);
+      }
+    }
+
+    res.json({
+      success: true,
+      score,
+      upvotesCount,
+      downvotesCount,
+      userVote: finalVote === 1 ? 'up' : finalVote === -1 ? 'down' : null,
+      likesCount: upvotesCount,
+      isLiked: finalVote === 1
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to record comment vote' });
   }
 });
 
@@ -12810,8 +13207,50 @@ app.post('/api/community/posts/:id/poll-vote', async (req, res) => {
 app.get('/api/community/posts/:id/comments', (req, res) => {
   try {
     const postId = req.params.id;
+    const userId = (req.query.userId as string) || '';
     const comments = communityCommentsStore.get(postId) || [];
-    res.json({ success: true, comments });
+
+    const enriched = comments.map((cmt: any) => {
+      let score = cmt.score || 0;
+      let upvotesCount = cmt.upvotesCount || 0;
+      let downvotesCount = cmt.downvotesCount || 0;
+      let userVote: 'up' | 'down' | null = null;
+
+      let s = 0;
+      let ups = 0;
+      let downs = 0;
+      let foundVote = false;
+
+      karmaVotesStore.forEach((v) => {
+        if (v.targetType === 'comment' && v.targetId === cmt.id) {
+          foundVote = true;
+          s += v.vote;
+          if (v.vote === 1) ups++;
+          else if (v.vote === -1) downs++;
+          if (userId && v.voterId === userId) {
+            userVote = v.vote === 1 ? 'up' : 'down';
+          }
+        }
+      });
+
+      if (foundVote) {
+        score = s;
+        upvotesCount = ups;
+        downvotesCount = downs;
+      }
+
+      return {
+        ...cmt,
+        score,
+        upvotesCount,
+        downvotesCount,
+        userVote,
+        likesCount: upvotesCount,
+        isLiked: userVote === 'up',
+      };
+    });
+
+    res.json({ success: true, comments: enriched });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch comments' });
   }
