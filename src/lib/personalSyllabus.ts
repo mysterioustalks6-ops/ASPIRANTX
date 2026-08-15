@@ -107,22 +107,25 @@ export async function savePersonalSubjectSyllabus(
   subject: string,
   nodes: PersonalSyllabusNode[]
 ): Promise<PersonalSyllabusNode[]> {
-  const cleanedSubject = (subject || 'General Subject').trim();
+  const defaultSubject = (subject || 'General Subject').trim();
   const cleanedExam = (exam || 'UPSC_CSE').trim();
 
-  const preparedNodes: PersonalSyllabusNode[] = [];
-  nodes.forEach((node, idx) => {
-    if (node.subject && node.subject.trim() && node.subject.trim().toLowerCase() !== cleanedSubject.toLowerCase()) {
-      console.warn(`Skipping node with subject "${node.subject}" because it does not match target subject "${cleanedSubject}"`);
-      return;
-    }
-    preparedNodes.push({
+  const preparedNodes: PersonalSyllabusNode[] = nodes.map((node, idx) => {
+    const nodeSubject = (node.subject && node.subject.trim()) ? node.subject.trim() : defaultSubject;
+    return {
       ...node,
       id: node.id || `pers_node_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 7)}`,
       exam: cleanedExam,
-      subject: cleanedSubject,
-    });
+      subject: nodeSubject,
+    };
   });
+
+  if (preparedNodes.length === 0) return [];
+
+  // Get all unique lowercased subject names being updated in this batch
+  const uniqueSubjectsLower = Array.from(
+    new Set(preparedNodes.map((n) => n.subject.toLowerCase()))
+  );
 
   // 1. Always save locally first for instant offline responsiveness
   const key = getStorageKey(userId);
@@ -135,8 +138,9 @@ export async function savePersonalSubjectSyllabus(
     }
   } catch (e) {}
 
+  // Filter out existing nodes for this exam and any of the updated subjects
   const filtered = currentAll.filter(
-    (n) => !(n.exam === cleanedExam && n.subject.toLowerCase() === cleanedSubject.toLowerCase())
+    (n) => !(n.exam === cleanedExam && uniqueSubjectsLower.includes(n.subject.toLowerCase()))
   );
   const updatedAll = [...filtered, ...preparedNodes];
   localStorage.setItem(key, JSON.stringify(updatedAll));
@@ -147,13 +151,15 @@ export async function savePersonalSubjectSyllabus(
   // 2. Fire-and-forget sync to Supabase if logged in
   if (isSupabaseConfigured && userId) {
     (async () => {
-      // Delete existing rows for (user_id, exam, subject)
-      await supabase
-        .from('personal_syllabus_nodes')
-        .delete()
-        .eq('user_id', userId)
-        .eq('exam', cleanedExam)
-        .ilike('subject', cleanedSubject);
+      const uniqueSubjectsOriginal = Array.from(new Set(preparedNodes.map((n) => n.subject)));
+      for (const subj of uniqueSubjectsOriginal) {
+        await supabase
+          .from('personal_syllabus_nodes')
+          .delete()
+          .eq('user_id', userId)
+          .eq('exam', cleanedExam)
+          .ilike('subject', subj);
+      }
 
       if (preparedNodes.length > 0) {
         const rowsToInsert = preparedNodes.map((n) => ({
@@ -338,16 +344,15 @@ export function parseCsvSyllabus(
     if (hasHeader) {
       const csvRowSubject = (subjectIdx >= 0 && cols[subjectIdx]) ? cols[subjectIdx].trim() : '';
 
-      // If CSV has a Subject column and targetSubject is specified by caller
-      if (subjectIdx >= 0 && csvRowSubject && targetSubject) {
-        if (csvRowSubject.toLowerCase() !== targetSubject.toLowerCase()) {
-          skippedOtherSubjectRows++;
+      // Always keep the row — use its own subject name if present,
+      // otherwise fall back to targetSubject/detectedSubject.
+      if (csvRowSubject) {
+        rowSubject = csvRowSubject;
+        if (targetSubject && csvRowSubject.toLowerCase() !== targetSubject.toLowerCase()) {
           otherSubjectsSet.add(csvRowSubject);
-          continue; // Skip rows belonging to other subjects!
         }
       }
 
-      if (csvRowSubject) rowSubject = csvRowSubject;
       if (chapterIdx >= 0 && cols[chapterIdx]) rowChapter = cols[chapterIdx];
       if (topicIdx >= 0 && cols[topicIdx]) rowTopic = cols[topicIdx];
       if (subtopicIdx >= 0 && cols[subtopicIdx]) rowSubtopic = cols[subtopicIdx];
@@ -376,11 +381,9 @@ export function parseCsvSyllabus(
         if (cols[6]) rowTags = cols[6];
       }
 
-      // Check positional subject if targetSubject is specified
+      // Track positional subject if targetSubject is specified
       if (rowSubject && targetSubject && rowSubject.toLowerCase() !== targetSubject.toLowerCase()) {
-        skippedOtherSubjectRows++;
         otherSubjectsSet.add(rowSubject);
-        continue;
       }
     }
 
@@ -390,7 +393,7 @@ export function parseCsvSyllabus(
     nodes.push({
       id: `pers_node_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
       exam: defaultExam,
-      subject: targetSubject || rowSubject || 'Custom Subject',
+      subject: rowSubject || targetSubject || 'Custom Subject',
       chapter: rowChapter,
       topic: rowTopic || rowChapter,
       subtopic: rowSubtopic,
@@ -400,9 +403,13 @@ export function parseCsvSyllabus(
     });
   }
 
+  const distinctSubjectsFound = Array.from(
+    new Set(nodes.map((n) => n.subject).filter(Boolean))
+  );
+
   return {
     nodes,
-    skippedOtherSubjectRows,
-    otherSubjectsFound: Array.from(otherSubjectsSet),
+    skippedOtherSubjectRows: 0,
+    otherSubjectsFound: distinctSubjectsFound,
   };
 }

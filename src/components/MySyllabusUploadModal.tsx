@@ -101,13 +101,18 @@ export const MySyllabusUploadModal: React.FC<MySyllabusUploadModalProps> = ({
   };
 
   const handleSaveSyllabus = async () => {
-    if (!subjectName.trim()) {
-      setStatusMessage({ type: 'error', text: 'Please enter a subject name (e.g., "Indian Polity", "Physics").' });
+    if (parsedPreview.length === 0) {
+      setStatusMessage({ type: 'error', text: 'No syllabus rows detected. Please upload a CSV file or paste syllabus text.' });
       return;
     }
 
-    if (parsedPreview.length === 0) {
-      setStatusMessage({ type: 'error', text: 'No syllabus rows detected. Please upload a CSV file or paste syllabus text.' });
+    const distinctSavedSubjects = Array.from(
+      new Set(parsedPreview.map((n) => n.subject).filter(Boolean))
+    );
+    const fallbackSubject = subjectName.trim() || distinctSavedSubjects[0] || 'Custom Subject';
+
+    if (!subjectName.trim() && distinctSavedSubjects.length === 0) {
+      setStatusMessage({ type: 'error', text: 'Please enter a subject name (e.g., "Indian Polity", "Physics").' });
       return;
     }
 
@@ -115,8 +120,17 @@ export const MySyllabusUploadModal: React.FC<MySyllabusUploadModalProps> = ({
     setStatusMessage(null);
 
     try {
-      await savePersonalSubjectSyllabus(userId, exam, subjectName.trim(), parsedPreview);
-      setStatusMessage({ type: 'success', text: `Saved syllabus for "${subjectName.trim()}" successfully!` });
+      await savePersonalSubjectSyllabus(userId, exam, fallbackSubject, parsedPreview);
+
+      if (distinctSavedSubjects.length > 1) {
+        setStatusMessage({
+          type: 'success',
+          text: `Saved ${parsedPreview.length} topics across ${distinctSavedSubjects.length} subjects (${distinctSavedSubjects.join(', ')}) successfully!`,
+        });
+      } else {
+        const singleSubject = distinctSavedSubjects[0] || fallbackSubject;
+        setStatusMessage({ type: 'success', text: `Saved syllabus for "${singleSubject}" successfully!` });
+      }
       
       // Reset form
       setSubjectName('');
@@ -347,12 +361,12 @@ export const MySyllabusUploadModal: React.FC<MySyllabusUploadModalProps> = ({
                   </div>
                 )}
 
-                {/* Warning notice for skipped rows from other subjects */}
-                {skippedCount > 0 && (
-                  <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
-                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                {/* Info notice for multiple subjects detected in file */}
+                {otherSubjectsFound.length > 1 && (
+                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 flex items-start gap-2.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <span>
-                      ⚠️ {skippedCount} row{skippedCount > 1 ? 's' : ''} skipped — {skippedCount === 1 ? 'it belongs' : 'they belong'} to other subjects in this file ({otherSubjectsFound.join(', ')}). Change "Subject Name" above to import those separately.
+                      ✅ Imported {parsedPreview.length} topics across {otherSubjectsFound.length} subjects: {otherSubjectsFound.join(', ')}, based on the Subject column in your file.
                     </span>
                   </div>
                 )}
