@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Clock, Flame, Target, TrendingUp, Award, 
-  Sparkles, BookOpen, BarChart3, Zap, ShieldCheck 
+  Sparkles, BookOpen, BarChart3, Zap, ShieldCheck,
+  LayoutGrid, Sliders, ChevronRight
 } from 'lucide-react';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
 import { OnboardingTour } from './OnboardingTour';
 import { EXAM_LIST } from '../lib/examList';
 import { AdSenseBanner } from './AdSenseBanner';
+import { loadWorkspaceConfig, getActiveFeaturesInOrder, WorkspaceConfig, recordFeatureUsage } from '../lib/workspacePreferences';
 
 interface StudentDashboardProps {
   userProfile: UserProfile;
@@ -14,6 +16,7 @@ interface StudentDashboardProps {
   onExamChange?: (examId: string) => void;
   onNavigate?: (tab: ActiveTab) => void;
   onOpenProfileModal?: () => void;
+  onOpenWorkspaceCustomizer?: () => void;
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({ 
@@ -21,8 +24,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   selectedExam, 
   onExamChange, 
   onNavigate, 
-  onOpenProfileModal 
+  onOpenProfileModal,
+  onOpenWorkspaceCustomizer
 }) => {
+  const [workspaceConfig, setWorkspaceConfig] = useState<WorkspaceConfig>(() => loadWorkspaceConfig(userProfile.id));
+
+  useEffect(() => {
+    const handleWorkspaceUpdate = () => {
+      setWorkspaceConfig(loadWorkspaceConfig(userProfile.id));
+    };
+    window.addEventListener('aspirantx_workspace_updated', handleWorkspaceUpdate);
+    return () => window.removeEventListener('aspirantx_workspace_updated', handleWorkspaceUpdate);
+  }, [userProfile.id]);
   const defaultDashboardData: StudentDashboardData = {
     todayStudyMinutes: 180,
     weeklyStudyHours: 24,
@@ -235,6 +248,73 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           <div className="text-xs text-emerald-400 font-medium">
             Top 5% Percentile
           </div>
+        </div>
+      </div>
+
+      {/* MY PERSONALIZED WORKSPACE FOCUS HUB */}
+      <div className="ax-card p-5 md:p-6 space-y-4 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-indigo-950/20 border-indigo-500/20">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+              <LayoutGrid className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm md:text-base font-bold text-slate-100 flex items-center gap-2">
+                <span>My Active Workspace</span>
+                {workspaceConfig.preset && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
+                    {workspaceConfig.preset} MODE
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-slate-400">
+                Your selected study modules, custom-tailored for your daily revision routine
+              </p>
+            </div>
+          </div>
+
+          {onOpenWorkspaceCustomizer && (
+            <button
+              onClick={onOpenWorkspaceCustomizer}
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Personalize Workspace</span>
+            </button>
+          )}
+        </div>
+
+        {/* Workspace Quick Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 pt-1">
+          {getActiveFeaturesInOrder(workspaceConfig).map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                recordFeatureUsage(item.id, userProfile.id);
+                if (onNavigate) {
+                  onNavigate(item.id as ActiveTab);
+                }
+              }}
+              className="p-3 rounded-xl bg-slate-950/80 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/50 transition-all text-left group flex flex-col justify-between h-20 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-base font-bold text-slate-300 group-hover:text-indigo-300">
+                  {item.label.charAt(0)}
+                </span>
+                {item.meta.badge && (
+                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-indigo-500/20 text-indigo-300 uppercase">
+                    {item.meta.badge}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-bold text-slate-200 group-hover:text-white truncate">
+                  {item.label}
+                </span>
+                <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-indigo-400 transition-transform group-hover:translate-x-0.5 shrink-0" />
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 

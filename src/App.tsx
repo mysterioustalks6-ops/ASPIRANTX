@@ -32,6 +32,8 @@ import { AdSenseBanner } from './components/AdSenseBanner';
 import { NetworkStatusIndicator } from './components/NetworkStatusIndicator';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { VersionUpdateNotifier } from './components/VersionUpdateNotifier';
+import { WorkspaceCustomizer } from './components/WorkspaceCustomizer';
+import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
 import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle } from 'lucide-react';
 
 // Lazy Loaded Enterprise Modules for Optimal Bundle Performance
@@ -216,10 +218,18 @@ export default function App() {
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showReferralModal, setShowReferralModal] = useState<boolean>(false);
   const [showCustomizerModal, setShowCustomizerModal] = useState<boolean>(false);
+  const [showWorkspaceCustomizer, setShowWorkspaceCustomizer] = useState<boolean>(false);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [showCompanionWidget, setShowCompanionWidget] = useState<boolean>(true);
   const [isCompanionMinimized, setIsCompanionMinimized] = useState<boolean>(false);
   const [customizer, setCustomizer] = useState<AppCustomizerSettings>(loadCustomizerSettings());
+
+  // Fetch and cache user workspace preferences from server asynchronously
+  useEffect(() => {
+    if (user?.id) {
+      fetchServerWorkspaceConfig(user.id);
+    }
+  }, [user?.id]);
 
   // Keyboard shortcut listener for Ctrl+K
   useEffect(() => {
@@ -820,6 +830,7 @@ export default function App() {
         return;
       }
     }
+    recordFeatureUsage(tab, user?.id);
     setActiveTab(tab);
   };
 
@@ -1031,6 +1042,7 @@ export default function App() {
         onOpenProfileModal={() => setShowProfileModal(true)}
         onOpenReferralModal={() => setShowReferralModal(true)}
         onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
+        onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
         customizer={customizer}
         selectedExam={selectedExam}
         onExamChange={handleExamChange}
@@ -1048,6 +1060,7 @@ export default function App() {
           onExamChange={handleExamChange}
           onOpenProfileModal={() => setShowProfileModal(true)} 
           onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
+          onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
           onOpenSearch={() => setShowSearchModal(true)}
           onRequireLogin={() => setUser(null)}
           onNavigate={(t) => setActiveTab(t as ActiveTab)}
@@ -1249,6 +1262,7 @@ export default function App() {
                   onExamChange={handleExamChange}
                   onNavigate={(t) => setActiveTab(t)} 
                   onOpenProfileModal={() => setShowProfileModal(true)} 
+                  onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
                 />
               )}
 
@@ -1417,6 +1431,13 @@ export default function App() {
         isOpen={showCustomizerModal}
         onClose={() => setShowCustomizerModal(false)}
         onSettingsSaved={(updated) => setCustomizer(updated)}
+      />
+
+      {/* Workspace Personalization & Reordering Modal */}
+      <WorkspaceCustomizer
+        isOpen={showWorkspaceCustomizer}
+        onClose={() => setShowWorkspaceCustomizer(false)}
+        userId={user?.id}
       />
 
       {/* Demo Session Expired Modal */}

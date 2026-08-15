@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ActiveTab, UserProfile } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { 
@@ -24,12 +24,23 @@ import {
   Mic,
   BarChart3,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Sliders,
+  GripVertical
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
 import { AdSenseBanner } from './AdSenseBanner';
+import { 
+  ALL_WORKSPACE_FEATURES, 
+  WorkspaceConfig, 
+  loadWorkspaceConfig, 
+  activateFeatureInWorkspace,
+  saveWorkspaceConfig 
+} from '../lib/workspacePreferences';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -41,12 +52,33 @@ interface SidebarProps {
   onOpenProfileModal?: () => void;
   onOpenReferralModal?: () => void;
   onOpenCustomizerModal?: () => void;
+  onOpenWorkspaceCustomizer?: () => void;
   customizer?: AppCustomizerSettings;
   selectedExam?: string;
   onExamChange?: (examId: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
+
+const ICON_MAP: Record<string, any> = {
+  Target,
+  BookOpen,
+  CheckSquare,
+  Timer,
+  Award,
+  BookMarked,
+  HelpCircle,
+  Sparkles,
+  MessageSquare,
+  Users,
+  Mic,
+  BarChart3,
+  Flame,
+  ShieldCheck,
+  Gift,
+  Crown,
+  Handshake,
+};
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
@@ -58,6 +90,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfileModal,
   onOpenReferralModal,
   onOpenCustomizerModal,
+  onOpenWorkspaceCustomizer,
   customizer,
   selectedExam,
   onExamChange,
@@ -65,12 +98,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
 }) => {
   const [clickCount, setClickCount] = React.useState<number>(0);
-  const [expandedSection, setExpandedSection] = React.useState<string | null>('practice');
+  const [isMoreFeaturesOpen, setIsMoreFeaturesOpen] = React.useState<boolean>(false);
+  const [workspaceConfig, setWorkspaceConfig] = useState<WorkspaceConfig>(() =>
+    loadWorkspaceConfig(user?.id)
+  );
+
   const [localCollapsed, setLocalCollapsed] = React.useState<boolean>(() => {
     return localStorage.getItem('aspirantx_sidebar_collapsed') === 'true';
   });
 
   const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : localCollapsed;
+
+  // Listen to workspace config updates from customizer modal, nudges, or other components
+  useEffect(() => {
+    const handleWorkspaceUpdate = (e: any) => {
+      if (e.detail) {
+        setWorkspaceConfig(e.detail);
+      } else {
+        setWorkspaceConfig(loadWorkspaceConfig(user?.id));
+      }
+    };
+
+    window.addEventListener('aspirantx_workspace_updated', handleWorkspaceUpdate);
+    return () => {
+      window.removeEventListener('aspirantx_workspace_updated', handleWorkspaceUpdate);
+    };
+  }, [user?.id]);
 
   const toggleCollapse = () => {
     if (onToggleCollapse) {
@@ -91,66 +144,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const navGroups = [
-    {
-      key: 'core',
-      title: 'Main Dashboard',
-      items: [
-        { id: 'dashboard' as ActiveTab, label: 'Student Dashboard', icon: Target, badge: 'Overview' },
-        { id: 'syllabus' as ActiveTab, label: 'Syllabus Tracker', icon: BookOpen, badge: 'Live Track' },
-        { id: 'tasks' as ActiveTab, label: 'Study Planner', icon: CheckSquare, badge: 'Tasks' },
-        { id: 'timer' as ActiveTab, label: 'Pomodoro Timer', icon: Timer, badge: 'Focus' },
-      ]
-    },
-    {
-      key: 'practice',
-      title: 'Practice & Exam Prep',
-      items: [
-        { id: 'cbt' as ActiveTab, label: 'CBT Mock Tests', icon: Award, badge: 'Real Exam' },
-        { id: 'pyq' as ActiveTab, label: 'PYQ Bank (35+ Yrs)', icon: BookMarked, badge: '1991–2026' },
-        { id: 'question_bank' as ActiveTab, label: 'Question Bank', icon: HelpCircle, badge: 'Practice' },
-        { id: 'flashcards' as ActiveTab, label: 'Flashcards Recall', icon: Sparkles, badge: 'Spaced' },
-        { id: 'library' as ActiveTab, label: 'Reference Library', icon: BookOpen, badge: 'NCERT' },
-      ]
-    },
-    {
-      key: 'ai_community',
-      title: 'AI & Community',
-      items: [
-        { id: 'chat' as ActiveTab, label: 'AI Mentor & Chat', icon: MessageSquare, badge: 'Gemini AI' },
-        { id: 'community' as ActiveTab, label: 'Community Feed', icon: Users, badge: 'Tokens' },
-        { id: 'study_buddy' as ActiveTab, label: '1-on-1 Study Buddy', icon: Users, badge: 'Peer' },
-        { id: 'podcasts' as ActiveTab, label: 'Topper Podcasts', icon: Mic, badge: 'Audio' },
-        { id: 'blog' as ActiveTab, label: 'Editorial & Blog Desk', icon: BookOpen, badge: 'Daily' },
-      ]
-    },
-    {
-      key: 'analytics',
-      title: 'Rankings & Diagnostics',
-      items: [
-        { id: 'leaderboard' as ActiveTab, label: 'All-India Ranker Board', icon: Flame, badge: 'Rankings' },
-        { id: 'weakness' as ActiveTab, label: 'AI Lag Detector', icon: BarChart3, badge: 'Diagnosis' },
-        { id: 'eligibility' as ActiveTab, label: 'Eligibility Calculator', icon: ShieldCheck, badge: 'Check' },
-      ]
-    },
-    {
-      key: 'resources_perks',
-      title: 'Membership & Rewards',
-      items: [
-        { id: 'reward_milestones' as ActiveTab, label: 'Reward Milestones', icon: Gift, badge: 'Perks' },
-        { id: 'premium' as ActiveTab, label: 'Monetization / PRO', icon: Crown, badge: 'Plans' },
-        ...(!(user?.isPremium && user?.premiumSource === 'paid') ? [{
-          id: 'earn_premium' as ActiveTab,
-          label: 'Earn Free PRO',
-          icon: Sparkles,
-          badge: 'Free PRO'
-        }] : []),
-        { id: 'teachers' as ActiveTab, label: 'Teacher Portal', icon: Users, badge: 'Live Class' },
-        { id: 'collaboration' as ActiveTab, label: 'Partner & Sponsor', icon: Handshake, badge: 'Collab' },
-        { id: 'feedback' as ActiveTab, label: 'Feedback & Support', icon: MessageSquare, badge: 'Help' },
-      ]
-    }
-  ];
+  const metaMap = new Map();
+  ALL_WORKSPACE_FEATURES.forEach((m) => metaMap.set(m.id, m));
+
+  // Active features sorted by user's custom sortOrder
+  const activePreferences = workspaceConfig.preferences
+    .filter((p) => p.isActive)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  // Inactive features for "+ More Features" drawer
+  const inactivePreferences = workspaceConfig.preferences.filter((p) => !p.isActive);
 
   const adminItem = {
     id: 'admin' as ActiveTab,
@@ -161,8 +164,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const showAdmin = isAdminUnlocked || activeTab === 'admin' || user?.role === 'ADMIN';
 
-  const renderNavItem = (item: { id: ActiveTab; label: string; icon: any; badge: string }, isAdmin: boolean = false) => {
-    const Icon = item.icon;
+  const handleQuickAddFeature = (e: React.MouseEvent, featureId: ActiveTab) => {
+    e.stopPropagation();
+    const updated = activateFeatureInWorkspace(featureId, undefined, user?.id);
+    setWorkspaceConfig(updated);
+    setActiveTab(featureId);
+  };
+
+  const renderNavItem = (
+    item: { id: ActiveTab; label: string; icon: any; badge: string; defaultLabel?: string },
+    isAdmin: boolean = false
+  ) => {
+    const Icon = item.icon || Target;
     const isActive = activeTab === item.id;
 
     return (
@@ -233,6 +246,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
             </div>
+
+            {onOpenWorkspaceCustomizer && (
+              <button
+                onClick={onOpenWorkspaceCustomizer}
+                className="p-1.5 rounded-lg bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-400 hover:text-indigo-200 transition-colors"
+                title="Customize Workspace Features & Layout"
+                aria-label="Customize Workspace"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             <button
               onClick={toggleCollapse}
               className="hidden md:flex p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
@@ -277,6 +302,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div className="flex items-center gap-1 shrink-0 ml-1">
+              {onOpenWorkspaceCustomizer && (
+                <button
+                  onClick={onOpenWorkspaceCustomizer}
+                  className="p-2 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-400 hover:text-indigo-200 transition-colors shrink-0 shadow-sm"
+                  title="Personalize My Workspace (Drag & Drop, Rename & Select Features)"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                </button>
+              )}
+
               {onOpenCustomizerModal && (
                 <button
                   onClick={onOpenCustomizerModal}
@@ -286,6 +321,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Wrench className="w-3.5 h-3.5" />
                 </button>
               )}
+
               <button
                 onClick={toggleCollapse}
                 className="hidden md:flex p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-slate-200 transition-colors shrink-0"
@@ -377,38 +413,118 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Grouped Navigation */}
-        <div className="space-y-3">
-          {navGroups.map((group) => {
-            const isGroupExpanded = expandedSection === null || expandedSection === group.key;
+        {/* Section Header: My Workspace */}
+        {!isCollapsed && (
+          <div className="flex items-center justify-between px-2 pt-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Sliders className="w-3 h-3 text-indigo-400" />
+              My Workspace
+            </span>
+            {onOpenWorkspaceCustomizer && (
+              <button
+                onClick={onOpenWorkspaceCustomizer}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold transition-colors"
+                title="Edit workspace ordering & features"
+              >
+                Customize →
+              </button>
+            )}
+          </div>
+        )}
 
-            return (
-              <div key={group.key} className="space-y-1">
-                {!isCollapsed && (
-                  <div 
-                    onClick={() => setExpandedSection(expandedSection === group.key ? null : group.key)}
-                    className="px-2 py-1 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-slate-400 transition-colors"
-                  >
-                    <span>{group.title}</span>
-                    <ChevronDown className={`w-3 h-3 transition-transform ${isGroupExpanded ? 'rotate-180' : ''}`} />
-                  </div>
-                )}
+        {/* Active Features Ordered By User */}
+        <nav className="space-y-1">
+          {activePreferences.map((pref) => {
+            const meta = metaMap.get(pref.featureId);
+            if (!meta) return null;
+            const Icon = ICON_MAP[meta.iconName] || Target;
 
-                {(isCollapsed || isGroupExpanded) && (
-                  <nav className="space-y-1">
-                    {group.items.map((item) => renderNavItem(item))}
-                  </nav>
-                )}
-              </div>
-            );
+            return renderNavItem({
+              id: pref.featureId,
+              label: pref.customLabel || meta.defaultLabel,
+              defaultLabel: meta.defaultLabel,
+              icon: Icon,
+              badge: meta.badge,
+            });
           })}
 
+          {/* Admin panel if unlocked */}
           {showAdmin && (
             <div className="pt-2 border-t border-slate-800">
               {renderNavItem(adminItem, true)}
             </div>
           )}
-        </div>
+        </nav>
+
+        {/* "+ Add More Features" Drawer (Collapsible) */}
+        {!isCollapsed && inactivePreferences.length > 0 && (
+          <div className="pt-2 border-t border-slate-800/80">
+            <button
+              type="button"
+              onClick={() => setIsMoreFeaturesOpen(!isMoreFeaturesOpen)}
+              className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 text-xs font-semibold text-slate-300 hover:text-white transition-all group"
+            >
+              <div className="flex items-center gap-2 truncate">
+                <Plus className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
+                <span className="truncate">Add More Features</span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                  {inactivePreferences.length} hidden
+                </span>
+                {isMoreFeaturesOpen ? (
+                  <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                )}
+              </div>
+            </button>
+
+            {isMoreFeaturesOpen && (
+              <div className="mt-2 space-y-1.5 p-2 rounded-xl bg-slate-950/80 border border-slate-800/80 max-h-56 overflow-y-auto pr-1">
+                {inactivePreferences.map((pref) => {
+                  const meta = metaMap.get(pref.featureId);
+                  if (!meta) return null;
+                  const Icon = ICON_MAP[meta.iconName] || Target;
+
+                  return (
+                    <div
+                      key={pref.featureId}
+                      onClick={() => setActiveTab(pref.featureId)}
+                      className="p-2 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-800/60 flex items-center justify-between gap-2 cursor-pointer transition-colors group"
+                      title={meta.shortDescription}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 shrink-0" />
+                        <span className="text-xs text-slate-300 group-hover:text-white truncate font-medium">
+                          {meta.defaultLabel}
+                        </span>
+                      </div>
+
+                      <button
+                        onClick={(e) => handleQuickAddFeature(e, pref.featureId)}
+                        className="px-2 py-0.5 rounded bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-[10px] font-bold flex items-center gap-1 transition-colors shrink-0"
+                        title="Add this feature to active workspace"
+                      >
+                        <Plus className="w-2.5 h-2.5" />
+                        <span>Add</span>
+                      </button>
+                    </div>
+                  );
+                })}
+
+                {onOpenWorkspaceCustomizer && (
+                  <button
+                    onClick={onOpenWorkspaceCustomizer}
+                    className="w-full text-center py-1.5 text-[11px] text-indigo-400 hover:text-indigo-300 font-bold transition-colors"
+                  >
+                    Open Full Customizer →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Sidebar AdSense Ad Unit - Hidden when collapsed */}
         {!isCollapsed && (

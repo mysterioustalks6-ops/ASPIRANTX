@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActiveTab, UserProfile } from '../types';
 import { EXAM_LIST } from '../lib/examList';
-import { Flame, Sparkles, Clock, GraduationCap, Sliders, Search, Maximize, Minimize } from 'lucide-react';
+import { Flame, Sparkles, Clock, GraduationCap, Sliders, Search, Maximize, Minimize, LayoutGrid } from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
   onExamChange?: (examId: string) => void;
   onOpenProfileModal?: () => void;
   onOpenCustomizerModal?: () => void;
+  onOpenWorkspaceCustomizer?: () => void;
   onOpenSearch?: () => void;
   onRequireLogin?: () => void;
   onNavigate?: (tab: string) => void;
@@ -26,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   onExamChange,
   onOpenProfileModal,
   onOpenCustomizerModal,
+  onOpenWorkspaceCustomizer,
   onOpenSearch,
   onRequireLogin,
   onNavigate,
@@ -151,6 +153,18 @@ export const Header: React.FC<HeaderProps> = ({
           </select>
         </div>
 
+        {/* Workspace Customizer Launcher */}
+        {onOpenWorkspaceCustomizer && (
+          <button
+            onClick={onOpenWorkspaceCustomizer}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-500/30 text-xs font-semibold text-indigo-300 transition-colors shadow-sm"
+            title="Personalize My Workspace"
+          >
+            <LayoutGrid className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden md:inline">Workspace</span>
+          </button>
+        )}
+
         {/* Customizer Launcher */}
         {onOpenCustomizerModal && (
           <button
@@ -190,11 +204,12 @@ export const Header: React.FC<HeaderProps> = ({
           {isFullscreen ? <Minimize className="w-4 h-4 text-indigo-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
         </button>
 
-        {/* Notification Bell with Merged Announcements */}
+        {/* Notification Bell with Merged Announcements & Weekly Nudges */}
         <NotificationCenter 
           onNavigate={onNavigate} 
           selectedExam={selectedExam || user?.exam || 'NEET_UG'} 
           userId={user?.id || user?.email || 'default_user'} 
+          onOpenWorkspaceCustomizer={onOpenWorkspaceCustomizer}
         />
 
         {/* Profile Avatar */}
