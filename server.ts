@@ -468,6 +468,7 @@ let userPomodoroSessionsDb: Array<{
 }> = [];
 
 let processedSessionsStore: Set<string> = new Set();
+let userWorkspacePreferencesDb: Map<string, any> = new Map();
 
 let simulatedErrors: Record<string, boolean> = {
   googleSheets: false,
@@ -1238,6 +1239,75 @@ app.delete('/api/user/subjects/:id', async (req, res) => {
   }
 
   return res.status(404).json({ error: 'Subject not found' });
+});
+
+// ---------------- USER WORKSPACE PREFERENCES ----------------
+app.get('/api/user/workspace-preferences', async (req, res) => {
+  const rawUserId = String(req.query.userId || '').trim();
+  const userId = rawUserId || 'default_user';
+
+  // 1. Try fetching from Supabase if connected (durable cloud storage for authenticated UUIDs)
+  if (supabaseServer && rawUserId && isValidUUID(rawUserId)) {
+    try {
+      const { data, error } = await supabaseServer
+        .from('user_profiles')
+        .select('workspace_preferences')
+        .eq('id', rawUserId)
+        .maybeSingle();
+
+      if (error) {
+        console.warn(`[WorkspacePrefs] Supabase GET query error for user ${rawUserId}:`, error.message, error.code);
+      } else if (data?.workspace_preferences) {
+        // Cache locally in-memory for this specific user
+        userWorkspacePreferencesDb.set(rawUserId, data.workspace_preferences);
+        return res.json({ success: true, workspaceConfig: data.workspace_preferences });
+      }
+    } catch (err: any) {
+      console.warn(`[WorkspacePrefs] Supabase GET exception for user ${rawUserId}:`, err?.message || err);
+    }
+  }
+
+  // 2. Fast in-memory cache lookup strictly scoped to this specific userId (no cross-user fallback)
+  if (userWorkspacePreferencesDb.has(userId)) {
+    const cached = userWorkspacePreferencesDb.get(userId);
+    return res.json({ success: true, workspaceConfig: cached });
+  }
+
+  return res.json({ success: true, workspaceConfig: null });
+});
+
+app.post('/api/user/workspace-preferences', async (req, res) => {
+  const rawUserId = String(req.body.userId || '').trim();
+  const userId = rawUserId || 'default_user';
+  const workspaceConfig = req.body.workspaceConfig;
+
+  if (!workspaceConfig) {
+    return res.status(400).json({ error: 'Missing workspaceConfig payload' });
+  }
+
+  // Store in-memory strictly for this userId
+  userWorkspacePreferencesDb.set(userId, workspaceConfig);
+
+  // Sync durably to Supabase user_profiles if connected for authenticated UUID
+  if (supabaseServer && rawUserId && isValidUUID(rawUserId)) {
+    try {
+      const { error } = await supabaseServer
+        .from('user_profiles')
+        .update({ 
+          workspace_preferences: workspaceConfig,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', rawUserId);
+
+      if (error) {
+        console.warn(`[WorkspacePrefs] Supabase POST update warning for user ${rawUserId}:`, error.message, error.code);
+      }
+    } catch (err: any) {
+      console.warn(`[WorkspacePrefs] Supabase update exception for user ${rawUserId}:`, err?.message || err);
+    }
+  }
+
+  return res.json({ success: true, workspaceConfig });
 });
 
 // ---------------- USER MANUAL QUESTIONS ----------------
