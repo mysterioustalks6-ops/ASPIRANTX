@@ -22,7 +22,7 @@ export interface UserProfile {
   xp: number;
   coins: number;
   level: number;
-  role?: 'ADMIN' | 'CO_ADMIN' | 'DEVELOPER' | 'USER';
+  role?: 'STUDENT' | 'TEACHER' | 'ADMIN' | 'CO_ADMIN' | 'DEVELOPER' | 'USER';
   isGuest?: boolean;
   referralCode?: string;
   referredBy?: string;
@@ -721,3 +721,124 @@ export interface EnterpriseAuditLog {
   endpoint?: string;
   details: string;
 }
+
+// Teacher Portal & Live Classes Types
+export interface TeacherProfile {
+  id: string;
+  userId: string;
+  name: string;
+  email?: string;
+  subjects: string[];
+  bio: string;
+  qualification: string;
+  experienceYears: number;
+  photoUrl?: string;
+  rating?: number;
+  isVerified?: boolean;
+  createdAt?: string;
+}
+
+export interface TeacherClass {
+  id: string;
+  teacherId: string;
+  teacherName: string;
+  title: string;
+  subject: string;
+  description: string;
+  scheduledAt: string;
+  durationMins: number;
+  maxStudents: number;
+  meetingLink: string;
+  status: 'SCHEDULED' | 'LIVE' | 'COMPLETED';
+  recordingUrl?: string;
+  createdAt: string;
+  enrolledCount?: number;
+}
+
+export interface ClassEnrollment {
+  id: string;
+  classId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  enrolledAt: string;
+}
+
+export interface ClassAttendance {
+  id: string;
+  classId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  joinedAt: string;
+  durationMins?: number;
+}
+
+export interface ClassAssignment {
+  id: string;
+  classId: string;
+  teacherId: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  attachmentUrl?: string;
+  createdAt: string;
+  submissionCount?: number;
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  submissionText: string;
+  attachmentUrl?: string;
+  grade?: string;
+  feedback?: string;
+  submittedAt: string;
+  gradedAt?: string;
+}
+
+export interface TeacherStudentAggregate {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  classesAttendedCount: number;
+  assignmentsSubmittedCount: number;
+}
+
+// Sponsorship & Partner Types
+export interface SponsorshipTier {
+  id: string;
+  name: string;
+  priceRange: string;
+  benefits: string[];
+  sortOrder: number;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface SponsorshipApplication {
+  id: string;
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  tierInterest: string;
+  message: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  adminNote?: string;
+  appliedAt: string;
+}
+
+export interface ActiveSponsor {
+  id: string;
+  name: string;
+  logoUrl: string;
+  websiteUrl?: string;
+  tierName: string;
+  testimonial?: string;
+  createdAt?: string;
+}
+

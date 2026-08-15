@@ -35,7 +35,7 @@ import { VersionUpdateNotifier } from './components/VersionUpdateNotifier';
 import { WorkspaceCustomizer } from './components/WorkspaceCustomizer';
 import { OnboardingTour } from './components/OnboardingTour';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
-import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle } from 'lucide-react';
+import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle, ShieldCheck } from 'lucide-react';
 
 // Lazy Loaded Enterprise Modules for Optimal Bundle Performance
 const StudentDashboard = lazy(() => import('./components/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
@@ -464,7 +464,19 @@ export default function App() {
     const handleGamificationUpdated = (e: any) => {
       const updatedProfile = e.detail;
       if (updatedProfile) {
-        setUser((prev) => (prev ? { ...prev, ...updatedProfile } : updatedProfile));
+        setUser((prev) => {
+          if (!prev) return updatedProfile;
+          return {
+            ...prev,
+            xp: typeof updatedProfile.xp === 'number' ? updatedProfile.xp : prev.xp,
+            coins: typeof updatedProfile.coins === 'number' ? updatedProfile.coins : prev.coins,
+            level: typeof updatedProfile.level === 'number' ? updatedProfile.level : prev.level,
+            streakDays: typeof updatedProfile.streakDays === 'number' ? updatedProfile.streakDays : prev.streakDays,
+            lastActiveDate: updatedProfile.lastActiveDate || prev.lastActiveDate,
+            premiumUntil: updatedProfile.premiumUntil || prev.premiumUntil,
+            isPremium: updatedProfile.isPremium !== undefined ? updatedProfile.isPremium : prev.isPremium,
+          };
+        });
       }
     };
 
@@ -1353,17 +1365,7 @@ export default function App() {
               )}
 
               {activeTab === 'collaboration' && (
-                <PremiumGate
-                  featureName="collaboration"
-                  featureTitle="Virtual Office Workspace"
-                  isUserPremium={user.isPremium}
-                  isGuest={user.isGuest}
-                  featureFlags={featureFlagsMap}
-                  onOpenPremium={() => setActiveTab('premium')}
-                  onRequireLogin={() => setUser(null)}
-                >
-                  <SponsorshipCollaboration user={{...user, exam: selectedExam}} />
-                </PremiumGate>
+                <SponsorshipCollaboration user={{...user, exam: selectedExam}} />
               )}
 
               {activeTab === 'library' && (
@@ -1389,7 +1391,27 @@ export default function App() {
               )}
 
               {activeTab === 'teachers' && (
-                <TeacherPortal />
+                user.role === 'TEACHER' || user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER' || user.email === DESIGNATED_ADMIN_EMAIL ? (
+                  <TeacherPortal user={{...user, exam: selectedExam}} onNavigate={(t) => setActiveTab(t as ActiveTab)} />
+                ) : (
+                  <div className="p-8 max-w-2xl mx-auto text-center my-12 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
+                    <div className="w-16 h-16 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <ShieldCheck className="w-8 h-8" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white">This area is for teachers only</h2>
+                    <p className="text-sm text-slate-400 leading-relaxed">
+                      The Teacher Portal is restricted to verified educators and faculty members. If you are an educator, please contact an administrator to upgrade your account access.
+                    </p>
+                    <div className="pt-2 flex justify-center gap-3">
+                      <button
+                        onClick={() => setActiveTab('syllabus')}
+                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20"
+                      >
+                        Return to Dashboard
+                      </button>
+                    </div>
+                  </div>
+                )
               )}
 
               {activeTab === 'podcasts' && (

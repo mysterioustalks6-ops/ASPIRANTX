@@ -124,6 +124,10 @@ export function generateReferralCode(userId?: string): string {
  * Loads User Profile from LocalStorage / Supabase
  */
 export async function loadUserProfile(userId?: string): Promise<UserProfile> {
+  if (!userId) {
+    console.warn('[Gamification] loadUserProfile called without a valid userId. Falling back to default guest profile.');
+  }
+
   let profile: UserProfile = {
     ...DEFAULT_USER_PROFILE,
     id: userId || DEFAULT_USER_PROFILE.id,
