@@ -289,7 +289,7 @@ export const MySyllabusUploadModal: React.FC<MySyllabusUploadModalProps> = ({
         analyzeColumnsAndPrefill(rawTextToSend, hasHeaderRow);
         setStatusMessage({
           type: 'error',
-          text: "Couldn't auto-detect structure — please map columns manually.",
+          text: data.error || "Couldn't auto-detect structure — please map columns manually.",
         });
       }
     } catch (err: any) {
