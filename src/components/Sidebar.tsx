@@ -28,7 +28,9 @@ import {
   ChevronUp,
   Plus,
   Sliders,
-  GripVertical
+  GripVertical,
+  X,
+  ArrowDownRight
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
@@ -102,6 +104,43 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [workspaceConfig, setWorkspaceConfig] = useState<WorkspaceConfig>(() =>
     loadWorkspaceConfig(user?.id)
   );
+
+  const [showCustomizeHint, setShowCustomizeHint] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('aspirantx_seen_customize_hint') !== 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissCustomizeHint = () => {
+    try {
+      localStorage.setItem('aspirantx_seen_customize_hint', 'true');
+    } catch {}
+    setShowCustomizeHint(false);
+  };
+
+  // Auto-dismiss the first-time customize hint after ~6 seconds or on window interactions
+  useEffect(() => {
+    if (!showCustomizeHint) return;
+
+    const timer = setTimeout(() => {
+      dismissCustomizeHint();
+    }, 6000);
+
+    const handleAnyInteraction = () => {
+      dismissCustomizeHint();
+    };
+
+    window.addEventListener('click', handleAnyInteraction, { once: true });
+    window.addEventListener('keydown', handleAnyInteraction, { once: true });
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('click', handleAnyInteraction);
+      window.removeEventListener('keydown', handleAnyInteraction);
+    };
+  }, [showCustomizeHint]);
 
   const [localCollapsed, setLocalCollapsed] = React.useState<boolean>(() => {
     return localStorage.getItem('aspirantx_sidebar_collapsed') === 'true';
@@ -415,20 +454,65 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Section Header: My Workspace */}
         {!isCollapsed && (
-          <div className="flex items-center justify-between px-2 pt-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Sliders className="w-3 h-3 text-indigo-400" />
-              My Workspace
-            </span>
-            {onOpenWorkspaceCustomizer && (
-              <button
-                onClick={onOpenWorkspaceCustomizer}
-                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold transition-colors"
-                title="Edit workspace ordering & features"
-              >
-                Customize →
-              </button>
-            )}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between px-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                <Sliders className="w-3 h-3 text-indigo-400" />
+                My Workspace
+              </span>
+              {onOpenWorkspaceCustomizer && (
+                <button
+                  onClick={() => {
+                    dismissCustomizeHint();
+                    onOpenWorkspaceCustomizer();
+                  }}
+                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold transition-colors flex items-center gap-1"
+                  title="Add, remove or reorder tools"
+                >
+                  <span>Customize</span>
+                  <span>→</span>
+                </button>
+              )}
+            </div>
+
+            {/* First-time contextual nudge (One-time, non-intrusive tooltip) */}
+            <AnimatePresence>
+              {showCustomizeHint && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.2 } }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    dismissCustomizeHint();
+                    if (onOpenWorkspaceCustomizer) onOpenWorkspaceCustomizer();
+                  }}
+                  className="relative z-20 p-2.5 rounded-xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 border border-indigo-500/50 shadow-lg shadow-indigo-950/60 flex items-center justify-between gap-2 cursor-pointer group hover:border-indigo-400 transition-all"
+                  title="Click to customize workspace"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="relative flex h-2.5 w-2.5 shrink-0">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+                    </span>
+                    <p className="text-[11px] font-semibold text-indigo-200 group-hover:text-white leading-tight">
+                      Tap here to add or remove tools anytime
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dismissCustomizeHint();
+                    }}
+                    className="p-1 text-slate-400 hover:text-white rounded-md transition-colors shrink-0"
+                    aria-label="Dismiss hint"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -447,6 +531,73 @@ export const Sidebar: React.FC<SidebarProps> = ({
               badge: meta.badge,
             });
           })}
+
+          {/* "+ N More Features" Prominent Hint Card at Bottom of Nav List */}
+          {inactivePreferences.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => {
+                dismissCustomizeHint();
+                if (onOpenWorkspaceCustomizer) {
+                  onOpenWorkspaceCustomizer();
+                } else {
+                  setIsMoreFeaturesOpen(!isMoreFeaturesOpen);
+                }
+              }}
+              className={`w-full flex items-center ${
+                isCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2.5'
+              } rounded-xl border border-dashed border-indigo-500/50 bg-indigo-950/30 hover:bg-indigo-900/40 text-indigo-300 hover:text-white transition-all duration-200 group mt-2 shadow-sm min-h-[40px]`}
+              title={`See all ${inactivePreferences.length} more available tools`}
+            >
+              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
+                <div className="w-5 h-5 rounded-full border border-dashed border-indigo-400/80 flex items-center justify-center bg-indigo-500/20 group-hover:scale-110 transition-transform shrink-0">
+                  <Plus className="w-3 h-3 text-indigo-300 group-hover:text-white" />
+                </div>
+                {!isCollapsed && (
+                  <div className="text-left truncate">
+                    <p className="text-xs font-bold text-indigo-200 group-hover:text-white truncate">
+                      + {inactivePreferences.length} more tools available
+                    </p>
+                    <p className="text-[10px] text-indigo-400/80 font-medium truncate">
+                      Tap to add to sidebar
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {!isCollapsed && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
+                  Add Tools
+                </span>
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                dismissCustomizeHint();
+                if (onOpenWorkspaceCustomizer) onOpenWorkspaceCustomizer();
+              }}
+              className={`w-full flex items-center ${
+                isCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2.5'
+              } rounded-xl border border-dashed border-slate-700/70 bg-slate-900/40 hover:bg-slate-900 text-slate-400 hover:text-slate-200 transition-all duration-200 group mt-2 min-h-[40px]`}
+              title="Personalize and reorder your workspace tools"
+            >
+              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
+                <Sliders className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
+                {!isCollapsed && (
+                  <span className="text-xs font-medium text-slate-300 group-hover:text-white truncate">
+                    Personalize & reorder tools
+                  </span>
+                )}
+              </div>
+              {!isCollapsed && (
+                <span className="text-[10px] font-semibold text-slate-500 group-hover:text-indigo-300 transition-colors shrink-0">
+                  Edit →
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Admin panel if unlocked */}
           {showAdmin && (

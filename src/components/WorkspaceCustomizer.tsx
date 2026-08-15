@@ -98,6 +98,19 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const pointerDragRef = useRef<{
+    isDragging: boolean;
+    startIndex: number | null;
+    currentIndex: number | null;
+    pointerId: number | null;
+  }>({
+    isDragging: false,
+    startIndex: null,
+    currentIndex: null,
+    pointerId: null,
+  });
+
   // Sync state when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -276,7 +289,7 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
     });
   };
 
-  // Drag & drop handlers
+  // Drag & drop handlers (Native HTML5 DnD for desktop mouse fallback)
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -304,6 +317,97 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
     items.splice(dropIndex, 0, draggedItem);
 
     rebuildPreferencesOrder(items);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // Touch & Pointer Events Handlers (Unified Touch + Mouse + Pen reordering on Grip Handle)
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>, index: number) => {
+    // Only handle primary button / touch / pen
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+    const target = e.currentTarget;
+    try {
+      target.setPointerCapture(e.pointerId);
+    } catch (_) {}
+
+    pointerDragRef.current = {
+      isDragging: true,
+      startIndex: index,
+      currentIndex: index,
+      pointerId: e.pointerId,
+    };
+
+    setDraggedIndex(index);
+    setDragOverIndex(index);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointerDragRef.current.isDragging) return;
+    e.preventDefault();
+
+    const hitEl = document.elementFromPoint(e.clientX, e.clientY);
+    if (!hitEl) return;
+
+    const rowEl = hitEl.closest('[data-feature-index]');
+    if (rowEl) {
+      const idxAttr = rowEl.getAttribute('data-feature-index');
+      if (idxAttr !== null) {
+        const targetIndex = parseInt(idxAttr, 10);
+        if (!isNaN(targetIndex) && targetIndex >= 0 && targetIndex < activePreferences.length) {
+          if (dragOverIndex !== targetIndex) {
+            setDragOverIndex(targetIndex);
+            pointerDragRef.current.currentIndex = targetIndex;
+          }
+        }
+      }
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointerDragRef.current.isDragging) return;
+
+    const { startIndex, currentIndex, pointerId } = pointerDragRef.current;
+    const target = e.currentTarget;
+    try {
+      if (pointerId !== null) {
+        target.releasePointerCapture(pointerId);
+      }
+    } catch (_) {}
+
+    if (startIndex !== null && currentIndex !== null && startIndex !== currentIndex) {
+      const items = [...activePreferences];
+      const [draggedItem] = items.splice(startIndex, 1);
+      items.splice(currentIndex, 0, draggedItem);
+      rebuildPreferencesOrder(items);
+    }
+
+    pointerDragRef.current = {
+      isDragging: false,
+      startIndex: null,
+      currentIndex: null,
+      pointerId: null,
+    };
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointerDragRef.current.isDragging) return;
+    const { pointerId } = pointerDragRef.current;
+    const target = e.currentTarget;
+    try {
+      if (pointerId !== null) {
+        target.releasePointerCapture(pointerId);
+      }
+    } catch (_) {}
+
+    pointerDragRef.current = {
+      isDragging: false,
+      startIndex: null,
+      currentIndex: null,
+      pointerId: null,
+    };
     setDraggedIndex(null);
     setDragOverIndex(null);
   };
@@ -528,6 +632,7 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                       return (
                         <div
                           key={pref.featureId}
+                          data-feature-index={index}
                           draggable
                           onDragStart={(e) => handleDragStart(e, index)}
                           onDragOver={(e) => handleDragOver(e, index)}
@@ -546,10 +651,15 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                         >
                           {/* Drag handle & Icon & Name */}
                           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            {/* Grip Handle */}
+                            {/* Grip Handle (Supports Touch + Mouse Drag) */}
                             <div 
-                              className="cursor-grab active:cursor-grabbing p-1 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
-                              title="Drag up or down to reorder"
+                              className="cursor-grab active:cursor-grabbing p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors touch-none select-none min-w-[36px] min-h-[36px] flex items-center justify-center"
+                              style={{ touchAction: 'none' }}
+                              onPointerDown={(e) => handlePointerDown(e, index)}
+                              onPointerMove={handlePointerMove}
+                              onPointerUp={handlePointerUp}
+                              onPointerCancel={handlePointerCancel}
+                              title="Press and drag up or down to reorder"
                             >
                               <GripVertical className="w-4 h-4" />
                             </div>
@@ -671,7 +781,17 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                 )}
 
                 {/* Collapsible "+ Add More Features" Drawer */}
-                <div className="pt-2 border-t border-slate-800">
+                <div className="pt-2 border-t border-slate-800 space-y-2">
+                  {/* Underused Workspace Banner (if active features < 5) */}
+                  {activePreferences.length < 5 && inactivePreferences.length > 0 && (
+                    <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-transparent border border-amber-500/30 flex items-center gap-2.5 text-xs text-amber-200">
+                      <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="font-medium">
+                        You're only using a few tools — tap any card below to add it to your sidebar
+                      </span>
+                    </div>
+                  )}
+
                   <div
                     onClick={() => setIsMoreFeaturesOpen(!isMoreFeaturesOpen)}
                     className="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 hover:border-slate-700 flex items-center justify-between cursor-pointer transition-all group"
@@ -682,13 +802,13 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                       </div>
                       <div>
                         <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors flex items-center gap-2">
-                          + Add More Features Drawer
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">
+                          + Add More Tools
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                             {inactivePreferences.length} Available
                           </span>
                         </h4>
                         <p className="text-[10px] text-slate-400 font-medium">
-                          These features are safely hidden from your main sidebar. Click to activate anytime.
+                          These tools are hidden from your sidebar. Tap to add anytime.
                         </p>
                       </div>
                     </div>
@@ -707,7 +827,7 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                           type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search available features by name or category..."
+                          placeholder="Search available tools by name..."
                           className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
                         />
                       </div>
@@ -715,8 +835,8 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                       {filteredInactive.length === 0 ? (
                         <div className="py-6 text-center text-xs text-slate-500">
                           {searchQuery
-                            ? 'No available features match your search filter.'
-                            : 'All available features are already active in your workspace!'}
+                            ? 'No tools match your search.'
+                            : 'All tools are currently added to your workspace!'}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-72 overflow-y-auto pr-1">
@@ -728,15 +848,16 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                             return (
                               <div
                                 key={pref.featureId}
-                                className="p-3 rounded-xl bg-slate-900/80 border border-slate-800/80 hover:border-indigo-500/40 flex items-start justify-between gap-2.5 transition-all group"
+                                onClick={() => handleAddFeature(pref.featureId)}
+                                className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 hover:bg-slate-900 flex items-center justify-between gap-2.5 transition-all group cursor-pointer"
                               >
-                                <div className="flex items-start gap-2.5 min-w-0">
-                                  <div className="p-2 rounded-xl bg-slate-800 text-slate-400 group-hover:text-indigo-300 group-hover:bg-indigo-500/10 transition-colors shrink-0 mt-0.5">
-                                    <IconComponent className="w-3.5 h-3.5" />
+                                <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                                  <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20 group-hover:scale-105 transition-all shrink-0 mt-0.5">
+                                    <IconComponent className="w-4 h-4" />
                                   </div>
-                                  <div className="min-w-0">
+                                  <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-1.5">
-                                      <h5 className="text-xs font-bold text-slate-200 truncate">
+                                      <h5 className="text-xs font-bold text-slate-100 group-hover:text-indigo-300 transition-colors truncate">
                                         {meta.defaultLabel}
                                       </h5>
                                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-400 border border-slate-700 shrink-0">
@@ -750,11 +871,16 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                                 </div>
 
                                 <button
-                                  onClick={() => handleAddFeature(pref.featureId)}
-                                  className="px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-[10px] font-bold flex items-center gap-1 transition-all shrink-0"
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAddFeature(pref.featureId);
+                                  }}
+                                  className="min-h-[40px] px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white border border-indigo-400/40 text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-indigo-600/20 transition-all shrink-0 active:scale-95"
                                   title="Add to My Workspace"
                                 >
-                                  <Plus className="w-3 h-3" /> Add
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Add</span>
                                 </button>
                               </div>
                             );
