@@ -33,6 +33,7 @@ import { NetworkStatusIndicator } from './components/NetworkStatusIndicator';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { VersionUpdateNotifier } from './components/VersionUpdateNotifier';
 import { WorkspaceCustomizer } from './components/WorkspaceCustomizer';
+import { OnboardingTour } from './components/OnboardingTour';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
 import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle } from 'lucide-react';
 
@@ -1079,6 +1080,13 @@ export default function App() {
         <main className={`flex-1 p-4 md:p-8 space-y-8 w-full mx-auto transition-all duration-200 ${
           isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
         }`}>
+          {/* Onboarding Tour (Global across all tabs until dismissed) */}
+          <OnboardingTour
+            onNavigate={(t) => setActiveTab(t as ActiveTab)}
+            onOpenProfileModal={() => setShowProfileModal(true)}
+            onToggleSidebar={handleToggleSidebarCollapse}
+          />
+
           {activeTab === 'dashboard' && (
             <>
               {/* Top Announcement Ticker (Customizable) */}

@@ -1,4 +1,4 @@
-import { getPersonalSyllabusNodes, PersonalSyllabusNode, savePersonalSubjectSyllabus, removePersonalSubject } from './personalSyllabus';
+import { getPersonalSyllabusNodes, PersonalSyllabusNode, savePersonalSubjectSyllabus, saveAllPersonalSyllabusNodes, removePersonalSubject } from './personalSyllabus';
 
 export interface OfficialSyllabusNode {
   id: string;
@@ -172,4 +172,4 @@ export async function fetchSyllabusTimeSummary(
   return {};
 }
 
-export { getPersonalSyllabusNodes, savePersonalSubjectSyllabus, removePersonalSubject };
+export { getPersonalSyllabusNodes, savePersonalSubjectSyllabus, saveAllPersonalSyllabusNodes, removePersonalSubject };

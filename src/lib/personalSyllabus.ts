@@ -12,6 +12,7 @@ export interface PersonalSyllabusNode {
   tags?: string;
   origin_official_id?: string;
   time_studied_seconds?: number;
+  order?: number;
   user_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -36,7 +37,7 @@ export async function getPersonalSyllabusNodes(
       const { data, error } = await query;
 
       if (!error && Array.isArray(data)) {
-        const nodes: PersonalSyllabusNode[] = data.map((row: any) => ({
+        const nodes: PersonalSyllabusNode[] = data.map((row: any, idx: number) => ({
           id: row.id,
           exam: row.exam,
           subject: row.subject,
@@ -48,10 +49,13 @@ export async function getPersonalSyllabusNodes(
           tags: row.tags || '',
           origin_official_id: row.origin_official_id || undefined,
           time_studied_seconds: Number(row.time_studied_seconds) || 0,
+          order: typeof row.order === 'number' ? row.order : (row.sort_order ?? idx),
           user_id: row.user_id,
           created_at: row.created_at,
           updated_at: row.updated_at,
         }));
+
+        nodes.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
         // Write result to LocalStorage cache
         try {
@@ -88,7 +92,8 @@ export async function getPersonalSyllabusNodes(
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        return exam ? parsed.filter((n: PersonalSyllabusNode) => n.exam === exam) : parsed;
+        const res = exam ? parsed.filter((n: PersonalSyllabusNode) => n.exam === exam) : parsed;
+        return res.sort((a: PersonalSyllabusNode, b: PersonalSyllabusNode) => (a.order ?? 0) - (b.order ?? 0));
       }
     }
   } catch (e) {
@@ -96,6 +101,71 @@ export async function getPersonalSyllabusNodes(
   }
 
   return [];
+}
+
+/**
+ * Saves all personal syllabus nodes for a given exam and user in a single batch operation
+ */
+export async function saveAllPersonalSyllabusNodes(
+  userId: string | undefined,
+  exam: string,
+  allNodes: PersonalSyllabusNode[]
+): Promise<PersonalSyllabusNode[]> {
+  const cleanedExam = (exam || 'UPSC_CSE').trim();
+  const key = getStorageKey(userId);
+
+  const preparedNodes: PersonalSyllabusNode[] = allNodes.map((n, idx) => ({
+    ...n,
+    exam: cleanedExam,
+    order: typeof n.order === 'number' ? n.order : idx,
+  }));
+
+  let currentAll: PersonalSyllabusNode[] = [];
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) currentAll = parsed;
+    }
+  } catch (e) {}
+
+  const otherExamsNodes = currentAll.filter((n) => n.exam !== cleanedExam);
+  const updatedAll = [...otherExamsNodes, ...preparedNodes];
+  localStorage.setItem(key, JSON.stringify(updatedAll));
+
+  window.dispatchEvent(new CustomEvent('aspirantx_personal_syllabus_updated'));
+
+  if (isSupabaseConfigured && userId) {
+    (async () => {
+      await supabase
+        .from('personal_syllabus_nodes')
+        .delete()
+        .eq('user_id', userId)
+        .eq('exam', cleanedExam);
+
+      if (preparedNodes.length > 0) {
+        const rowsToInsert = preparedNodes.map((n, idx) => ({
+          id: n.id,
+          user_id: userId,
+          exam: n.exam,
+          subject: n.subject,
+          chapter: n.chapter || '',
+          topic: n.topic || '',
+          subtopic: n.subtopic || '',
+          stage: n.stage || 'Prelims',
+          weightage: n.weightage || 'Medium',
+          tags: n.tags || '',
+          origin_official_id: n.origin_official_id || null,
+          time_studied_seconds: n.time_studied_seconds || 0,
+          updated_at: new Date().toISOString(),
+        }));
+
+        await supabase.from('personal_syllabus_nodes').upsert(rowsToInsert);
+      }
+    })().catch((err) => console.warn('Background Supabase saveAllPersonalSyllabusNodes warning:', err));
+  }
+
+  return preparedNodes;
 }
 
 /**
@@ -243,13 +313,50 @@ export async function getPersonalSubjects(userId?: string, exam?: string): Promi
   return Array.from(subjectsSet);
 }
 
+export interface CsvColumnMapping {
+  subjectIdx?: number | null;
+  chapterIdx?: number | null;
+  topicIdx?: number | null;
+  subtopicIdx?: number | null;
+  stageIdx?: number | null;
+  weightageIdx?: number | null;
+  tagsIdx?: number | null;
+  hasHeaderRow?: boolean;
+}
+
+/**
+ * Helper to split CSV line respecting quotes or fallback to tabs / semicolons
+ */
+export const splitCsvLine = (line: string): string[] => {
+  if (line.includes('\t')) {
+    return line.split('\t').map((c) => c.trim().replace(/^["']|["']$/g, ''));
+  }
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"' || char === "'") {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim().replace(/^["']|["']$/g, ''));
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim().replace(/^["']|["']$/g, ''));
+  return result;
+};
+
 /**
  * Helper to parse CSV content or pasted plain text lines into PersonalSyllabusNode[]
  */
 export function parseCsvSyllabus(
   csvContent: string,
   defaultExam: string,
-  defaultSubject?: string
+  defaultSubject?: string,
+  columnMapping?: CsvColumnMapping
 ): { nodes: PersonalSyllabusNode[]; skippedOtherSubjectRows: number; otherSubjectsFound: string[] } {
   if (!csvContent || typeof csvContent !== 'string') {
     return { nodes: [], skippedOtherSubjectRows: 0, otherSubjectsFound: [] };
@@ -270,35 +377,68 @@ export function parseCsvSyllabus(
   }
 
   const nodes: PersonalSyllabusNode[] = [];
+  const targetSubject = defaultSubject ? defaultSubject.trim() : '';
+  const detectedSubject = targetSubject || 'Custom Subject';
+
+  // Branch A: Explicit Column Mapping provided
+  if (columnMapping) {
+    const {
+      subjectIdx,
+      chapterIdx,
+      topicIdx,
+      subtopicIdx,
+      stageIdx,
+      weightageIdx,
+      tagsIdx,
+      hasHeaderRow = true,
+    } = columnMapping;
+
+    const startLineIdx = hasHeaderRow ? 1 : 0;
+
+    for (let i = startLineIdx; i < lines.length; i++) {
+      const cols = splitCsvLine(lines[i]);
+      if (cols.length === 0 || cols.every((c) => !c)) continue;
+
+      let rowSubject = (subjectIdx != null && subjectIdx >= 0 && cols[subjectIdx]) ? cols[subjectIdx].trim() : detectedSubject;
+      let rowChapter = (chapterIdx != null && chapterIdx >= 0 && cols[chapterIdx]) ? cols[chapterIdx].trim() : '';
+      let rowTopic = (topicIdx != null && topicIdx >= 0 && cols[topicIdx]) ? cols[topicIdx].trim() : '';
+      let rowSubtopic = (subtopicIdx != null && subtopicIdx >= 0 && cols[subtopicIdx]) ? cols[subtopicIdx].trim() : '';
+      let rowStage = (stageIdx != null && stageIdx >= 0 && cols[stageIdx]) ? cols[stageIdx].trim() : 'Prelims';
+      let rowWeightage = (weightageIdx != null && weightageIdx >= 0 && cols[weightageIdx]) ? cols[weightageIdx].trim() : 'Medium';
+      let rowTags = (tagsIdx != null && tagsIdx >= 0 && cols[tagsIdx]) ? cols[tagsIdx].trim() : '';
+
+      if (!rowChapter) rowChapter = rowTopic || 'General Chapter';
+      if (!rowSubtopic) rowSubtopic = rowTopic || rowChapter;
+
+      nodes.push({
+        id: `pers_node_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
+        exam: defaultExam,
+        subject: rowSubject || targetSubject || 'Custom Subject',
+        chapter: rowChapter,
+        topic: rowTopic || rowChapter,
+        subtopic: rowSubtopic,
+        stage: rowStage || 'Prelims',
+        weightage: rowWeightage || 'Medium',
+        tags: rowTags,
+      });
+    }
+
+    const distinctSubjectsFound = Array.from(
+      new Set(nodes.map((n) => n.subject).filter(Boolean))
+    );
+
+    return {
+      nodes,
+      skippedOtherSubjectRows: 0,
+      otherSubjectsFound: distinctSubjectsFound,
+    };
+  }
+
+  // Branch B: Legacy Auto-detection / Positional Heuristic Fallback
   let skippedOtherSubjectRows = 0;
   const otherSubjectsSet = new Set<string>();
 
-  const targetSubject = defaultSubject ? defaultSubject.trim() : '';
-  let detectedSubject = targetSubject || 'Custom Subject';
-
-  // Helper to split CSV line respecting quotes or fallback to tabs / semicolons
-  const splitLine = (line: string): string[] => {
-    if (line.includes('\t')) {
-      return line.split('\t').map((c) => c.trim().replace(/^["']|["']$/g, ''));
-    }
-    // Standard CSV split
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"' || char === "'") {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        result.push(current.trim().replace(/^["']|["']$/g, ''));
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    result.push(current.trim().replace(/^["']|["']$/g, ''));
-    return result;
-  };
+  const splitLine = splitCsvLine;
 
   const firstLineCols = splitLine(lines[0]).map((c) => c.toLowerCase());
   const hasHeader =
@@ -344,8 +484,6 @@ export function parseCsvSyllabus(
     if (hasHeader) {
       const csvRowSubject = (subjectIdx >= 0 && cols[subjectIdx]) ? cols[subjectIdx].trim() : '';
 
-      // Always keep the row — use its own subject name if present,
-      // otherwise fall back to targetSubject/detectedSubject.
       if (csvRowSubject) {
         rowSubject = csvRowSubject;
         if (targetSubject && csvRowSubject.toLowerCase() !== targetSubject.toLowerCase()) {
@@ -381,7 +519,6 @@ export function parseCsvSyllabus(
         if (cols[6]) rowTags = cols[6];
       }
 
-      // Track positional subject if targetSubject is specified
       if (rowSubject && targetSubject && rowSubject.toLowerCase() !== targetSubject.toLowerCase()) {
         otherSubjectsSet.add(rowSubject);
       }
