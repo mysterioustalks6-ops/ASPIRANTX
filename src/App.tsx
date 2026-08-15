@@ -686,7 +686,42 @@ export default function App() {
           return;
         }
 
-        // Do NOT wipe user state on non-signout auth events (e.g. TOKEN_REFRESHED)
+        if (event === 'TOKEN_REFRESHED') {
+          // Only refresh the internal JWT exchange, don't touch user/profile state
+          if (session?.access_token) {
+            try {
+              const res = await fetch('/api/auth/token', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${session.access_token}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+              if (res.status === 403) {
+                const errData = await res.json().catch(() => ({}));
+                if (errData.error === 'ACCOUNT_BANNED') {
+                  try {
+                    await supabase.auth.signOut();
+                  } catch (e) {}
+                  localStorage.removeItem('aspirantx_auth_token');
+                  setBannedMessage(errData.message || 'Your account has been suspended for violating community guidelines.');
+                  return;
+                }
+              }
+              if (res.ok) {
+                const tokenData = await res.json().catch(() => ({}));
+                if (tokenData.token) {
+                  localStorage.setItem('aspirantx_auth_token', tokenData.token);
+                }
+              }
+            } catch (e) {
+              console.error('Token refresh exchange failed:', e);
+            }
+          }
+          return; // IMPORTANT: skip profile refetch + setUser/setSelectedExam below
+        }
+
+        // Do NOT wipe user state on non-signout auth events (e.g. USER_UPDATED, SIGNED_IN)
         if (session?.user) {
           const email = session.user.email || '';
           const isDesignatedAdmin = email.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
@@ -726,12 +761,12 @@ export default function App() {
           try {
             const profile = await loadUserProfile(session.user.id);
             const resolvedExam = profile.exam || selectedExam || 'NEET_UG';
-            setSelectedExam(resolvedExam);
+            setSelectedExam((prev) => (prev === resolvedExam ? prev : resolvedExam));
             localStorage.setItem('aspirantx_global_selected_exam', resolvedExam);
 
             setUser((prev) => {
               const isComp = Boolean(profile.isProfileComplete || (profile.exam && profile.exam.trim() !== '') || prev?.isProfileComplete);
-              return {
+              const next: UserProfile = {
                 ...profile,
                 ...prev,
                 id: session.user.id,
@@ -741,6 +776,8 @@ export default function App() {
                 role: isDesignatedAdmin ? 'ADMIN' : (profile.role || 'USER'),
                 isProfileComplete: isComp,
               };
+              const changed = !prev || JSON.stringify(next) !== JSON.stringify(prev);
+              return changed ? next : prev;
             });
             if (isDesignatedAdmin) {
               setIsAdminUnlocked(true);
