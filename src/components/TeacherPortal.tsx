@@ -1,987 +1,1301 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
-  Video, 
   Calendar, 
+  Video, 
+  FileText, 
   Plus, 
-  Tv, 
-  Award,
-  Loader2,
-  CheckCircle2,
+  Clock, 
+  CheckCircle2, 
+  PlayCircle, 
+  BookOpen, 
+  Award, 
+  UserCheck, 
+  GraduationCap, 
+  Send, 
+  ExternalLink, 
+  ChevronRight, 
+  Sparkles, 
+  Edit3, 
+  X, 
+  Search, 
+  Check, 
   AlertCircle,
-  MessageSquare,
-  Clock,
-  UserCheck,
-  Star,
-  Ban,
-  XCircle
+  FileCheck
 } from 'lucide-react';
+import { 
+  UserProfile, 
+  TeacherProfile, 
+  TeacherClass, 
+  ClassAssignment, 
+  AssignmentSubmission, 
+  TeacherStudentAggregate,
+  ActiveTab 
+} from '../types';
 
-interface Educator {
-  id: string;
-  name: string;
-  subject: string;
-  experience: string;
-  qualification: string;
-  avatar: string;
-  isVerified?: boolean;
-  status?: string;
-  email?: string;
-  bio?: string;
-  availability?: string[];
-  rating?: number;
-  studentsCount?: number;
-  reviewsCount?: number;
-  sessionPrice?: number;
-  isOnline?: boolean;
+interface TeacherPortalProps {
+  user: UserProfile;
+  onNavigate?: (tab: ActiveTab) => void;
 }
 
-interface Booking {
-  id: string;
-  educatorId: string;
-  date: string;
-  time: string;
-  selectedSlot?: string;
-  studentEmail: string;
-  studentName?: string;
-  notes?: string;
-  status: string;
-  price?: number;
-  utrNumber?: string;
-  createdAt: string;
-}
-
-interface ChatMessage {
-  id: string;
-  educatorId: string;
-  sender: string;
-  msg: string;
-  timestamp: string;
-}
-
-export const TeacherPortal: React.FC = () => {
-  const [educators, setEducators] = useState<Educator[]>([]);
-  const [loadingEducators, setLoadingEducators] = useState<boolean>(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
-
-  // Educator Registration Modal & Form State
-  const [showRegModal, setShowRegModal] = useState<boolean>(false);
-  const [submittingReg, setSubmittingReg] = useState<boolean>(false);
-  const [regForm, setRegForm] = useState({
-    name: '',
-    email: '',
-    subject: 'Indian Polity & Governance',
-    experience: '',
-    qualification: '',
-    bio: '',
-    avatar: '',
-    sessionPrice: 0
+export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }) => {
+  const [activeSubTab, setActiveSubTab] = useState<'classes' | 'assignments' | 'students' | 'profile' | 'live_classes'>('classes');
+  
+  // Teacher Profile state
+  const [teacherProfile, setTeacherProfile] = useState<TeacherProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState<boolean>(true);
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [profileForm, setProfileForm] = useState({
+    name: user.name || '',
+    subjects: user.streamOrSubject ? [user.streamOrSubject] : ['General Studies'],
+    subjectInput: '',
+    bio: user.bio || '',
+    qualification: 'Faculty / Educator',
+    experienceYears: 3,
+    photoUrl: user.avatar_url || ''
   });
 
-  // Booking Modal & Form State
-  const [bookingEducator, setBookingEducator] = useState<Educator | null>(null);
-  const [selectedSlot, setSelectedSlot] = useState<string>('');
-  const [utrNumber, setUtrNumber] = useState<string>('');
-  const [studentEmail, setStudentEmail] = useState<string>('');
-  const [studentName, setStudentName] = useState<string>('');
-  const [notes, setNotes] = useState<string>('');
-  const [submittingBooking, setSubmittingBooking] = useState<boolean>(false);
+  // Classes state
+  const [classes, setClasses] = useState<TeacherClass[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState<boolean>(false);
+  const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
+  const [selectedClass, setSelectedClass] = useState<TeacherClass | null>(null);
+  const [classStudents, setClassStudents] = useState<{ enrollments: any[]; attendance: any[] }>({ enrollments: [], attendance: [] });
+  const [loadingClassStudents, setLoadingClassStudents] = useState<boolean>(false);
 
-  // View Bookings Drawer/Modal State
-  const [viewingBookingsEd, setViewingBookingsEd] = useState<Educator | null>(null);
-  const [bookingsList, setBookingsList] = useState<Booking[]>([]);
-  const [loadingBookings, setLoadingBookings] = useState<boolean>(false);
-  const [confirmCancelBooking, setConfirmCancelBooking] = useState<Booking | null>(null);
-  const [cancellingBooking, setCancellingBooking] = useState<boolean>(false);
+  // New Class Form state
+  const [classForm, setClassForm] = useState({
+    title: '',
+    subject: user.streamOrSubject || 'General Studies',
+    description: '',
+    scheduledAt: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
+    durationMins: 60,
+    maxStudents: 100,
+    meetingLink: ''
+  });
 
-  // Live Classroom & Chat State
-  const [selectedEducatorId, setSelectedEducatorId] = useState<string>('ed_1');
-  const [liveChat, setLiveChat] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState<string>('');
-  const [sendingChat, setSendingChat] = useState<boolean>(false);
+  // Recording link state
+  const [recordingUrlInput, setRecordingUrlInput] = useState<string>('');
 
-  // Auto-dismiss alert banner
-  useEffect(() => {
-    if (successMsg) {
-      const timer = setTimeout(() => setSuccessMsg(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMsg]);
+  // Assignments state
+  const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
+  const [loadingAssignments, setLoadingAssignments] = useState<boolean>(false);
+  const [showCreateAssignmentModal, setShowCreateAssignmentModal] = useState<boolean>(false);
+  const [assignmentForm, setAssignmentForm] = useState({
+    title: '',
+    description: '',
+    dueDate: new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 16),
+    attachmentUrl: ''
+  });
+  const [selectedAssignment, setSelectedAssignment] = useState<ClassAssignment | null>(null);
+  const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState<boolean>(false);
+  const [gradingModalSub, setGradingModalSub] = useState<AssignmentSubmission | null>(null);
+  const [gradeInput, setGradeInput] = useState<string>('');
+  const [feedbackInput, setFeedbackInput] = useState<string>('');
 
-  useEffect(() => {
-    if (errorMsg) {
-      const timer = setTimeout(() => setErrorMsg(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [errorMsg]);
+  // My Students state
+  const [studentsList, setStudentsList] = useState<TeacherStudentAggregate[]>([]);
+  const [loadingStudentsList, setLoadingStudentsList] = useState<boolean>(false);
+  const [studentSearch, setStudentSearch] = useState<string>('');
 
-  // When booking modal opens, initialize selected slot
-  useEffect(() => {
-    if (bookingEducator) {
-      if (bookingEducator.availability && bookingEducator.availability.length > 0) {
-        setSelectedSlot(bookingEducator.availability[0]);
-      } else {
-        setSelectedSlot('');
-      }
-      setUtrNumber('');
-    }
-  }, [bookingEducator]);
+  // Notice & Notification banner
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
 
-  // Fetch Educators List
-  const fetchEducators = useCallback(async () => {
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('aspirantx_auth_token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (user.role) headers['X-User-Role'] = user.role;
+    return headers;
+  };
+
+  // 1. Fetch Teacher Profile
+  const fetchProfile = async () => {
+    setLoadingProfile(true);
     try {
-      setLoadingEducators(true);
-      const res = await fetch('/api/teachers');
-      const data = await res.json();
-      if (res.ok && data.success && Array.isArray(data.educators)) {
-        setEducators(data.educators);
-        if (data.educators.length > 0 && !data.educators.some((e: Educator) => e.id === selectedEducatorId)) {
-          setSelectedEducatorId(data.educators[0].id);
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch educators:', err);
-    } finally {
-      setLoadingEducators(false);
-    }
-  }, [selectedEducatorId]);
-
-  useEffect(() => {
-    fetchEducators();
-  }, [fetchEducators]);
-
-  // Fetch Live Chat
-  const fetchLiveChat = useCallback(async () => {
-    if (!selectedEducatorId) return;
-    try {
-      const res = await fetch(`/api/teachers/chat/${selectedEducatorId}`);
-      const data = await res.json();
-      if (res.ok && data.success && Array.isArray(data.chat)) {
-        setLiveChat(data.chat);
-      }
-    } catch (err) {
-      console.error('Error fetching live chat:', err);
-    }
-  }, [selectedEducatorId]);
-
-  useEffect(() => {
-    fetchLiveChat();
-    const interval = setInterval(fetchLiveChat, 4000);
-    return () => clearInterval(interval);
-  }, [fetchLiveChat]);
-
-  // Handle Educator Registration
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setSubmittingReg(true);
-      setErrorMsg(null);
-      const res = await fetch('/api/teachers/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(regForm)
+      const res = await fetch(`/api/teacher/profile?userId=${encodeURIComponent(user.id)}&email=${encodeURIComponent(user.email)}`, {
+        headers: getAuthHeaders()
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        setSuccessMsg(data.message || 'Teacher registration submitted successfully!');
-        setShowRegModal(false);
-        setRegForm({
-          name: '',
-          email: '',
-          subject: 'Indian Polity & Governance',
-          experience: '',
-          qualification: '',
-          bio: '',
-          avatar: '',
-          sessionPrice: 0
+      if (data.success && data.profile) {
+        setTeacherProfile(data.profile);
+        setProfileForm({
+          name: data.profile.name || user.name || '',
+          subjects: data.profile.subjects || ['General Studies'],
+          subjectInput: '',
+          bio: data.profile.bio || '',
+          qualification: data.profile.qualification || 'Faculty',
+          experienceYears: data.profile.experienceYears || 3,
+          photoUrl: data.profile.photoUrl || user.avatar_url || ''
         });
-        fetchEducators();
       } else {
-        setErrorMsg(data.error || 'Registration failed.');
+        // Auto show setup modal if not created yet
+        setShowProfileModal(true);
       }
-    } catch (err: any) {
-      console.error('Error registering educator:', err);
-      setErrorMsg('Server connection error while registering.');
+    } catch (_e) {
+      setShowProfileModal(true);
     } finally {
-      setSubmittingReg(false);
+      setLoadingProfile(false);
     }
   };
 
-  // Handle Book Session Submission
-  const handleBookSession = async (e: React.FormEvent) => {
+  // 2. Fetch Teacher Classes
+  const fetchClasses = async () => {
+    setLoadingClasses(true);
+    try {
+      const res = await fetch(`/api/teacher/classes?teacherId=${encodeURIComponent(user.id)}`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.classes)) {
+        setClasses(data.classes);
+        if (data.classes.length > 0 && !selectedClass) {
+          setSelectedClass(data.classes[0]);
+        }
+      }
+    } catch (_e) {} finally {
+      setLoadingClasses(false);
+    }
+  };
+
+  // Fetch Class Enrolled & Attendance
+  const fetchClassStudents = async (classId: string) => {
+    setLoadingClassStudents(true);
+    try {
+      const res = await fetch(`/api/teacher/classes/${classId}/students`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success) {
+        setClassStudents({ enrollments: data.enrollments || [], attendance: data.attendance || [] });
+      }
+    } catch (_e) {} finally {
+      setLoadingClassStudents(false);
+    }
+  };
+
+  // Fetch Assignments for selected class
+  const fetchClassAssignments = async (classId: string) => {
+    setLoadingAssignments(true);
+    try {
+      const res = await fetch(`/api/teacher/classes/${classId}/assignments`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.assignments)) {
+        setAssignments(data.assignments);
+      }
+    } catch (_e) {} finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  // Fetch Submissions for assignment
+  const fetchSubmissions = async (assignmentId: string) => {
+    setLoadingSubmissions(true);
+    try {
+      const res = await fetch(`/api/teacher/assignments/${assignmentId}/submissions`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.submissions)) {
+        setSubmissions(data.submissions);
+      }
+    } catch (_e) {} finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
+  // Fetch My Students
+  const fetchMyStudents = async () => {
+    setLoadingStudentsList(true);
+    try {
+      const res = await fetch(`/api/teacher/my-students?teacherId=${encodeURIComponent(user.id)}`, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.students)) {
+        setStudentsList(data.students);
+      }
+    } catch (_e) {} finally {
+      setLoadingStudentsList(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    fetchClasses();
+  }, [user.id]);
+
+  useEffect(() => {
+    if (selectedClass) {
+      fetchClassStudents(selectedClass.id);
+      fetchClassAssignments(selectedClass.id);
+      setRecordingUrlInput(selectedClass.recordingUrl || '');
+    }
+  }, [selectedClass?.id]);
+
+  useEffect(() => {
+    if (activeSubTab === 'students') {
+      fetchMyStudents();
+    }
+  }, [activeSubTab]);
+
+  // Handle Save Teacher Profile
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bookingEducator) return;
-    if (!selectedSlot) {
-      setErrorMsg('Please select an available session slot.');
-      return;
-    }
-    if (bookingEducator.sessionPrice && bookingEducator.sessionPrice > 0 && !utrNumber.trim()) {
-      setErrorMsg('Please enter your payment UTR / Transaction ID to confirm booking.');
-      return;
-    }
-
     try {
-      setSubmittingBooking(true);
-      setErrorMsg(null);
-      const res = await fetch(`/api/teachers/${bookingEducator.id}/book`, {
+      const res = await fetch('/api/teacher/profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
-          slot: selectedSlot,
-          studentEmail,
-          studentName,
-          notes,
-          utrNumber
+          userId: user.id,
+          email: user.email,
+          name: profileForm.name,
+          subjects: profileForm.subjects,
+          bio: profileForm.bio,
+          qualification: profileForm.qualification,
+          experienceYears: Number(profileForm.experienceYears),
+          photoUrl: profileForm.photoUrl
         })
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        setSuccessMsg(data.message || `Session booked with ${bookingEducator.name}!`);
-        setBookingEducator(null);
-        setNotes('');
-        setUtrNumber('');
-        if (viewingBookingsEd?.id === bookingEducator.id) {
-          handleViewBookings(viewingBookingsEd);
-        }
-      } else {
-        setErrorMsg(data.error || 'Booking failed.');
+      if (data.success) {
+        setTeacherProfile(data.profile);
+        setShowProfileModal(false);
+        setActionNotice('✅ Teacher profile saved successfully!');
       }
-    } catch (err: any) {
-      console.error('Error booking session:', err);
-      setErrorMsg('Server connection error while booking.');
-    } finally {
-      setSubmittingBooking(false);
+    } catch (_e) {
+      setActionNotice('Profile updated locally');
     }
+    setTimeout(() => setActionNotice(null), 3000);
   };
 
-  // Fetch Bookings for an Educator
-  const handleViewBookings = async (ed: Educator) => {
-    setViewingBookingsEd(ed);
+  // Handle Schedule Class
+  const handleScheduleClass = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      setLoadingBookings(true);
-      const res = await fetch(`/api/teachers/${ed.id}/bookings`);
-      const data = await res.json();
-      if (res.ok && data.success && Array.isArray(data.bookings)) {
-        setBookingsList(data.bookings);
-      } else {
-        setBookingsList([]);
-      }
-    } catch (err) {
-      console.error('Error fetching bookings:', err);
-      setBookingsList([]);
-    } finally {
-      setLoadingBookings(false);
-    }
-  };
-
-  // Execute Cancel Booking
-  const handleExecuteCancelBooking = async () => {
-    if (!confirmCancelBooking) return;
-    try {
-      setCancellingBooking(true);
-      const res = await fetch(`/api/teachers/bookings/${confirmCancelBooking.id}/cancel`, {
-        method: 'POST'
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setSuccessMsg('Booking cancelled successfully.');
-        setConfirmCancelBooking(null);
-        if (viewingBookingsEd) {
-          await handleViewBookings(viewingBookingsEd);
-        }
-      } else {
-        setErrorMsg(data.error || 'Failed to cancel booking.');
-      }
-    } catch (err) {
-      console.error('Error cancelling booking:', err);
-      setErrorMsg('Failed to cancel booking due to network error.');
-    } finally {
-      setCancellingBooking(false);
-    }
-  };
-
-  // Send Chat Message
-  const sendLiveChat = async () => {
-    if (!chatInput.trim() || !selectedEducatorId) return;
-    try {
-      setSendingChat(true);
-      const res = await fetch(`/api/teachers/chat/${selectedEducatorId}`, {
+      const res = await fetch('/api/teacher/classes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
-          sender: studentName || 'Aspirant Student',
-          msg: chatInput.trim()
+          teacherId: user.id,
+          teacherName: teacherProfile?.name || user.name || 'Faculty Member',
+          title: classForm.title,
+          subject: classForm.subject,
+          description: classForm.description,
+          scheduledAt: new Date(classForm.scheduledAt).toISOString(),
+          durationMins: Number(classForm.durationMins),
+          maxStudents: Number(classForm.maxStudents),
+          meetingLink: classForm.meetingLink || `https://meet.jit.si/aspirantx-class-${Date.now()}`
         })
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        setChatInput('');
-        fetchLiveChat();
+      if (data.success) {
+        setClasses((prev) => [data.class, ...prev]);
+        setSelectedClass(data.class);
+        setShowScheduleModal(false);
+        setClassForm({
+          title: '',
+          subject: user.streamOrSubject || 'General Studies',
+          description: '',
+          scheduledAt: new Date(Date.now() + 3600000).toISOString().slice(0, 16),
+          durationMins: 60,
+          maxStudents: 100,
+          meetingLink: ''
+        });
+        setActionNotice('✅ Class scheduled successfully!');
       }
-    } catch (err) {
-      console.error('Error sending chat:', err);
-    } finally {
-      setSendingChat(false);
+    } catch (_e) {}
+    setTimeout(() => setActionNotice(null), 3000);
+  };
+
+  // Handle Update Class Status
+  const handleUpdateClassStatus = async (classId: string, newStatus: 'SCHEDULED' | 'LIVE' | 'COMPLETED', recUrl?: string) => {
+    try {
+      const res = await fetch(`/api/teacher/classes/${classId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          status: newStatus,
+          ...(recUrl !== undefined ? { recordingUrl: recUrl } : {})
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setClasses((prev) => prev.map((c) => (c.id === classId ? { ...c, status: newStatus, recordingUrl: recUrl || c.recordingUrl } : c)));
+        if (selectedClass?.id === classId) {
+          setSelectedClass((prev) => (prev ? { ...prev, status: newStatus, recordingUrl: recUrl || prev.recordingUrl } : prev));
+        }
+        setActionNotice(`✅ Class marked as ${newStatus}`);
+      }
+    } catch (_e) {}
+    setTimeout(() => setActionNotice(null), 3000);
+  };
+
+  // Handle Create Assignment
+  const handleCreateAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedClass) return;
+
+    try {
+      const res = await fetch(`/api/teacher/classes/${selectedClass.id}/assignments`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          teacherId: user.id,
+          title: assignmentForm.title,
+          description: assignmentForm.description,
+          dueDate: new Date(assignmentForm.dueDate).toISOString(),
+          attachmentUrl: assignmentForm.attachmentUrl
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAssignments((prev) => [data.assignment, ...prev]);
+        setShowCreateAssignmentModal(false);
+        setAssignmentForm({
+          title: '',
+          description: '',
+          dueDate: new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 16),
+          attachmentUrl: ''
+        });
+        setActionNotice('✅ Assignment created for class!');
+      }
+    } catch (_e) {}
+    setTimeout(() => setActionNotice(null), 3000);
+  };
+
+  // Handle Grade Submission
+  const handleGradeSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gradingModalSub) return;
+
+    try {
+      const res = await fetch(`/api/teacher/submissions/${gradingModalSub.id}/grade`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          grade: gradeInput,
+          feedback: feedbackInput
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmissions((prev) => prev.map((s) => (s.id === gradingModalSub.id ? { ...s, grade: gradeInput, feedback: feedbackInput, gradedAt: new Date().toISOString() } : s)));
+        setGradingModalSub(null);
+        setGradeInput('');
+        setFeedbackInput('');
+        setActionNotice('✅ Submission graded!');
+      }
+    } catch (_e) {}
+    setTimeout(() => setActionNotice(null), 3000);
+  };
+
+  // Add/Remove subject tag
+  const handleAddSubjectTag = () => {
+    if (profileForm.subjectInput.trim() && !profileForm.subjects.includes(profileForm.subjectInput.trim())) {
+      setProfileForm((prev) => ({
+        ...prev,
+        subjects: [...prev.subjects, prev.subjectInput.trim()],
+        subjectInput: ''
+      }));
     }
   };
 
-  const selectedEducator = educators.find(e => e.id === selectedEducatorId);
+  const handleRemoveSubjectTag = (sub: string) => {
+    setProfileForm((prev) => ({
+      ...prev,
+      subjects: prev.subjects.filter((s) => s !== sub)
+    }));
+  };
+
+  const filteredStudents = studentsList.filter((s) =>
+    s.studentName.toLowerCase().includes(studentSearch.toLowerCase()) ||
+    s.studentEmail.toLowerCase().includes(studentSearch.toLowerCase())
+  );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Header section */}
-      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-6 sm:p-8 backdrop-blur-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
-          <div className="space-y-2 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold">
-              <Award className="w-3.5 h-3.5" /> Faculty & Mentorship Hub
+    <div className="space-y-6 pb-12">
+      {/* Top Banner Header */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-900 border border-indigo-500/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0 shadow-inner">
+              <GraduationCap className="w-9 h-9" />
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Teacher & Mentor Network
-            </h1>
-            <p className="text-slate-400 text-xs sm:text-sm max-w-xl">
-              Connect 1-on-1 with India's top educators for personalized UPSC, SSC, and State PCS exam guidance.
-            </p>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                  Teacher Portal & Faculty Center
+                </h1>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  Verified Faculty
+                </span>
+              </div>
+              <p className="text-sm text-slate-300 mt-1 max-w-xl">
+                Schedule live classes, manage enrolled students, issue class assignments, track attendance, and grade submissions.
+              </p>
+            </div>
           </div>
 
-          <button
-            onClick={() => setShowRegModal(true)}
-            className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-2xl shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2 shrink-0 border border-indigo-400/30"
-          >
-            <Plus className="w-4 h-4" /> Apply as Educator
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => setShowScheduleModal(true)}
+              className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl transition-all shadow-lg shadow-indigo-600/30 flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Schedule Class
+            </button>            <button
+              onClick={() => setShowProfileModal(true)}
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition-all flex items-center gap-2"
+            >
+              <Edit3 className="w-4 h-4" />
+              Edit Profile
+            </button>
+          </div>
         </div>
+
+        {/* Action Notice Toast */}
+        {actionNotice && (
+          <div className="mt-4 px-4 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold animate-fade-in flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4" />
+            {actionNotice}
+          </div>
+        )}
       </div>
 
-      {/* Alert Notifications */}
-      {successMsg && (
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-2xl flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>{successMsg}</span>
-        </div>
-      )}
+      {/* Sub-Navigation Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/80 scrollbar-none">
+        <button
+          onClick={() => setActiveSubTab('classes')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+            activeSubTab === 'classes'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
+              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
+          }`}
+        >
+          <Video className="w-4 h-4" />
+          My Classes ({classes.length})
+        </button>
 
-      {errorMsg && (
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold rounded-2xl flex items-center gap-2 animate-fade-in">
-          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>{errorMsg}</span>
-        </div>
-      )}
+        <button
+          onClick={() => setActiveSubTab('assignments')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+            activeSubTab === 'assignments'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
+              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          Assignments & Submissions ({assignments.length})
+        </button>
 
-      {/* Main Grid: Educators & Video Portal (Left) vs Live Chat (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Educators Grid */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <h3 className="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-4 h-4 text-indigo-400" /> Featured Educators
-              </h3>
-              <span className="text-[10px] text-slate-400 font-medium">Verified Faculty Members</span>
-            </div>
+        <button
+          onClick={() => setActiveSubTab('students')}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+            activeSubTab === 'students'
+              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
+              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          My Enrolled Students
+        </button>
+      </div>
 
-            {loadingEducators ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
-                <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
-                <p className="text-xs">Loading faculty network...</p>
-              </div>
-            ) : educators.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-8">No educators registered yet.</p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {educators.map(ed => (
-                  <div 
-                    key={ed.id}
-                    className={`bg-slate-950/60 border rounded-2xl p-4 flex flex-col justify-between transition-all ${
-                      selectedEducatorId === ed.id ? 'border-indigo-500/60 shadow-lg shadow-indigo-500/10' : 'border-white/5 hover:border-indigo-500/30'
-                    }`}
-                  >
-                    <div className="flex gap-3">
-                      <div className="relative shrink-0">
-                        <img 
-                          src={ed.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80'} 
-                          alt={ed.name} 
-                          className="w-14 h-14 rounded-2xl border border-white/10 object-cover" 
-                        />
-                        {/* GAP 4: Online indicator dot */}
-                        <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-slate-950 ${
-                          ed.isOnline ? 'bg-emerald-500' : 'bg-slate-500'
-                        }`} />
-                      </div>
-
-                      <div className="space-y-1 text-left flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="font-black text-white text-xs sm:text-sm truncate">{ed.name}</h4>
-                          {ed.isVerified && <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1 py-0.5 rounded font-bold">Verified</span>}
-                        </div>
-                        
-                        <p className="text-[11px] text-indigo-400 font-bold truncate">{ed.subject}</p>
-                        <p className="text-[10px] text-slate-400 line-clamp-1">{ed.experience} • {ed.qualification}</p>
-
-                        {/* GAP 1: Social Proof (Rating + Students Taught) */}
-                        <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                          {ed.rating && ed.rating > 0 ? (
-                            <div className="flex items-center gap-1 text-amber-400 font-bold text-[10px] bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded-lg">
-                              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                              <span>{ed.rating.toFixed(1)}</span>
-                              <span className="text-[9px] text-slate-400 font-normal">({ed.reviewsCount ? ed.reviewsCount.toLocaleString() : 0})</span>
-                            </div>
-                          ) : (
-                            <span className="text-[9px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded-lg font-bold">
-                              New Educator
-                            </span>
-                          )}
-
-                          <div className="flex items-center gap-1 text-[10px] text-slate-300 font-medium">
-                            <Users className="w-3 h-3 text-indigo-400" />
-                            <span>{ed.studentsCount ? ed.studentsCount.toLocaleString() : 0} taught</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* GAP 3: Price Display & Actions */}
-                    <div className="pt-3 mt-3 border-t border-white/5 flex items-center justify-between flex-wrap gap-2">
-                      <div className="text-left">
-                        {ed.sessionPrice && ed.sessionPrice > 0 ? (
-                          <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-md font-black">
-                            ₹{ed.sessionPrice} / session
-                          </span>
-                        ) : (
-                          <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-md font-black">
-                            Free Session
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => setBookingEducator(ed)}
-                          className="px-2.5 py-1.5 bg-indigo-600/20 border border-indigo-500/30 hover:bg-indigo-600/30 text-indigo-200 text-[10px] font-bold rounded-xl transition-all flex items-center gap-1"
-                        >
-                          <Calendar className="w-3 h-3 text-indigo-400" />
-                          <span>Book</span>
-                        </button>
-
-                        <button
-                          onClick={() => setSelectedEducatorId(ed.id)}
-                          className={`px-2 py-1.5 border text-[10px] font-bold rounded-xl transition-all flex items-center gap-1 ${
-                            selectedEducatorId === ed.id 
-                              ? 'bg-purple-600 text-white border-purple-500' 
-                              : 'bg-slate-900 border-white/10 text-slate-300 hover:text-white'
-                          }`}
-                        >
-                          <Tv className="w-3 h-3 text-purple-300" />
-                          <span>Chat</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleViewBookings(ed)}
-                          className="px-2 py-1.5 bg-slate-900 border border-white/10 text-slate-300 hover:text-white text-[10px] font-bold rounded-xl transition-all flex items-center gap-1"
-                        >
-                          <Clock className="w-3 h-3 text-amber-400" />
-                          <span>List</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Video portal playlist */}
-          <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-4">
-            <h3 className="font-extrabold text-white text-xs uppercase tracking-wider pb-3 border-b border-white/5 flex items-center gap-2">
-              <Video className="w-4 h-4 text-indigo-400" /> Popular Masterclasses
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="bg-slate-950/80 rounded-xl overflow-hidden border border-white/5 group">
-                <div className="aspect-video bg-gradient-to-tr from-slate-900 to-indigo-950 relative flex items-center justify-center border-b border-white/5">
-                  <Video className="w-8 h-8 text-white/40 group-hover:scale-110 transition-transform" />
-                  <span className="absolute bottom-2 right-2 text-[9px] bg-black/80 text-slate-300 px-1.5 py-0.5 rounded">45:00 Min</span>
-                </div>
-                <div className="p-3.5 space-y-1 text-left">
-                  <h4 className="font-bold text-white text-xs group-hover:text-indigo-400 transition-colors">Indian Polity: Basic Structure Doctrine</h4>
-                  <p className="text-[10px] text-slate-400">By Dr. Siddharth Arora • Recorded Lecture</p>
-                </div>
-              </div>
-
-              <div className="bg-slate-950/80 rounded-xl overflow-hidden border border-white/5 group">
-                <div className="aspect-video bg-gradient-to-tr from-slate-900 to-indigo-950 relative flex items-center justify-center border-b border-white/5">
-                  <Video className="w-8 h-8 text-white/40 group-hover:scale-110 transition-transform" />
-                  <span className="absolute bottom-2 right-2 text-[9px] bg-black/80 text-slate-300 px-1.5 py-0.5 rounded">1:12:08 Hr</span>
-                </div>
-                <div className="p-3.5 space-y-1 text-left">
-                  <h4 className="font-bold text-white text-xs group-hover:text-indigo-400 transition-colors">Union Budget Analysis for IAS Mains</h4>
-                  <p className="text-[10px] text-slate-400">By Mrunal Patel • Strategy Session</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Classroom & Real-time Chat */}
-        <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-4 h-fit">
-          <div className="flex items-center justify-between pb-3 border-b border-white/5">
-            <div className="space-y-1 text-left">
-              <h3 className="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2">
-                <Tv className="w-4 h-4 text-emerald-400 animate-pulse" /> Live Classroom Chat
-              </h3>
-              {/* GAP 4: Online/Offline Status in Chat */}
-              {selectedEducator && (
-                <div className="flex items-center gap-1.5">
-                  {selectedEducator.isOnline ? (
-                    <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      Online
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-[10px] text-slate-400 font-medium bg-slate-800/80 border border-white/10 px-2 py-0.5 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-slate-500"></span>
-                      Offline — replies within a few hours
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30 font-bold">
-              {selectedEducator?.name || 'Educator Room'}
-            </span>
-          </div>
-
-          {/* Whiteboard visual simulator */}
-          <div className="aspect-[4/3] bg-slate-950 rounded-xl border border-white/10 p-3 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute inset-0 bg-slate-950 flex flex-col justify-center items-center p-4">
-              <span className="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded font-black absolute top-3 left-3">LIVE STREAM</span>
-              <div className="text-center space-y-1.5">
-                <p className="text-slate-200 text-xs font-black">Interactive Educator Canvas & Video Stream</p>
-                <p className="text-[10px] text-slate-400">
-                  {selectedEducator?.name || 'Educator'} Live Classroom
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Live Chat simulator */}
-          <div className="space-y-3">
+      {/* TAB 1: CLASSES DASHBOARD & DETAILS */}
+      {activeSubTab === 'classes' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column: Classes List */}
+          <div className="lg:col-span-1 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] text-slate-400 font-bold uppercase flex items-center gap-1">
-                <MessageSquare className="w-3 h-3 text-indigo-400" /> Classroom Chat:
-              </span>
-              <span className="text-[9px] text-slate-500 font-mono">Auto-refreshes live</span>
-            </div>
-            
-            <div className="bg-slate-950/80 border border-white/5 rounded-xl p-3 h-48 overflow-y-auto space-y-2 text-left scrollbar-thin">
-              {liveChat.length === 0 ? (
-                <p className="text-[10px] text-slate-500 text-center py-14">Iss educator room me abhi koi message nahi hai. Pehla message bhejein!</p>
-              ) : (
-                liveChat.map((chat) => (
-                  <div key={chat.id || Math.random()} className="text-[11px] leading-tight bg-slate-900/40 p-1.5 rounded border border-white/5">
-                    <div className="flex justify-between items-center mb-0.5">
-                      <span className="font-black text-indigo-400 text-[10px]">{chat.sender}</span>
-                      <span className="text-[8px] text-slate-500">{new Date(chat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <span className="text-slate-200">{chat.msg}</span>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && sendLiveChat()}
-                placeholder="Ask doubt or chat live..."
-                className="flex-1 bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500"
-              />
-              <button
-                onClick={sendLiveChat}
-                disabled={sendingChat || !chatInput.trim()}
-                className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl disabled:opacity-50 transition-all shrink-0"
-              >
-                {sendingChat ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Educator Registration Modal */}
-      {showRegModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-white/10 pb-3">
-              <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-indigo-400" /> Apply as an Educator
+              <h3 className="text-sm font-black text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-indigo-400" />
+                Scheduled Classes
               </h3>
-              <button onClick={() => setShowRegModal(false)} className="text-slate-400 hover:text-white text-xs font-bold">✕</button>
-            </div>
-            <p className="text-xs text-slate-400">Join top faculty at AspirantX to guide thousands of students across India.</p>
-
-            <form onSubmit={handleRegister} className="space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase">Full Name *</label>
-                <input
-                  type="text"
-                  required
-                  value={regForm.name}
-                  onChange={(e) => setRegForm(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g. Dr. Siddharth Arora"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase">Educator Email Address</label>
-                <input
-                  type="email"
-                  value={regForm.email}
-                  onChange={(e) => setRegForm(prev => ({ ...prev, email: e.target.value }))}
-                  placeholder="educator@aspirantx.in"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Syllabus Speciality *</label>
-                  <select
-                    value={regForm.subject}
-                    onChange={(e) => setRegForm(prev => ({ ...prev, subject: e.target.value }))}
-                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white"
-                  >
-                    <option value="Indian Polity & Governance">Indian Polity & Governance</option>
-                    <option value="Indian Economy & Budgetary Reforms">Indian Economy</option>
-                    <option value="Modern Indian History">Modern Indian History</option>
-                    <option value="Geography & Environment">Geography & Environment</option>
-                    <option value="Ethics & Case Studies">Ethics & Case Studies</option>
-                    <option value="Quantitative Aptitude (SSC/CGL)">Quantitative Aptitude</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Session Price (₹)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={regForm.sessionPrice}
-                    onChange={(e) => setRegForm(prev => ({ ...prev, sessionPrice: Number(e.target.value) }))}
-                    placeholder="0 for Free"
-                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase">Teaching Experience</label>
-                <input
-                  type="text"
-                  value={regForm.experience}
-                  onChange={(e) => setRegForm(prev => ({ ...prev, experience: e.target.value }))}
-                  placeholder="e.g. 8+ Years"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase">Qualifications / Background</label>
-                <input
-                  type="text"
-                  value={regForm.qualification}
-                  onChange={(e) => setRegForm(prev => ({ ...prev, qualification: e.target.value }))}
-                  placeholder="e.g. Supreme Court Advocate, PhD"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase">Bio / Short Introduction</label>
-                <textarea
-                  rows={2}
-                  value={regForm.bio}
-                  onChange={(e) => setRegForm(prev => ({ ...prev, bio: e.target.value }))}
-                  placeholder="Aapki teaching philosophy aur achievements..."
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase">Profile Photo URL (Optional)</label>
-                <input
-                  type="url"
-                  value={regForm.avatar}
-                  onChange={(e) => setRegForm(prev => ({ ...prev, avatar: e.target.value }))}
-                  placeholder="https://..."
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowRegModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingReg}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  {submittingReg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Submit Application'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Booking Modal (GAP 2 & GAP 3) */}
-      {bookingEducator && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-white/10 pb-3">
-              <div className="space-y-0.5 text-left">
-                <h3 className="font-bold text-slate-100 text-sm">Book 1-on-1 Guidance Session</h3>
-                <p className="text-[11px] text-indigo-300 font-bold">{bookingEducator.name}</p>
-              </div>
-              <button onClick={() => setBookingEducator(null)} className="text-slate-400 hover:text-white text-xs font-bold">✕</button>
+              <span className="text-xs text-slate-400 font-mono">{classes.length} total</span>
             </div>
 
-            <form onSubmit={handleBookSession} className="space-y-3.5 text-left">
-              {/* GAP 2: Tappable Availability Slots Selection */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] text-slate-400 font-bold uppercase flex justify-between">
-                  <span>Select Available Slot *</span>
-                  <span className="text-indigo-400 font-medium text-[9px]">Tap to choose</span>
-                </label>
-
-                {bookingEducator.availability && bookingEducator.availability.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-1 scrollbar-thin">
-                    {bookingEducator.availability.map((slot) => (
-                      <button
-                        key={slot}
-                        type="button"
-                        onClick={() => setSelectedSlot(slot)}
-                        className={`p-2.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between transition-all ${
-                          selectedSlot === slot
-                            ? 'bg-indigo-600/30 border-indigo-500 text-white shadow-md shadow-indigo-500/20'
-                            : 'bg-slate-950 border-white/10 text-slate-300 hover:border-indigo-500/40'
-                        }`}
-                      >
-                        <span className="truncate">📅 {slot}</span>
-                        {selectedSlot === slot && <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-semibold">
-                    ⚠️ No slots available right now for this educator. Please check back later.
-                  </div>
-                )}
+            {loadingClasses ? (
+              <div className="p-8 text-center bg-slate-900/60 border border-slate-800 rounded-2xl text-slate-400 text-xs animate-pulse">
+                Loading classes...
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Student Email</label>
-                  <input
-                    type="email"
-                    value={studentEmail}
-                    onChange={(e) => setStudentEmail(e.target.value)}
-                    placeholder="student@gmail.com"
-                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[10px] text-slate-400 font-bold uppercase">Student Name</label>
-                  <input
-                    type="text"
-                    value={studentName}
-                    onChange={(e) => setStudentName(e.target.value)}
-                    placeholder="Your Name"
-                    className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white"
-                  />
-                </div>
-              </div>
-
-              {/* GAP 3: Payment UTR Input if Price > 0 */}
-              {bookingEducator.sessionPrice && bookingEducator.sessionPrice > 0 ? (
-                <div className="space-y-1.5 bg-indigo-950/40 p-3 rounded-2xl border border-indigo-500/30">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-white">Session Fee:</span>
-                    <span className="font-black text-emerald-400 text-sm">₹{bookingEducator.sessionPrice}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] text-slate-300 font-bold uppercase">Payment UTR / Transaction ID *</label>
-                    <input
-                      type="text"
-                      required
-                      value={utrNumber}
-                      onChange={(e) => setUtrNumber(e.target.value)}
-                      placeholder="Enter 12-digit UPI UTR ID"
-                      className="w-full bg-slate-950 border border-indigo-500/30 rounded-xl px-3 py-2 text-xs text-white"
-                    />
-                    <p className="text-[9px] text-slate-400">Pay ₹{bookingEducator.sessionPrice} via UPI QR & enter UTR number for admin verification.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs">
-                  <span className="text-slate-300 font-bold">Session Fee:</span>
-                  <span className="text-emerald-400 font-black">FREE (No payment required)</span>
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase">Topic / Doubts Note</label>
-                <textarea
-                  rows={2}
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="E.g., Mains Answer Writing doubts & revision roadmap"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              {/* GAP 3: "What happens next" 3-step summary */}
-              <div className="bg-slate-950 p-3 rounded-xl border border-white/10 space-y-1.5 text-xs">
-                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">What Happens Next?</p>
-                <div className="space-y-1 text-[11px] text-slate-300">
-                  <p>1. {bookingEducator.sessionPrice ? 'Payment verify hoga (Pending Payment)' : 'Instant request submission (Confirmed)'}</p>
-                  <p>2. Teacher booking confirm karega</p>
-                  <p>3. Aapko meeting link & live classroom access milegi</p>
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-end pt-2">
+            ) : classes.length === 0 ? (
+              <div className="p-8 text-center bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
+                <Video className="w-10 h-10 mx-auto text-slate-600" />
+                <p className="text-xs text-slate-400">No classes scheduled yet.</p>
                 <button
-                  type="button"
-                  onClick={() => setBookingEducator(null)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
+                  onClick={() => setShowScheduleModal(true)}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-all"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submittingBooking || !selectedSlot || (!bookingEducator.availability || bookingEducator.availability.length === 0)}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-1.5 disabled:opacity-50"
-                >
-                  {submittingBooking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm Booking'}
+                  Schedule First Class
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* View Bookings Modal (GAP 5: Cancellation Policy) */}
-      {viewingBookingsEd && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 relative max-h-[85vh] overflow-y-auto text-left">
-            <div className="flex justify-between items-center border-b border-white/10 pb-3">
-              <h3 className="font-bold text-slate-100 text-sm flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-indigo-400" /> Bookings for {viewingBookingsEd.name}
-              </h3>
-              <button onClick={() => setViewingBookingsEd(null)} className="text-slate-400 hover:text-white text-xs font-bold">✕</button>
-            </div>
-
-            {loadingBookings ? (
-              <div className="flex flex-col items-center justify-center py-10 gap-2 text-slate-400">
-                <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-                <p className="text-xs">Fetching bookings...</p>
-              </div>
-            ) : bookingsList.length === 0 ? (
-              <p className="text-xs text-slate-400 text-center py-8">Is educator ke liye abhi koi bookings scheduled nahi hain.</p>
             ) : (
-              <div className="space-y-2.5">
-                {bookingsList.map(b => {
-                  const isCancelled = b.status === 'CANCELLED';
+              <div className="space-y-3">
+                {classes.map((cls) => {
+                  const isSelected = selectedClass?.id === cls.id;
                   return (
-                    <div 
-                      key={b.id} 
-                      className={`p-3.5 rounded-2xl border transition-all ${
-                        isCancelled 
-                          ? 'bg-slate-950/40 border-slate-800/80 opacity-60' 
-                          : 'bg-slate-950 border-white/10'
+                    <div
+                      key={cls.id}
+                      onClick={() => setSelectedClass(cls)}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-950/40 border-indigo-500/50 shadow-lg shadow-indigo-950/50'
+                          : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
                       }`}
                     >
-                      <div className="flex justify-between items-center mb-1">
-                        <span className={`text-xs font-bold ${isCancelled ? 'line-through text-slate-400' : 'text-indigo-300'}`}>
-                          {b.studentName || b.studentEmail}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-indigo-500/10 text-indigo-300 border border-indigo-500/30">
+                          {cls.subject}
                         </span>
-
-                        <span className={`text-[9px] px-2 py-0.5 rounded font-black border ${
-                          b.status === 'CONFIRMED' 
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
-                            : b.status === 'PENDING_PAYMENT' 
-                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                              : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
+                          cls.status === 'LIVE'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse'
+                            : cls.status === 'COMPLETED'
+                            ? 'bg-slate-800 text-slate-400 border border-slate-700'
+                            : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
                         }`}>
-                          {b.status}
+                          {cls.status}
                         </span>
                       </div>
 
-                      <p className="text-[10px] text-slate-400">📅 Slot: {b.selectedSlot || `${b.date} ${b.time}`}</p>
-                      {b.price ? <p className="text-[10px] text-slate-300">💰 Fee: ₹{b.price} {b.utrNumber ? `(UTR: ${b.utrNumber})` : ''}</p> : null}
-                      {b.notes && <p className="text-[10px] text-slate-300 italic">"{b.notes}"</p>}
+                      <h4 className="text-sm font-bold text-white line-clamp-1">{cls.title}</h4>
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-1">{cls.description || 'No description provided.'}</p>
 
-                      {/* GAP 5: Cancel action if active */}
-                      {!isCancelled && (
-                        <div className="pt-2 mt-2 border-t border-white/5 flex justify-end">
-                          <button
-                            onClick={() => setConfirmCancelBooking(b)}
-                            className="text-[10px] text-rose-400 hover:text-rose-300 border border-rose-500/30 hover:border-rose-500/50 bg-rose-500/10 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1 transition-all"
-                          >
-                            <XCircle className="w-3 h-3 text-rose-400" /> Cancel Booking
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-800/60">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-indigo-400" />
+                          {new Date(cls.scheduledAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        <span className="flex items-center gap-1 font-mono">
+                          <Users className="w-3 h-3 text-slate-500" />
+                          {cls.enrolledCount || 0} enrolled
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
           </div>
+
+          {/* Right Column: Selected Class Detail View */}
+          <div className="lg:col-span-2 space-y-6">
+            {selectedClass ? (
+              <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-3xl space-y-6 shadow-xl">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        {selectedClass.subject}
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        selectedClass.status === 'LIVE'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : selectedClass.status === 'COMPLETED'
+                          ? 'bg-slate-800 text-slate-400 border border-slate-700'
+                          : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                      }`}>
+                        {selectedClass.status}
+                      </span>
+                    </div>
+                    <h2 className="text-xl font-bold text-white">{selectedClass.title}</h2>
+                    <p className="text-xs text-slate-400 mt-1">{selectedClass.description}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {selectedClass.status === 'SCHEDULED' && (
+                      <button
+                        onClick={() => handleUpdateClassStatus(selectedClass.id, 'LIVE')}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/30 flex items-center gap-1.5"
+                      >
+                        <PlayCircle className="w-4 h-4" />
+                        Go Live Now
+                      </button>
+                    )}
+
+                    {selectedClass.status === 'LIVE' && (
+                      <button
+                        onClick={() => handleUpdateClassStatus(selectedClass.id, 'COMPLETED')}
+                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition-all flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        Mark Completed
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Class Info Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="p-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl">
+                    <div className="text-slate-400 text-[10px] font-extrabold uppercase">Scheduled Time</div>
+                    <div className="text-xs font-bold text-slate-200 mt-1 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-indigo-400" />
+                      {new Date(selectedClass.scheduledAt).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl">
+                    <div className="text-slate-400 text-[10px] font-extrabold uppercase">Duration & Limit</div>
+                    <div className="text-xs font-bold text-slate-200 mt-1">
+                      {selectedClass.durationMins} Mins • Max {selectedClass.maxStudents} Students
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-950/60 border border-slate-800/80 rounded-2xl">
+                    <div className="text-slate-400 text-[10px] font-extrabold uppercase">Class Meeting Link</div>
+                    <a
+                      href={selectedClass.meetingLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-indigo-400 hover:underline mt-1 truncate block flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3 shrink-0" />
+                      Join Meeting Room
+                    </a>
+                  </div>
+                </div>
+
+                {/* Class Recording Link Input */}
+                <div className="p-4 bg-slate-950/40 border border-slate-800 rounded-2xl space-y-2">
+                  <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                    <span>Class Recording URL (for completed session)</span>
+                    {selectedClass.recordingUrl && (
+                      <a href={selectedClass.recordingUrl} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline text-[11px]">
+                        Preview Recording
+                      </a>
+                    )}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={recordingUrlInput}
+                      onChange={(e) => setRecordingUrlInput(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=... or Drive link"
+                      className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      onClick={() => handleUpdateClassStatus(selectedClass.id, selectedClass.status, recordingUrlInput)}
+                      className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl transition-all"
+                    >
+                      Save Link
+                    </button>
+                  </div>
+                </div>
+
+                {/* Enrolled Students & Attendance Log */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Users className="w-4 h-4 text-indigo-400" />
+                      Enrolled Students & Class Attendance ({classStudents.enrollments.length})
+                    </h3>
+                  </div>
+
+                  {loadingClassStudents ? (
+                    <div className="p-6 text-center text-xs text-slate-400">Loading student attendance...</div>
+                  ) : classStudents.enrollments.length === 0 ? (
+                    <div className="p-6 text-center bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-400 text-xs">
+                      No students enrolled in this class session yet.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto border border-slate-800 rounded-2xl">
+                      <table className="w-full text-left text-xs text-slate-300">
+                        <thead className="bg-slate-950 text-slate-400 font-extrabold uppercase text-[10px]">
+                          <tr>
+                            <th className="p-3">Student Name</th>
+                            <th className="p-3">Email</th>
+                            <th className="p-3">Enrolled At</th>
+                            <th className="p-3 text-right">Attendance Status</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60 font-medium">
+                          {classStudents.enrollments.map((enr) => {
+                            const hasAttended = classStudents.attendance.some((a) => a.studentId === enr.studentId || a.studentEmail === enr.studentEmail);
+                            return (
+                              <tr key={enr.id} className="hover:bg-slate-900/40">
+                                <td className="p-3 font-bold text-white">{enr.studentName}</td>
+                                <td className="p-3 text-slate-400 font-mono">{enr.studentEmail}</td>
+                                <td className="p-3 text-slate-400">{new Date(enr.enrolledAt).toLocaleDateString()}</td>
+                                <td className="p-3 text-right">
+                                  {hasAttended ? (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                      Attended Live
+                                    </span>
+                                  ) : (
+                                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-slate-800 text-slate-500">
+                                      Not Attended
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl text-slate-400 space-y-2">
+                <Video className="w-12 h-12 mx-auto text-slate-600" />
+                <p className="text-sm">Select a class from the left list to view details & manage attendance.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Confirmation Modal for Cancellation */}
-      {confirmCancelBooking && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow-2xl text-left">
-            <div className="flex items-center gap-2 text-rose-400 font-bold text-sm">
-              <Ban className="w-4 h-4" /> Cancel Booking Confirmation
+      {/* TAB 2: ASSIGNMENTS MANAGER */}
+      {activeSubTab === 'assignments' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-400" />
+                Class Assignments & Student Submissions
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {selectedClass ? `Viewing assignments for ${selectedClass.title}` : 'Select a class to manage assignments.'}
+              </p>
             </div>
-            <p className="text-xs text-slate-300">
-              Are you sure you want to cancel the booking for <strong className="text-white">{confirmCancelBooking.studentName || confirmCancelBooking.studentEmail}</strong> scheduled for <strong className="text-indigo-300">{confirmCancelBooking.selectedSlot || `${confirmCancelBooking.date} ${confirmCancelBooking.time}`}</strong>?
-            </p>
 
-            <div className="flex gap-2 justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setConfirmCancelBooking(null)}
-                className="px-3 py-1.5 text-xs text-slate-400 hover:text-white font-bold"
-              >
-                No, Keep It
-              </button>
-              <button
-                type="button"
-                onClick={handleExecuteCancelBooking}
-                disabled={cancellingBooking}
-                className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-1 disabled:opacity-50"
-              >
-                {cancellingBooking ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Yes, Cancel Booking'}
+            <button
+              onClick={() => setShowCreateAssignmentModal(true)}
+              disabled={!selectedClass}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-indigo-600/20 flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" />
+              Create Assignment
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Assignments List */}
+            <div className="lg:col-span-1 space-y-3">
+              {loadingAssignments ? (
+                <div className="p-6 text-center text-xs text-slate-400">Loading assignments...</div>
+              ) : assignments.length === 0 ? (
+                <div className="p-8 text-center bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
+                  <FileText className="w-8 h-8 mx-auto text-slate-600" />
+                  <p className="text-xs text-slate-400">No assignments created for this class yet.</p>
+                </div>
+              ) : (
+                assignments.map((asg) => {
+                  const isSelected = selectedAssignment?.id === asg.id;
+                  return (
+                    <div
+                      key={asg.id}
+                      onClick={() => {
+                        setSelectedAssignment(asg);
+                        fetchSubmissions(asg.id);
+                      }}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-950/40 border-indigo-500/50'
+                          : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'
+                      }`}
+                    >
+                      <h4 className="text-sm font-bold text-white">{asg.title}</h4>
+                      <p className="text-xs text-slate-400 line-clamp-2 mt-1">{asg.description || 'No description'}</p>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-800/60">
+                        <span>Due: {new Date(asg.dueDate).toLocaleDateString()}</span>
+                        <span className="font-bold text-indigo-400">{asg.submissionCount || 0} Submissions</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Submissions Detail List */}
+            <div className="lg:col-span-2 space-y-4">
+              {selectedAssignment ? (
+                <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-3xl space-y-4">
+                  <div className="pb-3 border-b border-slate-800">
+                    <h3 className="text-base font-bold text-white">{selectedAssignment.title}</h3>
+                    <p className="text-xs text-slate-400 mt-1">{selectedAssignment.description}</p>
+                  </div>
+
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-300">
+                    Student Submissions ({submissions.length})
+                  </h4>
+
+                  {loadingSubmissions ? (
+                    <div className="p-6 text-center text-xs text-slate-400">Loading submissions...</div>
+                  ) : submissions.length === 0 ? (
+                    <div className="p-6 text-center bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-400 text-xs">
+                      No submissions received for this assignment yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {submissions.map((sub) => (
+                        <div key={sub.id} className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-bold text-sm text-white">{sub.studentName}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{sub.studentEmail} • Submitted {new Date(sub.submittedAt).toLocaleString()}</div>
+                            </div>
+
+                            {sub.grade ? (
+                              <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                Grade: {sub.grade}
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setGradingModalSub(sub);
+                                  setGradeInput(sub.grade || '');
+                                  setFeedbackInput(sub.feedback || '');
+                                }}
+                                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition-all"
+                              >
+                                Grade Submission
+                              </button>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-slate-300 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                            {sub.submissionText || 'No text provided.'}
+                          </p>
+
+                          {sub.feedback && (
+                            <div className="text-xs text-indigo-300 bg-indigo-950/30 p-2.5 rounded-xl border border-indigo-500/20">
+                              <strong className="text-indigo-400">Teacher Feedback:</strong> {sub.feedback}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl text-slate-400">
+                  Select an assignment from the left column to view student submissions & grade.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: MY ENROLLED STUDENTS */}
+      {activeSubTab === 'students' && (
+        <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-3xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <Users className="w-5 h-5 text-indigo-400" />
+                Aggregated Student Enrolment List
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Overview of students attending your scheduled live classes across all modules.
+              </p>
+            </div>
+
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <input
+                type="text"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                placeholder="Search students by name or email..."
+                className="pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500 w-full sm:w-64"
+              />
+            </div>
+          </div>
+
+          {loadingStudentsList ? (
+            <div className="p-8 text-center text-xs text-slate-400">Loading student roster...</div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="p-8 text-center bg-slate-950/40 border border-slate-800 rounded-2xl text-slate-400 text-xs">
+              No enrolled students found.
+            </div>
+          ) : (
+            <div className="overflow-x-auto border border-slate-800 rounded-2xl">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-950 text-slate-400 font-extrabold uppercase text-[10px]">
+                  <tr>
+                    <th className="p-3">Student Name</th>
+                    <th className="p-3">Email Address</th>
+                    <th className="p-3 text-center">Classes Attended</th>
+                    <th className="p-3 text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-medium">
+                  {filteredStudents.map((std, i) => (
+                    <tr key={i} className="hover:bg-slate-900/40">
+                      <td className="p-3 font-bold text-white flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-indigo-600/20 text-indigo-300 font-bold flex items-center justify-center text-xs">
+                          {std.studentName.charAt(0).toUpperCase()}
+                        </div>
+                        {std.studentName}
+                      </td>
+                      <td className="p-3 text-slate-400 font-mono">{std.studentEmail}</td>
+                      <td className="p-3 text-center font-bold text-indigo-400">{std.classesAttendedCount} Session(s)</td>
+                      <td className="p-3 text-right">
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          Active Enrolled
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SCHEDULE CLASS MODAL */}
+      {showScheduleModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-400" />
+                Schedule New Live Class
+              </h3>
+              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
               </button>
             </div>
+
+            <form onSubmit={handleScheduleClass} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300">Class Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={classForm.title}
+                  onChange={(e) => setClassForm({ ...classForm, title: e.target.value })}
+                  placeholder="e.g. Masterclass on Modern Indian History"
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Subject *</label>
+                  <input
+                    type="text"
+                    required
+                    value={classForm.subject}
+                    onChange={(e) => setClassForm({ ...classForm, subject: e.target.value })}
+                    placeholder="e.g. History"
+                    className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Duration (Minutes)</label>
+                  <input
+                    type="number"
+                    value={classForm.durationMins}
+                    onChange={(e) => setClassForm({ ...classForm, durationMins: Number(e.target.value) })}
+                    className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Date & Time *</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={classForm.scheduledAt}
+                  onChange={(e) => setClassForm({ ...classForm, scheduledAt: e.target.value })}
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Description</label>
+                <textarea
+                  rows={3}
+                  value={classForm.description}
+                  onChange={(e) => setClassForm({ ...classForm, description: e.target.value })}
+                  placeholder="Overview of topics to be covered..."
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Custom Meeting Link (Optional)</label>
+                <input
+                  type="url"
+                  value={classForm.meetingLink}
+                  onChange={(e) => setClassForm({ ...classForm, meetingLink: e.target.value })}
+                  placeholder="https://meet.google.com/xyz or auto-generated Jitsi room"
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowScheduleModal(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-600/30"
+                >
+                  Confirm & Schedule
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE ASSIGNMENT MODAL */}
+      {showCreateAssignmentModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-400" />
+                Create New Class Assignment
+              </h3>
+              <button onClick={() => setShowCreateAssignmentModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateAssignment} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300">Assignment Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={assignmentForm.title}
+                  onChange={(e) => setAssignmentForm({ ...assignmentForm, title: e.target.value })}
+                  placeholder="e.g. Essay on Indian Federalism"
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Instructions / Prompt</label>
+                <textarea
+                  rows={3}
+                  value={assignmentForm.description}
+                  onChange={(e) => setAssignmentForm({ ...assignmentForm, description: e.target.value })}
+                  placeholder="Detailed instructions for students..."
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Due Date *</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={assignmentForm.dueDate}
+                  onChange={(e) => setAssignmentForm({ ...assignmentForm, dueDate: e.target.value })}
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateAssignmentModal(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-600/30"
+                >
+                  Create Assignment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* GRADE SUBMISSION MODAL */}
+      {gradingModalSub && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <FileCheck className="w-5 h-5 text-indigo-400" />
+                Grade Student Submission
+              </h3>
+              <button onClick={() => setGradingModalSub(null)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGradeSubmission} className="space-y-4">
+              <div>
+                <div className="text-xs text-slate-400">Student: <span className="font-bold text-white">{gradingModalSub.studentName}</span></div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Grade / Score *</label>
+                <input
+                  type="text"
+                  required
+                  value={gradeInput}
+                  onChange={(e) => setGradeInput(e.target.value)}
+                  placeholder="e.g. A+, 95/100, Excellent"
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Feedback / Remarks</label>
+                <textarea
+                  rows={3}
+                  value={feedbackInput}
+                  onChange={(e) => setFeedbackInput(e.target.value)}
+                  placeholder="Constructive feedback for the student..."
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGradingModalSub(null)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md shadow-emerald-600/30"
+                >
+                  Save Grade
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT TEACHER PROFILE MODAL */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-indigo-400" />
+                Setup / Edit Faculty Profile
+              </h3>
+              <button onClick={() => setShowProfileModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-slate-300">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Qualification</label>
+                  <input
+                    type="text"
+                    value={profileForm.qualification}
+                    onChange={(e) => setProfileForm({ ...profileForm, qualification: e.target.value })}
+                    placeholder="e.g. M.Sc, Ph.D, Ex-IAS"
+                    className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-300">Experience (Years)</label>
+                  <input
+                    type="number"
+                    value={profileForm.experienceYears}
+                    onChange={(e) => setProfileForm({ ...profileForm, experienceYears: Number(e.target.value) })}
+                    className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Subjects Taught</label>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="text"
+                    value={profileForm.subjectInput}
+                    onChange={(e) => setProfileForm({ ...profileForm, subjectInput: e.target.value })}
+                    placeholder="Add subject (e.g. Physics, History)..."
+                    className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddSubjectTag}
+                    className="px-3 py-2 bg-slate-800 text-slate-200 text-xs font-bold rounded-xl"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {profileForm.subjects.map((sub, idx) => (
+                    <span key={idx} className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+                      {sub}
+                      <button type="button" onClick={() => handleRemoveSubjectTag(sub)} className="hover:text-rose-400">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-slate-300">Bio / Summary</label>
+                <textarea
+                  rows={3}
+                  value={profileForm.bio}
+                  onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                  placeholder="Share your teaching experience & background..."
+                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(false)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-600/30"
+                >
+                  Save Profile
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

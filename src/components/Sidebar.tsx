@@ -186,13 +186,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const metaMap = new Map();
   ALL_WORKSPACE_FEATURES.forEach((m) => metaMap.set(m.id, m));
 
+  const isTeacherOrAdmin = user?.role === 'TEACHER' || user?.role === 'ADMIN' || user?.role === 'CO_ADMIN' || user?.role === 'DEVELOPER';
+
   // Active features sorted by user's custom sortOrder
   const activePreferences = workspaceConfig.preferences
     .filter((p) => p.isActive)
+    .filter((p) => isTeacherOrAdmin || p.featureId !== 'teachers')
     .sort((a, b) => a.sortOrder - b.sortOrder);
 
   // Inactive features for "+ More Features" drawer
-  const inactivePreferences = workspaceConfig.preferences.filter((p) => !p.isActive);
+  const inactivePreferences = workspaceConfig.preferences
+    .filter((p) => !p.isActive)
+    .filter((p) => isTeacherOrAdmin || p.featureId !== 'teachers');
 
   const adminItem = {
     id: 'admin' as ActiveTab,

@@ -351,7 +351,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     setSyncState(res);
 
     if (isNowChecking) {
-      await awardXPAndCoins(30, 10, 'Checked off Syllabus Sub-topic');
+      await awardXPAndCoins(30, 10, 'Checked off Syllabus Sub-topic', userId);
     }
   };
 

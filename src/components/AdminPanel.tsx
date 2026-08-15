@@ -31,7 +31,7 @@ export interface AdminUserRecord {
   avatar_url?: string;
   exam: string;
   stateName?: string;
-  role: 'ADMIN' | 'CO_ADMIN' | 'DEVELOPER' | 'USER';
+  role: 'ADMIN' | 'CO_ADMIN' | 'DEVELOPER' | 'TEACHER' | 'STUDENT' | 'USER';
   isPremium: boolean;
   planName: 'FREE' | 'PRO PASS' | 'INSTITUTE';
   streakDays: number;
@@ -1765,7 +1765,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
     return matchesSearch && matchesRole && matchesLive;
   });
 
-  const handleUpdateUserRole = async (userId: string, userEmail: string, newRole: 'ADMIN' | 'CO_ADMIN' | 'DEVELOPER' | 'USER') => {
+  const handleUpdateUserRole = async (userId: string, userEmail: string, newRole: 'ADMIN' | 'CO_ADMIN' | 'DEVELOPER' | 'TEACHER' | 'STUDENT' | 'USER') => {
     setUserList((prev) => prev.map((u) => (u.id === userId || u.email === userEmail ? { ...u, role: newRole } : u)));
     setUserActionNotice(`Updating ${userEmail} role to ${newRole}...`);
 
@@ -4209,9 +4209,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                           ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
                           : u.role === 'DEVELOPER'
                           ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30'
+                          : u.role === 'TEACHER'
+                          ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 font-extrabold'
                           : 'bg-slate-800 text-slate-300 border border-slate-700'
                       }`}>
-                        {u.role}
+                        {u.role || 'STUDENT'}
                       </span>
                     </td>
                     <td className="p-3">
@@ -4245,16 +4247,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                       </button>
                     </td>
                     <td className="p-3 text-right">
-                      <select
-                        value={u.role}
-                        onChange={(e) => handleUpdateUserRole(u.id, u.email, e.target.value as any)}
-                        className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-[11px] font-bold focus:outline-none focus:border-cyan-500"
-                      >
-                        <option value="USER">USER</option>
-                        <option value="DEVELOPER">DEVELOPER</option>
-                        <option value="CO_ADMIN">CO_ADMIN (Vice Admin)</option>
-                        <option value="ADMIN">ADMIN</option>
-                      </select>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateUserRole(u.id, u.email, u.role === 'TEACHER' ? 'STUDENT' : 'TEACHER')}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-extrabold uppercase transition-all cursor-pointer ${
+                            u.role === 'TEACHER'
+                              ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/40'
+                              : 'bg-slate-800 text-slate-300 border border-slate-700 hover:bg-indigo-600/30 hover:text-indigo-200 hover:border-indigo-500/50'
+                          }`}
+                        >
+                          {u.role === 'TEACHER' ? 'Revoke Teacher' : 'Set as Teacher'}
+                        </button>
+                        <select
+                          value={u.role || 'STUDENT'}
+                          onChange={(e) => handleUpdateUserRole(u.id, u.email, e.target.value as any)}
+                          className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-[11px] font-bold focus:outline-none focus:border-cyan-500"
+                        >
+                          <option value="STUDENT">STUDENT</option>
+                          <option value="TEACHER">TEACHER</option>
+                          <option value="USER">USER</option>
+                          <option value="DEVELOPER">DEVELOPER</option>
+                          <option value="CO_ADMIN">CO_ADMIN (Vice Admin)</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                      </div>
                     </td>
                   </tr>
                 );
