@@ -10,6 +10,7 @@ import {
   CbtQuestionStatus, CbtExamResult, UserProfile 
 } from '../types';
 import { EXAM_LIST } from '../lib/examList';
+import { INITIAL_CBT_TESTS } from '../data/cbtData';
 
 interface CbtExamEngineProps {
   userProfile: UserProfile;
@@ -40,6 +41,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'available' | 'custom' | 'live' | 'results'>('available');
+  const [testCategoryFilter, setTestCategoryFilter] = useState<string>('ALL');
 
   // Custom Builder
   const [builder, setBuilder] = useState<CustomBuilderState>({
@@ -92,9 +94,17 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     try {
       const res = await fetch(`/api/academic/cbt/tests?exam=${activeExamKey}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success) setAvailableTests(data.tests);
+      if (data.success && Array.isArray(data.tests) && data.tests.length > 0) {
+        setAvailableTests(data.tests);
+        return;
+      }
+      // Fallback to INITIAL_CBT_TESTS
+      const filtered = INITIAL_CBT_TESTS.filter(t => t.exam === activeExamKey);
+      setAvailableTests(filtered.length > 0 ? filtered : INITIAL_CBT_TESTS);
     } catch (err) {
-      console.error('Failed to load CBT tests:', err);
+      console.warn('API fetch failed, falling back to comprehensive INITIAL_CBT_TESTS:', err);
+      const filtered = INITIAL_CBT_TESTS.filter(t => t.exam === activeExamKey);
+      setAvailableTests(filtered.length > 0 ? filtered : INITIAL_CBT_TESTS);
     } finally {
       setLoading(false);
     }
@@ -421,26 +431,65 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               Loading Examination Series...
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availableTests.map((test) => (
-                <div key={test.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">{test.exam?.replace(/_/g, ' ')}</span>
-                      <span className="text-xs text-slate-500 font-medium flex items-center"><Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />{test.durationMinutes} Mins</span>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2">{test.title}</h3>
-                    <div className="space-y-1.5 text-xs text-slate-600 mb-6">
-                      <div className="flex justify-between"><span>Total Marks:</span><span className="font-semibold text-slate-900">{test.totalMarks} Marks</span></div>
-                      <div className="flex justify-between"><span>Questions:</span><span className="font-semibold text-slate-900">{test.questions.length} Items</span></div>
-                      <div className="flex justify-between"><span>Marking Scheme:</span><span className="font-semibold text-emerald-600">+{test.markingScheme.correct} / -{test.markingScheme.incorrect}</span></div>
-                    </div>
-                  </div>
-                  <button onClick={() => handleStartExam(test)} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
-                    <Zap className="w-4 h-4" /><span>Start Live CBT Exam</span>
+            <div className="space-y-6">
+              {/* Category Filter Pills */}
+              <div className="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
+                <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mr-1">Filter:</span>
+                {[
+                  { id: 'ALL', label: 'All Exams' },
+                  { id: 'SSC', label: 'SSC Exams' },
+                  { id: 'BANKING', label: 'Banking & PO' },
+                  { id: 'RAILWAY', label: 'Railways (RRB)' },
+                  { id: 'STATE', label: 'State Exams (UP/Bihar)' },
+                  { id: 'UPSC', label: 'UPSC CSE' },
+                  { id: 'NEET', label: 'NEET / Medical' }
+                ].map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setTestCategoryFilter(cat.id)}
+                    className={`px-3 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
+                      testCategoryFilter === cat.id
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300'
+                    }`}
+                  >
+                    {cat.label}
                   </button>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(testCategoryFilter === 'ALL'
+                  ? (availableTests.length > 0 ? availableTests : INITIAL_CBT_TESTS)
+                  : (availableTests.length > 0 ? availableTests : INITIAL_CBT_TESTS).filter(t => {
+                      if (testCategoryFilter === 'SSC') return t.exam?.includes('SSC');
+                      if (testCategoryFilter === 'BANKING') return t.exam?.includes('IBPS') || t.exam?.includes('SBI');
+                      if (testCategoryFilter === 'RAILWAY') return t.exam?.includes('RRB');
+                      if (testCategoryFilter === 'STATE') return t.exam?.includes('UP') || t.exam?.includes('BPSC') || t.exam?.includes('WBP');
+                      if (testCategoryFilter === 'UPSC') return t.exam?.includes('UPSC');
+                      if (testCategoryFilter === 'NEET') return t.exam?.includes('NEET');
+                      return true;
+                    })
+                ).map((test) => (
+                  <div key={test.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
+                    <div>
+                      <div className="flex justify-between items-start mb-3">
+                        <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">{test.exam?.replace(/_/g, ' ')}</span>
+                        <span className="text-xs text-slate-500 font-medium flex items-center"><Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />{test.durationMinutes} Mins</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2">{test.title}</h3>
+                      <div className="space-y-1.5 text-xs text-slate-600 mb-6">
+                        <div className="flex justify-between"><span>Total Marks:</span><span className="font-semibold text-slate-900">{test.totalMarks} Marks</span></div>
+                        <div className="flex justify-between"><span>Questions:</span><span className="font-semibold text-slate-900">{test.questions.length} Items</span></div>
+                        <div className="flex justify-between"><span>Marking Scheme:</span><span className="font-semibold text-emerald-600">+{test.markingScheme.correct} / -{test.markingScheme.incorrect}</span></div>
+                      </div>
+                    </div>
+                    <button onClick={() => handleStartExam(test)} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
+                      <Zap className="w-4 h-4" /><span>Start Live CBT Exam</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )
         )}

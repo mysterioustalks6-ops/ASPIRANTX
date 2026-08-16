@@ -210,6 +210,401 @@ export const INITIAL_CBT_TESTS: CbtTest[] = [
         explanation: 'Principal P = (SI * 100) / (R * T) = (1200 * 100) / (8 * 3) = 120000 / 24 = Rs. 5,000.'
       }
     ]
+  },
+  {
+    id: 'rrb_ntpc_cbt_mock_01',
+    title: 'RRB NTPC Stage-1 (CBT-1) All India Grand Speed Test 2026',
+    exam: 'RRB_NTPC',
+    durationMinutes: 90,
+    totalMarks: 100,
+    sections: [
+      { name: 'General Awareness', durationMinutes: 30, totalQuestions: 3 },
+      { name: 'Mathematics', durationMinutes: 30, totalQuestions: 2 },
+      { name: 'General Intelligence & Reasoning', durationMinutes: 30, totalQuestions: 2 }
+    ],
+    markingScheme: { correct: 1.0, incorrect: 0.33 },
+    questions: [
+      {
+        id: 'q_rrb_1',
+        type: 'mcq',
+        section: 'General Awareness',
+        questionText: 'Where is the headquarters of the Indian Railway National Academy (NAIR) situated?',
+        options: ['Vadodara, Gujarat', 'New Delhi', 'Kharagpur, West Bengal', 'Secunderabad, Telangana'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'General Awareness',
+        topic: 'Indian Railways & Static GK',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'National Academy of Indian Railways (NAIR) is located at Vadodara, Gujarat in the Pratap Vilas Palace.'
+      },
+      {
+        id: 'q_rrb_2',
+        type: 'mcq',
+        section: 'General Awareness',
+        questionText: 'Which planet in the solar system has the highest density?',
+        options: ['Earth', 'Jupiter', 'Saturn', 'Mercury'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'General Science',
+        topic: 'Solar System & Astronomy',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Earth is the densest planet in the solar system with an average density of approx 5.51 g/cm³.'
+      },
+      {
+        id: 'q_rrb_3',
+        type: 'mcq',
+        section: 'General Awareness',
+        questionText: 'Which Article of the Indian Constitution provides for the establishment of the Finance Commission?',
+        options: ['Article 280', 'Article 324', 'Article 356', 'Article 370'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Indian Polity',
+        topic: 'Constitutional Bodies',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Article 280 deals with the Finance Commission of India, constituted by the President every five years.'
+      },
+      {
+        id: 'q_rrb_4',
+        type: 'numerical',
+        section: 'Mathematics',
+        questionText: 'If the radius of a sphere is increased by 20%, what is the percentage increase in its surface area?',
+        options: ['44%', '40%', '20%', '48%'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Mensuration & Geometry',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Surface Area proportional to r^2. Percentage change = 20 + 20 + (20*20)/100 = 40 + 4 = 44%.'
+      },
+      {
+        id: 'q_rrb_5',
+        type: 'numerical',
+        section: 'Mathematics',
+        questionText: 'The average of five consecutive odd numbers is 61. What is the difference between the highest and lowest numbers?',
+        options: ['8', '10', '12', '6'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Averages',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Numbers are: 57, 59, 61, 63, 65. Difference between highest (65) and lowest (57) = 65 - 57 = 8.'
+      },
+      {
+        id: 'q_rrb_6',
+        type: 'mcq',
+        section: 'General Intelligence & Reasoning',
+        questionText: 'In a certain code, "TRAIN" is written as "WUDLQ". How is "METRO" written in that code?',
+        options: ['PHWUR', 'PGVUR', 'QHWUR', 'PGWUR'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Reasoning',
+        topic: 'Coding Decoding',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Each letter is shifted +3. M(+3)=P, E(+3)=H, T(+3)=W, R(+3)=U, O(+3)=R -> PHWUR.'
+      },
+      {
+        id: 'q_rrb_7',
+        type: 'mcq',
+        section: 'General Intelligence & Reasoning',
+        questionText: 'Pointing to a photograph, Rohit said, "She is the daughter of my grandfather\'s only son." How is the girl related to Rohit?',
+        options: ['Sister', 'Mother', 'Cousin', 'Aunt'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Reasoning',
+        topic: 'Blood Relations',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Grandfather\'s only son = Rohit\'s father. Daughter of Rohit\'s father = Rohit\'s sister.'
+      }
+    ]
+  },
+  {
+    id: 'ibps_po_cbt_mock_01',
+    title: 'IBPS PO / SBI PO Prelims All India Speed Mock Test 2026',
+    exam: 'IBPS_PO',
+    durationMinutes: 60,
+    totalMarks: 100,
+    sections: [
+      { name: 'Quantitative Aptitude', durationMinutes: 20, totalQuestions: 3 },
+      { name: 'Reasoning Ability', durationMinutes: 20, totalQuestions: 1 },
+      { name: 'English Language', durationMinutes: 20, totalQuestions: 1 }
+    ],
+    markingScheme: { correct: 1.0, incorrect: 0.25 },
+    questions: [
+      {
+        id: 'q_ibps_1',
+        type: 'numerical',
+        section: 'Quantitative Aptitude',
+        questionText: 'A vessel contains 80 liters of milk and water in the ratio 7 : 3. How much water must be added to make the ratio 2 : 1?',
+        options: ['4 liters', '6 liters', '8 liters', '5 liters'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Quantitative Aptitude',
+        topic: 'Mixtures & Alligations',
+        marks: 1.0,
+        negativeMarks: 0.25,
+        explanation: 'Milk = (7/10)*80 = 56 L, Water = 24 L. Let added water be x. 56 / (24+x) = 2/1 => 24 + x = 28 => x = 4 liters.'
+      },
+      {
+        id: 'q_ibps_2',
+        type: 'numerical',
+        section: 'Quantitative Aptitude',
+        questionText: 'A and B together can complete a piece of work in 12 days, while B alone can finish it in 30 days. In how many days can A alone finish the work?',
+        options: ['20 days', '25 days', '18 days', '15 days'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Quantitative Aptitude',
+        topic: 'Time & Work',
+        marks: 1.0,
+        negativeMarks: 0.25,
+        explanation: '1/A = 1/12 - 1/30 = (5 - 2)/60 = 3/60 = 1/20. A alone can do it in 20 days.'
+      },
+      {
+        id: 'q_ibps_3',
+        type: 'mcq',
+        section: 'Quantitative Aptitude',
+        questionText: 'What is the compound interest on Rs. 10,000 at 10% per annum for 2 years, compounded annually?',
+        options: ['Rs. 2,100', 'Rs. 2,000', 'Rs. 2,200', 'Rs. 1,900'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Quantitative Aptitude',
+        topic: 'Compound Interest',
+        marks: 1.0,
+        negativeMarks: 0.25,
+        explanation: 'Amount = 10000 * (1.1)^2 = 10000 * 1.21 = Rs. 12,100. CI = 12100 - 10000 = Rs. 2,100.'
+      },
+      {
+        id: 'q_ibps_4',
+        type: 'mcq',
+        section: 'Reasoning Ability',
+        questionText: 'Statements:\n1. All Banks are Financial Institutions.\n2. Some Financial Institutions are NBFCs.\n\nConclusions:\nI. Some Banks are NBFCs.\nII. Some Financial Institutions are Banks.',
+        options: ['Only Conclusion II follows', 'Only Conclusion I follows', 'Both I and II follow', 'Neither I nor II follows'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Reasoning',
+        topic: 'Syllogism',
+        marks: 1.0,
+        negativeMarks: 0.25,
+        explanation: 'Since All Banks are Financial Institutions, it immediately implies that Some Financial Institutions are Banks (Conclusion II is definitely true).'
+      },
+      {
+        id: 'q_ibps_5',
+        type: 'mcq',
+        section: 'English Language',
+        questionText: 'Choose the word that is most nearly OPPOSITE in meaning to the word "PRAGMATIC":',
+        options: ['Idealistic', 'Practical', 'Realistic', 'Sensible'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'English Language',
+        topic: 'Antonyms & Vocabulary',
+        marks: 1.0,
+        negativeMarks: 0.25,
+        explanation: 'Pragmatic means practical and dealing with things realistically. Its direct antonym is Idealistic.'
+      }
+    ]
+  },
+  {
+    id: 'up_police_cbt_mock_01',
+    title: 'UP Police Constable & SI All India Super Practice Mock Test 2026',
+    exam: 'UP_POLICE_CONSTABLE',
+    durationMinutes: 120,
+    totalMarks: 300,
+    sections: [
+      { name: 'General Hindi', durationMinutes: 30, totalQuestions: 2 },
+      { name: 'General Knowledge', durationMinutes: 30, totalQuestions: 2 },
+      { name: 'Numerical & Mental Ability', durationMinutes: 30, totalQuestions: 1 }
+    ],
+    markingScheme: { correct: 2.0, incorrect: 0.5 },
+    questions: [
+      {
+        id: 'q_up_1',
+        type: 'mcq',
+        section: 'General Hindi',
+        questionText: '\'सूर्य\' का पर्यायवाची शब्द निम्नलिखित में से कौन-सा नहीं है?',
+        options: ['शशांक', 'दिनकर', 'भास्कर', 'रवि'],
+        correctOption: 0,
+        language: 'Hindi',
+        subject: 'General Hindi',
+        topic: 'Paryayvachi Shabd',
+        marks: 2.0,
+        negativeMarks: 0.5,
+        explanation: '\'शशांक\' चंद्रमा का पर्यायवाची है, जबकि दिनकर, भास्कर और रवि सूर्य के पर्यायवाची शब्द हैं।'
+      },
+      {
+        id: 'q_up_2',
+        type: 'mcq',
+        section: 'General Hindi',
+        questionText: '\'जो सब कुछ जानता हो\' - इस वाक्यांश के लिए एक उपयुक्त शब्द क्या होगा?',
+        options: ['सर्वज्ञ', 'अल्पज्ञ', 'विद्वान', 'बहुज्ञ'],
+        correctOption: 0,
+        language: 'Hindi',
+        subject: 'General Hindi',
+        topic: 'Anek Shabdon Ke Liye Ek Shabd',
+        marks: 2.0,
+        negativeMarks: 0.5,
+        explanation: '\'जो सब कुछ जानता हो\' उसे \'सर्वज्ञ\' कहा जाता है।'
+      },
+      {
+        id: 'q_up_3',
+        type: 'mcq',
+        section: 'General Knowledge',
+        questionText: 'उत्तर प्रदेश में स्थित \'दुधवा राष्ट्रीय उद्यान\' किस जिले में स्थित है?',
+        options: ['लखीमपुर खीरी', 'सोनभद्र', 'पीलीभीत', 'वाराणसी'],
+        correctOption: 0,
+        language: 'Hindi',
+        subject: 'UP Special GK',
+        topic: 'National Parks of UP',
+        marks: 2.0,
+        negativeMarks: 0.5,
+        explanation: 'दुधवा राष्ट्रीय उद्यान उत्तर प्रदेश के लखीमपुर खीरी जिले में स्थित है। यह प्रदेश का एकमात्र राष्ट्रीय उद्यान है।'
+      },
+      {
+        id: 'q_up_4',
+        type: 'mcq',
+        section: 'General Knowledge',
+        questionText: 'भारतीय संविधान में मौलिक कर्तव्यों (Fundamental Duties) को किस देश के संविधान से लिया गया है?',
+        options: ['सोवियत संघ (रूस)', 'अमेरिका', 'आयरलैंड', 'ब्रिटेन'],
+        correctOption: 0,
+        language: 'Hindi',
+        subject: 'Indian Polity',
+        topic: 'Sources of Constitution',
+        marks: 2.0,
+        negativeMarks: 0.5,
+        explanation: 'मौलिक कर्तव्यों को 42वें संविधान संशोधन 1976 द्वारा पूर्व सोवियत संघ (USSR) के संविधान से प्रेरित होकर जोड़ा गया था।'
+      },
+      {
+        id: 'q_up_5',
+        type: 'numerical',
+        section: 'Numerical & Mental Ability',
+        questionText: 'एक वस्तु को 10% की हानि पर ₹450 में बेचा गया। 20% का लाभ कमाने के लिए उसे किस मूल्य पर बेचा जाना चाहिए?',
+        options: ['₹600', '₹550', '₹650', '₹500'],
+        correctOption: 0,
+        language: 'Hindi',
+        subject: 'Mathematics',
+        topic: 'Profit and Loss',
+        marks: 2.0,
+        negativeMarks: 0.5,
+        explanation: 'क्रय मूल्य (CP) = 450 / 0.9 = ₹500। 20% लाभ पर विक्रय मूल्य = 500 * 1.20 = ₹600।'
+      }
+    ]
+  },
+  {
+    id: 'bpsc_pcs_cbt_mock_01',
+    title: 'BPSC Integrated 71st CCE Prelims All India Mock Test 2026',
+    exam: 'BPSC_PCS',
+    durationMinutes: 120,
+    totalMarks: 150,
+    sections: [
+      { name: 'General Studies & Bihar Special', durationMinutes: 120, totalQuestions: 3 }
+    ],
+    markingScheme: { correct: 1.0, incorrect: 0.33 },
+    questions: [
+      {
+        id: 'q_bpsc_1',
+        type: 'mcq',
+        section: 'General Studies & Bihar Special',
+        questionText: 'Who led the Revolt of 1857 in Bihar against British rule?',
+        options: ['Kunwar Singh', 'Nana Saheb', 'Tatya Tope', 'Maulvi Ahmadullah'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Bihar History',
+        topic: '1857 Revolt in Bihar',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Veer Kunwar Singh of Jagdishpur (Arrah) was the prominent leader of the 1857 revolt in Bihar.'
+      },
+      {
+        id: 'q_bpsc_2',
+        type: 'mcq',
+        section: 'General Studies & Bihar Special',
+        questionText: 'Which district of Bihar records the highest population density as per the latest census data?',
+        options: ['Sheohar', 'Patna', 'Darbhanga', 'Vaishali'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Bihar Geography',
+        topic: 'Census & Demographics',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'Sheohar has the highest population density in Bihar (1,880 persons per sq km).'
+      },
+      {
+        id: 'q_bpsc_3',
+        type: 'mcq',
+        section: 'General Studies & Bihar Special',
+        questionText: 'Which river is known as the "Sorrow of Bihar" due to its frequent course-changing and flooding?',
+        options: ['Kosi', 'Gandak', 'Son', 'Ghaghara'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Geography',
+        topic: 'Rivers of Bihar',
+        marks: 1.0,
+        negativeMarks: 0.33,
+        explanation: 'River Kosi is known as the Sorrow of Bihar because of extensive flooding and shifting channels.'
+      }
+    ]
+  },
+  {
+    id: 'neet_ug_cbt_mock_01',
+    title: 'NEET (UG) All India Mega Mock Test 2026 (Physics, Chem, Bio)',
+    exam: 'NEET_UG',
+    durationMinutes: 200,
+    totalMarks: 720,
+    sections: [
+      { name: 'Physics', durationMinutes: 50, totalQuestions: 1 },
+      { name: 'Chemistry', durationMinutes: 50, totalQuestions: 1 },
+      { name: 'Biology (Botany & Zoology)', durationMinutes: 100, totalQuestions: 1 }
+    ],
+    markingScheme: { correct: 4.0, incorrect: 1.0 },
+    questions: [
+      {
+        id: 'q_neet_1',
+        type: 'numerical',
+        section: 'Physics',
+        questionText: 'A body of mass 2 kg is moving with a velocity of 10 m/s. Calculate its kinetic energy.',
+        options: ['100 Joules', '200 Joules', '50 Joules', '20 Joules'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Work, Energy and Power',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Kinetic Energy = (1/2) * m * v^2 = (1/2) * 2 * (10)^2 = 100 Joules.'
+      },
+      {
+        id: 'q_neet_2',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'Which of the following noble gases is most abundant in the Earth\'s atmosphere?',
+        options: ['Argon', 'Neon', 'Helium', 'Krypton'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Inorganic Chemistry',
+        topic: 'p-Block Elements',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Argon makes up approximately 0.93% of Earth\'s atmosphere by volume, making it the most abundant noble gas.'
+      },
+      {
+        id: 'q_neet_3',
+        type: 'mcq',
+        section: 'Biology (Botany & Zoology)',
+        questionText: 'Which cell organelle is known as the "Powerhouse of the Cell"?',
+        options: ['Mitochondria', 'Ribosome', 'Golgi apparatus', 'Lysosome'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Biology',
+        topic: 'Cell Biology',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Mitochondria are sites of cellular aerobic respiration and ATP generation, earning them the title of Powerhouse of the cell.'
+      }
+    ]
   }
 ];
 
