@@ -5,6 +5,7 @@ import { dedupFetch } from '../lib/apiDeduplicator';
 import { QuestionBankRecord } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { AdSenseBanner } from './AdSenseBanner';
+import { DIAGNOSTIC_QUESTION_BANK } from '../data/diagnosticQuestionBank';
 import { 
   HelpCircle, 
   Plus, 
@@ -185,14 +186,64 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
       const res = await dedupFetch(url);
       if (res.ok) {
         const data = await res.json();
-        if (data.success && Array.isArray(data.questions)) {
+        if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
           setQuestions(data.questions);
-          setTotal(data.total || 0);
+          setTotal(data.total || data.questions.length);
           setTotalPages(data.totalPages || 1);
+          return;
         }
       }
+
+      // Offline Instant Fallback from local diagnostic question database
+      const normExam = normalizeExamKey(selectedExam);
+      const fallbackQuestions = DIAGNOSTIC_QUESTION_BANK
+        .filter(q => normalizeExamKey(q.exam) === normExam)
+        .map(q => ({
+          id: `q_diag_${q.id}`,
+          exam: q.exam,
+          subject: q.subject,
+          topic: q.topic,
+          questionText: q.question,
+          type: 'mcq' as const,
+          options: q.options,
+          correctOption: q.correctAnswer,
+          solutionText: q.explanation,
+          difficulty: 'Medium' as const,
+          status: 'published' as const,
+          language: 'English',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
+
+      if (fallbackQuestions.length > 0) {
+        setQuestions(fallbackQuestions);
+        setTotal(fallbackQuestions.length);
+        setTotalPages(Math.max(1, Math.ceil(fallbackQuestions.length / limit)));
+      }
     } catch (e) {
-      console.warn('Failed to fetch questions from API');
+      console.warn('Using offline questions fallback');
+      const normExam = normalizeExamKey(selectedExam);
+      const fallbackQuestions = DIAGNOSTIC_QUESTION_BANK
+        .filter(q => normalizeExamKey(q.exam) === normExam)
+        .map(q => ({
+          id: `q_diag_${q.id}`,
+          exam: q.exam,
+          subject: q.subject,
+          topic: q.topic,
+          questionText: q.question,
+          type: 'mcq' as const,
+          options: q.options,
+          correctOption: q.correctAnswer,
+          solutionText: q.explanation,
+          difficulty: 'Medium' as const,
+          status: 'published' as const,
+          language: 'English',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }));
+      setQuestions(fallbackQuestions);
+      setTotal(fallbackQuestions.length);
+      setTotalPages(Math.max(1, Math.ceil(fallbackQuestions.length / limit)));
     } finally {
       setLoading(false);
     }
