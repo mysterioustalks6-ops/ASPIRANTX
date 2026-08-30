@@ -1214,7 +1214,7 @@ export default function App() {
             onToggleSidebar={handleToggleSidebarCollapse}
           />
 
-          {activeTab === 'dashboard' && (
+          {(activeTab === 'dashboard' || activeTab === 'student_dashboard') && (
             <>
               {/* Top Announcement Ticker (Customizable) */}
               {customizer.showAnnouncementTicker && (
