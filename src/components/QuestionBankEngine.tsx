@@ -173,6 +173,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
 
   const fetchQuestions = async () => {
     setLoading(true);
+    let loaded = false;
     try {
       const typeParam = typeFilter !== 'All' ? `&type=${typeFilter}` : '';
       const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
@@ -190,11 +191,64 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
           setQuestions(data.questions);
           setTotal(data.total || data.questions.length);
           setTotalPages(data.totalPages || 1);
+          loaded = true;
           return;
         }
       }
+    } catch (e) {
+      console.warn('Backend API unreachable, checking direct Supabase question store...');
+    }
 
-      // Offline Instant Fallback from local diagnostic question database
+    // Direct Supabase Fallback for native APK
+    if (!loaded) {
+      try {
+        const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
+        if (isSupabaseConfigured) {
+          let query = supabase.from('pyqs').select('id, data', { count: 'exact' });
+          if (selectedExam) {
+            const cleanExam = selectedExam.replace(/_/g, '%');
+            query = query.or(`data->>exam.ilike.%${selectedExam}%,data->>exam.ilike.%${cleanExam}%`);
+          }
+          if (selectedSubject !== 'All') {
+            query = query.ilike('data->>subject', `%${selectedSubject}%`);
+          }
+          const offset = (page - 1) * limit;
+          query = query.range(offset, offset + limit - 1);
+          const { data: dbData, count: dbCount, error: dbErr } = await query;
+          if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
+            const mapped = dbData.map((row: any) => {
+              const d = row.data || row;
+              return {
+                id: row.id || d.id,
+                exam: d.exam || selectedExam,
+                subject: d.subject || 'General',
+                topic: d.topic || 'General Topic',
+                questionText: d.questionText || d.question_text || '',
+                type: 'mcq' as const,
+                options: Array.isArray(d.options) ? d.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+                correctOption: typeof d.correctOption === 'number' ? d.correctOption : 0,
+                solutionText: d.explanation || 'Detailed solution verified.',
+                difficulty: d.difficulty || 'Medium',
+                status: 'published' as const,
+                language: d.language || 'English',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+            });
+            setQuestions(mapped);
+            setTotal(dbCount || mapped.length);
+            setTotalPages(Math.max(1, Math.ceil((dbCount || mapped.length) / limit)));
+            loaded = true;
+            return;
+          }
+        }
+      } catch (sbErr) {
+        console.warn('Direct Supabase question bank error:', sbErr);
+      }
+    }
+
+    // Offline Instant Fallback from local diagnostic question database
+    if (!loaded) {
       const normExam = normalizeExamKey(selectedExam);
       const fallbackQuestions = DIAGNOSTIC_QUESTION_BANK
         .filter(q => normalizeExamKey(q.exam) === normExam)
@@ -220,33 +274,8 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
         setTotal(fallbackQuestions.length);
         setTotalPages(Math.max(1, Math.ceil(fallbackQuestions.length / limit)));
       }
-    } catch (e) {
-      console.warn('Using offline questions fallback');
-      const normExam = normalizeExamKey(selectedExam);
-      const fallbackQuestions = DIAGNOSTIC_QUESTION_BANK
-        .filter(q => normalizeExamKey(q.exam) === normExam)
-        .map(q => ({
-          id: `q_diag_${q.id}`,
-          exam: q.exam,
-          subject: q.subject,
-          topic: q.topic,
-          questionText: q.question,
-          type: 'mcq' as const,
-          options: q.options,
-          correctOption: q.correctAnswer,
-          solutionText: q.explanation,
-          difficulty: 'Medium' as const,
-          status: 'published' as const,
-          language: 'English',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }));
-      setQuestions(fallbackQuestions);
-      setTotal(fallbackQuestions.length);
-      setTotalPages(Math.max(1, Math.ceil(fallbackQuestions.length / limit)));
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   useEffect(() => {

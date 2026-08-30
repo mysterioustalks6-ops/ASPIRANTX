@@ -63,7 +63,7 @@ export const LibraryEngine: React.FC<LibraryEngineProps> = ({ user, onNavigate }
 
   const isAdmin = user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER';
 
-  // Fetch books from server database
+  // Fetch books from server database with instant offline fallback
   const fetchBooks = async () => {
     try {
       setLoading(true);
@@ -75,12 +75,34 @@ export const LibraryEngine: React.FC<LibraryEngineProps> = ({ user, onNavigate }
 
       const res = await fetch(`/api/academic/books?${queryParams.toString()}`);
       const data = await res.json();
-      if (data.success) {
+      if (data.success && Array.isArray(data.books) && data.books.length > 0) {
         setBooks(data.books);
+        return;
       }
     } catch (err) {
-      console.error('Failed to fetch books from server API:', err);
+      console.warn('Loading curated offline book repository fallback');
     } finally {
+      // Offline fallback from comprehensive books database
+      const { COMPREHENSIVE_BOOKS_DATABASE } = await import('../data/booksData');
+      let filtered = [...COMPREHENSIVE_BOOKS_DATABASE];
+      if (selectedExam !== 'ALL') {
+        filtered = filtered.filter(b => b.exam === selectedExam || b.exam === 'ALL');
+      }
+      if (selectedCategory !== 'ALL') {
+        filtered = filtered.filter(b => b.category === selectedCategory);
+      }
+      if (selectedSubject !== 'ALL') {
+        filtered = filtered.filter(b => b.subject === selectedSubject);
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(b => 
+          b.title.toLowerCase().includes(q) || 
+          b.author.toLowerCase().includes(q) || 
+          b.description.toLowerCase().includes(q)
+        );
+      }
+      setBooks(filtered);
       setLoading(false);
     }
   };
