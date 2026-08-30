@@ -181,7 +181,6 @@ export const NetworkStatusIndicator: React.FC = () => {
           textClass: 'text-amber-300',
         };
       case 'checking':
-      case 'good':
       default:
         return {
           label: 'Good',
@@ -193,12 +192,8 @@ export const NetworkStatusIndicator: React.FC = () => {
     }
   }, [qualityStatus]);
 
-  // Hide widget completely when status is good or checking, unless showing the brief 3.5s "Restored" confirmation
-  const shouldShowWidget =
-    !isOnline ||
-    qualityStatus === 'slow' ||
-    qualityStatus === 'lagging' ||
-    showRestoredBanner;
+  // Only show banner when truly offline (navigator.onLine === false) or brief restored confirmation
+  const shouldShowWidget = !isOnline || (showRestoredBanner && isOnline);
 
   if (!shouldShowWidget) {
     return null;
