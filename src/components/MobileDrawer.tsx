@@ -27,7 +27,8 @@ import {
   ChevronRight,
   User,
   GraduationCap,
-  Download
+  Download,
+  Smartphone
 } from 'lucide-react';
 import { AppCustomizerSettings } from '../lib/customizer';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
@@ -77,6 +78,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
       title: 'Study & Practice',
       items: [
         { id: 'dashboard' as ActiveTab, label: 'Candidate Telemetry', icon: Target, badge: 'Live' },
+        { id: 'wallpaper' as ActiveTab, label: 'Habit Wallpaper Generator', icon: Smartphone, badge: 'HD' },
         { id: 'syllabus' as ActiveTab, label: 'Syllabus Tracker', icon: BookOpen, badge: 'AI' },
         { id: 'cbt' as ActiveTab, label: 'CBT Test Series', icon: Award, badge: 'NTA' },
         { id: 'pyq' as ActiveTab, label: 'Previous Year Papers', icon: BookMarked, badge: '35 Yrs' },

@@ -38,9 +38,10 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileDrawer } from './components/MobileDrawer';
 import { ReminderSettingsModal } from './components/ReminderSettingsModal';
 import { AppDownloadModal } from './components/AppDownloadModal';
+import { ExamWallpaperWidget } from './components/ExamWallpaperWidget';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
-import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle, ShieldCheck } from 'lucide-react';
+import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle, ShieldCheck, Smartphone } from 'lucide-react';
 
 // Lazy Loaded Enterprise Modules for Optimal Bundle Performance
 const StudentDashboard = lazy(() => import('./components/StudentDashboard').then(m => ({ default: m.StudentDashboard })));
@@ -1507,6 +1508,27 @@ export default function App() {
 
               {activeTab === 'blog' && (
                 <BlogView />
+              )}
+
+              {activeTab === 'wallpaper' && (
+                <div className="max-w-4xl mx-auto space-y-6">
+                  <div className="flex items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-500/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-base sm:text-lg font-bold text-white">Daily Habit Lockscreen Wallpaper</h2>
+                        <p className="text-xs text-slate-400">Export high-resolution dynamic mobile wallpapers customized to your exam countdown</p>
+                      </div>
+                    </div>
+                  </div>
+                  <ExamWallpaperWidget 
+                    user={{...user, exam: selectedExam}} 
+                    selectedExam={selectedExam} 
+                    onNavigateToSyllabus={() => setActiveTab('syllabus')} 
+                  />
+                </div>
               )}
 
               {activeTab === 'blog_submit' && (

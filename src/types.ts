@@ -33,7 +33,7 @@ export interface UserProfile {
   isProfileComplete?: boolean;
 }
 
-export type ActiveTab = 'syllabus' | 'pyq' | 'question_bank' | 'cbt' | 'dashboard' | 'leaderboard' | 'cbt_exam' | 'student_dashboard' | 'timer' | 'tasks' | 'chat' | 'community' | 'study_buddy' | 'premium' | 'earn_premium' | 'reward_milestones' | 'admin' | 'collaboration' | 'library' | 'flashcards' | 'weakness' | 'teachers' | 'podcasts' | 'eligibility' | 'feedback' | 'blog' | 'blog_submit';
+export type ActiveTab = 'syllabus' | 'pyq' | 'question_bank' | 'cbt' | 'dashboard' | 'leaderboard' | 'cbt_exam' | 'student_dashboard' | 'timer' | 'tasks' | 'chat' | 'community' | 'study_buddy' | 'premium' | 'earn_premium' | 'reward_milestones' | 'admin' | 'collaboration' | 'library' | 'flashcards' | 'weakness' | 'teachers' | 'podcasts' | 'eligibility' | 'feedback' | 'blog' | 'blog_submit' | 'wallpaper';
 
 export interface BlogPost {
   id: string;
