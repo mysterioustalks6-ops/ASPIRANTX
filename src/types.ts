@@ -440,27 +440,31 @@ export interface CbtExamSessionState {
 export interface CbtExamResult {
   testId: string;
   testTitle: string;
-  sessionState: CbtExamSessionState;
+  sessionState?: CbtExamSessionState;
   score: number;
   totalPossibleScore: number;
   accuracy: number;
-  attemptRate: number;
+  accuracyPercentage?: number;
+  attemptRate?: number;
   correctCount: number;
   incorrectCount: number;
   unattemptedCount: number;
   globalRank: number;
+  totalAspirants?: number;
   percentile: number;
-  timePerSubject: Record<string, number>;
-  timePerQuestion: Record<string, number>;
-  weakSubjects: string[];
-  strongSubjects: string[];
-  weakTopics: string[];
-  strongTopics: string[];
+  timeTakenSeconds?: number;
+  timePerSubject?: Record<string, number>;
+  timePerQuestion?: Record<string, number>;
+  subjectWiseBreakdown?: Array<{ subject: string; score: number; accuracy: number }>;
+  weakSubjects?: string[];
+  strongSubjects?: string[];
+  weakTopics?: string[];
+  strongTopics?: string[];
   aiMistakeAnalysis: string[];
   aiImprovementSuggestions: string[];
-  nextRevisionPlan: string[];
-  recommendedPyqIds: string[];
-  recommendedTopics: string[];
+  nextRevisionPlan?: string[];
+  recommendedPyqIds?: string[];
+  recommendedTopics?: string[];
 }
 
 export interface LeaderboardEntry {

@@ -410,6 +410,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         testTitle: selectedTest.title,
         score: Math.max(0, Math.round(score * 100) / 100),
         totalPossibleScore,
+        accuracy: accuracy,
         accuracyPercentage: accuracy,
         globalRank: Math.floor(Math.random() * 45) + 12,
         totalAspirants: 1420,
