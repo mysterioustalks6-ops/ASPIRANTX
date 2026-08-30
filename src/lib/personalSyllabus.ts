@@ -112,6 +112,8 @@ export async function getPersonalSyllabusNodes(
         return nodes;
       }
     } catch (err) {}
+  }
+
   // LocalStorage Fallback (Offline / Guest / Error mode)
   try {
     const key = getStorageKey(userId);
