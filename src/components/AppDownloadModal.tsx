@@ -45,6 +45,8 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
     };
   }, []);
 
+  const [showAndroidGuide, setShowAndroidGuide] = useState<boolean>(false);
+
   const handleInstallApp = async () => {
     if (deferredPrompt) {
       try {
@@ -56,21 +58,19 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
         }
       } catch (e) {
         console.warn('Install error:', e);
+        setShowAndroidGuide(true);
       }
       setDeferredPrompt(null);
     } else {
-      // Direct WebAPK install trigger for Android browsers
-      try {
-        // Create dynamic anchor to prompt native installation or trigger native handler
-        localStorage.setItem('aspirantx_app_installed', 'true');
-        setIsOpen(false);
-      } catch (e) {}
+      // If browser security blocked programmatic prompt, show direct visual guide
+      setShowAndroidGuide(true);
     }
   };
 
   const handleContinueWithWeb = () => {
     // Closes current popup for this viewing session, but will ask again on next refresh until installed
     setIsOpen(false);
+    setShowAndroidGuide(false);
     if (onClose) onClose();
   };
 
@@ -133,6 +133,19 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
             </div>
           </div>
 
+          {/* In-Modal Guide when browser requires 1 tap on browser menu */}
+          {showAndroidGuide && (
+            <div className="mb-5 p-3.5 rounded-2xl bg-indigo-950/80 border border-indigo-500/40 text-xs text-slate-200 space-y-2 animate-in fade-in">
+              <div className="flex items-center gap-2 font-bold text-indigo-300">
+                <Smartphone className="w-4 h-4 text-indigo-400" />
+                <span>Quick Install Step for Android:</span>
+              </div>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                Tap your browser menu (<strong>⋮</strong> or <strong>Share</strong>) and click <strong>"Install app"</strong> or <strong>"Add to Home screen"</strong> to get the full Android app icon in your app drawer!
+              </p>
+            </div>
+          )}
+
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-2.5">
             {/* Install Button */}
@@ -141,7 +154,7 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
               className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
             >
               <Download className="w-4 h-4" />
-              <span>Install App Now</span>
+              <span>{showAndroidGuide ? 'Retry 1-Tap Install' : 'Install App Now'}</span>
             </button>
 
             {/* Continue with Web */}
