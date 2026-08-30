@@ -27,7 +27,57 @@ export async function getPersonalSyllabusNodes(
   userId?: string,
   exam?: string
 ): Promise<PersonalSyllabusNode[]> {
-  // If Supabase is configured and user is logged in, try loading from Supabase first
+  const localKey = getStorageKey(userId);
+  let cachedNodes: PersonalSyllabusNode[] = [];
+
+  // 1. Instant 0ms Read from Local Device Cache
+  try {
+    const raw = localStorage.getItem(localKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        cachedNodes = exam ? parsed.filter((n: any) => n.exam === exam) : parsed;
+      }
+    }
+  } catch (e) {}
+
+  // 2. If cached data exists, return instantly in 0ms, and sync in background
+  if (cachedNodes.length > 0) {
+    if (isSupabaseConfigured && userId) {
+      // Background non-blocking sync
+      (async () => {
+        try {
+          let query = supabase.from('personal_syllabus_nodes').select('*').eq('user_id', userId);
+          if (exam) query = query.eq('exam', exam);
+          const { data, error } = await query;
+          if (!error && Array.isArray(data)) {
+            const nodes: PersonalSyllabusNode[] = data.map((row: any, idx: number) => ({
+              id: row.id,
+              exam: row.exam,
+              subject: row.subject,
+              chapter: row.chapter || '',
+              topic: row.topic || '',
+              subtopic: row.subtopic || '',
+              stage: row.stage || '',
+              weightage: row.weightage || '',
+              tags: row.tags || '',
+              origin_official_id: row.origin_official_id || undefined,
+              time_studied_seconds: Number(row.time_studied_seconds) || 0,
+              order: typeof row.order === 'number' ? row.order : (row.sort_order ?? idx),
+              user_id: row.user_id,
+              created_at: row.created_at,
+              updated_at: row.updated_at,
+            }));
+            nodes.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+            localStorage.setItem(localKey, JSON.stringify(nodes));
+          }
+        } catch (e) {}
+      })();
+    }
+    return cachedNodes;
+  }
+
+  // 3. If cache is empty and user logged in, fetch once from Supabase
   if (isSupabaseConfigured && userId) {
     try {
       let query = supabase.from('personal_syllabus_nodes').select('*').eq('user_id', userId);
@@ -36,7 +86,7 @@ export async function getPersonalSyllabusNodes(
       }
       const { data, error } = await query;
 
-      if (!error && Array.isArray(data)) {
+      if (!error && Array.isArray(data) && data.length > 0) {
         const nodes: PersonalSyllabusNode[] = data.map((row: any, idx: number) => ({
           id: row.id,
           exam: row.exam,
@@ -56,35 +106,12 @@ export async function getPersonalSyllabusNodes(
         }));
 
         nodes.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-
-        // Write result to LocalStorage cache
         try {
-          const key = getStorageKey(userId);
-          const existingRaw = localStorage.getItem(key);
-          let allCached: PersonalSyllabusNode[] = [];
-          if (existingRaw) {
-            const parsed = JSON.parse(existingRaw);
-            if (Array.isArray(parsed)) allCached = parsed;
-          }
-
-          let updatedCached: PersonalSyllabusNode[];
-          if (exam) {
-            updatedCached = allCached.filter((n) => n.exam !== exam).concat(nodes);
-          } else {
-            updatedCached = nodes;
-          }
-          localStorage.setItem(key, JSON.stringify(updatedCached));
-        } catch (cacheErr) {
-          console.warn('Failed to update local syllabus cache:', cacheErr);
-        }
-
+          localStorage.setItem(localKey, JSON.stringify(nodes));
+        } catch (e) {}
         return nodes;
       }
-    } catch (err) {
-      console.warn('Supabase fetch personal syllabus error, falling back to localStorage:', err);
-    }
-  }
-
+    } catch (err) {}
   // LocalStorage Fallback (Offline / Guest / Error mode)
   try {
     const key = getStorageKey(userId);
