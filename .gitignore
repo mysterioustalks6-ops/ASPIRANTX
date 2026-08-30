@@ -23,10 +23,15 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment
-.env
-.env.*
-!.env.example
+# Keystore and Keys
+*.keystore
+*.jks
+android/app/*.keystore
+android/app/*.jks
+
+# Data
+.data/
+.system_generated/
 
 # Scratch files
 scratch/

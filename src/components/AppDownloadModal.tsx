@@ -107,6 +107,12 @@ export const AppDownloadModal: React.FC = () => {
                 )}
               </div>
 
+              {/* Install Guidance Note */}
+              <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 text-[10px] text-slate-400 leading-relaxed">
+                <span className="font-bold text-slate-200 block mb-0.5">💡 Quick Install Guide for Android:</span>
+                <span>After download, tap the file. If prompted <em>"Install blocked"</em>, tap <strong>Settings → Allow from this source</strong>, then tap Install.</span>
+              </div>
+
               {/* Continue on Web Button */}
               <button
                 onClick={handleDismiss}
