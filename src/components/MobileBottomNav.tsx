@@ -57,7 +57,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
         {/* Mock Tests */}
         <button
-          onClick={() => setActiveTab('cbt_exam')}
+          onClick={() => setActiveTab('cbt')}
           className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation active:scale-90 ${
             isTestsActive
               ? 'text-indigo-400 font-bold'

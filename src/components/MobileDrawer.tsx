@@ -77,7 +77,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
       items: [
         { id: 'student_dashboard' as ActiveTab, label: 'Candidate Telemetry', icon: Target, badge: 'Live' },
         { id: 'syllabus' as ActiveTab, label: 'Syllabus Tracker', icon: BookOpen, badge: 'AI' },
-        { id: 'cbt_exam' as ActiveTab, label: 'CBT Test Series', icon: Award, badge: 'NTA' },
+        { id: 'cbt' as ActiveTab, label: 'CBT Test Series', icon: Award, badge: 'NTA' },
         { id: 'pyq' as ActiveTab, label: 'Previous Year Papers', icon: BookMarked, badge: '35 Yrs' },
         { id: 'question_bank' as ActiveTab, label: 'Question Bank', icon: HelpCircle, badge: '4000+' },
         { id: 'flashcards' as ActiveTab, label: 'Active Recall Decks', icon: Sparkles },

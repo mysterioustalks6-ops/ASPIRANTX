@@ -1402,7 +1402,7 @@ export default function App() {
                 />
               )}
 
-              {activeTab === 'cbt' && (
+              {(activeTab === 'cbt' || activeTab === 'cbt_exam') && (
                 <PremiumGate
                   featureName="cbt"
                   featureTitle="AspirantX All-India Mock Test & CBT Simulator"

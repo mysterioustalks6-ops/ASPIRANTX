@@ -589,7 +589,7 @@ export const INITIAL_NOTIFICATIONS: AppNotification[] = [
     type: 'mock_test',
     read: false,
     createdAt: '1 hour ago',
-    actionUrl: 'cbt_exam'
+    actionUrl: 'cbt'
   },
   {
     id: 'notif_3',
