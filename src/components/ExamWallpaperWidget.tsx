@@ -250,10 +250,43 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
       ctx.font = 'bold 28px sans-serif';
       ctx.fillText('ASPIRANTX DYNAMIC SYSTEM • PROVEN DISCIPLINE', 540, 2220);
 
-      // Download Wallpaper Image
+      const dataUrl = canvas.toDataURL('image/png');
+      const filename = `AspirantX_${selectedPersona.id}_Wallpaper_${activeExam}.png`;
+
+      // Check if running inside native Android / iOS Capacitor APK
+      const { Capacitor } = await import('@capacitor/core');
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { Filesystem, Directory } = await import('@capacitor/filesystem');
+          const { Share } = await import('@capacitor/share');
+
+          const base64Data = dataUrl.split(',')[1];
+          const savedFile = await Filesystem.writeFile({
+            path: filename,
+            data: base64Data,
+            directory: Directory.Cache
+          });
+
+          // Open Android native Share sheet which allows "Set as Wallpaper" / "Use as Wallpaper" directly
+          await Share.share({
+            title: 'Set AspirantX Wallpaper',
+            text: `AspirantX ${selectedPersona.name} Lockscreen Countdown Wallpaper`,
+            url: savedFile.uri,
+            dialogTitle: 'Set as Lockscreen / Homescreen Wallpaper'
+          });
+
+          setDownloadSuccess(true);
+          setTimeout(() => setDownloadSuccess(false), 4000);
+          return;
+        } catch (nativeErr) {
+          console.warn('Native wallpaper share fallback to download link:', nativeErr);
+        }
+      }
+
+      // Standard Browser / Web Download Link
       const link = document.createElement('a');
-      link.download = `AspirantX_${selectedPersona.id}_Wallpaper_${activeExam}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.download = filename;
+      link.href = dataUrl;
       link.click();
 
       setDownloadSuccess(true);
