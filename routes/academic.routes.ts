@@ -897,7 +897,8 @@ router.get('/api/academic/pyqs', async (req, res) => {
           .select('id, data', { count: 'exact' });
 
         if (exam) {
-          query = query.ilike("data->>exam", "" + exam + "");
+          const cleanExam = exam.replace(/_/g, '%');
+          query = query.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
         }
         if (stage) {
           query = query.eq('data->>stage', stage);
@@ -1471,17 +1472,12 @@ router.get('/api/academic/questions', async (req, res) => {
     if (supabaseServer) {
       try {
         let query = supabaseServer
-          .from('question_bank')
+          .from('pyqs')
           .select('id, data', { count: 'exact' });
 
         if (exam) {
-          query = query.ilike("data->>exam", "" + exam + "");
-        }
-        if (type && type !== 'All') {
-          query = query.eq('data->>type', type);
-        }
-        if (status && status !== 'All') {
-          query = query.eq('data->>status', status);
+          const cleanExam = exam.replace(/_/g, '%');
+          query = query.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
         }
         if (difficulty && difficulty !== 'All') {
           query = query.eq('data->>difficulty', difficulty);
@@ -1494,7 +1490,7 @@ router.get('/api/academic/questions', async (req, res) => {
         query = query.range(offset, offset + pageLimit - 1);
 
         const { data: dbData, count: dbCount, error: dbErr } = await query;
-        if (!dbErr && Array.isArray(dbData)) {
+        if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
           fetchedFromDb = true;
           total = dbCount || dbData.length;
           items = dbData.map(normalizeQuestionItem).filter(Boolean);
