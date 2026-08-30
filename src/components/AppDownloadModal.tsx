@@ -11,12 +11,12 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check if app is already installed in Standalone mode or Capacitor native APK
+    // Check if app is already running in Standalone mode or Capacitor native APK
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
     const isNative = (window as any).Capacitor?.isNativePlatform?.();
     const isInstalled = localStorage.getItem('aspirantx_app_installed') === 'true';
 
-    // If app is already installed, DO NOT show prompt
+    // If app is already running in standalone PWA, do not show
     if (isStandalone || isNative || isInstalled) {
       return;
     }
@@ -24,20 +24,24 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show prompt 2.5s after load on uninstalled browser
-      setTimeout(() => setIsOpen(true), 2500);
+      setIsOpen(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Fallback: On mobile or web browsers where app is not installed, prompt after 3s
+    // Global listener so any button can trigger the install popup
+    const handleTrigger = () => setIsOpen(true);
+    window.addEventListener('trigger_app_download_modal', handleTrigger);
+
+    // Immediate prompt on uninstalled web page load (1.2s)
     const timer = setTimeout(() => {
       setIsOpen(true);
-    }, 3000);
+    }, 1200);
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('trigger_app_download_modal', handleTrigger);
     };
   }, []);
 
