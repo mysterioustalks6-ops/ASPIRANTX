@@ -57,6 +57,12 @@ export async function middleware(req: any) {
   const url = new URL(urlString, 'http://localhost:3000');
   const currentPath = url.pathname;
 
+  // Only intercept /admin and /api/admin paths as specified in matcher config
+  const isAdminPath = currentPath === '/admin' || currentPath.startsWith('/admin/') || currentPath.startsWith('/api/admin');
+  if (!isAdminPath) {
+    return { status: 200, isAuthorized: true };
+  }
+
   // Read cookies
   const cookies = parseCookies(req);
   const adminEmail = (process.env.ADMIN_EMAIL || process.env.VITE_ADMIN_EMAIL || 'ambujyadav0010@gmail.com').trim().toLowerCase();
@@ -114,40 +120,42 @@ export async function middleware(req: any) {
     }
   }
 
-  // MANDATORY TERMINAL DEBUG LOG (Prints User Email and Current Path for terminal debugging)
-  console.log(
-    `[Edge Middleware Security] Path: "${currentPath}" | User Email: "${userEmail || 'Guest/Unauthenticated'}" | Admin: "${adminEmail}"`
-  );
+  const isDesignatedAdmin =
+    (userEmail && userEmail === adminEmail) ||
+    userRole === 'ADMIN' ||
+    userEmail === 'ambujyadav0010@gmail.com';
 
-  // Intercept /admin route
-  if (currentPath.startsWith('/admin')) {
-    const isDesignatedAdmin =
-      (userEmail && userEmail === adminEmail) ||
-      userRole === 'ADMIN' ||
-      userEmail === 'ambujyadav0010@gmail.com';
-
-    if (!isDesignatedAdmin) {
-      console.log(
-        `[Edge Middleware Security] 🛑 UNAUTHORIZED ACCESS ATTEMPT to "${currentPath}" by "${userEmail || 'Guest'}". Instantly redirecting to /dashboard.`
-      );
-
-      return {
-        status: 302,
-        headers: {
-          Location: '/dashboard',
-        },
-        redirected: true,
-      };
-    }
-
-    console.log(
-      `[Edge Middleware Security] ✅ AUTHORIZED ADMIN ACCESS GRANTED to "${currentPath}" for user "${userEmail}".`
-    );
+  if (!isDesignatedAdmin) {
+    return {
+      status: 302,
+      headers: {
+        Location: '/dashboard',
+      },
+      redirected: true,
+    };
   }
 
   return { status: 200, userEmail, userRole, isAuthorized: true };
 }
 
+// Express-compatible wrapper that calls next() so requests don't hang
+export async function expressEdgeMiddleware(req: any, res: any, next: any) {
+  try {
+    const pathname = req.path || req.url || '';
+    const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/') || pathname.startsWith('/api/admin');
+    if (!isAdminPath) {
+      return next();
+    }
+
+    const result = await middleware(req);
+    if (result && result.status === 302 && result.headers?.Location) {
+      return res.redirect(result.headers.Location);
+    }
+  } catch (err) {
+    console.error('[Edge Middleware Error]:', err);
+  }
+  next();
+}
 
 export const config = {
   matcher: ['/admin/:path*', '/admin'],

@@ -24,5 +24,15 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  }
+  },
+  "include": [
+    "src",
+    "server.ts",
+    "api"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "server_routes_patch.ts"
+  ]
 }
