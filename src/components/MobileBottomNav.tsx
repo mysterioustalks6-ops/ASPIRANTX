@@ -27,7 +27,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       <div className="flex items-center justify-around px-2 py-1.5 h-16 max-w-md mx-auto">
         {/* Home */}
         <button
-          onClick={() => setActiveTab('student_dashboard')}
+          onClick={() => setActiveTab('dashboard')}
           className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation active:scale-90 ${
             isHomeActive
               ? 'text-indigo-400 font-bold'

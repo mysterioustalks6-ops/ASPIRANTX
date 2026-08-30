@@ -1390,7 +1390,7 @@ export default function App() {
             )}
 
             <Suspense fallback={<SuspenseFallback />}>
-              {activeTab === 'dashboard' && (
+              {(activeTab === 'dashboard' || activeTab === 'student_dashboard') && (
                 <StudentDashboard 
                   userProfile={{...user, exam: selectedExam}} 
                   selectedExam={selectedExam}
