@@ -3498,6 +3498,175 @@ export const DEFAULT_CBT_MOCKS = [
         explanation: 'Principal P = (SI * 100) / (R * T) = (1200 * 100) / (8 * 3) = 120000 / 24 = Rs. 5,000.'
       }
     ]
+  },
+  {
+    id: 'neet_ug_cbt_mock_01',
+    title: 'NEET UG All India National Grand Mock Test 2026 (Physics, Chem & Bio)',
+    exam: 'NEET_UG',
+    durationMinutes: 180,
+    totalMarks: 720,
+    sections: [
+      { name: 'Physics', durationMinutes: 45, totalQuestions: 2 },
+      { name: 'Chemistry', durationMinutes: 45, totalQuestions: 2 },
+      { name: 'Biology', durationMinutes: 90, totalQuestions: 2 }
+    ],
+    markingScheme: { correct: 4.0, incorrect: 1.0 },
+    questions: [
+      {
+        id: 'q_neet_1',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'A particle starts from rest with a uniform acceleration of 2 m/s². The distance travelled by the particle in the 5th second is:',
+        options: ['9 m', '10 m', '25 m', '12 m'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Kinematics in 1D',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Distance in nth second: Sn = u + a/2 * (2n - 1) = 0 + 2/2 * (2*5 - 1) = 9 m.'
+      },
+      {
+        id: 'q_neet_2',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'Two point charges +3µC and -3µC are separated by a distance of 2cm in air. What is the electric dipole moment of the system?',
+        options: ['6 × 10⁻⁸ C·m', '6 × 10⁻⁶ C·m', '3 × 10⁻⁸ C·m', '1.5 × 10⁻⁸ C·m'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Electrostatics',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Dipole moment p = q × 2a = (3 × 10⁻⁶) × (2 × 10⁻²) = 6 × 10⁻⁸ C·m.'
+      },
+      {
+        id: 'q_neet_3',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'Which among the following coordination compounds exhibits optical isomerism?',
+        options: ['[Co(en)₃]³⁺', 'trans-[Co(NH₃)₄Cl₂]⁺', 'cis-[Pt(NH₃)₂Cl₂]', '[Zn(en)₂]²⁺ (tetrahedral)'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Coordination Compounds',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Tris-chelate octahedral complex [Co(en)₃]³⁺ lacks plane of symmetry and exhibits optical isomerism.'
+      },
+      {
+        id: 'q_neet_4',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'The pH of a 10⁻⁸ M aqueous solution of HCl at 25°C is:',
+        options: ['8.00', '6.98', '7.00', '1.00'],
+        correctOption: 1,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Ionic Equilibrium',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Total [H⁺] = 10⁻⁸ (from HCl) + 10⁻⁷ (from water) = 1.1 × 10⁻⁷ M, yielding pH = 6.98.'
+      },
+      {
+        id: 'q_neet_5',
+        type: 'mcq',
+        section: 'Biology',
+        questionText: 'In cellular respiration, what is the net gain of ATP molecules per molecule of glucose oxidized in glycolysis?',
+        options: ['2 ATP', '4 ATP', '36 ATP', '38 ATP'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Biology',
+        topic: 'Respiration in Plants',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Glycolysis yields 4 ATP total and consumes 2 ATP, resulting in a net gain of 2 ATP.'
+      },
+      {
+        id: 'q_neet_6',
+        type: 'mcq',
+        section: 'Biology',
+        questionText: 'Which hormone triggers ovulation and the development of corpus luteum in human females?',
+        options: ['Luteinizing Hormone (LH)', 'Follicle Stimulating Hormone (FSH)', 'Estrogen', 'Progesterone'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Biology',
+        topic: 'Human Reproduction',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'A rapid surge in LH (LH surge) mid-cycle induces rupture of Graafian follicle and releases the ovum.'
+      }
+    ]
+  },
+  {
+    id: 'nda_na_cbt_mock_01',
+    title: 'NDA / NA All India Defense Officers Mock Test (Maths & GAT)',
+    exam: 'NDA_NA',
+    durationMinutes: 150,
+    totalMarks: 300,
+    sections: [
+      { name: 'Mathematics', durationMinutes: 75, totalQuestions: 2 },
+      { name: 'General Ability Test (GAT)', durationMinutes: 75, totalQuestions: 2 }
+    ],
+    markingScheme: { correct: 2.5, incorrect: 0.83 },
+    questions: [
+      {
+        id: 'q_nda_1',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'If sin θ + cos θ = √2 cos θ, then what is the value of cos θ - sin θ?',
+        options: ['√2 sin θ', '√2 cos θ', 'sin θ', '-√2 sin θ'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Trigonometry',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'Squaring both sides and simplifying yields cos θ - sin θ = √2 sin θ.'
+      },
+      {
+        id: 'q_nda_2',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'What is the value of lim (x → 0) (sin 3x) / (tan 2x)?',
+        options: ['3/2', '2/3', '1', '0'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Limits & Calculus',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'lim (x → 0) [ (sin 3x / 3x) * 3 ] / [ (tan 2x / 2x) * 2 ] = (1 * 3) / (1 * 2) = 3/2.'
+      },
+      {
+        id: 'q_nda_3',
+        type: 'mcq',
+        section: 'General Ability Test (GAT)',
+        questionText: 'Where is the headquarters of the Indian National Defence Academy (NDA) located?',
+        options: ['Khadakwasla, Pune', 'Dehradun', 'Dungigal, Hyderabad', 'Ezhimala, Kerala'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'General Knowledge',
+        topic: 'Defense Institutions',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'The National Defence Academy (NDA) is located at Khadakwasla near Pune, Maharashtra.'
+      },
+      {
+        id: 'q_nda_4',
+        type: 'mcq',
+        section: 'General Ability Test (GAT)',
+        questionText: 'Which optical phenomenon is primarily responsible for the sparkling brilliance of diamonds?',
+        options: ['Total Internal Reflection', 'Refraction', 'Dispersion', 'Interference'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Ray Optics',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'The small critical angle of diamond (24.4°) ensures multiple total internal reflections of trapped light.'
+      }
+    ]
   }
 ];
 

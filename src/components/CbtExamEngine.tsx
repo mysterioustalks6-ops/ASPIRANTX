@@ -10,6 +10,7 @@ import {
   CbtQuestionStatus, CbtExamResult, UserProfile 
 } from '../types';
 import { EXAM_LIST } from '../lib/examList';
+import { INITIAL_CBT_TESTS } from '../data/cbtData';
 
 interface CbtExamEngineProps {
   userProfile: UserProfile;
@@ -93,9 +94,17 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     try {
       const res = await fetch(`/api/academic/cbt/tests?exam=${activeExamKey}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success) setAvailableTests(data.tests);
+      if (data.success && data.tests && data.tests.length > 0) {
+        setAvailableTests(data.tests);
+      } else {
+        // Fallback to local default tests for the selected exam
+        const fallback = INITIAL_CBT_TESTS.filter(t => !activeExamKey || t.exam === activeExamKey);
+        setAvailableTests(fallback.length > 0 ? fallback : INITIAL_CBT_TESTS);
+      }
     } catch (err) {
-      console.error('Failed to load CBT tests:', err);
+      console.warn('Failed to load CBT tests from API, using cached tests:', err);
+      const fallback = INITIAL_CBT_TESTS.filter(t => !activeExamKey || t.exam === activeExamKey);
+      setAvailableTests(fallback.length > 0 ? fallback : INITIAL_CBT_TESTS);
     } finally {
       setLoading(false);
     }
