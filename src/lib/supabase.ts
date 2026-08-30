@@ -4,10 +4,10 @@ import { createClient } from '@supabase/supabase-js';
 const env = (import.meta as any).env || {};
 
 const DEFAULT_SUPABASE_URL = "https://ixwpkzorjutnhpnybuvx.supabase.co";
-const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml4d3Brem9yanV0bmhwbnlidXZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3NDIxMjIsImV4cCI6MjEwMTMxODEyMn0.0Km2xeSzdTznuSzNK8DyL4a_MfYFFnuEseV78oSx9zw";
+const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_dF6kX95MWNslPQThitCNLA_wjRSIDdR";
 
 const supabaseUrl = env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL;
-const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || env.SUPABASE_PUBLISHABLE_KEY || DEFAULT_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
@@ -30,13 +30,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export async function signInWithGoogle() {
   if (!isSupabaseConfigured) {
     return { data: null, error: new Error('Supabase credentials not configured in environment.') };
-  }
-
-  if (supabaseAnonKey && !supabaseAnonKey.startsWith('eyJ')) {
-    return { 
-      data: null, 
-      error: new Error('Invalid Supabase Anon Key format! Replace VITE_SUPABASE_ANON_KEY with the real anon JWT key starting with "eyJ...".') 
-    };
   }
 
 
