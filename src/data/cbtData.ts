@@ -211,6 +211,259 @@ export const INITIAL_CBT_TESTS: CbtTest[] = [
       }
     ]
   }
+  {
+    id: 'neet_ug_cbt_mock_01',
+    title: 'NEET UG 2026 National Grand Diagnostic Mock Test (PCB Full Syllabus)',
+    exam: 'NEET_UG',
+    durationMinutes: 200,
+    totalMarks: 720,
+    sections: [
+      { name: 'Physics', durationMinutes: 50, totalQuestions: 3 },
+      { name: 'Chemistry', durationMinutes: 50, totalQuestions: 3 },
+      { name: 'Biology (Botany & Zoology)', durationMinutes: 100, totalQuestions: 4 }
+    ],
+    markingScheme: { correct: 4.0, incorrect: 1.0 },
+    questions: [
+      {
+        id: 'q_neet_1',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'A particle starts from the origin at t = 0 with an initial velocity of 5i m/s and moves in the x-y plane with a constant acceleration of (3i + 2j) m/s². At the instant its x-coordinate is 84 m, what is the y-coordinate of the particle?',
+        options: ['36 m', '24 m', '48 m', '16 m'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Motion in a Plane',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Along x-axis: x = ux*t + 0.5*ax*t² => 84 = 5t + 1.5t² => t = 6 s. Along y-axis: y = uy*t + 0.5*ay*t² = 0 + 0.5*(2)*(6)² = 36 m.'
+      },
+      {
+        id: 'q_neet_2',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'In a Young\'s double slit experiment, if the separation between the slits is halved and the distance between the slits and screen is doubled, what happens to the fringe width β?',
+        options: ['Remains unchanged', 'Becomes four times', 'Becomes half', 'Becomes two times'],
+        correctOption: 1,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Wave Optics',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Fringe width β = λD/d. New β\' = λ(2D)/(d/2) = 4(λD/d) = 4β.'
+      },
+      {
+        id: 'q_neet_3',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'An ideal gas undergoes an isothermal expansion from volume V1 to V2. The work done by the gas is given by:',
+        options: ['nRT ln(V2/V1)', 'nRT (V2 - V1)', 'Zero', 'nCv(T2 - T1)'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Thermodynamics',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'For an isothermal process, W = ∫P dV = nRT ln(V2/V1).'
+      },
+      {
+        id: 'q_neet_4',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'Which among the following species has the highest dipole moment?',
+        options: ['NH3', 'NF3', 'BF3', 'CCl4'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Chemical Bonding',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'In NH3, the orbital dipole due to the lone pair is in the same direction as the N-H bond dipoles, resulting in a large net dipole moment.'
+      },
+      {
+        id: 'q_neet_5',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'The oxidation state of chromium in potassium dichromate (K2Cr2O7) is:',
+        options: ['+4', '+6', '+3', '+7'],
+        correctOption: 1,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Redox Reactions',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: '2(+1) + 2(x) + 7(-2) = 0 => 2 + 2x - 14 = 0 => 2x = 12 => x = +6.'
+      },
+      {
+        id: 'q_neet_6',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'Which of the following organic compounds will give a positive Iodoform test upon warming with I2 and NaOH?',
+        options: ['Methanol', 'Ethanol', 'Benzophenone', 'Diethylether'],
+        correctOption: 1,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Alcohols, Phenols & Ethers',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Ethanol has CH3CH(OH)- group which oxidizes to ethanal CH3CHO containing the requisite methyl ketone moiety for positive iodoform test.'
+      },
+      {
+        id: 'q_neet_7',
+        type: 'mcq',
+        section: 'Biology (Botany & Zoology)',
+        questionText: 'During cellular respiration, which step produces the maximum number of ATP molecules via oxidative phosphorylation?',
+        options: ['Glycolysis', 'Krebs Cycle (TCA cycle)', 'Electron Transport System (ETS)', 'Fermentation'],
+        correctOption: 2,
+        language: 'English',
+        subject: 'Biology',
+        topic: 'Respiration in Plants',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'The mitochondrial Electron Transport Chain and ATP synthase generate the bulk of cellular ATP (~28-32 ATP) via oxidative phosphorylation.'
+      },
+      {
+        id: 'q_neet_8',
+        type: 'mcq',
+        section: 'Biology (Botany & Zoology)',
+        questionText: 'Identify the hormone responsible for the maintenance of the corpus luteum and secretion of progesterone during early pregnancy:',
+        options: ['hCG (Human Chorionic Gonadotropin)', 'Oxytocin', 'Prolactin', 'Relaxin'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Biology',
+        topic: 'Human Reproduction',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'hCG produced by the syncytiotrophoblast maintains the corpus luteum to prevent menstruation in early pregnancy.'
+      },
+      {
+        id: 'q_neet_9',
+        type: 'mcq',
+        section: 'Biology (Botany & Zoology)',
+        questionText: 'Which of the following restriction enzymes produces blunt ends during DNA cleavage?',
+        options: ['EcoRI', 'HindIII', 'SmaI', 'BamHI'],
+        correctOption: 2,
+        language: 'English',
+        subject: 'Biology',
+        topic: 'Biotechnology: Principles and Processes',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'SmaI cuts straight down the center of CCC/GGG sequence producing blunt ends.'
+      },
+      {
+        id: 'q_neet_10',
+        type: 'mcq',
+        section: 'Biology (Botany & Zoology)',
+        questionText: 'According to Mendel\'s Law of Independent Assortment, the phenotypic ratio in a typical dihybrid cross in F2 generation is:',
+        options: ['9:3:3:1', '3:1', '1:2:1', '9:7'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Biology',
+        topic: 'Principles of Inheritance and Variation',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'The standard Mendelian dihybrid F2 phenotypic ratio is 9:3:3:1.'
+      }
+    ]
+  },
+  {
+    id: 'nda_na_cbt_mock_01',
+    title: 'NDA & NA National Defence Academy All India Grand Mock Test 2026',
+    exam: 'NDA_NA',
+    durationMinutes: 150,
+    totalMarks: 300,
+    sections: [
+      { name: 'Mathematics', durationMinutes: 90, totalQuestions: 3 },
+      { name: 'General Ability Test (GAT)', durationMinutes: 60, totalQuestions: 3 }
+    ],
+    markingScheme: { correct: 2.5, incorrect: 0.83 },
+    questions: [
+      {
+        id: 'q_nda_1',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'If the roots of the quadratic equation x² - 2kx + (k² - 1) = 0 lie between -2 and 4, find the range of real values of k:',
+        options: ['-1 < k < 3', '-2 < k < 4', '0 < k < 2', '-3 < k < 1'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Quadratic Equations',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'Roots are x = k ± 1. For roots to lie between -2 and 4: k + 1 < 4 => k < 3 and k - 1 > -2 => k > -1 => -1 < k < 3.'
+      },
+      {
+        id: 'q_nda_2',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'Find the derivative of f(x) = sin²(3x) with respect to x:',
+        options: ['3 sin(6x)', '6 sin(3x)', '6 cos(3x)', 'sin(6x)'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Calculus & Derivatives',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'df/dx = 2 sin(3x) * cos(3x) * 3 = 3 * (2 sin 3x cos 3x) = 3 sin(6x).'
+      },
+      {
+        id: 'q_nda_3',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'What is the sum of the first 20 terms of an arithmetic progression (AP) whose first term is 5 and common difference is 4?',
+        options: ['860', '820', '900', '780'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Sequences and Series',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'S20 = (20/2) * [2(5) + (20 - 1)*4] = 10 * [10 + 76] = 10 * 86 = 860.'
+      },
+      {
+        id: 'q_nda_4',
+        type: 'mcq',
+        section: 'General Ability Test (GAT)',
+        questionText: 'Choose the antonym of the word "OBSTINATE":',
+        options: ['Flexible', 'Stubborn', 'Rigid', 'Resolute'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'English',
+        topic: 'Vocabulary & Antonyms',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'Obstinate means stubborn or unyielding; its direct antonym is Flexible.'
+      },
+      {
+        id: 'q_nda_5',
+        type: 'mcq',
+        section: 'General Ability Test (GAT)',
+        questionText: 'Who was the Commander-in-Chief of the Indian National Army (INA) formed during World War II?',
+        options: ['Netaji Subhash Chandra Bose', 'Rash Behari Bose', 'Captain Mohan Singh', 'Bhagat Singh'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'History',
+        topic: 'Modern Indian History',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'Netaji Subhash Chandra Bose reorganized and led the Azad Hind Fauj (INA).'
+      },
+      {
+        id: 'q_nda_6',
+        type: 'mcq',
+        section: 'General Ability Test (GAT)',
+        questionText: 'The sound waves in air are characterized as:',
+        options: ['Longitudinal waves', 'Transverse waves', 'Electromagnetic waves', 'Polarized waves'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'General Science',
+        topic: 'Physics - Waves & Sound',
+        marks: 2.5,
+        negativeMarks: 0.83,
+        explanation: 'Sound waves in gases and air travel through compressions and rarefactions as longitudinal waves.'
+      }
+    ]
+  }
 ];
 
 export const INITIAL_COMMUNITY_GROUPS: CommunityGroup[] = [
