@@ -1,22 +1,28 @@
 {
   "short_name": "AspirantX",
-  "name": "AspirantX - Enterprise UPSC/SSC Prep Platform",
-  "icons": [
-    {
-      "src": "pwa-192x192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "pwa-512x512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
-  ],
+  "name": "AspirantX - UPSC, NEET & SSC Prep",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "window-controls-overlay", "minimal-ui"],
   "background_color": "#0f172a",
   "theme_color": "#4f46e5",
-  "display": "standalone",
   "orientation": "portrait",
-  "description": "Enterprise SaaS Platform for UPSC & SSC Aspirants with CBT Engine, AI Mentor, and Community Platform."
+  "categories": ["education", "productivity"],
+  "description": "Enterprise Exam Preparation App for UPSC, NEET, NDA, and SSC Aspirants with AI Mentorship and Live CBT Engine.",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
 }
