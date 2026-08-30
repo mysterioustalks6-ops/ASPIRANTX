@@ -250,6 +250,17 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
+        {/* Download App direct button */}
+        <a
+          href="/aspirantx.apk"
+          download="AspirantX.apk"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all shadow-sm"
+          title="Download AspirantX Android APK"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Get App</span>
+        </a>
+
         {/* Fullscreen Toggle (Desktop only) */}
         <button
           onClick={toggleFullscreen}

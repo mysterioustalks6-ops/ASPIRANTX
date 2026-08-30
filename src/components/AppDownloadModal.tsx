@@ -82,25 +82,38 @@ export const AppDownloadModal: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-2.5">
-              {/* Install Button (Active when canInstall or on iOS) */}
-              {(canInstall || isIOS) && (
-                <button
-                  onClick={handleInstall}
-                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                {/* Direct Android APK Download Button */}
+                <a
+                  href="/aspirantx.apk"
+                  download="AspirantX.apk"
+                  onClick={handleDismiss}
+                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer active:scale-95 text-center"
                 >
-                  <Download className="w-4 h-4" />
-                  <span>Install</span>
-                </button>
-              )}
+                  <Download className="w-4 h-4 shrink-0" />
+                  <span>Download APK (Direct)</span>
+                </a>
+
+                {/* Instant App Install Button (Active when canInstall or on iOS) */}
+                {(canInstall || isIOS) && (
+                  <button
+                    onClick={handleInstall}
+                    className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+                  >
+                    <Smartphone className="w-4 h-4 shrink-0" />
+                    <span>{isIOS ? 'Install on iPhone' : '1-Tap Web App'}</span>
+                  </button>
+                )}
+              </div>
 
               {/* Continue on Web Button */}
               <button
                 onClick={handleDismiss}
-                className="flex-1 py-3 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-800/60 hover:bg-slate-700/70 border border-slate-700/60 text-slate-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95"
               >
-                <Globe className="w-4 h-4 text-slate-400" />
-                <span>Continue on Web</span>
+                <Globe className="w-3.5 h-3.5 text-slate-400" />
+                <span>Continue on Web Browser</span>
               </button>
             </div>
           </motion.div>

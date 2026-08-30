@@ -307,8 +307,19 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 </div>
               )}
 
-              {/* Workspace Personalization & Logout Buttons */}
+              {/* Download APK & Workspace Personalization & Logout Buttons */}
               <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                {/* Download Android APK Button */}
+                <a
+                  href="/aspirantx.apk"
+                  download="AspirantX.apk"
+                  onClick={onClose}
+                  className="w-full min-h-[44px] px-3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 text-center cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Download Android App (.APK)</span>
+                </a>
+
                 {onOpenWorkspaceCustomizer && (
                   <button
                     onClick={() => {
