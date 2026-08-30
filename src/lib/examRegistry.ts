@@ -1,0 +1,226 @@
+import { EXAM_LIST } from './examList';
+
+export interface ExamConfig {
+  examId: string;
+  displayName: string;
+  category: 'MEDICAL' | 'ENGINEERING' | 'DEFENCE' | 'CIVIL_SERVICES' | 'SSC_BANKING' | 'LAW' | 'MANAGEMENT' | 'TEACHING' | 'STATE_EXAMS' | 'OTHER';
+  stages: string[];
+  papers: string[];
+  subjects: string[];
+  syllabusTree: Record<string, { topics: string[]; subtopics?: Record<string, string[]> }>;
+  aliasMap: Record<string, string>;
+  defaultSubject: string;
+  languages: string[];
+  difficultyLevels: string[];
+  questionTypes: string[];
+}
+
+export const EXAM_REGISTRY: Record<string, ExamConfig> = {
+  UPSC_CSE: {
+    examId: 'UPSC_CSE',
+    displayName: 'UPSC Civil Services Examination',
+    category: 'CIVIL_SERVICES',
+    stages: ['Prelims', 'Mains', 'Interview'],
+    papers: ['GS Paper 1', 'GS Paper 2 (CSAT)', 'GS Paper 3', 'GS Paper 4 (Ethics)', 'Essay'],
+    subjects: [
+      'Indian Polity & Governance',
+      'History of India',
+      'Economy',
+      'Geography',
+      'Environment & Ecology',
+      'Science & Technology',
+      'International Relations & Current Affairs',
+      'CSAT (Paper-2)'
+    ],
+    syllabusTree: {
+      'Indian Polity & Governance': {
+        topics: ['Constitutional Framework', 'Preamble & Fundamental Rights', 'Parliament & State Legislature', 'Judiciary & Judicial Review', 'Panchayati Raj & Local Bodies', 'Constitutional & Non-Constitutional Bodies'],
+      },
+      'History of India': {
+        topics: ['Ancient History & Indus Valley', 'Vedic Period & Buddhism/Jainism', 'Medieval Empires & Sultanate', 'Modern India & Freedom Movement', 'Art, Architecture & Culture'],
+      },
+      'Economy': {
+        topics: ['Indian Economy & National Income', 'Banking & Monetary Policy', 'Fiscal Policy & Budgeting', 'Financial Markets & Inflation', 'External Sector & Foreign Trade'],
+      },
+      'Geography': {
+        topics: ['Physical Geography & Geomorphology', 'Climatology & Oceanography', 'Indian Physical & Human Geography', 'World Physical Geography'],
+      },
+      'Environment & Ecology': {
+        topics: ['Ecosystems & Biodiversity', 'Climate Change & Global Warming', 'Environmental Laws & Conventions', 'Pollution & Conservation Efforts'],
+      },
+      'Science & Technology': {
+        topics: ['Space Technology & ISRO', 'Defense & Nuclear Tech', 'Biotechnology & Genetics', 'IT, AI & Quantum Tech', 'General Science'],
+      }
+    },
+    aliasMap: {
+      'polity': 'Indian Polity & Governance',
+      'constitution': 'Indian Polity & Governance',
+      'history': 'History of India',
+      'modern history': 'History of India',
+      'economy': 'Economy',
+      'geography': 'Geography',
+      'environment': 'Environment & Ecology',
+      'science': 'Science & Technology'
+    },
+    defaultSubject: 'Indian Polity & Governance',
+    languages: ['English', 'Hindi'],
+    difficultyLevels: ['Easy', 'Medium', 'Hard'],
+    questionTypes: ['Prelims MCQ', 'Mains Descriptive', 'Essay Paper', 'Ethics Case Study']
+  },
+
+  NEET_UG: {
+    examId: 'NEET_UG',
+    displayName: 'NEET (UG) Medical Entrance Test',
+    category: 'MEDICAL',
+    stages: ['Main Entrance'],
+    papers: ['Paper 1 (PCB)'],
+    subjects: ['Physics', 'Chemistry', 'Biology'],
+    syllabusTree: {
+      'Physics': {
+        topics: ['Mechanics & Motion', 'Thermodynamics & Heat', 'Electrostatics & Magnetism', 'Optics & Waves', 'Modern Physics & Semiconductors'],
+      },
+      'Chemistry': {
+        topics: ['Physical Chemistry & Thermodynamics', 'Organic Chemistry & Reaction Mechanisms', 'Inorganic Chemistry & Periodic Table', 'Chemical Bonding & Structure'],
+      },
+      'Biology': {
+        topics: ['Human Physiology & Health', 'Genetics & Evolution', 'Cell Biology & Biomolecules', 'Plant Physiology & Reproduction', 'Ecology & Environment'],
+      }
+    },
+    aliasMap: {
+      'physics': 'Physics',
+      'physic': 'Physics',
+      'chemistry': 'Chemistry',
+      'chemist': 'Chemistry',
+      'biology': 'Biology',
+      'botany': 'Biology',
+      'zoology': 'Biology'
+    },
+    defaultSubject: 'Biology',
+    languages: ['English', 'Hindi'],
+    difficultyLevels: ['Easy', 'Medium', 'Hard'],
+    questionTypes: ['MCQ']
+  },
+
+  NDA_NA: {
+    examId: 'NDA_NA',
+    displayName: 'NDA & NA Defence Academy Entrance',
+    category: 'DEFENCE',
+    stages: ['Written Exam', 'SSB Interview'],
+    papers: ['Mathematics (Paper 1)', 'General Ability Test (Paper 2)'],
+    subjects: [
+      'Mathematics',
+      'Physics',
+      'Chemistry',
+      'General Science',
+      'History of India',
+      'Geography',
+      'Current Affairs & GK',
+      'English'
+    ],
+    syllabusTree: {
+      'Mathematics': {
+        topics: ['Algebra & Matrices', 'Trigonometry', 'Analytical Geometry', 'Differential & Integral Calculus', 'Probability & Statistics'],
+      },
+      'Physics': {
+        topics: ['Properties of Matter', 'Optics & Sound', 'Electricity & Magnetism', 'Work, Power & Energy'],
+      },
+      'English': {
+        topics: ['Grammar & Usage', 'Vocabulary & Synonyms', 'Comprehension', 'Ordering of Words'],
+      }
+    },
+    aliasMap: {
+      'math': 'Mathematics',
+      'calculus': 'Mathematics',
+      'trig': 'Mathematics',
+      'english': 'English',
+      'physics': 'Physics',
+      'chemistry': 'Chemistry',
+      'history': 'History of India',
+      'geography': 'Geography'
+    },
+    defaultSubject: 'Mathematics',
+    languages: ['English', 'Hindi'],
+    difficultyLevels: ['Easy', 'Medium', 'Hard'],
+    questionTypes: ['Written MCQ']
+  },
+
+  SSC_CGL: {
+    examId: 'SSC_CGL',
+    displayName: 'SSC Combined Graduate Level',
+    category: 'SSC_BANKING',
+    stages: ['Tier 1', 'Tier 2'],
+    papers: ['Paper 1 (Tier 1)', 'Paper 1 (Tier 2)'],
+    subjects: [
+      'General Intelligence & Reasoning',
+      'General Awareness',
+      'Quantitative Aptitude',
+      'English Comprehension'
+    ],
+    syllabusTree: {
+      'Quantitative Aptitude': {
+        topics: ['Number Systems & Arithmetic', 'Algebra & Geometry', 'Trigonometry & Mensuration', 'Data Interpretation'],
+      },
+      'General Intelligence & Reasoning': {
+        topics: ['Analogy & Classification', 'Coding-Decoding', 'Series & Pattern Completion', 'Non-Verbal Reasoning'],
+      },
+      'General Awareness': {
+        topics: ['Indian History & Polity', 'Geography & Economy', 'General Science', 'Static GK & Current Affairs'],
+      },
+      'English Comprehension': {
+        topics: ['Grammar & Error Spotting', 'Reading Comprehension', 'Cloze Test & Sentence Improvement'],
+      }
+    },
+    aliasMap: {
+      'quant': 'Quantitative Aptitude',
+      'math': 'Quantitative Aptitude',
+      'reasoning': 'General Intelligence & Reasoning',
+      'english': 'English Comprehension',
+      'gk': 'General Awareness'
+    },
+    defaultSubject: 'Quantitative Aptitude',
+    languages: ['English', 'Hindi'],
+    difficultyLevels: ['Easy', 'Medium', 'Hard'],
+    questionTypes: ['Objective MCQ']
+  }
+};
+
+import { getCustomExamConfig } from './customExamStore';
+
+export const getExamConfig = (examId: string): ExamConfig => {
+  const normId = (examId || '').toUpperCase();
+  if (EXAM_REGISTRY[normId]) {
+    return EXAM_REGISTRY[normId];
+  }
+
+  // Check if exam is a user-created Custom Exam
+  const customConfig = getCustomExamConfig(examId);
+  if (customConfig) {
+    return customConfig;
+  }
+
+  // Generic Dynamic Fallback Config for ANY exam in EXAM_LIST
+  const match = EXAM_LIST.find(e => e.id === normId || e.id.toLowerCase() === examId.toLowerCase());
+  const label = match ? match.label : normId.replace(/_/g, ' ');
+
+  return {
+    examId: normId,
+    displayName: label,
+    category: normId.includes('NEET') || normId.includes('NURSING') ? 'MEDICAL' :
+              normId.includes('JEE') || normId.includes('GATE') ? 'ENGINEERING' :
+              normId.includes('NDA') || normId.includes('CDS') || normId.includes('AFCAT') ? 'DEFENCE' :
+              normId.includes('SSC') || normId.includes('IBPS') || normId.includes('SBI') ? 'SSC_BANKING' :
+              normId.includes('LAW') || normId.includes('CLAT') ? 'LAW' :
+              normId.includes('CAT') || normId.includes('MAT') ? 'MANAGEMENT' : 'OTHER',
+    stages: ['Main Stage'],
+    papers: ['General Paper'],
+    subjects: ['General Studies', 'Aptitude & Reasoning', 'English & Verbal'],
+    syllabusTree: {
+      'General Studies': { topics: ['Core Concepts', 'Practice Topics'] }
+    },
+    aliasMap: {},
+    defaultSubject: 'General Studies',
+    languages: ['English', 'Hindi'],
+    difficultyLevels: ['Easy', 'Medium', 'Hard'],
+    questionTypes: ['MCQ']
+  };
+};

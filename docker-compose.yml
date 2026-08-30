@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # - GEMINI_API_KEY=${GEMINI_API_KEY}
+    restart: always
+    volumes:
+      - admin-store:/app/data
+
+volumes:
+  admin-store:

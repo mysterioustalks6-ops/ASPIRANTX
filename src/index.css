@@ -1,0 +1,182 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+/* Design Tokens & Custom Surface Utilities (Linear/Stripe Style) */
+@layer utilities {
+  .shadow-card {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25), 0 1px 2px -1px rgba(0, 0, 0, 0.2);
+  }
+  .shadow-card-hover {
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(99, 102, 241, 0.15);
+  }
+  .shadow-modal {
+    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .ax-card {
+    background-color: #0f172a; /* slate-900 */
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem; /* rounded-2xl */
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .ax-card-interactive {
+    background-color: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.25);
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ax-card-interactive:hover {
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(99, 102, 241, 0.15);
+    transform: translateY(-2px);
+  }
+  .ax-card-interactive:active {
+    transform: scale(0.985);
+    border-color: rgba(99, 102, 241, 0.5);
+  }
+
+  .ax-btn-primary {
+    background-color: #4f46e5; /* indigo-600 */
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem; /* rounded-xl */
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ax-btn-primary:hover {
+    background-color: #4338ca; /* indigo-700 */
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  }
+  .ax-btn-primary:active {
+    transform: scale(0.96);
+    filter: brightness(0.92);
+  }
+
+  .ax-btn-secondary {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f1f5f9; /* slate-100 */
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ax-btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  .ax-btn-secondary:active {
+    transform: scale(0.96);
+  }
+
+  /* Safe Area Support */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .min-h-screen-safe {
+    min-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Global Fluid 60fps / 120fps Smooth Scrolling & Screen Physics */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body, html, #root {
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  background-color: #020617; /* slate-950 */
+  color: #f8fafc;
+  overscroll-behavior-y: contain;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Mobile & Touch Feedback Animations (Tactile Spring Feel) */
+@media (hover: none) and (pointer: coarse) {
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+button, a, select, input, [role="button"] {
+  touch-action: manipulation;
+  transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease, opacity 0.14s ease;
+}
+
+button:active:not(:disabled), 
+a:active:not(:disabled), 
+[role="button"]:active:not([aria-disabled="true"]) {
+  transform: scale(0.96);
+  opacity: 0.92;
+}
+
+/* Fluid responsive inputs on Mobile / Tablets / Foldables */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents auto-zoom on iOS/Android */
+  }
+}
+
+/* Allow text inputs and textareas to remain editable/selectable */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Prevent Screen Printing & PDF Generation */
+@media print {
+  body, html, #root {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
+/* Custom Ultra-Smooth Glassmorphic Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.35);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.35) rgba(15, 23, 42, 0.6);
+}
