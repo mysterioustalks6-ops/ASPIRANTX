@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<incidents format="6" by="lint 8.13.0" type="incidents">
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-land-hdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-land-hdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-land-mdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-land-mdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-land-xhdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-land-xhdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-land-xxhdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-land-xxhdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-land-xxxhdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-land-xxxhdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-port-hdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-port-hdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-port-mdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-port-mdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-port-xhdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-port-xhdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-port-xxhdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-port-xxhdpi/splash.png"/>
+    </incident>
+
+    <incident
+        id="MissingDefaultResource"
+        severity="fatal"
+        message="The drawable &quot;splash&quot; in drawable-port-xxxhdpi has no declaration in the base `drawable` folder or in a `drawable-`*density*`dpi` folder; this can lead to crashes when the drawable is queried in a configuration that does not match this qualifier">
+        <location
+            file="${:app*release*MAIN*sourceProvider*0*resDir*0}/drawable-port-xxxhdpi/splash.png"/>
+    </incident>
+
+</incidents>

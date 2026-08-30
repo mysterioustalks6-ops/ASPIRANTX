@@ -74,6 +74,11 @@ export const Header: React.FC<HeaderProps> = ({
           title: 'Syllabus Command Center',
           subtitle: 'Track GS, CSAT, Optional, and Tier-1/2 exam topics',
         };
+      case 'wallpaper':
+        return {
+          title: 'Lockscreen Habit Wallpaper',
+          subtitle: 'HD dynamic persona countdown lockscreen generator',
+        };
       case 'cbt_exam':
       case 'cbt':
         return {

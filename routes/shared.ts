@@ -1672,25 +1672,24 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
   const performHydration = async () => {
     const signal = controller.signal;
     const settledResults = await Promise.allSettled([
-      supabaseServer.from('admin_settings').select('id, data').eq('id', 'global').abortSignal(signal).maybeSingle(),
-      supabaseServer.from('feature_flags').select('id, data').abortSignal(signal),
-      supabaseServer.from('admin_users').select('id, name, email, role, is_premium, plan_name, streak_days, xp, coins, level, status, updated_at').abortSignal(signal),
-      supabaseServer.from('admin_content').select('id, data').eq('id', 'global').abortSignal(signal).maybeSingle(),
-      supabaseServer.from('user_subscriptions').select('id, data, userEmail, planId, isPremium, activatedAt, expiresAt, paymentId, orderId, verificationMethod, amountPaid, currency').abortSignal(signal),
-      supabaseServer.from('community_groups').select('id, data').abortSignal(signal),
-      supabaseServer.from('notifications').select('id, user_id, data').abortSignal(signal),
-      supabaseServer.from('orders').select('id, data').abortSignal(signal),
-      supabaseServer.from('cbt_results').select('id, user_id, data').abortSignal(signal),
-      supabaseServer.from('ad_rewards').select('id, email, data').abortSignal(signal),
-      supabaseServer.from('study_buddy_queue').select('id, email, data').abortSignal(signal),
-      supabaseServer.from('study_buddy_matches').select('id, room_id, data').abortSignal(signal),
-      supabaseServer.from('study_heartbeats').select('id, user_id, session_id, subject, topic_id, pinged_at').abortSignal(signal),
-      supabaseServer.from('reward_milestones').select('id, data').abortSignal(signal),
-      supabaseServer.from('reward_claims').select('id, data').abortSignal(signal),
-      supabaseServer.from('utr_requests').select('id, data, user_email, utr_number, amount, status, created_at').abortSignal(signal),
-      supabaseServer.from('admin_announcements').select('id, data').abortSignal(signal),
-      supabaseServer.from('personal_syllabus_nodes').select('id, user_id, topic_id, status, updated_at').abortSignal(signal),
-      supabaseServer.from('syllabus_time_log').select('id, user_id, subject, duration_seconds, logged_at').abortSignal(signal),
+      supabaseServer.from('admin_settings').select('*').eq('id', 'global').abortSignal(signal).maybeSingle(),
+      supabaseServer.from('feature_flags').select('*').abortSignal(signal),
+      supabaseServer.from('admin_users').select('*').abortSignal(signal),
+      supabaseServer.from('admin_content').select('*').eq('id', 'global').abortSignal(signal).maybeSingle(),
+      supabaseServer.from('user_subscriptions').select('*').abortSignal(signal),
+      supabaseServer.from('community_groups').select('*').abortSignal(signal),
+      supabaseServer.from('notifications').select('*').abortSignal(signal),
+      supabaseServer.from('orders').select('*').abortSignal(signal),
+      supabaseServer.from('cbt_results').select('*').abortSignal(signal),
+      supabaseServer.from('ad_rewards').select('*').abortSignal(signal),
+      supabaseServer.from('study_buddy_queue').select('*').abortSignal(signal),
+      supabaseServer.from('study_buddy_matches').select('*').abortSignal(signal),
+      supabaseServer.from('study_heartbeats').select('*').abortSignal(signal),
+      supabaseServer.from('reward_milestones').select('*').abortSignal(signal),
+      supabaseServer.from('reward_claims').select('*').abortSignal(signal),
+      supabaseServer.from('utr_requests').select('*').abortSignal(signal),
+      supabaseServer.from('admin_announcements').select('*').abortSignal(signal),
+      supabaseServer.from('personal_syllabus_nodes').select('*').abortSignal(signal),
     ]);
 
     const settingsRes = getQueryResult(settledResults[0]);
@@ -1711,7 +1710,6 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
     const utrRes = getQueryResult(settledResults[15]);
     const announcementsRes = getQueryResult(settledResults[16]);
     const personalSyllabusRes = getQueryResult(settledResults[17]);
-    const timeLogRes = getQueryResult(settledResults[18]);
 
     // Independent per-table check: Admin Settings
     if (settingsRes.error) {
@@ -2004,17 +2002,18 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
       }
     }
 
-    // Independent per-table check: Syllabus Time Log
-    if (timeLogRes.error) {
-      console.error('[HYDRATION ERROR] syllabus_time_log fetch failed:', timeLogRes.error.message || timeLogRes.error);
-    } else if (Array.isArray(timeLogRes.data) && timeLogRes.data.length > 0) {
-      syllabusTimeLogsStore.clear();
-      for (const r of timeLogRes.data) {
-        const uid = r.user_id || 'guest';
-        if (!syllabusTimeLogsStore.has(uid)) syllabusTimeLogsStore.set(uid, []);
-        syllabusTimeLogsStore.get(uid)!.push(r);
+    // Optional check: Syllabus Time Log (if table exists)
+    try {
+      const { data: timeLogData } = await supabaseServer.from('syllabus_time_log').select('*');
+      if (Array.isArray(timeLogData) && timeLogData.length > 0) {
+        syllabusTimeLogsStore.clear();
+        for (const r of timeLogData) {
+          const uid = r.user_id || 'guest';
+          if (!syllabusTimeLogsStore.has(uid)) syllabusTimeLogsStore.set(uid, []);
+          syllabusTimeLogsStore.get(uid)!.push(r);
+        }
       }
-    }
+    } catch (_tlErr) {}
       try {
         const { data: fbData } = await supabaseServer.from('feedback_reports').select('id, section, type, description, user_email, email, status, admin_note, resolved_by, resolved_at, is_guest_submission, created_at');
         if (fbData && fbData.length > 0) {
@@ -3773,9 +3772,9 @@ DEFAULT_COMMUNITY_POSTS.forEach((p) => communityPostsStore.set(p.id, p));
 export async function hydrateCommunityPostsFromSupabase() {
   if (!supabaseServer) return;
   try {
-    const { data: postsData, error: postsErr } = await supabaseServer.from('community_posts').select('id, data');
+    const { data: postsData, error: postsErr } = await supabaseServer.from('community_posts').select('*');
     if (postsErr) {
-      console.error('[HYDRATION COMMUNITY POSTS FAILURE]', postsErr.message);
+      console.warn('[HYDRATION COMMUNITY POSTS NOTICE]', postsErr.message);
     } else if (Array.isArray(postsData) && postsData.length > 0) {
       postsData.forEach((row: any) => {
         const item = row.data || row;
@@ -3785,9 +3784,9 @@ export async function hydrateCommunityPostsFromSupabase() {
       });
     }
 
-    const { data: votesData, error: votesErr } = await supabaseServer.from('community_votes').select('id, data, key');
+    const { data: votesData, error: votesErr } = await supabaseServer.from('community_votes').select('*');
     if (votesErr) {
-      console.error('[HYDRATION COMMUNITY VOTES FAILURE]', votesErr.message);
+      console.warn('[HYDRATION COMMUNITY VOTES NOTICE]', votesErr.message);
     } else if (Array.isArray(votesData) && votesData.length > 0) {
       votesData.forEach((row: any) => {
         const item = row.data || row;
@@ -3798,9 +3797,9 @@ export async function hydrateCommunityPostsFromSupabase() {
       });
     }
 
-    const { data: groupsData, error: groupsErr } = await supabaseServer.from('community_groups').select('id, data');
+    const { data: groupsData, error: groupsErr } = await supabaseServer.from('community_groups').select('*');
     if (groupsErr) {
-      console.error('[HYDRATION COMMUNITY GROUPS FAILURE]', groupsErr.message);
+      console.warn('[HYDRATION COMMUNITY GROUPS NOTICE]', groupsErr.message);
     } else if (Array.isArray(groupsData) && groupsData.length > 0) {
       groupsData.forEach((row: any) => {
         const item = row.data || row;
@@ -3810,23 +3809,23 @@ export async function hydrateCommunityPostsFromSupabase() {
       });
     }
   } catch (e: any) {
-    console.error('[HYDRATION COMMUNITY ERROR]', e?.message || e);
+    console.warn('[HYDRATION COMMUNITY NOTICE]', e?.message || e);
   }
 }
 
 export async function hydrateWalletsFromSupabase(userId?: string) {
   if (!supabaseServer) return;
   try {
-    let query = supabaseServer.from('user_wallets').select('id, user_id, data');
+    let query = supabaseServer.from('user_wallets').select('*');
     if (userId) {
       query = query.eq('user_id', userId);
     }
     const { data, error } = await query;
     if (error) {
-      console.error('[HYDRATION WALLETS FAILURE]', error.message);
+      console.warn('[HYDRATION WALLETS NOTICE]', error.message);
     } else if (Array.isArray(data) && data.length > 0) {
       data.forEach((row: any) => {
-        const uid = row.user_id;
+        const uid = row.user_id || row.id;
         const wData = row.data || row;
         if (uid && wData) {
           userWalletsStore.set(uid, wData);
@@ -3834,16 +3833,16 @@ export async function hydrateWalletsFromSupabase(userId?: string) {
       });
     }
   } catch (e: any) {
-    console.error('[HYDRATION WALLETS ERROR]', e?.message || e);
+    console.warn('[HYDRATION WALLETS NOTICE]', e?.message || e);
   }
 }
 
 export async function hydratePayoutsFromSupabase() {
   if (!supabaseServer) return;
   try {
-    const { data, error } = await supabaseServer.from('user_payouts').select('id, user_id, amount, status, created_at').order('created_at', { ascending: false });
+    const { data, error } = await supabaseServer.from('user_payouts').select('*').order('created_at', { ascending: false });
     if (error) {
-      console.error('[HYDRATION PAYOUTS FAILURE]', error.message);
+      console.warn('[HYDRATION PAYOUTS NOTICE]', error.message);
     } else if (Array.isArray(data) && data.length > 0) {
       data.forEach((row: any) => {
         const payout = row.data || row;
@@ -3861,21 +3860,21 @@ export async function hydratePayoutsFromSupabase() {
       });
     }
   } catch (e: any) {
-    console.error('[HYDRATION PAYOUTS ERROR]', e?.message || e);
+    console.warn('[HYDRATION PAYOUTS NOTICE]', e?.message || e);
   }
 }
 
 export async function hydrateKarmaFromSupabase(userId?: string) {
   if (!supabaseServer) return;
   try {
-    let karmaQuery = supabaseServer.from('user_karma').select('id, user_id, karma_points');
+    let karmaQuery = supabaseServer.from('user_karma').select('*');
     if (userId) karmaQuery = karmaQuery.eq('user_id', userId);
     const { data: kData, error: kErr } = await karmaQuery;
     if (kErr) {
-      console.error('[HYDRATION USER KARMA FAILURE]', kErr.message);
+      console.warn('[HYDRATION USER KARMA NOTICE]', kErr.message);
     } else if (Array.isArray(kData) && kData.length > 0) {
       kData.forEach((row: any) => {
-        const uid = row.user_id;
+        const uid = row.user_id || row.id;
         if (uid) {
           const postKarma = Number(row.post_karma) || 0;
           const commentKarma = Number(row.comment_karma) || 0;
@@ -3891,17 +3890,17 @@ export async function hydrateKarmaFromSupabase(userId?: string) {
       });
     }
 
-    let votesQuery = supabaseServer.from('karma_votes').select('id, user_id, target_id, vote');
+    let votesQuery = supabaseServer.from('karma_votes').select('*');
     if (userId) votesQuery = votesQuery.or(`voter_id.eq.${userId},target_owner_id.eq.${userId}`);
     const { data: vData, error: vErr } = await votesQuery;
     if (vErr) {
-      console.error('[HYDRATION KARMA VOTES FAILURE]', vErr.message);
+      console.warn('[HYDRATION KARMA VOTES NOTICE]', vErr.message);
     } else if (Array.isArray(vData) && vData.length > 0) {
       vData.forEach((row: any) => {
-        const key = `${row.voter_id}:${row.target_type}:${row.target_id}`;
+        const key = `${row.voter_id || row.user_id}:${row.target_type}:${row.target_id}`;
         karmaVotesStore.set(key, {
           id: row.id || key,
-          voterId: row.voter_id,
+          voterId: row.voter_id || row.user_id,
           targetType: row.target_type,
           targetId: row.target_id,
           targetOwnerId: row.target_owner_id,
@@ -3911,7 +3910,7 @@ export async function hydrateKarmaFromSupabase(userId?: string) {
       });
     }
   } catch (e: any) {
-    console.error('[HYDRATION KARMA ERROR]', e?.message || e);
+    console.warn('[HYDRATION KARMA NOTICE]', e?.message || e);
   }
 }
 
