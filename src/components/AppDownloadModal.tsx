@@ -43,18 +43,29 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
 
   const handleInstallApp = async () => {
     if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        localStorage.setItem('aspirantx_app_installed', 'true');
-        setIsOpen(false);
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          localStorage.setItem('aspirantx_app_installed', 'true');
+          setIsOpen(false);
+        }
+      } catch (e) {
+        console.warn('Install prompt error:', e);
       }
       setDeferredPrompt(null);
     } else {
-      // Fallback instruction for iOS or unsupported browsers
-      alert('To install AspirantX on your device: Tap Share / Options ➔ "Add to Home Screen" 📲');
-      localStorage.setItem('aspirantx_app_installed', 'true');
-      setIsOpen(false);
+      // Direct action: Guide Android Chrome / Safari / Edge to install PWA icon to home screen
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (isIOS) {
+        alert('📲 iPhone/iPad me Install karne ke liye:\n1. Neeche Share button (⬆️) par tap karein\n2. "Add to Home Screen" (+) select karein!');
+      } else if (isAndroid) {
+        alert('📲 Android me Install karne ke liye:\n1. Top-right me 3 dots (⋮) par tap karein\n2. "Install app" ya "Add to Home screen" select karein!');
+      } else {
+        alert('📲 Desktop/Laptop me Install karne ke liye:\nBrowser ke address bar me "Install AspirantX" icon (⬇️) par click karein!');
+      }
     }
   };
 
@@ -102,24 +113,24 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
                 <span>EXPERIENCE ASPIRANTX</span>
               </div>
               <h3 className="text-base sm:text-lg font-black text-slate-100">
-                Install Mobile App?
+                Install AspirantX App
               </h3>
             </div>
           </div>
 
           <p className="text-xs text-slate-300 leading-relaxed mb-5">
-            Download AspirantX on your device for instant offline access, wallpaper widgets, and 0ms touch response, or continue smoothly on the web.
+            Install AspirantX on your phone or laptop for 0ms zero-lag response, live exam countdown wallpapers, and 100% offline study data!
           </p>
 
           {/* Key Perks */}
           <div className="grid grid-cols-2 gap-2 mb-5 text-[11px] text-slate-300 font-semibold">
             <div className="flex items-center gap-1.5 p-2 rounded-xl bg-slate-950/60 border border-slate-800">
               <Zap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Instant Offline Sync</span>
+              <span>Instant 0ms Launch</span>
             </div>
             <div className="flex items-center gap-1.5 p-2 rounded-xl bg-slate-950/60 border border-slate-800">
               <ShieldCheck className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span>Lockscreen Widgets</span>
+              <span>Full Offline Support</span>
             </div>
           </div>
 
@@ -131,7 +142,7 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
               className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
             >
               <Download className="w-4 h-4" />
-              <span>Install App</span>
+              <span>Install App Now</span>
             </button>
 
             {/* Continue with Web */}
