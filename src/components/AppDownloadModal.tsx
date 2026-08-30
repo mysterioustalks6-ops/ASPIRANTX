@@ -11,37 +11,32 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    // Check if user already dismissed or installed app recently
-    const dismissed = localStorage.getItem('aspirantx_app_prompt_dismissed');
+    // Check if app is already installed in Standalone mode or Capacitor native APK
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    const isNative = (window as any).Capacitor?.isNativePlatform?.();
+    const isInstalled = localStorage.getItem('aspirantx_app_installed') === 'true';
 
-    // Do not show inside installed standalone PWA or native Capacitor app
-    if (isStandalone || (window as any).Capacitor?.isNativePlatform?.()) {
+    // If app is already installed, DO NOT show prompt
+    if (isStandalone || isNative || isInstalled) {
       return;
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      if (!dismissed) {
-        // Show non-intrusive prompt after 3.5 seconds
-        setTimeout(() => setIsOpen(true), 3500);
-      }
+      // Show prompt 2.5s after load on uninstalled browser
+      setTimeout(() => setIsOpen(true), 2500);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Fallback: Show on mobile browsers if not dismissed yet
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isMobile && !dismissed) {
-      const timer = setTimeout(() => setIsOpen(true), 4000);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      };
-    }
+    // Fallback: On mobile or web browsers where app is not installed, prompt after 3s
+    const timer = setTimeout(() => {
+      setIsOpen(true);
+    }, 3000);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
@@ -51,18 +46,20 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ onClose }) =
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
+        localStorage.setItem('aspirantx_app_installed', 'true');
         setIsOpen(false);
       }
       setDeferredPrompt(null);
     } else {
       // Fallback instruction for iOS or unsupported browsers
-      alert('To install AspirantX on mobile: Tap Share ➔ "Add to Home Screen" 📲');
+      alert('To install AspirantX on your device: Tap Share / Options ➔ "Add to Home Screen" 📲');
+      localStorage.setItem('aspirantx_app_installed', 'true');
       setIsOpen(false);
     }
   };
 
   const handleContinueWithWeb = () => {
-    localStorage.setItem('aspirantx_app_prompt_dismissed', 'true');
+    // Closes current popup for this viewing session, but will ask again on next refresh until installed
     setIsOpen(false);
     if (onClose) onClose();
   };
