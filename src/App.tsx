@@ -34,6 +34,10 @@ import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { VersionUpdateNotifier } from './components/VersionUpdateNotifier';
 import { WorkspaceCustomizer } from './components/WorkspaceCustomizer';
 import { OnboardingTour } from './components/OnboardingTour';
+import { MobileBottomNav } from './components/MobileBottomNav';
+import { MobileDrawer } from './components/MobileDrawer';
+import { ReminderSettingsModal } from './components/ReminderSettingsModal';
+import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
 import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle, ShieldCheck } from 'lucide-react';
 
@@ -75,6 +79,7 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('aspirantx_sidebar_collapsed') === 'true';
   });
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
   const handleToggleSidebarCollapse = () => {
     setIsSidebarCollapsed((prev) => {
@@ -223,7 +228,26 @@ export default function App() {
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [showCompanionWidget, setShowCompanionWidget] = useState<boolean>(true);
   const [isCompanionMinimized, setIsCompanionMinimized] = useState<boolean>(false);
+  const [showReminderSettingsModal, setShowReminderSettingsModal] = useState<boolean>(false);
   const [customizer, setCustomizer] = useState<AppCustomizerSettings>(loadCustomizerSettings());
+
+  // Background check for daily study reminder trigger (1 per day, non-intrusive)
+  useEffect(() => {
+    if (!user) return;
+    const runReminderCheck = () => {
+      checkAndTriggerStudyReminder(user, selectedExam || user.exam);
+    };
+    runReminderCheck();
+    const interval = setInterval(runReminderCheck, 60000);
+    return () => clearInterval(interval);
+  }, [user, selectedExam]);
+
+  // Global listener for opening study reminder settings from anywhere in the app
+  useEffect(() => {
+    const handleOpenReminderSettings = () => setShowReminderSettingsModal(true);
+    window.addEventListener('aspirantx_open_reminder_settings', handleOpenReminderSettings);
+    return () => window.removeEventListener('aspirantx_open_reminder_settings', handleOpenReminderSettings);
+  }, []);
 
   // Fetch and cache user workspace preferences from server asynchronously
   useEffect(() => {
@@ -244,23 +268,75 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // User Presence Heartbeat
+  // User Presence Heartbeat (with 10s AbortController timeout & visibilitychange pause)
   useEffect(() => {
+    let intervalId: any = null;
+    let abortController: AbortController | null = null;
+
     const ping = () => {
+      if (document.visibilityState === 'hidden') return;
+      if (abortController) {
+        abortController.abort();
+      }
+      abortController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        abortController?.abort();
+      }, 10000);
+
       fetch('/api/user/heartbeat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: abortController.signal,
         body: JSON.stringify({
           userId: user?.id || 'guest_' + Math.random().toString(36).substring(2, 8),
           email: user?.email || 'guest@aspirantx.app',
           name: user?.name || 'Guest User',
           exam: user?.exam || 'UPSC CSE'
         })
-      }).catch(() => {});
+      })
+        .catch(() => {})
+        .finally(() => clearTimeout(timeoutId));
     };
-    ping();
-    const interval = setInterval(ping, 25000);
-    return () => clearInterval(interval);
+
+    const startInterval = () => {
+      if (!intervalId) {
+        intervalId = setInterval(ping, 75000);
+      }
+    };
+
+    const stopInterval = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        ping();
+        startInterval();
+      } else {
+        stopInterval();
+        if (abortController) {
+          abortController.abort();
+        }
+      }
+    };
+
+    if (document.visibilityState === 'visible') {
+      ping();
+      startInterval();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopInterval();
+      if (abortController) {
+        abortController.abort();
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
 
   // Dynamic SEO Controller: updates document.title, description, and keywords based on context
@@ -1112,6 +1188,7 @@ export default function App() {
           onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
           onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
           onOpenSearch={() => setShowSearchModal(true)}
+          onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
           onRequireLogin={() => setUser(null)}
           onNavigate={(t) => setActiveTab(t as ActiveTab)}
           demoTimeFormatted={formatDemoTime(demoSecondsRemaining)}
@@ -1126,7 +1203,7 @@ export default function App() {
         />
 
         {/* Dashboard Main Scroll Workspace */}
-        <main className={`flex-1 p-4 md:p-8 space-y-8 w-full mx-auto transition-all duration-200 ${
+        <main className={`flex-1 p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8 w-full mx-auto transition-all duration-200 ${
           isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
         }`}>
           {/* Onboarding Tour (Global across all tabs until dismissed) */}
@@ -1320,6 +1397,7 @@ export default function App() {
                   onNavigate={(t) => setActiveTab(t)} 
                   onOpenProfileModal={() => setShowProfileModal(true)} 
                   onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+                  onOpenReminderSettings={() => setShowReminderSettingsModal(true)}
                 />
               )}
 
@@ -1525,7 +1603,18 @@ export default function App() {
         onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
       />
 
-      {/* Friendly Study Companion Widget */}
+      {/* Reminder Preferences & Schedule Modal */}
+      {user && (
+        <ReminderSettingsModal
+          isOpen={showReminderSettingsModal}
+          onClose={() => setShowReminderSettingsModal(false)}
+          user={user}
+          selectedExam={selectedExam}
+          onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
+        />
+      )}
+
+      {/* Friendly Study Companion Widget (Research-tested calm nudge) */}
       {user && showCompanionWidget && (
         <div className="fixed bottom-16 right-4 z-40 group transition-all">
           {isCompanionMinimized ? (
@@ -1538,43 +1627,104 @@ export default function App() {
               <span className="text-sm">🤖</span>
               <span className="text-[10px] font-extrabold text-emerald-300 pr-1">AX Companion</span>
             </button>
-          ) : (
-            <div className="max-w-xs p-3.5 rounded-2xl bg-[#090b11] border border-emerald-500/30 text-xs text-slate-100 shadow-2xl flex items-start gap-3 relative pr-8">
-              {/* Close & Minimize Action Buttons */}
-              <div className="absolute top-2 right-2 flex items-center gap-1">
-                <button
-                  onClick={() => setIsCompanionMinimized(true)}
-                  className="w-4 h-4 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-[10px] transition-all"
-                  title="Minimize widget to side"
-                >
-                  −
-                </button>
-                <button
-                  onClick={() => setShowCompanionWidget(false)}
-                  className="w-4 h-4 rounded-full bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-[10px] transition-all"
-                  title="Dismiss widget"
-                >
-                  ✕
-                </button>
-              </div>
+          ) : (() => {
+            const summary = getDailyStudySummary(user, selectedExam || user.exam);
+            return (
+              <div className="max-w-xs p-3.5 rounded-2xl bg-[#090b11] border border-emerald-500/30 text-xs text-slate-100 shadow-2xl flex items-start gap-3 relative pr-8">
+                {/* Close & Minimize Action Buttons */}
+                <div className="absolute top-2 right-2 flex items-center gap-1">
+                  <button
+                    onClick={() => setIsCompanionMinimized(true)}
+                    className="w-4 h-4 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-[10px] transition-all cursor-pointer"
+                    title="Minimize widget to side"
+                  >
+                    −
+                  </button>
+                  <button
+                    onClick={() => setShowCompanionWidget(false)}
+                    className="w-4 h-4 rounded-full bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-[10px] transition-all cursor-pointer"
+                    title="Dismiss widget"
+                  >
+                    ✕
+                  </button>
+                </div>
 
-              <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 relative mt-0.5">
-                <span className="w-2 h-2 bg-emerald-400 rounded-full absolute top-0 right-0 animate-ping" />
-                🤖
+                <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 relative mt-0.5">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full absolute top-0 right-0 animate-ping" />
+                  🤖
+                </div>
+                <div className="text-left space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="font-extrabold text-[10px] text-emerald-400 uppercase tracking-wide">
+                      {summary.headlineCopy}
+                    </div>
+                  </div>
+                  {summary.pendingTopics.length > 0 ? (
+                    <div className="text-[10px] text-slate-300 space-y-0.5">
+                      {summary.pendingTopics.map((pt) => (
+                        <div key={pt.id} className="flex items-center gap-1 text-slate-300 truncate">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                          <span className="truncate">{pt.title}</span>
+                        </div>
+                      ))}
+                      <div className="text-[10px] text-emerald-400 font-semibold pt-0.5">
+                        {summary.streakCopy}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-200 font-medium leading-snug">
+                      {summary.streakCopy}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 pt-1">
+                    {!summary.isCompletedForToday && (
+                      <button
+                        onClick={() => setActiveTab('tasks')}
+                        className="text-[10px] font-bold text-emerald-400 hover:underline"
+                      >
+                        View Tasks →
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowReminderSettingsModal(true)}
+                      className="text-[10px] text-slate-400 hover:text-slate-200 hover:underline"
+                    >
+                      Settings ⚙️
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="text-left space-y-0.5">
-                <div className="font-extrabold text-[10px] text-emerald-400 uppercase tracking-wide">AspirantX Study Companion</div>
-                <p className="text-[10px] text-slate-300 font-semibold leading-relaxed">
-                  Only {24 - new Date().getHours()} hours left to complete today's goals and save your {user.streakDays}d streak!
-                </p>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
       {/* Network Status & Offline Indicator Toast */}
       <NetworkStatusIndicator />
+
+      {/* Mobile Navigation Drawer (Phone Slide-up sheet) */}
+      <MobileDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        activeTab={activeTab}
+        setActiveTab={handleSelectTab}
+        user={user}
+        onLogout={handleLogout}
+        isAdminUnlocked={isAdminUnlocked}
+        onOpenProfileModal={() => setShowProfileModal(true)}
+        onOpenReferralModal={() => setShowReferralModal(true)}
+        onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+        customizer={customizer}
+        selectedExam={selectedExam}
+        onExamChange={handleExamChange}
+      />
+
+      {/* Mobile Sticky Bottom Navigation */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={handleSelectTab}
+        onOpenMore={() => setIsMobileDrawerOpen(true)}
+      />
     </div>
       </SecurityWrapper>
     </ErrorBoundary>

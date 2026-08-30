@@ -462,7 +462,7 @@ export async function redeemCoinsForPremium(userId?: string): Promise<{
 }
 
 /**
- * Saves a completed Study Session (from Stopwatch or Pomodoro) to Supabase and LocalStorage
+ * Saves a completed Study Session (from Stopwatch or Pomodoro) to LocalStorage cache and awards local XP
  */
 export async function saveStudySessionLog(
   session: Omit<StudySession, 'id' | 'createdAt' | 'xpEarned' | 'coinsEarned'>
@@ -481,7 +481,7 @@ export async function saveStudySessionLog(
     coinsEarned,
   };
 
-  // Save to LocalStorage
+  // Save to LocalStorage cache
   const sessionsKey = getSessionsKey(session.userId);
   const existingRaw = localStorage.getItem(sessionsKey);
   let sessions: StudySession[] = [];
@@ -496,24 +496,6 @@ export async function saveStudySessionLog(
   sessions.unshift(newSession);
   localStorage.setItem(sessionsKey, JSON.stringify(sessions));
 
-  // Sync to Supabase
-  if (isSupabaseConfigured && session.userId) {
-    try {
-      await supabase.from('user_study_sessions').insert({
-        id: newSession.id,
-        user_id: session.userId,
-        subject: session.subject,
-        duration_seconds: session.durationSeconds,
-        xp_earned: xpEarned,
-        coins_earned: coinsEarned,
-        mode: session.mode,
-        created_at: newSession.createdAt,
-      });
-    } catch (err) {
-      console.warn('Supabase session log error:', err);
-    }
-  }
-
   // Award XP and Coins
   await awardXPAndCoins(xpEarned, coinsEarned, `Completed ${durationMins}m ${session.mode} study session`, session.userId);
 
@@ -525,7 +507,7 @@ export async function saveStudySessionLog(
 }
 
 /**
- * Loads recent study session logs
+ * Loads recent study session logs from local storage cache
  */
 export async function loadStudySessions(userId?: string): Promise<StudySession[]> {
   const sessionsKey = getSessionsKey(userId);
@@ -535,33 +517,7 @@ export async function loadStudySessions(userId?: string): Promise<StudySession[]
     try {
       sessions = JSON.parse(existingRaw);
     } catch (e) {
-      console.error(e);
-    }
-  }
-
-  if (isSupabaseConfigured && userId) {
-    try {
-      const { data, error } = await supabase
-        .from('user_study_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (!error && data && data.length > 0) {
-        return data.map((d) => ({
-          id: d.id,
-          userId: d.user_id,
-          subject: d.subject,
-          durationSeconds: d.duration_seconds,
-          createdAt: d.created_at,
-          xpEarned: d.xp_earned,
-          coinsEarned: d.coins_earned,
-          mode: d.mode,
-        }));
-      }
-    } catch (err) {
-      console.warn('Supabase fetch sessions error:', err);
+      console.error('Error loading study sessions:', e);
     }
   }
 
