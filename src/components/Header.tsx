@@ -11,7 +11,8 @@ import {
   Maximize, 
   Minimize, 
   LayoutGrid, 
-  Menu 
+  Menu,
+  Download 
 } from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
 

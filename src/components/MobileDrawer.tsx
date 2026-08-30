@@ -26,7 +26,8 @@ import {
   Sliders,
   ChevronRight,
   User,
-  GraduationCap
+  GraduationCap,
+  Download
 } from 'lucide-react';
 import { AppCustomizerSettings } from '../lib/customizer';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
