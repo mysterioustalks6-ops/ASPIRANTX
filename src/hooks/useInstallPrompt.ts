@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 
 export interface UseInstallPromptReturn {
   showPrompt: boolean;
+  canInstall: boolean;
   isIOS: boolean;
   isAndroid: boolean;
   isStandalone: boolean;
   showIOSInstructions: boolean;
+  toastMessage: string | null;
   handleInstall: () => Promise<void>;
   handleDismiss: () => void;
   closeIOSInstructions: () => void;
@@ -13,8 +15,10 @@ export interface UseInstallPromptReturn {
 
 export function useInstallPrompt(): UseInstallPromptReturn {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [canInstall, setCanInstall] = useState<boolean>(false);
   const [showPrompt, setShowPrompt] = useState<boolean>(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // 1. Detect if the app is already running as an installed PWA (Android / Desktop / iOS)
   const isStandalone = typeof window !== 'undefined' && (
@@ -48,24 +52,40 @@ export function useInstallPrompt(): UseInstallPromptReturn {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      setCanInstall(true);
       setShowPrompt(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Fallback: On iOS or desktop where beforeinstallprompt doesn't fire immediately, show after 2s if not dismissed
+    // If iOS Safari, installation is always available via Share -> Add to Home Screen
+    if (isIOS) {
+      setCanInstall(true);
+      const timer = setTimeout(() => {
+        const dismissed = localStorage.getItem('aspirantx_pwa_install_dismissed') === 'true';
+        if (!dismissed && !isStandalone) {
+          setShowPrompt(true);
+        }
+      }, 2000);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      };
+    }
+
+    // Fallback: On browsers where beforeinstallprompt takes a few seconds or is triggered later
     const timer = setTimeout(() => {
       const dismissed = localStorage.getItem('aspirantx_pwa_install_dismissed') === 'true';
       if (!dismissed && !isStandalone) {
         setShowPrompt(true);
       }
-    }, 2000);
+    }, 2500);
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, [isStandalone]);
+  }, [isStandalone, isIOS]);
 
   // Handle "Install" action
   const handleInstall = async () => {
@@ -89,8 +109,9 @@ export function useInstallPrompt(): UseInstallPromptReturn {
       }
       setDeferredPrompt(null);
     } else {
-      // Fallback for browsers with manual install
-      setShowPrompt(false);
+      // Safety fallback if triggerInstall is called without captured beforeinstallprompt
+      setToastMessage("Install isn't available right now — you can still use AspirantX in your browser");
+      setTimeout(() => setToastMessage(null), 4000);
     }
   };
 
@@ -108,10 +129,12 @@ export function useInstallPrompt(): UseInstallPromptReturn {
 
   return {
     showPrompt,
+    canInstall,
     isIOS,
     isAndroid,
     isStandalone,
     showIOSInstructions,
+    toastMessage,
     handleInstall,
     handleDismiss,
     closeIOSInstructions,

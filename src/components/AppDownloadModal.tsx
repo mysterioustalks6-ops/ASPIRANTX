@@ -6,8 +6,10 @@ import { useInstallPrompt } from '../hooks/useInstallPrompt';
 export const AppDownloadModal: React.FC = () => {
   const {
     showPrompt,
+    canInstall,
     isIOS,
     showIOSInstructions,
+    toastMessage,
     handleInstall,
     handleDismiss,
     closeIOSInstructions,
@@ -15,6 +17,13 @@ export const AppDownloadModal: React.FC = () => {
 
   return (
     <AnimatePresence>
+      {/* Toast message fallback if native prompt unavailable */}
+      {toastMessage && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2.5 rounded-2xl bg-slate-900/95 border border-indigo-500/40 text-xs text-indigo-200 font-semibold shadow-2xl backdrop-blur-xl animate-in fade-in">
+          {toastMessage}
+        </div>
+      )}
+
       {/* 1. Main Install App Banner / Dialog */}
       {showPrompt && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md">
@@ -74,14 +83,16 @@ export const AppDownloadModal: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-2.5">
-              {/* Install Button */}
-              <button
-                onClick={handleInstall}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
-              >
-                <Download className="w-4 h-4" />
-                <span>Install</span>
-              </button>
+              {/* Install Button (Active when canInstall or on iOS) */}
+              {(canInstall || isIOS) && (
+                <button
+                  onClick={handleInstall}
+                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all cursor-pointer active:scale-95"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Install</span>
+                </button>
+              )}
 
               {/* Continue on Web Button */}
               <button
