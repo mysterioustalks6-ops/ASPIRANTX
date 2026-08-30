@@ -266,7 +266,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside
       className={`hidden md:flex ${
         isCollapsed ? 'md:w-16 lg:w-16 p-2' : 'md:w-64 lg:w-72 p-4'
-      } bg-slate-950 border-r border-slate-800/80 flex-col justify-between shrink-0 z-30 overflow-y-auto transition-all duration-200`}
+      } bg-slate-950 border-r border-slate-800/80 flex-col justify-between shrink-0 z-30 sticky top-0 h-screen overflow-y-auto transition-all duration-200`}
     >
       <div className="space-y-4">
         {/* Logo & Brand Header */}
