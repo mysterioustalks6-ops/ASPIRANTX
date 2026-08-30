@@ -10,7 +10,6 @@ import {
   CbtQuestionStatus, CbtExamResult, UserProfile 
 } from '../types';
 import { EXAM_LIST } from '../lib/examList';
-import { INITIAL_CBT_TESTS } from '../data/cbtData';
 
 interface CbtExamEngineProps {
   userProfile: UserProfile;
@@ -40,8 +39,8 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
+  const [isMobilePaletteOpen, setIsMobilePaletteOpen] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'available' | 'custom' | 'live' | 'results'>('available');
-  const [testCategoryFilter, setTestCategoryFilter] = useState<string>('ALL');
 
   // Custom Builder
   const [builder, setBuilder] = useState<CustomBuilderState>({
@@ -94,17 +93,9 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     try {
       const res = await fetch(`/api/academic/cbt/tests?exam=${activeExamKey}`, { cache: 'no-store' });
       const data = await res.json();
-      if (data.success && Array.isArray(data.tests) && data.tests.length > 0) {
-        setAvailableTests(data.tests);
-        return;
-      }
-      // Fallback to INITIAL_CBT_TESTS
-      const filtered = INITIAL_CBT_TESTS.filter(t => t.exam === activeExamKey);
-      setAvailableTests(filtered.length > 0 ? filtered : INITIAL_CBT_TESTS);
+      if (data.success) setAvailableTests(data.tests);
     } catch (err) {
-      console.warn('API fetch failed, falling back to comprehensive INITIAL_CBT_TESTS:', err);
-      const filtered = INITIAL_CBT_TESTS.filter(t => t.exam === activeExamKey);
-      setAvailableTests(filtered.length > 0 ? filtered : INITIAL_CBT_TESTS);
+      console.error('Failed to load CBT tests:', err);
     } finally {
       setLoading(false);
     }
@@ -396,18 +387,18 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   // ─────────────────────────────────────────────────────────────────────────
   if (!selectedTest) {
     return (
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-          <div className="flex items-center space-x-2 text-indigo-600 font-semibold mb-1">
-            <Shield className="w-5 h-5" />
+        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
+          <div className="flex items-center space-x-2 text-indigo-600 font-semibold mb-1 text-xs sm:text-sm">
+            <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>National Standard Exam Portal</span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">Computer Based Test (CBT) Engine</h1>
-          <p className="text-slate-500 text-sm mt-1">Practice, build custom tests by subject & topic, or join live All-India admin exams.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Computer Based Test (CBT) Engine</h1>
+          <p className="text-slate-500 text-xs sm:text-sm mt-1">Practice, build custom tests by subject & topic, or join live All-India admin exams.</p>
 
           {/* Tabs */}
-          <div className="flex items-center space-x-2 mt-5 flex-wrap gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 mt-4 sm:mt-5 flex-wrap">
             {([
               { key: 'available', label: 'Mock Tests', icon: BookOpen },
               { key: 'custom', label: 'Create Custom Test', icon: Plus },
@@ -415,7 +406,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               { key: 'results', label: 'My Results', icon: BarChart2 },
             ] as const).map(({ key, label, icon: Icon }) => (
               <button key={key} onClick={() => { setActiveTab(key); if (key === 'custom' && subjects.length === 0) fetchSubjects(builder.exam); }}
-                className={`flex items-center space-x-1.5 px-4 py-2 text-sm font-semibold rounded-lg transition-all ${activeTab === key ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+                className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all min-h-[40px] ${activeTab === key ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
                 <Icon className="w-4 h-4" /><span>{label}</span>
                 {key === 'live' && liveExams.length > 0 && <span className="w-4 h-4 bg-rose-500 text-white text-[10px] rounded-full flex items-center justify-center">{liveExams.length}</span>}
               </button>
@@ -431,65 +422,26 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               Loading Examination Series...
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Category Filter Pills */}
-              <div className="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
-                <span className="font-bold text-slate-400 uppercase tracking-wider text-[10px] mr-1">Filter:</span>
-                {[
-                  { id: 'ALL', label: 'All Exams' },
-                  { id: 'SSC', label: 'SSC Exams' },
-                  { id: 'BANKING', label: 'Banking & PO' },
-                  { id: 'RAILWAY', label: 'Railways (RRB)' },
-                  { id: 'STATE', label: 'State Exams (UP/Bihar)' },
-                  { id: 'UPSC', label: 'UPSC CSE' },
-                  { id: 'NEET', label: 'NEET / Medical' }
-                ].map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setTestCategoryFilter(cat.id)}
-                    className={`px-3 py-1.5 rounded-full font-bold transition-all whitespace-nowrap ${
-                      testCategoryFilter === cat.id
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(testCategoryFilter === 'ALL'
-                  ? (availableTests.length > 0 ? availableTests : INITIAL_CBT_TESTS)
-                  : (availableTests.length > 0 ? availableTests : INITIAL_CBT_TESTS).filter(t => {
-                      if (testCategoryFilter === 'SSC') return t.exam?.includes('SSC');
-                      if (testCategoryFilter === 'BANKING') return t.exam?.includes('IBPS') || t.exam?.includes('SBI');
-                      if (testCategoryFilter === 'RAILWAY') return t.exam?.includes('RRB');
-                      if (testCategoryFilter === 'STATE') return t.exam?.includes('UP') || t.exam?.includes('BPSC') || t.exam?.includes('WBP');
-                      if (testCategoryFilter === 'UPSC') return t.exam?.includes('UPSC');
-                      if (testCategoryFilter === 'NEET') return t.exam?.includes('NEET');
-                      return true;
-                    })
-                ).map((test) => (
-                  <div key={test.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
-                    <div>
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">{test.exam?.replace(/_/g, ' ')}</span>
-                        <span className="text-xs text-slate-500 font-medium flex items-center"><Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />{test.durationMinutes} Mins</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2">{test.title}</h3>
-                      <div className="space-y-1.5 text-xs text-slate-600 mb-6">
-                        <div className="flex justify-between"><span>Total Marks:</span><span className="font-semibold text-slate-900">{test.totalMarks} Marks</span></div>
-                        <div className="flex justify-between"><span>Questions:</span><span className="font-semibold text-slate-900">{test.questions.length} Items</span></div>
-                        <div className="flex justify-between"><span>Marking Scheme:</span><span className="font-semibold text-emerald-600">+{test.markingScheme.correct} / -{test.markingScheme.incorrect}</span></div>
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {availableTests.map((test) => (
+                <div key={test.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
+                  <div>
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">{test.exam?.replace(/_/g, ' ')}</span>
+                      <span className="text-xs text-slate-500 font-medium flex items-center"><Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />{test.durationMinutes} Mins</span>
                     </div>
-                    <button onClick={() => handleStartExam(test)} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
-                      <Zap className="w-4 h-4" /><span>Start Live CBT Exam</span>
-                    </button>
+                    <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2">{test.title}</h3>
+                    <div className="space-y-1.5 text-xs text-slate-600 mb-6">
+                      <div className="flex justify-between"><span>Total Marks:</span><span className="font-semibold text-slate-900">{test.totalMarks} Marks</span></div>
+                      <div className="flex justify-between"><span>Questions:</span><span className="font-semibold text-slate-900">{test.questions.length} Items</span></div>
+                      <div className="flex justify-between"><span>Marking Scheme:</span><span className="font-semibold text-emerald-600">+{test.markingScheme.correct} / -{test.markingScheme.incorrect}</span></div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <button onClick={() => handleStartExam(test)} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
+                    <Zap className="w-4 h-4" /><span>Start Live CBT Exam</span>
+                  </button>
+                </div>
+              ))}
             </div>
           )
         )}
@@ -855,15 +807,15 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   // 2. RENDER EXAM RESULT VIEW (IF SUBMITTED)
   if (examResult) {
     return (
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-        <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 rounded-2xl p-6 text-white shadow-xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-indigo-800/60 pb-4 mb-6">
+      <div className="w-full space-y-4 sm:space-y-6">
+        <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-indigo-800/60 pb-4 mb-4 sm:mb-6">
             <div>
               <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-md">
                 CBT EXAM EVALUATION
               </span>
-              <h2 className="text-2xl font-bold mt-2">{examResult.testTitle}</h2>
-              <p className="text-indigo-200 text-sm">Server-authoritative evaluation & AI Diagnostic report</p>
+              <h2 className="text-xl sm:text-2xl font-bold mt-2">{examResult.testTitle}</h2>
+              <p className="text-indigo-200 text-xs sm:text-sm">Server-authoritative evaluation & AI Diagnostic report</p>
             </div>
             <button
               onClick={() => {
@@ -871,30 +823,30 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 setSessionState(null);
                 setExamResult(null);
               }}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-md"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md w-full sm:w-auto"
             >
               Back to Exam Portal
             </button>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="text-xs text-indigo-300 font-medium">Final Score</div>
-              <div className="text-3xl font-extrabold text-emerald-400 mt-1">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 text-center">
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
+              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">Final Score</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">
                 {examResult.score} / {examResult.totalPossibleScore}
               </div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="text-xs text-indigo-300 font-medium">National Rank</div>
-              <div className="text-3xl font-extrabold text-amber-300 mt-1">#{examResult.globalRank}</div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
+              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">National Rank</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-1">#{examResult.globalRank}</div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="text-xs text-indigo-300 font-medium">Percentile</div>
-              <div className="text-3xl font-extrabold text-cyan-300 mt-1">{examResult.percentile}%</div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
+              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">Percentile</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-cyan-300 mt-1">{examResult.percentile}%</div>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="text-xs text-indigo-300 font-medium">Accuracy</div>
-              <div className="text-3xl font-extrabold text-purple-300 mt-1">{examResult.accuracy}%</div>
+            <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
+              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">Accuracy</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-purple-300 mt-1">{examResult.accuracy}%</div>
             </div>
           </div>
         </div>
@@ -984,31 +936,39 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   return (
     <div className="fixed inset-0 z-50 bg-slate-100 flex flex-col overflow-hidden font-sans select-none">
       {/* CBT HEADER BAR */}
-      <header className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between border-b border-slate-800 shadow-md">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-md">
+      <header className="bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between border-b border-slate-800 shadow-md">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
             CBT
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-slate-100 line-clamp-1">{selectedTest.title}</h1>
-            <div className="text-xs text-slate-400">Section: {currentQuestion.section}</div>
+          <div className="min-w-0">
+            <h1 className="text-xs sm:text-sm font-bold text-slate-100 truncate max-w-[150px] sm:max-w-xs md:max-w-md">{selectedTest.title}</h1>
+            <div className="text-[10px] sm:text-xs text-slate-400 truncate">Sec: {currentQuestion.section}</div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-6">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          {/* Palette Button on Mobile */}
+          <button
+            onClick={() => setIsMobilePaletteOpen(true)}
+            className="md:hidden px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shrink-0"
+          >
+            <span>Q {sessionState.currentQuestionIndex + 1}/{selectedTest.questions.length}</span>
+          </button>
+
           {/* TIMER DISPLAY */}
-          <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg border text-sm font-extrabold ${
+          <div className={`flex items-center space-x-1.5 sm:space-x-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border text-xs sm:text-sm font-extrabold shrink-0 ${
             remainingSeconds < 300 
               ? 'bg-rose-950 text-rose-300 border-rose-800 animate-pulse' 
               : 'bg-slate-800 text-emerald-400 border-slate-700'
           }`}>
-            <Clock className="w-4 h-4" />
-            <span>Time Left: {formatTime(remainingSeconds)}</span>
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span>{formatTime(remainingSeconds)}</span>
           </div>
 
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
+            className="hidden sm:block p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-all"
             title="Toggle Fullscreen"
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
@@ -1127,7 +1087,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         </div>
 
         {/* RIGHT SIDEBAR: QUESTION PALETTE (OFFICIAL NTA / UPSC STYLE) */}
-        <div className="w-80 bg-slate-100 border-l border-slate-200 flex flex-col shrink-0">
+        <div className="hidden md:flex w-80 bg-slate-100 border-l border-slate-200 flex-col shrink-0">
           <div className="p-4 bg-white border-b border-slate-200">
             <h3 className="text-xs font-bold uppercase text-slate-500 mb-3">Question Palette Legend</h3>
             <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-700 font-medium">
@@ -1200,6 +1160,88 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           </div>
         </div>
       </div>
+
+      {/* MOBILE QUESTION PALETTE DRAWER SHEET */}
+      {isMobilePaletteOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm md:hidden flex justify-end">
+          <div className="w-4/5 max-w-xs bg-white h-full flex flex-col shadow-2xl">
+            <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider">Question Palette</h3>
+              <button 
+                onClick={() => setIsMobilePaletteOpen(false)}
+                className="w-7 h-7 rounded-lg bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-50 border-b border-slate-200">
+              <div className="grid grid-cols-2 gap-1.5 text-[10px] text-slate-700 font-medium">
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-4 h-4 bg-emerald-600 text-white font-bold text-[9px] rounded flex items-center justify-center">{countAnswered}</span>
+                  <span>Answered</span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-4 h-4 bg-rose-600 text-white font-bold text-[9px] rounded flex items-center justify-center">{countNotAnswered}</span>
+                  <span>Not Answered</span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-4 h-4 bg-purple-600 text-white font-bold text-[9px] rounded flex items-center justify-center">{countMarked}</span>
+                  <span>Review</span>
+                </div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-4 h-4 bg-slate-300 text-slate-700 font-bold text-[9px] rounded flex items-center justify-center">{countNotVisited}</span>
+                  <span>Not Visited</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 p-3 overflow-y-auto">
+              <div className="grid grid-cols-4 gap-2">
+                {selectedTest.questions.map((q, idx) => {
+                  const resp = sessionState.responses[q.id];
+                  const st = resp?.status || 'not_visited';
+                  const isCurrent = idx === sessionState.currentQuestionIndex;
+
+                  let bgClass = 'bg-slate-200 text-slate-700';
+                  if (st === 'answered') bgClass = 'bg-emerald-600 text-white';
+                  else if (st === 'not_answered') bgClass = 'bg-rose-600 text-white';
+                  else if (st === 'marked_for_review') bgClass = 'bg-purple-600 text-white';
+                  else if (st === 'answered_and_marked') bgClass = 'bg-purple-700 text-white ring-2 ring-emerald-400';
+
+                  return (
+                    <button
+                      key={q.id}
+                      onClick={() => {
+                        handleJumpToQuestion(idx);
+                        setIsMobilePaletteOpen(false);
+                      }}
+                      className={`h-9 font-bold text-xs rounded flex items-center justify-center ${bgClass} ${
+                        isCurrent ? 'ring-2 ring-indigo-900 ring-offset-1 font-black' : ''
+                      }`}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="p-3 bg-white border-t border-slate-200">
+              <button
+                onClick={() => {
+                  setIsMobilePaletteOpen(false);
+                  setShowSubmitModal(true);
+                }}
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2"
+              >
+                <Send className="w-4 h-4" />
+                <span>Submit Examination</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* CONFIRM SUBMIT MODAL */}
       {showSubmitModal && (

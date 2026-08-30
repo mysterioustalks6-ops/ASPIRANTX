@@ -669,10 +669,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       </PremiumGate>
 
       {/* Main Header & Actions */}
-      <div className="p-6 rounded-3xl bg-black/40 border border-white/10 backdrop-blur-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xl">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-black/40 border border-white/10 backdrop-blur-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xl">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-[#00FF94]" />
               {EXAM_LIST.find((ex) => ex.id === selectedExam)?.label || selectedExam} Syllabus Engine
             </h3>
@@ -695,10 +695,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         </div>
 
         {/* Global Action Buttons */}
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-cyan-300 transition-all flex items-center gap-2"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-cyan-300 transition-all flex items-center justify-center gap-2 min-h-[44px]"
           >
             <Search className="w-4 h-4 text-cyan-400" />
             <span>Search All</span>
@@ -706,7 +706,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={() => setIsMySyllabusModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-purple-600/80 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-400/30 flex items-center gap-2"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-purple-600/80 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-400/30 flex items-center justify-center gap-2 min-h-[44px]"
           >
             <Layers className="w-4 h-4 text-purple-200" />
             Bulk CSV Upload
@@ -714,14 +714,14 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#00FF94] to-cyan-400 hover:opacity-90 text-black font-extrabold text-xs transition-all shadow-[0_0_15px_rgba(0,255,148,0.3)] flex items-center gap-2"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#00FF94] to-cyan-400 hover:opacity-90 text-black font-extrabold text-xs transition-all shadow-[0_0_15px_rgba(0,255,148,0.3)] flex items-center justify-center gap-2 min-h-[44px]"
           >
             <FileSpreadsheet className="w-4 h-4" /> Import Sheet
           </button>
 
           <button
             onClick={handleResetProgress}
-            className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-white/10 transition-colors"
+            className="p-2.5 rounded-xl bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-white/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             title="Reset All Progress"
           >
             <RotateCcw className="w-4 h-4" />

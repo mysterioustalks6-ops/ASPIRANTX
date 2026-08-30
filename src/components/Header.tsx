@@ -1,7 +1,18 @@
 import React from 'react';
 import { ActiveTab, UserProfile } from '../types';
 import { EXAM_LIST } from '../lib/examList';
-import { Flame, Sparkles, Clock, GraduationCap, Sliders, Search, Maximize, Minimize, LayoutGrid } from 'lucide-react';
+import { 
+  Flame, 
+  Sparkles, 
+  Clock, 
+  GraduationCap, 
+  Sliders, 
+  Search, 
+  Maximize, 
+  Minimize, 
+  LayoutGrid, 
+  Menu 
+} from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
 
 interface HeaderProps {
@@ -15,6 +26,7 @@ interface HeaderProps {
   onOpenSearch?: () => void;
   onRequireLogin?: () => void;
   onNavigate?: (tab: string) => void;
+  onOpenMobileMenu?: () => void;
   demoTimeFormatted?: string;
   demoSecondsRemaining?: number;
   isDemoExpired?: boolean;
@@ -31,6 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   onRequireLogin,
   onNavigate,
+  onOpenMobileMenu,
   demoTimeFormatted,
   demoSecondsRemaining,
   isDemoExpired
@@ -60,6 +73,32 @@ export const Header: React.FC<HeaderProps> = ({
           title: 'Syllabus Command Center',
           subtitle: 'Track GS, CSAT, Optional, and Tier-1/2 exam topics',
         };
+      case 'cbt_exam':
+      case 'cbt':
+        return {
+          title: 'CBT Mock Test Simulator',
+          subtitle: 'Real-time online exam series with instant evaluation',
+        };
+      case 'pyq':
+        return {
+          title: 'PYQ Archive & Predictor',
+          subtitle: '35+ years past exam papers with AI model solutions',
+        };
+      case 'question_bank':
+        return {
+          title: 'Question Bank Engine',
+          subtitle: 'Topic-wise practice questions & smart filters',
+        };
+      case 'flashcards':
+        return {
+          title: 'Active Recall Flashcards',
+          subtitle: 'Spaced repetition decks for rapid revision',
+        };
+      case 'library':
+        return {
+          title: 'Digital Resource Library',
+          subtitle: 'NCERTs, standard books & curated toppers notes',
+        };
       case 'timer':
         return {
           title: 'Focus Deep-Work Timer',
@@ -67,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
         };
       case 'tasks':
         return {
-          title: 'Daily Study Tasks & PYQs',
+          title: 'Daily Study Tasks & Schedule',
           subtitle: 'Manage editorial reading, mock tests, and answer writing',
         };
       case 'chat':
@@ -75,36 +114,63 @@ export const Header: React.FC<HeaderProps> = ({
           title: 'AI Study Mentor',
           subtitle: 'Instant answer structuring & syllabus doubt solver',
         };
+      case 'community':
+        return {
+          title: 'Peer Study Community',
+          subtitle: 'Collaborate with fellow serious aspirants',
+        };
+      case 'weakness':
+        return {
+          title: 'AI Weakness Detector',
+          subtitle: 'Telemetry diagnostic & targeted revision roadmap',
+        };
       case 'premium':
+      case 'earn_premium':
         return {
           title: 'AspirantX PRO Access',
           subtitle: 'Unlock unlimited AI evaluation & mock test series',
         };
       default:
-        return { title: 'Dashboard', subtitle: 'Overview' };
+        return { title: 'Candidate Telemetry', subtitle: 'Live Study Dashboard & Metrics' };
     }
   };
 
   const { title, subtitle } = getTabTitle();
 
   return (
-    <header className="w-full bg-slate-950/80 border-b border-slate-800/80 px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 backdrop-blur-md sticky top-0 z-20">
-      <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-bold text-slate-100 tracking-tight">{title}</h2>
-          <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            <Sparkles className="w-3 h-3" /> Active Session
-          </span>
+    <header className="w-full bg-slate-950/90 border-b border-slate-800/80 px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between gap-2 sm:gap-4 backdrop-blur-md sticky top-0 z-20 pt-safe">
+      {/* Left: Mobile Hamburger + Titles */}
+      <div className="flex items-center gap-2.5 min-w-0">
+        {onOpenMobileMenu && (
+          <button
+            onClick={onOpenMobileMenu}
+            className="md:hidden w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 flex items-center justify-center shrink-0 transition-colors"
+            aria-label="Open Navigation Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm sm:text-base md:text-lg font-bold text-slate-100 tracking-tight truncate">
+              {title}
+            </h2>
+            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
+              <Sparkles className="w-3 h-3" /> Live
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-400 truncate hidden sm:block">{subtitle}</p>
         </div>
-        <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
       </div>
 
-      <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+      {/* Right: Controls & Actions */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Demo Mode Countdown */}
         {user?.isGuest && (
           <button
             onClick={onRequireLogin}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs transition-all shadow-card ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl font-semibold text-xs transition-all shadow-card ${
               isDemoExpired
                 ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 animate-pulse'
                 : (demoSecondsRemaining !== undefined && demoSecondsRemaining < 60)
@@ -112,24 +178,24 @@ export const Header: React.FC<HeaderProps> = ({
                 : 'bg-indigo-600 hover:bg-indigo-700 text-white'
             }`}
           >
-            <Clock className="w-3.5 h-3.5" />
-            <span>
+            <Clock className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">
               {isDemoExpired
                 ? 'Demo Expired • Sign In'
                 : demoTimeFormatted
                 ? `Demo: ${demoTimeFormatted}`
                 : 'Sign In'}
             </span>
+            <span className="sm:hidden text-[11px]">Demo</span>
           </button>
         )}
 
         {/* Selected Exam Pill Selector */}
         <div
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200 transition-colors"
+          className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200 transition-colors"
           title="Change Target Exam"
         >
           <GraduationCap className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-          <span className="hidden sm:inline text-slate-400">Exam:</span>
           <select
             value={selectedExam || user?.exam || 'NEET_UG'}
             onChange={(e) => {
@@ -140,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onExamChange(val);
               }
             }}
-            className="bg-transparent font-bold text-slate-100 max-w-[130px] sm:max-w-[170px] truncate focus:outline-none cursor-pointer border-none p-0 text-xs"
+            className="bg-transparent font-bold text-indigo-300 max-w-[85px] sm:max-w-[140px] md:max-w-[180px] truncate focus:outline-none cursor-pointer border-none p-0 text-xs"
           >
             {EXAM_LIST.map((ex) => (
               <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200 font-medium">
@@ -148,37 +214,25 @@ export const Header: React.FC<HeaderProps> = ({
               </option>
             ))}
             <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
-              + Custom Exam...
+              + Custom...
             </option>
           </select>
         </div>
 
-        {/* Workspace Customizer Launcher */}
+        {/* Workspace Customizer Launcher (Desktop/Tablet) */}
         {onOpenWorkspaceCustomizer && (
           <button
             onClick={onOpenWorkspaceCustomizer}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-500/30 text-xs font-semibold text-indigo-300 transition-colors shadow-sm"
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-500/30 text-xs font-semibold text-indigo-300 transition-colors shadow-sm"
             title="Personalize My Workspace"
           >
             <LayoutGrid className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden md:inline">Workspace</span>
-          </button>
-        )}
-
-        {/* Customizer Launcher */}
-        {onOpenCustomizerModal && (
-          <button
-            onClick={onOpenCustomizerModal}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition-colors"
-            title="App Customizer"
-          >
-            <Sliders className="w-3.5 h-3.5 text-slate-400" />
-            <span className="hidden md:inline">Studio</span>
+            <span className="hidden lg:inline">Workspace</span>
           </button>
         )}
 
         {/* Streak Badge */}
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+        <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
           <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
           <span className="font-semibold text-slate-200">{user?.streakDays ?? 1}d</span>
         </div>
@@ -187,24 +241,25 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenSearch && (
           <button
             onClick={onOpenSearch}
-            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors flex items-center gap-1 text-xs"
+            className="w-9 h-9 sm:w-auto sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors flex items-center justify-center gap-1.5 text-xs"
             title="Search Platform (Ctrl+K)"
+            aria-label="Search"
           >
             <Search className="w-4 h-4 text-slate-400" />
             <span className="hidden lg:inline text-xs text-slate-400">Search</span>
           </button>
         )}
 
-        {/* Fullscreen Toggle */}
+        {/* Fullscreen Toggle (Desktop only) */}
         <button
           onClick={toggleFullscreen}
-          className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
+          className="hidden md:flex p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
           title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
         >
           {isFullscreen ? <Minimize className="w-4 h-4 text-indigo-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
         </button>
 
-        {/* Notification Bell with Merged Announcements & Weekly Nudges */}
+        {/* Notification Bell */}
         <NotificationCenter 
           onNavigate={onNavigate} 
           selectedExam={selectedExam || user?.exam || 'NEET_UG'} 
@@ -216,13 +271,14 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           id="header-profile-dashboard-btn"
           onClick={onOpenProfileModal}
-          className="p-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors flex items-center gap-2 pr-2"
+          className="w-9 h-9 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-colors flex items-center justify-center p-0.5"
           title="Open Profile"
+          aria-label="Open Profile"
         >
           <img
             src={user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
             alt="Profile"
-            className="w-7 h-7 rounded-lg object-cover border border-slate-700"
+            className="w-full h-full rounded-lg object-cover border border-slate-700"
           />
         </button>
       </div>

@@ -35,8 +35,17 @@ import {
   CheckCircle2,
   AlertCircle,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Bell,
+  Send
 } from 'lucide-react';
+import { 
+  loadStudyReminderSettings, 
+  saveStudyReminderSettings, 
+  StudyReminderSettings,
+  requestNotificationPermission,
+  getDailyStudySummary 
+} from '../lib/studyReminderService';
 
 interface UserProfileModalProps {
   user: UserProfile;
@@ -65,7 +74,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onOpenReferralModal,
   onNavigateToRewards,
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'rewards'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'reminders' | 'rewards'>('profile');
   const [name, setName] = useState<string>(user.name || '');
   const [avatarUrl, setAvatarUrl] = useState<string>(user.avatar_url || AVATAR_PRESETS[0]);
   const [bio, setBio] = useState<string>(user.bio || '');
@@ -88,6 +97,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [isGeneratingAiSyllabus, setIsGeneratingAiSyllabus] = useState<boolean>(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
+
+  // Study Reminder Settings State
+  const [reminderSettings, setReminderSettings] = useState<StudyReminderSettings>(() => loadStudyReminderSettings());
+  const [reminderSavedMessage, setReminderSavedMessage] = useState<string | null>(null);
+  const [testingNotification, setTestingNotification] = useState<boolean>(false);
 
   useEffect(() => {
     if (activeTab === 'rewards' && user) {
@@ -326,12 +340,12 @@ Return ONLY valid JSON format like:
           </button>
         </div>
 
-        {/* Two-Tab Navigation Bar */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 px-6 pt-3 gap-6">
+        {/* Three-Tab Navigation Bar */}
+        <div className="flex border-b border-slate-800 bg-slate-950/60 px-6 pt-3 gap-6 overflow-x-auto custom-scrollbar">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'profile'
                 ? 'border-cyan-400 text-cyan-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -341,8 +355,19 @@ Return ONLY valid JSON format like:
           </button>
           <button
             type="button"
+            onClick={() => setActiveTab('reminders')}
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'reminders'
+                ? 'border-indigo-400 text-indigo-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Clock className="w-4 h-4" /> Daily Reminders
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('rewards')}
-            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
+            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'rewards'
                 ? 'border-amber-400 text-amber-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -693,6 +718,216 @@ Return ONLY valid JSON format like:
               </button>
             </div>
           </form>
+        )}
+
+        {/* Tab: Daily Reminders (Self-set, gentle nudges) */}
+        {activeTab === 'reminders' && (
+          <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+            {/* Header info */}
+            <div className="p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 shrink-0 mt-0.5">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  Daily Study Summary & Notification
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  A gentle daily check-in with your pending topics and streak. Research shows non-urgent, self-set reminders support study consistency without creating stress or guilt.
+                </p>
+              </div>
+            </div>
+
+            {/* Toggle Enable/Disable */}
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-xs font-bold text-slate-200">Enable Daily Study Reminder</label>
+                <p className="text-[11px] text-slate-400">Receive at most 1 calm nudge per day</p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  const nextState = !reminderSettings.enabled;
+                  if (nextState) {
+                    await requestNotificationPermission();
+                  }
+                  const updated = { ...reminderSettings, enabled: nextState };
+                  setReminderSettings(updated);
+                  saveStudyReminderSettings(updated);
+                  setReminderSavedMessage(nextState ? 'Reminder enabled' : 'Reminder turned off');
+                  setTimeout(() => setReminderSavedMessage(null), 3000);
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  reminderSettings.enabled ? 'bg-indigo-600' : 'bg-slate-800'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    reminderSettings.enabled ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {reminderSettings.enabled && (
+              <>
+                {/* Time Selection */}
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-slate-300">Preferred Reminder Time</label>
+                    <span className="text-xs font-mono font-bold text-indigo-400">
+                      {reminderSettings.reminderTime}
+                    </span>
+                  </div>
+                  <input
+                    type="time"
+                    value={reminderSettings.reminderTime}
+                    onChange={(e) => {
+                      const updated = { ...reminderSettings, reminderTime: e.target.value };
+                      setReminderSettings(updated);
+                      saveStudyReminderSettings(updated);
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-indigo-400 text-xs text-white outline-none"
+                  />
+                  {/* Preset quick buttons */}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {[
+                      { label: '6:00 PM (Evening)', time: '18:00' },
+                      { label: '8:00 PM (Default)', time: '20:00' },
+                      { label: '9:30 PM (Night)', time: '21:30' },
+                      { label: '10:30 PM (Late)', time: '22:30' },
+                    ].map((preset) => (
+                      <button
+                        type="button"
+                        key={preset.time}
+                        onClick={() => {
+                          const updated = { ...reminderSettings, reminderTime: preset.time };
+                          setReminderSettings(updated);
+                          saveStudyReminderSettings(updated);
+                          setReminderSavedMessage(`Time set to ${preset.label}`);
+                          setTimeout(() => setReminderSavedMessage(null), 3000);
+                        }}
+                        className={`text-[11px] px-3 py-1.5 rounded-lg border font-semibold transition-all ${
+                          reminderSettings.reminderTime === preset.time
+                            ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/50 font-bold'
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Content Preferences */}
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+                  <label className="text-xs font-bold text-slate-300">Summary Content Included</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { id: 'both', label: 'Tasks & Streak' },
+                      { id: 'tasks_only', label: 'Tasks Only' },
+                      { id: 'streak_only', label: 'Streak Only' },
+                    ].map((opt) => (
+                      <button
+                        type="button"
+                        key={opt.id}
+                        onClick={() => {
+                          const updated = { ...reminderSettings, updateType: opt.id as any };
+                          setReminderSettings(updated);
+                          saveStudyReminderSettings(updated);
+                        }}
+                        className={`p-3 rounded-xl border text-xs text-left transition-all ${
+                          reminderSettings.updateType === opt.id
+                            ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500/50 font-bold'
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Preview of current message */}
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                    Live Preview of Today's Summary
+                  </div>
+                  {(() => {
+                    const summary = getDailyStudySummary(user, examName || user.exam);
+                    return (
+                      <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5" /> {summary.headlineCopy}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            {summary.isCompletedForToday ? 'Completed' : `${summary.pendingCount} pending`}
+                          </span>
+                        </div>
+                        {summary.pendingTopics.length > 0 ? (
+                          <div className="space-y-1">
+                            {summary.pendingTopics.map((t) => (
+                              <div key={t.id} className="text-slate-300 text-xs flex items-center gap-1.5">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
+                                <span>{t.title}</span>
+                              </div>
+                            ))}
+                            <div className="text-xs text-emerald-400 font-semibold pt-1">
+                              {summary.streakCopy}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-slate-300 text-xs leading-relaxed">
+                            {summary.streakCopy}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Notification Test Action */}
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    type="button"
+                    disabled={testingNotification}
+                    onClick={async () => {
+                      setTestingNotification(true);
+                      try {
+                        const granted = await requestNotificationPermission();
+                        if (granted && typeof Notification !== 'undefined') {
+                          const summary = getDailyStudySummary(user, examName || user.exam);
+                          new Notification('Daily Study Reminder', {
+                            body: `${summary.headlineCopy}\n${summary.pendingTopics.map(t => t.title).join(', ')}`,
+                            icon: '/favicon.ico',
+                          });
+                          setReminderSavedMessage('Test notification sent!');
+                        } else {
+                          setReminderSavedMessage('Browser notification permission not granted.');
+                        }
+                      } catch {
+                        setReminderSavedMessage('Notification test triggered');
+                      } finally {
+                        setTestingNotification(false);
+                        setTimeout(() => setReminderSavedMessage(null), 3000);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold border border-slate-800 flex items-center gap-2"
+                  >
+                    <Send className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Send Test Notification</span>
+                  </button>
+
+                  {reminderSavedMessage && (
+                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> {reminderSavedMessage}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         )}
 
         {/* Tab 2: My Rewards */}

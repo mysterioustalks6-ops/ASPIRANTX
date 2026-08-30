@@ -592,28 +592,83 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
   const [cbtResults, setCbtResults] = useState<any | null>(null);
   const [cbtSelectedExamId, setCbtSelectedExamId] = useState<string | null>(null);
 
-  // Live Users Presence State
+  // Live Users Presence State (with 10s AbortController timeout & visibilitychange pause)
   const [liveUsersStats, setLiveUsersStats] = useState<{ liveCount: number; onlineUsers: any[] }>({ liveCount: 0, onlineUsers: [] });
   const [showOnlyLiveUsers, setShowOnlyLiveUsers] = useState<boolean>(false);
 
   useEffect(() => {
+    let intervalId: any = null;
+    let abortController: AbortController | null = null;
+
     const fetchLiveUsers = async () => {
+      if (document.visibilityState === 'hidden') return;
+      if (abortController) {
+        abortController.abort();
+      }
+      abortController = new AbortController();
+      const timeoutId = setTimeout(() => {
+        abortController?.abort();
+      }, 10000);
+
       try {
         const token = localStorage.getItem('aspirantx_auth_token');
         const headers: Record<string, string> = {};
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const res = await fetch('/api/admin/live-users', { headers });
+        const res = await fetch('/api/admin/live-users', {
+          headers,
+          signal: abortController.signal
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
             setLiveUsersStats({ liveCount: data.liveCount, onlineUsers: data.onlineUsers || [] });
           }
         }
-      } catch (e) {}
+      } catch (e) {
+      } finally {
+        clearTimeout(timeoutId);
+      }
     };
-    fetchLiveUsers();
-    const interval = setInterval(fetchLiveUsers, 10000);
-    return () => clearInterval(interval);
+
+    const startInterval = () => {
+      if (!intervalId) {
+        intervalId = setInterval(fetchLiveUsers, 30000);
+      }
+    };
+
+    const stopInterval = () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchLiveUsers();
+        startInterval();
+      } else {
+        stopInterval();
+        if (abortController) {
+          abortController.abort();
+        }
+      }
+    };
+
+    if (document.visibilityState === 'visible') {
+      fetchLiveUsers();
+      startInterval();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopInterval();
+      if (abortController) {
+        abortController.abort();
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const isUserOnline = (u: AdminUserRecord) => {
