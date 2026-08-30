@@ -146,10 +146,36 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
       ctx.font = 'bold 36px sans-serif';
       ctx.fillText(`Target: ${activeExam.replace(/_/g, ' ')}`, 540, 345);
 
+      // Universal safe rounded rect helper for Canvas
+      const drawRoundRect = (
+        context: CanvasRenderingContext2D,
+        x: number,
+        y: number,
+        w: number,
+        h: number,
+        radius: number
+      ) => {
+        if (typeof context.roundRect === 'function') {
+          context.beginPath();
+          context.roundRect(x, y, w, h, radius);
+        } else {
+          context.beginPath();
+          context.moveTo(x + radius, y);
+          context.lineTo(x + w - radius, y);
+          context.quadraticCurveTo(x + w, y, x + w, y + radius);
+          context.lineTo(x + w, y + h - radius);
+          context.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+          context.lineTo(x + radius, y + h);
+          context.quadraticCurveTo(x, y + h, x, y + h - radius);
+          context.lineTo(x, y + radius);
+          context.quadraticCurveTo(x, y, x + radius, y);
+          context.closePath();
+        }
+      };
+
       // 5. Days Left Pill Badge
       ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.roundRect(320, 385, 440, 85, 42);
+      drawRoundRect(ctx, 320, 385, 440, 85, 42);
       ctx.fill();
       ctx.strokeStyle = selectedPersona.accentColor;
       ctx.lineWidth = 3;
@@ -161,8 +187,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
 
       // 6. Character Quote Banner
       ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-      ctx.beginPath();
-      ctx.roundRect(100, 495, 880, 80, 20);
+      drawRoundRect(ctx, 100, 495, 880, 80, 20);
       ctx.fill();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.lineWidth = 1.5;
@@ -193,8 +218,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
 
         if (isCompleted) {
           ctx.fillStyle = selectedPersona.accentColor;
-          ctx.beginPath();
-          ctx.roundRect(x, y, boxSize, boxSize, 14);
+          drawRoundRect(ctx, x, y, boxSize, boxSize, 14);
           ctx.fill();
           
           ctx.fillStyle = '#0f172a';
@@ -202,8 +226,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
           ctx.fillText('✓', x + boxSize / 2, y + boxSize / 2 + 11);
         } else if (isToday) {
           ctx.fillStyle = '#6366f1';
-          ctx.beginPath();
-          ctx.roundRect(x, y, boxSize, boxSize, 14);
+          drawRoundRect(ctx, x, y, boxSize, boxSize, 14);
           ctx.fill();
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 4;
@@ -214,8 +237,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
           ctx.fillText('NOW', x + boxSize / 2, y + boxSize / 2 + 9);
         } else {
           ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
-          ctx.beginPath();
-          ctx.roundRect(x, y, boxSize, boxSize, 14);
+          drawRoundRect(ctx, x, y, boxSize, boxSize, 14);
           ctx.fill();
           ctx.strokeStyle = 'rgba(51, 65, 85, 0.8)';
           ctx.lineWidth = 2;
