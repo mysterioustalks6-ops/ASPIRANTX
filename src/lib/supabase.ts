@@ -68,10 +68,7 @@ export async function signInWithGoogle() {
  */
 export async function signInWithEmail(email: string, password: string) {
   if (!isSupabaseConfigured) {
-    return { data: null, error: new Error('Supabase project credentials not configured in .env. Please add keys to enable Email Sign-In.') };
-  }
-  if (env.VITE_SUPABASE_ANON_KEY && !env.VITE_SUPABASE_ANON_KEY.startsWith('eyJ')) {
-    return { data: null, error: new Error('Invalid Supabase Anon Key format! Replace VITE_SUPABASE_ANON_KEY in .env with the real anon JWT key starting with "eyJ...".') };
+    return { data: null, error: new Error('Supabase project credentials not configured. Please add keys to enable Email Sign-In.') };
   }
   return await supabase.auth.signInWithPassword({ email, password });
 }
@@ -81,10 +78,7 @@ export async function signInWithEmail(email: string, password: string) {
  */
 export async function signUpWithEmail(email: string, password: string, fullName?: string) {
   if (!isSupabaseConfigured) {
-    return { data: null, error: new Error('Supabase project credentials not configured in .env. Please add keys to enable Email Sign-Up.') };
-  }
-  if (env.VITE_SUPABASE_ANON_KEY && !env.VITE_SUPABASE_ANON_KEY.startsWith('eyJ')) {
-    return { data: null, error: new Error('Invalid Supabase Anon Key format! Replace VITE_SUPABASE_ANON_KEY in .env with the real anon JWT key starting with "eyJ...".') };
+    return { data: null, error: new Error('Supabase project credentials not configured. Please add keys to enable Email Sign-Up.') };
   }
 
   return await supabase.auth.signUp({
