@@ -210,7 +210,7 @@ export const INITIAL_CBT_TESTS: CbtTest[] = [
         explanation: 'Principal P = (SI * 100) / (R * T) = (1200 * 100) / (8 * 3) = 120000 / 24 = Rs. 5,000.'
       }
     ]
-  }
+  },
   {
     id: 'neet_ug_cbt_mock_01',
     title: 'NEET UG 2026 National Grand Diagnostic Mock Test (PCB Full Syllabus)',
