@@ -208,6 +208,126 @@ import * as Shared from './shared.js';
 const router = Router();
 const __dirname = path.resolve();
 
+// ─── Content Package Endpoints (Local-First Low-Cloud) ─────────────────────────
+router.get('/api/content/manifests', (req, res) => {
+  const targetExam = req.query.exam as string;
+  const exams = ['UPSC_CSE', 'NEET_UG', 'JEE_MAIN', 'JEE_ADVANCED', 'GATE', 'CAT', 'SSC_CGL', 'NDA'];
+  
+  const manifests: Record<string, any> = {};
+  for (const ex of exams) {
+    manifests[ex] = {
+      examId: ex,
+      version: 1,
+      schemaVersion: 1,
+      lastUpdated: '2026-09-01T00:00:00.000Z',
+      itemCounts: {
+        syllabusTopics: 50,
+        questions: 100,
+        pyqs: 80,
+        cbtTests: 4
+      }
+    };
+  }
+
+  if (targetExam && manifests[targetExam]) {
+    return res.json(manifests[targetExam]);
+  }
+  res.json({ manifests });
+});
+
+router.get('/api/content/package', async (req, res) => {
+  try {
+    const examId = (req.query.exam as string) || 'UPSC_CSE';
+    
+    // Filter questions matching exam
+    const questions = INITIAL_QUESTION_BANK
+      .filter((q: any) => String(q.exam || '').toUpperCase().includes(examId.toUpperCase()))
+      .map((q: any) => ({
+        id: String(q.id),
+        examId,
+        subject: q.subject || 'General',
+        topic: q.topic || 'General Topic',
+        questionText: q.questionText || q.question_text || '',
+        options: Array.isArray(q.options) ? q.options : ['A', 'B', 'C', 'D'],
+        correctOption: typeof q.correctOption === 'number' ? q.correctOption : 0,
+        solutionText: q.solutionText || q.explanation || 'Verified answer explanation.',
+        type: q.type || 'mcq',
+        difficulty: q.difficulty || 'Medium',
+        language: q.language || 'English',
+        status: 'published'
+      }));
+
+    // Filter PYQs matching exam
+    const pyqs = INITIAL_PYQS_DATABASE
+      .filter((p: any) => String(p.exam || '').toUpperCase().includes(examId.toUpperCase()))
+      .map((p: any) => ({
+        id: String(p.id),
+        examId,
+        year: p.year || 2024,
+        stage: p.stage || 'Prelims',
+        paper: p.paper || 'Paper 1',
+        subject: p.subject || 'General',
+        topic: p.topic || 'General Topic',
+        questionText: p.questionText || p.question_text || '',
+        options: Array.isArray(p.options) ? p.options : ['A', 'B', 'C', 'D'],
+        correctOption: typeof p.correctOption === 'number' ? p.correctOption : 0,
+        explanation: p.explanation || 'Verified official answer explanation.',
+        difficulty: p.difficulty || 'Medium',
+        language: p.language || 'English'
+      }));
+
+    // Filter CBT mocks matching exam
+    const cbtTests = DEFAULT_CBT_MOCKS
+      .filter((c: any) => String(c.exam || '').toUpperCase().includes(examId.toUpperCase()))
+      .map((c: any) => ({
+        id: String(c.id),
+        examId,
+        title: c.title,
+        durationMinutes: c.durationMinutes || 120,
+        totalMarks: c.totalMarks || 200,
+        totalQuestions: c.questions ? c.questions.length : 0,
+        negativeMarking: c.markingScheme?.incorrect || 0.33,
+        questions: c.questions || [],
+        isMock: true
+      }));
+
+    // Filter Syllabus matching exam
+    const syllabus = INITIAL_SYLLABUS_HIERARCHY
+      .filter((s: any) => String(s.exam || '').toUpperCase().includes(examId.toUpperCase()))
+      .map((s: any, idx: number) => ({
+        id: `${examId}_${s.subject || 'General'}_${s.topic || idx}`.replace(/\s+/g, '_'),
+        examId,
+        subject: s.subject || 'General Studies',
+        topic: s.topic || `Topic ${idx + 1}`,
+        subtopics: Array.isArray(s.subtopics) ? s.subtopics : [],
+        subtopicsCount: Array.isArray(s.subtopics) ? s.subtopics.length : 1,
+        completedSubtopics: 0
+      }));
+
+    const fullPackage = {
+      examId,
+      version: 1,
+      schemaVersion: 1,
+      title: `${examId} Official Academic Package`,
+      lastUpdated: new Date().toISOString(),
+      itemCounts: {
+        syllabusTopics: syllabus.length,
+        questions: questions.length,
+        pyqs: pyqs.length,
+        cbtTests: cbtTests.length
+      },
+      syllabus,
+      questions,
+      pyqs,
+      cbtTests
+    };
+
+    res.json(fullPackage);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to assemble exam package', message: err.message });
+  }
+});
+
 router.post('/api/syllabus/ai-organize', aiRateLimiter, async (req, res) => {
   try {
     const { rawText, content, defaultExam = 'UPSC_CSE', defaultSubject = 'Custom Subject' } = req.body;
@@ -2383,6 +2503,7 @@ router.post('/api/academic/cbt/submit', async (req, res) => {
     const result = {
       testId: test.id,
       testTitle: test.title,
+      exam: test.exam || req.body.exam || 'GENERAL',
       sessionState,
       score: Number(score.toFixed(2)),
       totalPossibleScore,
@@ -2432,7 +2553,11 @@ router.post('/api/academic/cbt/submit', async (req, res) => {
 router.get('/api/academic/cbt/history', (req, res) => {
   try {
     const userId = (req.query.userId as string) || 'default_user';
-    const history = cbtResultsStore.get(userId) || [];
+    const exam = (req.query.exam as string) || '';
+    let history = cbtResultsStore.get(userId) || [];
+    if (exam) {
+      history = history.filter((h: any) => !h.exam || normalizeExam(h.exam) === normalizeExam(exam));
+    }
     res.json({ success: true, history });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch CBT history' });

@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { dedupFetch } from '../lib/apiDeduplicator';
 import { PyqRecord } from '../types';
 import { EXAM_LIST } from '../lib/examList';
-import { getExamConfig } from '../lib/examRegistry';
+import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
+import { useExam } from '../context/ExamContext';
 import { AdSenseBanner } from './AdSenseBanner';
 import { DIAGNOSTIC_QUESTION_BANK } from '../data/diagnosticQuestionBank';
+import { contentPackageManager } from '../lib/contentPackageManager';
 import { 
   BookOpen, 
   Search, 
@@ -34,14 +36,7 @@ interface PyqEngineProps {
   initialExam?: string;
 }
 
-const normalizeExamKey = (e: string) => {
-  let s = String(e || '').trim().toLowerCase().replace(/[\s-_]/g, '');
-  if (s.includes('nda') || s.includes('defence') || s.includes('naval')) return 'nda';
-  if (s.includes('neet') || s.includes('medical') || s.includes('eligibilitycum')) return 'neet';
-  if (s.includes('upsc') || s.includes('civil') || s.includes('cse')) return 'upsc';
-  if (s.includes('ssc') || s.includes('cgl') || s.includes('staffselection')) return 'ssc';
-  return s;
-};
+const normalizeExamKey = (e: string) => normalizeExamId(e);
 
 export const getStandardSubject = (examId: string, rawSubj: string): string => {
   const exam = String(examId || '').toUpperCase();
@@ -103,7 +98,8 @@ export const getExamSubjects = (examId: string): string[] => {
 };
 
 export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin = false, initialExam }) => {
-  const [selectedExam, setSelectedExam] = useState<string>(initialExam || 'NEET_UG');
+  const { selectedExamId } = useExam();
+  const [selectedExam, setSelectedExam] = useState<string>(() => normalizeExamId(initialExam || selectedExamId));
 
   // Clean initial state (No dataset duplication in React state)
   const [pyqs, setPyqs] = useState<PyqRecord[]>([]);
@@ -114,17 +110,19 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
   const [ocrStatus, setOcrStatus] = useState<'idle' | 'scanning' | 'done'>('idle');
   const [ocrProgress, setOcrProgress] = useState(0);
 
-  // Update selectedExam whenever initialExam prop changes from parent
+  // Update selectedExam whenever initialExam or selectedExamId changes
   useEffect(() => {
-    if (initialExam && initialExam !== selectedExam) {
-      setSelectedExam(initialExam);
+    const target = normalizeExamId(initialExam || selectedExamId);
+    if (target !== selectedExam) {
+      setSelectedExam(target);
+      setPyqs([]);
       setSelectedSubject('All');
       setSelectedTopic('All');
       setStageFilter('All');
       setSearchQuery('');
       setPage(1);
     }
-  }, [initialExam]);
+  }, [initialExam, selectedExamId, selectedExam]);
 
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
@@ -218,6 +216,28 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
   const fetchPyqs = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     let loadedFromApi = false;
+
+    // 1. Instant Local-First query from IndexedDB (0ms latency, zero cloud traffic)
+    try {
+      const localRes = await contentPackageManager.getLocalPyqs(selectedExam, {
+        subject: selectedSubject,
+        year: selectedSpecificYear !== 'All' ? Number(selectedSpecificYear) : undefined,
+        searchQuery,
+        page,
+        limit
+      });
+
+      if (localRes.pyqs.length > 0 && (!signal || !signal.aborted)) {
+        setPyqs(localRes.pyqs as any);
+        setTotal(localRes.total);
+        setTotalPages(localRes.totalPages);
+        setLoading(false);
+        return;
+      }
+    } catch (localErr) {
+      console.warn('[PyqEngine] Local-first query skipped:', localErr);
+    }
+
     try {
       const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
       const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
@@ -308,23 +328,14 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
       }
     }
 
-    // Tier 3: 0ms Offline Diagnostic Academic PYQ Fallback (Always displays relevant questions)
+    // Tier 3: 0ms Offline Diagnostic Academic PYQ Fallback (Strictly scoped to active exam)
     if (!loadedFromApi && (!signal || !signal.aborted)) {
-      const normalizeKey = (k: string) => (k || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const currentNormExam = normalizeKey(selectedExam);
-      
-      let matches = DIAGNOSTIC_QUESTION_BANK.filter(q => normalizeKey(q.exam) === currentNormExam);
-      if (matches.length === 0) {
-        matches = DIAGNOSTIC_QUESTION_BANK.filter(q => normalizeKey(q.exam).includes(currentNormExam) || currentNormExam.includes(normalizeKey(q.exam)));
-      }
-      if (matches.length === 0) {
-        matches = DIAGNOSTIC_QUESTION_BANK;
-      }
+      const currentNormExam = normalizeExamId(selectedExam);
+      let matches = DIAGNOSTIC_QUESTION_BANK.filter(q => normalizeExamId(q.exam) === currentNormExam);
 
       if (selectedSubject && selectedSubject !== 'All') {
         const sLower = selectedSubject.toLowerCase();
-        const subFiltered = matches.filter(q => q.subject.toLowerCase().includes(sLower) || sLower.includes(q.subject.toLowerCase()));
-        if (subFiltered.length > 0) matches = subFiltered;
+        matches = matches.filter(q => q.subject.toLowerCase().includes(sLower) || sLower.includes(q.subject.toLowerCase()));
       }
 
       if (searchQuery) {

@@ -208,6 +208,59 @@ import * as Shared from './shared.js';
 const router = Router();
 const __dirname = path.resolve();
 
+// ─── Durable Offline Batch Sync Endpoint ──────────────────────────────────────
+router.post('/api/sync/batch', async (req, res) => {
+  try {
+    const { userId, items } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.json({ success: true, acknowledgedIds: [] });
+    }
+
+    const acknowledgedIds: string[] = [];
+
+    for (const item of items) {
+      try {
+        if (item.type === 'SYLLABUS_PROGRESS') {
+          const { completedSubtopicIds } = item.payload || {};
+          if (Array.isArray(completedSubtopicIds) && supabaseServer) {
+            try {
+              await supabaseServer.from('user_syllabus_progress').upsert({
+                user_id: item.userId || userId || 'guest',
+                exam_id: item.examId,
+                completed_subtopic_ids: completedSubtopicIds,
+                updated_at: new Date().toISOString()
+              }, { onConflict: 'user_id,exam_id' });
+            } catch (ignored) {}
+          }
+        } else if (item.type === 'TELEMETRY') {
+          const { studyMinutesIncrement } = item.payload || {};
+          if (typeof studyMinutesIncrement === 'number') {
+            await updateStreak(item.userId || userId || 'guest').catch(() => null);
+          }
+        } else if (item.type === 'CBT_RESULT') {
+          if (cbtResultsStore) {
+            const targetId = item.userId || userId || 'guest';
+            const history = cbtResultsStore.get(targetId) || [];
+            history.push(item.payload);
+            cbtResultsStore.set(targetId, history);
+          }
+        }
+        acknowledgedIds.push(item.id);
+      } catch (itemErr) {
+        console.warn('[SyncBatch] Error processing item:', item.id, itemErr);
+      }
+    }
+
+    res.json({
+      success: true,
+      processed: acknowledgedIds.length,
+      acknowledgedIds
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to process batch sync', message: err.message });
+  }
+});
+
 router.get('/api/user/subjects', async (req, res) => {
   const verifiedUser = await extractVerifiedUserFromReq(req);
   if (!verifiedUser) {

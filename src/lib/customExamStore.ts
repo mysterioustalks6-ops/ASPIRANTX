@@ -32,6 +32,7 @@ const STORAGE_KEY = 'aspirantx_custom_exams_v2';
  * Gets all user-created custom exams from LocalStorage
  */
 export function getCustomExamsFromStorage(): CustomExamConfig[] {
+  if (typeof window === 'undefined' || typeof localStorage === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];

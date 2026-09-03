@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { EXAM_LIST } from '../lib/examList';
 import { DIAGNOSTIC_QUESTION_BANK, DiagnosticQuestion } from '../data/diagnosticQuestionBank';
+import { normalizeExamId } from '../lib/examRegistry';
 
 interface WeaknessDetectorProps {
   selectedExam?: string;
@@ -38,29 +39,10 @@ export const WeaknessDetector: React.FC<WeaknessDetectorProps> = ({
   selectedExam = 'NEET_UG',
   onExamChange
 }) => {
-  const normalizeExamKey = (e: string) => {
-    let s = String(e || '').trim().toLowerCase().replace(/[\s-_]/g, '');
-    if (s.includes('nda') || s.includes('defence') || s.includes('cds') || s.includes('afcat')) return 'nda';
-    if (s.includes('neet') || s.includes('medical') || s.includes('nursing') || s.includes('jenpas') || s.includes('aiims') || s.includes('bcece') || s.includes('pm')) return 'neet';
-    if (s.includes('jee') || s.includes('engineering') || s.includes('gate') || s.includes('jelet') || s.includes('jexpo') || s.includes('comedk') || s.includes('bitsat')) return 'jee';
-    if (s.includes('upsc') || s.includes('civil') || s.includes('cse') || s.includes('capf')) return 'upsc';
-    if (s.includes('uppsc') || s.includes('bpsc') || s.includes('wbcs') || s.includes('mppsc') || s.includes('rpsc') || s.includes('state') || s.includes('pcs')) return 'state_psc';
-    if (s.includes('ssc') || s.includes('cgl') || s.includes('chsl') || s.includes('mts') || s.includes('gd') || s.includes('cpo')) return 'ssc';
-    if (s.includes('ibps') || s.includes('sbi') || s.includes('bank') || s.includes('po') || s.includes('clerk') || s.includes('rbi')) return 'bank';
-    if (s.includes('rrb') || s.includes('railway') || s.includes('ntpc') || s.includes('alp')) return 'rrb';
-    if (s.includes('ctet') || s.includes('tet') || s.includes('ugc') || s.includes('bed') || s.includes('teach')) return 'ctet';
-    return s;
-  };
-
-  // Filter questions by active exam with exact and normalized fallback matching
+  // Filter questions strictly by active exam with zero cross-exam contamination
   const examPool = useMemo(() => {
-    const exact = DIAGNOSTIC_QUESTION_BANK.filter(q => q.exam === selectedExam);
-    if (exact.length > 0) return exact;
-
-    const normalized = DIAGNOSTIC_QUESTION_BANK.filter(q => normalizeExamKey(q.exam) === normalizeExamKey(selectedExam));
-    if (normalized.length > 0) return normalized;
-
-    return DIAGNOSTIC_QUESTION_BANK;
+    const norm = normalizeExamId(selectedExam);
+    return DIAGNOSTIC_QUESTION_BANK.filter(q => normalizeExamId(q.exam) === norm);
   }, [selectedExam]);
 
   const examSubjects = useMemo(() => {

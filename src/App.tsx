@@ -5,6 +5,8 @@ import { loadUserProfile, saveUserProfile } from './lib/gamification';
 import { recordPerfMarker } from './lib/apiDeduplicator';
 import { logAuthDiagnostic } from './lib/authDiagnostics';
 import { EXAM_LIST } from './lib/examList';
+import { ExamProvider, useExam } from './context/ExamContext';
+import { normalizeExamId } from './lib/examRegistry';
 import { LandingPage } from './components/LandingPage';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
@@ -41,6 +43,8 @@ import { AppDownloadModal } from './components/AppDownloadModal';
 import { ExamWallpaperWidget } from './components/ExamWallpaperWidget';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
+import { contentPackageManager } from './lib/contentPackageManager';
+import { syncWorker } from './lib/syncWorker';
 import { Shield, KeyRound, X, Check, Lock as LockIcon, Sparkles, Sliders, XCircle, ShieldCheck, Smartphone } from 'lucide-react';
 
 // Lazy Loaded Enterprise Modules for Optimal Bundle Performance
@@ -76,7 +80,7 @@ const SuspenseFallback = () => (
 
 export const DESIGNATED_ADMIN_EMAIL = 'ambujyadav0010@gmail.com';
 
-export default function App() {
+function AppContent() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('aspirantx_sidebar_collapsed') === 'true';
@@ -91,18 +95,19 @@ export default function App() {
     });
   };
 
-  // selectedExam: persist in localStorage so exam choice survives page refresh
-  const [selectedExam, setSelectedExam] = useState<string>(() => {
-    return localStorage.getItem('aspirantx_global_selected_exam') || 'NEET_UG';
-  });
+  // Authoritative selectedExam from central ExamContext
+  const { selectedExamId, setSelectedExamId } = useExam();
+  const selectedExam = selectedExamId;
 
-  // PROFILE IS AUTHORITATIVE SINGLE SOURCE OF TRUTH FOR ACTIVE EXAM CONTEXT
+  // Sync profile exam with ExamContext whenever user profile loads
   useEffect(() => {
-    if (user?.exam && user.exam !== selectedExam) {
-      setSelectedExam(user.exam);
-      localStorage.setItem('aspirantx_global_selected_exam', user.exam);
+    if (user?.exam) {
+      const norm = normalizeExamId(user.exam);
+      if (norm !== selectedExamId) {
+        setSelectedExamId(norm, { persist: true, syncUser: false, userId: user?.id });
+      }
     }
-  }, [user?.exam, selectedExam]);
+  }, [user?.exam, selectedExamId, setSelectedExamId, user?.id]);
 
   // Global Frontend Error Listeners for Uncaught Exceptions & Promise Rejections
   useEffect(() => {
@@ -136,16 +141,20 @@ export default function App() {
     };
   }, []);
 
+  // Initialize Local-First Offline Database and Background Sync Engine
+  useEffect(() => {
+    contentPackageManager.seedBundledContentIfEmpty().catch((err) => {
+      console.warn('Local content package auto-seed notice:', err);
+    });
+    syncWorker.init();
+  }, []);
+
   // Handler: called when profile updates user exam
   const handleExamChange = (examId: string) => {
-    setSelectedExam(examId);
-    localStorage.setItem('aspirantx_global_selected_exam', examId);
-    setUser((prev) => (prev ? { ...prev, exam: examId } : prev));
+    const norm = normalizeExamId(examId);
+    setSelectedExamId(norm, { persist: true, syncUser: true, userId: user?.id });
+    setUser((prev) => (prev ? { ...prev, exam: norm } : prev));
 
-    // Keep the fast-path profile cache in sync too — checkAuthSession()
-    // reads THIS key first on every page load, before any network call.
-    // If it's not updated here, refresh will flash/revert to the old
-    // exam until (if ever) the background Supabase fetch corrects it.
     if (user?.id) {
       try {
         const cacheKey = `aspirantx_profile_cache_${user.id}`;
@@ -154,8 +163,8 @@ export default function App() {
         localStorage.setItem(cacheKey, JSON.stringify({
           ...existing,
           userId: user.id,
-          targetExam: examId,
-          exam: examId,
+          targetExam: norm,
+          exam: norm,
           profileComplete: true,
           updatedAt: new Date().toISOString(),
         }));
@@ -164,9 +173,6 @@ export default function App() {
       }
     }
 
-    // Persist to backend so it survives a refresh — otherwise the
-    // profile-authoritative useEffect above reverts it to the stale
-    // DB value on next load.
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -176,7 +182,7 @@ export default function App() {
             'Content-Type': 'application/json',
             ...(session?.access_token ? { 'Authorization': `Bearer ${session.access_token}` } : {}),
           },
-          body: JSON.stringify({ exam: examId, email: user?.email }),
+          body: JSON.stringify({ exam: norm, email: user?.email }),
         });
       } catch (err) {
         logAuthDiagnostic('EXAM_CHANGE', 'failed to persist exam change to backend', { error: String(err) });
@@ -655,8 +661,7 @@ export default function App() {
               isProfileComplete: true,
               role: isDesignatedAdmin ? 'ADMIN' : 'USER',
             };
-            setSelectedExam(cachedExam);
-            localStorage.setItem('aspirantx_global_selected_exam', cachedExam);
+            setSelectedExamId(cachedExam, { persist: false, syncUser: false, userId: immediateUser.id });
             setUser(immediateUser);
             if (isDesignatedAdmin) setIsAdminUnlocked(true);
             setInitializing(false);
@@ -673,6 +678,7 @@ export default function App() {
                   'Authorization': `Bearer ${session.access_token}`,
                   'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({ email }),
                 signal: controller.signal
               }).catch(() => null);
               clearTimeout(fetchTimer);
@@ -724,9 +730,9 @@ export default function App() {
               };
 
               // AUTHORITATIVE EXAM RESOLUTION BEFORE SHELL RENDER
-              const resolvedExam = u.exam || cachedExam || 'NEET_UG';
-              setSelectedExam(resolvedExam);
-              localStorage.setItem('aspirantx_global_selected_exam', resolvedExam);
+              const resolvedExam = normalizeExamId(u.exam || cachedExam || 'UPSC_CSE');
+              u.exam = resolvedExam;
+              setSelectedExamId(resolvedExam, { persist: true, syncUser: false, userId: u.id });
               recordPerfMarker('examResolved');
               logAuthDiagnostic('PROFILE', 'target exam resolved', { exam: resolvedExam });
 
@@ -769,7 +775,26 @@ export default function App() {
           logAuthDiagnostic('NAVIGATION', 'Redirecting to /signin', { reason: 'SIGNED_OUT auth event received' });
           if (user?.id) {
             localStorage.removeItem(`aspirantx_profile_cache_${user.id}`);
+            try {
+              const keysToRemove: string[] = [];
+              for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (
+                  k &&
+                  (k.includes(user.id) ||
+                    k.startsWith('aspirantx_kanban_') ||
+                    k.startsWith('aspirantx_subtopic_progress_') ||
+                    k.startsWith('aspirantx_local_store_') ||
+                    k.startsWith('aspirantx_cbt_results_'))
+                ) {
+                  keysToRemove.push(k);
+                }
+              }
+              keysToRemove.forEach((k) => localStorage.removeItem(k));
+            } catch (cleanErr) {}
           }
+          localStorage.removeItem('aspirantx_global_selected_exam');
+          localStorage.removeItem('aspirantx_cbt_results_cache');
           setUser(null);
           setIsAdminUnlocked(false);
           localStorage.removeItem('aspirantx_auth_token');
@@ -851,7 +876,7 @@ export default function App() {
           try {
             const profile = await loadUserProfile(session.user.id);
             const resolvedExam = profile.exam || selectedExam || 'NEET_UG';
-            setSelectedExam((prev) => (prev === resolvedExam ? prev : resolvedExam));
+            setSelectedExamId(resolvedExam, { persist: true, syncUser: false, userId: session.user.id });
             localStorage.setItem('aspirantx_global_selected_exam', resolvedExam);
 
             setUser((prev) => {
@@ -1018,7 +1043,7 @@ export default function App() {
           logAuthDiagnostic('AUTH', 'onLoginSuccess triggered', { userId: u.id, email: u.email });
           
           const storedExam = localStorage.getItem('aspirantx_global_selected_exam') || u.exam || 'NEET_UG';
-          setSelectedExam(storedExam);
+          setSelectedExamId(storedExam, { persist: true, syncUser: false, userId: u.id });
           localStorage.setItem('aspirantx_global_selected_exam', storedExam);
 
           const immediateUser: UserProfile = {
@@ -1039,7 +1064,7 @@ export default function App() {
             try {
               const profile = await loadUserProfile(u.id);
               const resolvedExam = profile.exam || storedExam;
-              setSelectedExam(resolvedExam);
+              setSelectedExamId(resolvedExam, { persist: true, syncUser: false, userId: u.id });
               localStorage.setItem('aspirantx_global_selected_exam', resolvedExam);
 
               setUser((prev) => {
@@ -1753,5 +1778,13 @@ export default function App() {
     </div>
       </SecurityWrapper>
     </ErrorBoundary>
+  );
+}
+
+export default function App() {
+  return (
+    <ExamProvider>
+      <AppContent />
+    </ExamProvider>
   );
 }

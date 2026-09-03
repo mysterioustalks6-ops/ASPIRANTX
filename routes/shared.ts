@@ -2842,13 +2842,32 @@ export const cleanSubjectName = (subj: string) => {
   return s;
 };
 
-export const normalizeExam = (e: string) => {
-  let s = String(e || '').trim().toLowerCase().replace(/[\s-_]/g, '');
-  if (s.includes('nda') || s.includes('defence') || s.includes('naval')) return 'nda';
-  if (s.includes('neet') || s.includes('medical') || s.includes('eligibilitycum')) return 'neet';
-  if (s.includes('upsc') || s.includes('civil') || s.includes('cse')) return 'upsc';
-  if (s.includes('ssc') || s.includes('cgl') || s.includes('staffselection')) return 'ssc';
-  return s;
+export const normalizeExam = (e: string): string => {
+  if (!e) return '';
+  const raw = String(e).trim().toUpperCase();
+  
+  // Specific alias mappings
+  if (raw === 'NEET' || raw === 'NEET_UG' || raw.includes('NEET UG') || raw.includes('NATIONAL ELIGIBILITY CUM ENTRANCE')) return 'NEET_UG';
+  if (raw === 'UPSC' || raw === 'UPSC_CSE' || raw.includes('CIVIL SERVICES')) return 'UPSC_CSE';
+  if (raw === 'SSC' || raw === 'SSC_CGL' || raw.includes('COMBINED GRADUATE LEVEL')) return 'SSC_CGL';
+  if (raw === 'NDA' || raw === 'NDA_NA' || raw.includes('NATIONAL DEFENCE ACADEMY')) return 'NDA_NA';
+  if (raw === 'JEE_MAIN' || raw === 'JEE' || raw.includes('JOINT ENTRANCE EXAMINATION')) return 'JEE_MAIN';
+  if (raw === 'JEE_ADVANCED' || raw === 'JEE_ADV') return 'JEE_ADVANCED';
+  if (raw === 'GATE_CS' || raw === 'GATE') return 'GATE_CS';
+  if (raw === 'CAT' || raw.includes('COMMON ADMISSION TEST')) return 'CAT';
+  if (raw === 'CDS' || raw.includes('COMBINED DEFENCE SERVICES')) return 'CDS';
+  if (raw === 'AFCAT') return 'AFCAT';
+  if (raw === 'CAPF') return 'CAPF_AC';
+  if (raw === 'IBPS_PO' || raw === 'IBPS') return 'IBPS_PO';
+  if (raw === 'SBI_PO') return 'SBI_PO';
+  if (raw === 'RRB_NTPC' || raw === 'RRB') return 'RRB_NTPC';
+  if (raw === 'UPPSC_PCS' || raw === 'UPPSC') return 'UPPSC_PCS';
+  if (raw === 'BPSC' || raw.includes('BIHAR PUBLIC SERVICE')) return 'BPSC';
+  if (raw === 'WBCS') return 'WBCS';
+  if (raw === 'CLAT') return 'CLAT_UG';
+
+  // Standardize punctuation to underscores
+  return raw.replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
 };
 
 export interface QuestionRepeatInfo {

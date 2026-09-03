@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
 import { EXAM_LIST } from '../lib/examList';
+import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { AdSenseBanner } from './AdSenseBanner';
 import { DailyStudySummaryCard } from './DailyStudySummaryCard';
 import { CircularPerformanceHub } from './CircularPerformanceMeter';
@@ -73,14 +74,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     ]
   };
 
-  const activeExamTag = selectedExam || userProfile.exam || 'NEET_UG';
+  const activeExamTag = normalizeExamId(selectedExam || userProfile.exam);
 
   // Compute 100% Real Live Telemetry from User's Actual Progress & Storage
   const computeLiveDashboardData = (examTag: string, userId: string): StudentDashboardData => {
     // 1. Calculate Real Days Left for Selected Exam
     const today = new Date();
     const currentYear = today.getFullYear();
-    let targetExamDate = new Date(`${currentYear + 1}-05-03`); // default NEET May
+    let targetExamDate = new Date(`${currentYear + 1}-05-03`); // default
     if (examTag.includes('JEE_MAIN')) targetExamDate = new Date(`${currentYear + 1}-04-06`);
     else if (examTag.includes('JEE_ADV')) targetExamDate = new Date(`${currentYear + 1}-05-24`);
     else if (examTag.includes('UPSC')) targetExamDate = new Date(`${currentYear + 1}-05-25`);
@@ -92,11 +93,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     const diffMs = targetExamDate.getTime() - today.getTime();
     const daysLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-    // 2. Calculate Real Syllabus Topics Completed from LocalStorage
+    // 2. Calculate Real Syllabus Topics Completed from LocalStorage (Scoped by User + Exam)
     let completedTopicsCount = 0;
     try {
-      const progressKey = `aspirantx_subtopic_progress_v3_${userId || 'guest'}`;
-      const rawProgress = localStorage.getItem(progressKey);
+      const progressKey = `aspirantx_subtopic_progress_v3_${userId || 'guest'}_${examTag}`;
+      let rawProgress = localStorage.getItem(progressKey);
+      if (!rawProgress) {
+        rawProgress = localStorage.getItem(`aspirantx_subtopic_progress_v3_${userId || 'guest'}`);
+      }
       if (rawProgress) {
         const parsed = JSON.parse(rawProgress);
         if (Array.isArray(parsed)) completedTopicsCount = parsed.length;
@@ -124,18 +128,26 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     }
     if (todayMinutes === 0) todayMinutes = 45; // baseline active time
 
-    // 4. Calculate Real Accuracy from CBT tests
+    // 4. Calculate Real Accuracy from CBT tests (Scoped by User + Exam)
     let testAccuracy = 78;
     try {
-      const cbtResults = localStorage.getItem('aspirantx_cbt_results_cache');
+      const scopedKey = `aspirantx_cbt_results_cache_${userId || 'guest'}_${examTag}`;
+      const cbtResults = localStorage.getItem(scopedKey) || localStorage.getItem('aspirantx_cbt_results_cache');
       if (cbtResults) {
         const parsedResults = JSON.parse(cbtResults);
         if (Array.isArray(parsedResults) && parsedResults.length > 0) {
-          const totalAcc = parsedResults.reduce((acc: number, r: any) => acc + (r.accuracy || r.accuracyPercentage || 75), 0);
-          testAccuracy = Math.round(totalAcc / parsedResults.length);
+          const matchingTests = parsedResults.filter((r: any) => !r.exam || normalizeExamId(r.exam) === examTag);
+          const testsToEvaluate = matchingTests.length > 0 ? matchingTests : parsedResults;
+          const totalAcc = testsToEvaluate.reduce((acc: number, r: any) => acc + (r.accuracy || r.accuracyPercentage || 75), 0);
+          testAccuracy = Math.round(totalAcc / testsToEvaluate.length);
         }
       }
     } catch {}
+
+    // Derive Dynamic AI Suggestions for the active exam subjects
+    const examCfg = getExamConfig(examTag);
+    const primarySubject = examCfg.subjects?.[0] || 'Core Concepts';
+    const secondarySubject = examCfg.subjects?.[1] || primarySubject;
 
     return {
       todayStudyMinutes: todayMinutes,
@@ -164,8 +176,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         { date: '2026-08-02', hours: 8 },
       ],
       aiSuggestions: [
-        `Focus on high-yield ${examTag.replace(/_/g, ' ')} key topics today.`,
-        'Practice 20 PYQ MCQs to maintain your speed and accuracy momentum.',
+        `Focus on high-yield ${primarySubject} topics today for ${examCfg.displayName}.`,
+        `Practice 20 ${secondarySubject} PYQ MCQs to maintain your speed and accuracy momentum.`,
       ]
     };
   };
@@ -197,11 +209,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       setData(computeLiveDashboardData(activeExamTag, userProfile.id));
     };
 
+    const handleExamChanged = (e: any) => {
+      const newExam = normalizeExamId(e.detail?.examId || activeExamTag);
+      setData(computeLiveDashboardData(newExam, userProfile.id));
+    };
+
     window.addEventListener('aspirantx_streak_updated', handleStreakUpdated);
     window.addEventListener('aspirantx_gamification_updated', handleGamificationUpdated);
     window.addEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdated);
     window.addEventListener('aspirantx_syllabus_time_updated', handleSyllabusUpdated);
     window.addEventListener('aspirantx_local_store_updated', handleStoreUpdated);
+    window.addEventListener('aspirantx_exam_changed', handleExamChanged);
 
     return () => {
       window.removeEventListener('aspirantx_streak_updated', handleStreakUpdated);
@@ -209,6 +227,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       window.removeEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdated);
       window.removeEventListener('aspirantx_syllabus_time_updated', handleSyllabusUpdated);
       window.removeEventListener('aspirantx_local_store_updated', handleStoreUpdated);
+      window.removeEventListener('aspirantx_exam_changed', handleExamChanged);
     };
   }, [activeExamTag, userProfile.id, userProfile.streakDays, userProfile.xp]);
 

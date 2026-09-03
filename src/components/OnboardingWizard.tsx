@@ -105,7 +105,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ user, onComp
 
     setSaving(true);
     try {
-      const chosenExam = getExamLabel();
+      const chosenExam = useCustomExam && customExamName.trim() ? customExamName.trim() : selectedExamId;
+      try {
+        localStorage.setItem('aspirantx_global_selected_exam', chosenExam);
+      } catch (e) {}
 
       const updatedProfile: UserProfile = {
         ...user,

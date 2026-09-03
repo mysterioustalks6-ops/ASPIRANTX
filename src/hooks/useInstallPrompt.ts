@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Capacitor } from '@capacitor/core';
 
 export interface UseInstallPromptReturn {
   showPrompt: boolean;
@@ -20,11 +21,11 @@ export function useInstallPrompt(): UseInstallPromptReturn {
   const [showIOSInstructions, setShowIOSInstructions] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // 1. Detect if the app is already running as an installed PWA (Android / Desktop / iOS)
+  // 1. Detect if the app is already running as an installed PWA or native Capacitor app
   const isStandalone = typeof window !== 'undefined' && (
     window.matchMedia('(display-mode: standalone)').matches || 
     (window.navigator as any).standalone === true ||
-    (window as any).Capacitor?.isNativePlatform?.() === true
+    Capacitor.isNativePlatform()
   );
 
   // 2. Detect the platform using userAgent

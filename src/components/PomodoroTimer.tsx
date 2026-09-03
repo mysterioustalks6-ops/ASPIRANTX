@@ -44,6 +44,8 @@ import { INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK } from '../data/academicDa
 import { fetchOfficialSyllabus, fetchPersonalSyllabus } from '../lib/unifiedSyllabus';
 import { PomodoroHistoryView } from './PomodoroHistoryView';
 import { ForestGardenView } from './ForestGardenView';
+import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
+import { useExam } from '../context/ExamContext';
 
 // --- FOREST MILESTONE TIERS (FEATURE C) ---
 interface ForestTier {
@@ -447,15 +449,33 @@ const EXAM_SUBJECT_CHOICES: { [exam: string]: string[] } = {
   ]
 };
 
-export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, selectedExam = 'NEET_UG' }) => {
-  const currentPredefinedSubjects = EXAM_SUBJECT_CHOICES[selectedExam] || EXAM_SUBJECT_CHOICES['NEET_UG'];
+export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, selectedExam }) => {
+  const { selectedExamId } = useExam();
+  const activeExamId = normalizeExamId(selectedExam || selectedExamId);
+  const examConfig = getExamConfig(activeExamId);
+
+  const currentPredefinedSubjects = useMemo(() => {
+    if (EXAM_SUBJECT_CHOICES[activeExamId]) {
+      return EXAM_SUBJECT_CHOICES[activeExamId];
+    }
+    if (examConfig && Array.isArray(examConfig.subjects) && examConfig.subjects.length > 0) {
+      return examConfig.subjects;
+    }
+    return ['General Studies', 'Core Subject 1', 'Core Subject 2', 'Aptitude & Practice'];
+  }, [activeExamId, examConfig]);
 
   const [activeTab, setActiveTab] = useState<'stopwatch' | 'pomodoro' | 'forest' | 'history'>('pomodoro');
 
   // --- Subject & Topic State ---
   const [customSubjects, setCustomSubjects] = useState<CustomSubject[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<string>(currentPredefinedSubjects[0]);
+  const [selectedSubject, setSelectedSubject] = useState<string>(() => currentPredefinedSubjects[0]);
   const [topicText, setTopicText] = useState<string>('');
+
+  useEffect(() => {
+    if (currentPredefinedSubjects.length > 0 && !currentPredefinedSubjects.includes(selectedSubject)) {
+      setSelectedSubject(currentPredefinedSubjects[0]);
+    }
+  }, [currentPredefinedSubjects, selectedSubject]);
   
   // --- Syllabus Linkage State ---
   const [selectedSyllabusNodeId, setSelectedSyllabusNodeId] = useState<string | null>(null);

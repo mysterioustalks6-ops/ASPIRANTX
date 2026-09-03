@@ -1,7 +1,10 @@
 import { SyllabusTopic, SubTopic, PredictorSettings } from '../types';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { syncWorker } from './syncWorker';
+import { syncAuthoritativeWallpaperToNative } from './nativeWallpaperBridge';
 
-const getProgressKey = (userId?: string) => `aspirantx_subtopic_progress_v3_${userId || 'guest'}`;
+export const getProgressKey = (userId?: string, examId?: string) =>
+  `aspirantx_subtopic_progress_v3_${userId || 'guest'}_${examId || 'ALL'}`;
 const getSettingsKey = (userId?: string) => `aspirantx_predictor_settings_v3_${userId || 'guest'}`;
 
 export const DEFAULT_PREDICTOR_SETTINGS: PredictorSettings = {
@@ -18,16 +21,21 @@ export interface SyncState {
 }
 
 /**
- * Loads checked subtopic IDs from local storage or Supabase
+ * Loads checked subtopic IDs from local storage or Supabase partitioned by user + exam
  */
-export async function loadCompletedSubtopicIds(userId?: string): Promise<Set<string>> {
+export async function loadCompletedSubtopicIds(userId?: string, examId?: string): Promise<Set<string>> {
   try {
     if (isSupabaseConfigured && userId) {
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_syllabus_progress')
         .select('completed_subtopic_ids')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
+
+      if (examId) {
+        query = query.eq('exam_id', examId);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (!error && data?.completed_subtopic_ids && Array.isArray(data.completed_subtopic_ids)) {
         return new Set(data.completed_subtopic_ids);
@@ -35,16 +43,17 @@ export async function loadCompletedSubtopicIds(userId?: string): Promise<Set<str
 
       // Fallback check user metadata in Supabase Auth if table returned null
       const { data: authUser } = await supabase.auth.getUser();
-      if (authUser?.user?.user_metadata?.completed_subtopic_ids && Array.isArray(authUser.user.user_metadata.completed_subtopic_ids)) {
-        return new Set(authUser.user.user_metadata.completed_subtopic_ids);
+      const metaKey = examId ? `completed_subtopic_ids_${examId}` : 'completed_subtopic_ids';
+      if (authUser?.user?.user_metadata?.[metaKey] && Array.isArray(authUser.user.user_metadata[metaKey])) {
+        return new Set(authUser.user.user_metadata[metaKey]);
       }
     }
   } catch (err) {
     console.warn('Supabase fetch progress error, falling back to localStorage:', err);
   }
 
-  // LocalStorage fallback
-  const key = getProgressKey(userId);
+  // LocalStorage partitioned by exam
+  const key = getProgressKey(userId, examId);
   const raw = localStorage.getItem(key);
   if (raw) {
     try {
@@ -61,17 +70,41 @@ export async function loadCompletedSubtopicIds(userId?: string): Promise<Set<str
 }
 
 /**
- * Saves completed subtopic IDs to Supabase and LocalStorage
+ * Fast synchronous reader for locally cached completed subtopics partitioned by user + exam
+ */
+export function getLocalCompletedSubtopicIds(userId?: string, examId?: string): Set<string> {
+  const key = getProgressKey(userId, examId);
+  try {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return new Set(parsed);
+      }
+    }
+  } catch (e) {}
+  return new Set();
+}
+
+/**
+ * Saves completed subtopic IDs to Supabase and LocalStorage partitioned by user + exam
  */
 export async function saveCompletedSubtopicIds(
   completedIds: Set<string>,
-  userId?: string
+  userId?: string,
+  examId?: string
 ): Promise<SyncState> {
   const idsArray = Array.from(completedIds);
 
-  // Always save locally first for instant offline responsiveness
-  const key = getProgressKey(userId);
+  // Always save locally first with user + exam scoping for instant offline responsiveness
+  const key = getProgressKey(userId, examId);
   localStorage.setItem(key, JSON.stringify(idsArray));
+
+  // Durable IndexedDB Queue for batched low-cloud sync
+  syncWorker.enqueueSyllabusProgress(userId || 'guest', examId || 'UPSC_CSE', idsArray).catch(() => {});
+
+  // Update native Android Live Wallpaper with new syllabus completion %
+  syncAuthoritativeWallpaperToNative(userId, examId).catch(() => {});
 
   // If subtopics are completed, trigger streak update on server
   if (completedIds.size > 0) {
@@ -79,7 +112,7 @@ export async function saveCompletedSubtopicIds(
       fetch('/api/user/streak/trigger', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userId || 'guest', activityType: 'syllabus_progress' })
+        body: JSON.stringify({ userId: userId || 'guest', activityType: 'syllabus_progress', examId })
       })
         .then((res) => res.json())
         .then((data) => {
@@ -104,21 +137,24 @@ export async function saveCompletedSubtopicIds(
   }
 
   try {
+    const payload: any = {
+      user_id: userId,
+      completed_subtopic_ids: idsArray,
+      updated_at: new Date().toISOString(),
+    };
+    if (examId) {
+      payload.exam_id = examId;
+    }
+
     const { error } = await supabase
       .from('user_syllabus_progress')
-      .upsert(
-        {
-          user_id: userId,
-          completed_subtopic_ids: idsArray,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id' }
-      );
+      .upsert(payload, { onConflict: examId ? 'user_id,exam_id' : 'user_id' });
 
     if (error) {
-      // If table doesn't exist yet, save to user metadata
+      // If table doesn't have exam_id column or conflict fails, save with user_id or metadata
+      const metaKey = examId ? `completed_subtopic_ids_${examId}` : 'completed_subtopic_ids';
       await supabase.auth.updateUser({
-        data: { completed_subtopic_ids: idsArray },
+        data: { [metaKey]: idsArray },
       });
     }
 
@@ -183,7 +219,7 @@ export function calculatePredictorStats(
   settings: PredictorSettings = DEFAULT_PREDICTOR_SETTINGS,
   exam?: string
 ): PredictorStats {
-  const filteredTopics = exam ? topics.filter((t) => !t.exam || t.exam === exam) : topics;
+  const filteredTopics = exam ? topics.filter((t) => t.exam === exam) : topics;
   let totalSubtopics = 0;
   let completedSubtopics = 0;
 

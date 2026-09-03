@@ -4,8 +4,11 @@ import { getStandardSubject, getExamSubjects } from './PyqEngine';
 import { dedupFetch } from '../lib/apiDeduplicator';
 import { QuestionBankRecord } from '../types';
 import { EXAM_LIST } from '../lib/examList';
+import { normalizeExamId } from '../lib/examRegistry';
+import { useExam } from '../context/ExamContext';
 import { AdSenseBanner } from './AdSenseBanner';
 import { DIAGNOSTIC_QUESTION_BANK } from '../data/diagnosticQuestionBank';
+import { contentPackageManager } from '../lib/contentPackageManager';
 import { 
   HelpCircle, 
   Plus, 
@@ -34,37 +37,33 @@ interface QuestionBankEngineProps {
   initialExam?: string;
 }
 
-const normalizeExamKey = (e: string) => {
-  let s = String(e || '').trim().toLowerCase().replace(/[\s-_]/g, '');
-  if (s.includes('nda') || s.includes('defence') || s.includes('naval')) return 'nda';
-  if (s.includes('neet') || s.includes('medical') || s.includes('eligibilitycum')) return 'neet';
-  if (s.includes('upsc') || s.includes('civil') || s.includes('cse')) return 'upsc';
-  if (s.includes('ssc') || s.includes('cgl') || s.includes('staffselection')) return 'ssc';
-  return s;
-};
+const normalizeExamKey = (e: string) => normalizeExamId(e);
 
 export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({ 
   isAdmin = false, 
   onOpenBulkImport, 
   initialExam 
 }) => {
+  const { selectedExamId } = useExam();
   const [activeEngineTab, setActiveEngineTab] = useState<'browse' | 'quiz' | 'patterns'>('browse');
-  const [selectedExam, setSelectedExam] = useState<string>(initialExam || 'NEET_UG');
+  const [selectedExam, setSelectedExam] = useState<string>(() => normalizeExamId(initialExam || selectedExamId));
   const [loading, setLoading] = useState<boolean>(false);
 
   // Clean initial state (No dataset duplication in React state)
   const [questions, setQuestions] = useState<QuestionBankRecord[]>([]);
 
-  // Update selectedExam whenever initialExam prop changes from parent
+  // Update selectedExam whenever initialExam or selectedExamId changes
   useEffect(() => {
-    if (initialExam && initialExam !== selectedExam) {
-      setSelectedExam(initialExam);
+    const target = normalizeExamId(initialExam || selectedExamId);
+    if (target !== selectedExam) {
+      setSelectedExam(target);
+      setQuestions([]);
       setSelectedSubject('All');
       setTypeFilter('All');
       setSearchQuery('');
       setPage(1);
     }
-  }, [initialExam]);
+  }, [initialExam, selectedExamId, selectedExam]);
 
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [typeFilter, setTypeFilter] = useState<string>('All');
@@ -174,6 +173,29 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
   const fetchQuestions = async () => {
     setLoading(true);
     let loaded = false;
+
+    // 1. Instant Local-First query from IndexedDB (0ms latency, zero cloud traffic)
+    try {
+      const localRes = await contentPackageManager.getLocalQuestions(selectedExam, {
+        subject: selectedSubject,
+        type: typeFilter,
+        searchQuery,
+        page,
+        limit
+      });
+
+      if (localRes.questions.length > 0) {
+        setQuestions(localRes.questions as any);
+        setTotal(localRes.total);
+        setTotalPages(localRes.totalPages);
+        loaded = true;
+        setLoading(false);
+        return;
+      }
+    } catch (localErr) {
+      console.warn('[QuestionBank] Local-first query skipped:', localErr);
+    }
+
     try {
       const typeParam = typeFilter !== 'All' ? `&type=${typeFilter}` : '';
       const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
@@ -273,6 +295,10 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
         setQuestions(fallbackQuestions);
         setTotal(fallbackQuestions.length);
         setTotalPages(Math.max(1, Math.ceil(fallbackQuestions.length / limit)));
+      } else {
+        setQuestions([]);
+        setTotal(0);
+        setTotalPages(1);
       }
     }
     setLoading(false);

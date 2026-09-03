@@ -3,6 +3,7 @@ import { EXAM_LIST } from './examList';
 export interface ExamConfig {
   examId: string;
   displayName: string;
+  name?: string;
   category: 'MEDICAL' | 'ENGINEERING' | 'DEFENCE' | 'CIVIL_SERVICES' | 'SSC_BANKING' | 'LAW' | 'MANAGEMENT' | 'TEACHING' | 'STATE_EXAMS' | 'OTHER';
   stages: string[];
   papers: string[];
@@ -184,16 +185,65 @@ export const EXAM_REGISTRY: Record<string, ExamConfig> = {
   }
 };
 
-import { getCustomExamConfig } from './customExamStore';
+import { getCustomExamConfig, getCustomExamsFromStorage } from './customExamStore';
+
+/**
+ * Normalizes any exam identifier, label, or alias into the canonical EXAM_LIST ID.
+ * Returns a stable, canonical uppercase ID (e.g. 'UPSC_CSE', 'SSC_CGL', 'NEET_UG', 'NDA_NA').
+ */
+export function normalizeExamId(raw?: string | null): string {
+  if (!raw || typeof raw !== 'string') return 'UPSC_CSE';
+  const trimmed = raw.trim();
+  if (!trimmed) return 'UPSC_CSE';
+
+  // 1. Exact match in EXAM_LIST by ID
+  const exactId = EXAM_LIST.find((e) => e.id.toLowerCase() === trimmed.toLowerCase());
+  if (exactId) return exactId.id;
+
+  // 2. Match by label in EXAM_LIST
+  const exactLabel = EXAM_LIST.find((e) => e.label.toLowerCase() === trimmed.toLowerCase());
+  if (exactLabel) return exactLabel.id;
+
+  // 3. Match in custom exams
+  try {
+    const customExams = getCustomExamsFromStorage();
+    const customMatch = customExams.find(
+      (c) => c.id.toLowerCase() === trimmed.toLowerCase() || c.label.toLowerCase() === trimmed.toLowerCase()
+    );
+    if (customMatch) return customMatch.id;
+  } catch (e) {}
+
+  // 4. Common canonical patterns
+  const s = trimmed.toLowerCase();
+  if (s.includes('upsc') || s.includes('civil service') || s.includes('ias')) return 'UPSC_CSE';
+  if (s.includes('neet') || s.includes('national eligibility')) return 'NEET_UG';
+  if (s.includes('ssc cgl') || s.includes('combined graduate level')) return 'SSC_CGL';
+  if (s.includes('ssc chsl')) return 'SSC_CHSL';
+  if (s.includes('nda') || s.includes('naval academy') || s.includes('national defence academy')) return 'NDA_NA';
+  if (s.includes('cds') || s.includes('combined defence')) return 'CDS';
+  if (s.includes('rrb ntpc')) return 'RRB_NTPC';
+  if (s.includes('uppsc') || s.includes('up pcs')) return 'UPPSC_PCS';
+  if (s.includes('bpsc')) return 'BPSC';
+  if (s.includes('mppsc')) return 'MPPSC';
+  if (s.includes('ibps po')) return 'IBPS_PO';
+  if (s.includes('sbi po')) return 'SBI_PO';
+
+  // 5. Look for partial match in EXAM_LIST
+  const partial = EXAM_LIST.find((e) => s.includes(e.id.toLowerCase()) || e.label.toLowerCase().includes(s));
+  if (partial) return partial.id;
+
+  // 6. Clean uppercase fallback
+  return trimmed.toUpperCase().replace(/[-\s]/g, '_');
+}
 
 export const getExamConfig = (examId: string): ExamConfig => {
-  const normId = (examId || '').toUpperCase();
+  const normId = normalizeExamId(examId);
   if (EXAM_REGISTRY[normId]) {
     return EXAM_REGISTRY[normId];
   }
 
   // Check if exam is a user-created Custom Exam
-  const customConfig = getCustomExamConfig(examId);
+  const customConfig = getCustomExamConfig(examId) || getCustomExamConfig(normId);
   if (customConfig) {
     return customConfig;
   }

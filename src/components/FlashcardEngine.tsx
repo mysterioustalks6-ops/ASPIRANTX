@@ -15,6 +15,7 @@ import {
   Layers
 } from 'lucide-react';
 import { EXAM_LIST } from '../lib/examList';
+import { normalizeExamId } from '../lib/examRegistry';
 
 export interface Flashcard {
   id: string;
@@ -152,19 +153,9 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
     return {};
   });
 
-  // Helper for resilient exam key matching
-  const normalizeExamKey = (e: string) => {
-    let s = String(e || '').trim().toLowerCase().replace(/[\s-_]/g, '');
-    if (s.includes('nda') || s.includes('defence')) return 'nda';
-    if (s.includes('neet') || s.includes('medical')) return 'neet';
-    if (s.includes('upsc') || s.includes('civil') || s.includes('cse')) return 'upsc';
-    if (s.includes('ssc') || s.includes('cgl') || s.includes('staffselection')) return 'ssc';
-    return s;
-  };
-
-  // Filter cards by normalized exam ID with fallback
-  const matchedCards = cards.filter(c => c.exam === 'ALL' || normalizeExamKey(c.exam) === normalizeExamKey(selectedExam));
-  const examCards = matchedCards.length > 0 ? matchedCards : cards;
+  // Filter cards strictly for normalized active exam or universal cards
+  const normActive = normalizeExamId(selectedExam);
+  const examCards = cards.filter(c => c.exam === 'ALL' || normalizeExamId(c.exam) === normActive);
   const filteredCards = examCards.filter(c => selectedCategory === 'ALL' || c.category === selectedCategory);
 
   // Reset index when exam or category changes

@@ -5,6 +5,8 @@
  * and batch-syncing lightweight JSON packets to the backend.
  */
 
+import { syncWorker } from './syncWorker';
+
 export interface StudyTelemetryPacket {
   id: string;
   userId: string;
@@ -57,16 +59,16 @@ export function getLocalDeviceStore(userId: string = 'guest', examId: string = '
     console.warn('Failed to parse local device study store:', err);
   }
 
-  // Default initial store
+  // Default initial store with zero unearned progress
   const todayKey = new Date().toISOString().split('T')[0];
   const initialStore: LocalDeviceStudyStore = {
     userId,
     activeExam: examId,
     examDate: getDefaultExamDate(examId),
-    completedBoxKeys: [todayKey],
-    todayStudyMinutes: 120,
-    streakDays: 1,
-    lastActiveDate: todayKey,
+    completedBoxKeys: [],
+    todayStudyMinutes: 0,
+    streakDays: 0,
+    lastActiveDate: '',
     pendingSyncPackets: [],
     lastSyncedAt: Date.now(),
   };
@@ -127,6 +129,9 @@ export function markDailyBoxCompleted(
   store.completedBoxKeys = newKeys;
   store.pendingSyncPackets.push(packet);
   saveLocalDeviceStore(store);
+
+  // Enqueue in IndexedDB durable syncWorker
+  syncWorker.enqueueTelemetry(userId, examId, dateKey, 30, true).catch(() => {});
 
   // Trigger background batch sync if online
   queueBackgroundPacketSync(store);

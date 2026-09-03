@@ -463,6 +463,63 @@ export const INITIAL_CBT_TESTS: CbtTest[] = [
         explanation: 'Sound waves in gases and air travel through compressions and rarefactions as longitudinal waves.'
       }
     ]
+  },
+  {
+    id: 'jee_main_cbt_mock_01',
+    title: 'JEE Main 2026 All India Full Syllabus Grand Mock Test (Session-1)',
+    exam: 'JEE_MAIN',
+    durationMinutes: 180,
+    totalMarks: 300,
+    sections: [
+      { name: 'Physics', durationMinutes: 60, totalQuestions: 3 },
+      { name: 'Chemistry', durationMinutes: 60, totalQuestions: 3 },
+      { name: 'Mathematics', durationMinutes: 60, totalQuestions: 3 }
+    ],
+    markingScheme: { correct: 4.0, incorrect: 1.0 },
+    questions: [
+      {
+        id: 'q_jee_1',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'A particle of mass m moves under a central conservative force field with potential energy V(r) = -k / r. The radius of the circular orbit with angular momentum L is:',
+        options: ['L² / (m k)', 'm k / L²', 'L / (m k)', 'L² / (2 m k)'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Rotational & Central Dynamics',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'For circular orbit in central field: m v² / r = dV/dr = k / r². Since L = m v r, v = L / (m r). Substituting gives r = L² / (m k).'
+      },
+      {
+        id: 'q_jee_2',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'Which of the following coordination compounds exhibits optical isomerism?',
+        options: ['[Co(NH3)4Cl2]+', 'cis-[Co(en)2Cl2]+', 'trans-[Co(en)2Cl2]+', '[Pt(NH3)2Cl2]'],
+        correctOption: 1,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Coordination Chemistry',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'cis-[Co(en)2Cl2]+ is chiral and lacks a plane of symmetry, thereby displaying non-superimposable mirror images (optical isomerism).'
+      },
+      {
+        id: 'q_jee_3',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'The value of the definite integral ∫[0 to π/2] (sin³(x) / (sin³(x) + cos³(x))) dx is equal to:',
+        options: ['π / 2', 'π / 4', 'π / 3', '0'],
+        correctOption: 1,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Definite Integration',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'By King\'s property ∫[0 to a] f(x)dx = ∫[0 to a] f(a-x)dx, 2I = ∫[0 to π/2] 1 dx = π/2 => I = π/4.'
+      }
+    ]
   }
 ];
 

@@ -3,7 +3,6 @@
 
     <application
         android:allowBackup="true"
-        android:usesCleartextTraffic="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -28,7 +27,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.aspirantx.app" android:host="*" />
+                <data android:scheme="com.aspirantx.app" />
             </intent-filter>
 
         </activity>
@@ -42,9 +41,23 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <service
+            android:name=".AspirantXWallpaperService"
+            android:label="@string/wallpaper_name"
+            android:description="@string/wallpaper_description"
+            android:permission="android.permission.BIND_WALLPAPER"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/wallpaper" />
+        </service>
     </application>
 
-    <!-- Permissions -->
-
+    <!-- Features & Permissions -->
+    <uses-feature android:name="android.software.live_wallpaper" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
 </manifest>
