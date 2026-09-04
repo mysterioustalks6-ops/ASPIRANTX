@@ -86,7 +86,21 @@ export function buildCanonicalWallpaperState(
   }
 
   const activePersona = getAuthoritativePersona(persona);
-  const resolvedName = candidateName && candidateName.trim() ? candidateName.trim() : 'Dedicated Aspirant';
+  let resolvedName = candidateName && candidateName.trim() ? candidateName.trim() : null;
+  if (!resolvedName) {
+    try {
+      const storedUser = localStorage.getItem('aspirantx_user_profile') || localStorage.getItem('aspirantx_user');
+      if (storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.name && typeof parsed.name === 'string' && parsed.name.trim()) {
+          resolvedName = parsed.name.trim();
+        }
+      }
+    } catch {}
+  }
+  if (!resolvedName) {
+    resolvedName = 'Dedicated Aspirant';
+  }
 
   return {
     candidateName: resolvedName,

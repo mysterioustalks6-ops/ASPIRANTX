@@ -54,6 +54,7 @@ public class AspirantXWallpaperService extends WallpaperService {
 
     private class AspirantXEngine extends Engine {
         private boolean mVisible = false;
+        private boolean mPendingUpdate = false;
         private BroadcastReceiver mInternalReceiver;
         private BroadcastReceiver mSystemReceiver;
         private SharedPreferences mPrefs;
@@ -80,6 +81,9 @@ public class AspirantXWallpaperService extends WallpaperService {
                     Log.i(TAG, "Received ACTION_UPDATE_WALLPAPER broadcast, mVisible=" + mVisible);
                     if (mVisible) {
                         drawFrame();
+                        mPendingUpdate = false;
+                    } else {
+                        mPendingUpdate = true;
                     }
                 }
             };
@@ -130,9 +134,10 @@ public class AspirantXWallpaperService extends WallpaperService {
         @Override
         public void onVisibilityChanged(boolean visible) {
             mVisible = visible;
-            Log.i(TAG, "AspirantXEngine.onVisibilityChanged: visible=" + visible);
+            Log.i(TAG, "AspirantXEngine.onVisibilityChanged: visible=" + visible + ", pendingUpdate=" + mPendingUpdate);
             if (visible) {
                 drawFrame();
+                mPendingUpdate = false;
             }
         }
 
