@@ -22,8 +22,11 @@ import {
   Mail,
   User as UserIcon,
   X,
-  Loader2
+  Loader2,
+  Download,
+  Smartphone
 } from 'lucide-react';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 interface LandingPageProps {
   onLoginSuccess: (user: UserProfile) => void;
@@ -224,23 +227,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <a
+            id="landing-download-app-btn"
+            href={CANONICAL_APP_RELEASE.apkDownloadUrl}
+            download={CANONICAL_APP_RELEASE.apkFileName}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm"
+            title={`Download AspirantX Android App (.APK v${CANONICAL_APP_RELEASE.version})`}
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline">Download App</span>
+            <span className="sm:hidden">App</span>
+            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-black">v{CANONICAL_APP_RELEASE.version}</span>
+          </a>
+
           <button
             id="landing-guest-demo-btn"
             onClick={handleGuestLogin}
-            className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-bold text-xs transition-all duration-200"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 font-bold text-xs transition-all duration-200"
           >
-            Explore Demo
+            <span className="hidden sm:inline">Explore Demo</span>
+            <span className="sm:hidden">Demo</span>
           </button>
           
           <button
             id="landing-signin-btn"
             onClick={() => { setShowEmailModal(true); setAuthError(null); setAuthSuccess(null); }}
             disabled={loading}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20 transition-all duration-200"
+            className="px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-cyan-500/20 transition-all duration-200"
           >
-            <UserIcon className="w-4 h-4" />
-            Sign In / Register
+            <UserIcon className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Sign In / Register</span>
+            <span className="sm:hidden">Sign In</span>
           </button>
         </div>
       </header>

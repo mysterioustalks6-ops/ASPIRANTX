@@ -1092,41 +1092,81 @@ router.get('/api/academic/pyqs', async (req, res) => {
 
     if (supabaseServer) {
       try {
+        // 1. Primary: Query pyq_bank with flat columns
         let query = supabaseServer
-          .from('pyqs')
-          .select('id, data', { count: 'exact' });
+          .from('pyq_bank')
+          .select('*', { count: 'exact' });
 
         if (exam) {
           const cleanExam = exam.replace(/_/g, '%');
-          query = query.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
+          query = query.or(`exam.ilike.%${exam}%,exam.ilike.%${cleanExam}%`);
         }
-        if (stage) {
-          query = query.eq('data->>stage', stage);
+        if (subject && subject !== 'All') {
+          query = query.ilike('subject', `%${subject}%`);
+        }
+        if (topic && topic !== 'All') {
+          query = query.ilike('topic', `%${topic}%`);
         }
         if (difficulty && difficulty !== 'All') {
-          query = query.eq('data->>difficulty', difficulty);
-        }
-        if (language && language !== 'All') {
-          query = query.ilike('data->>language', language);
+          query = query.eq('difficulty', difficulty);
         }
         if (minYear) {
-          query = query.gte('data->>year', minYear);
+          query = query.gte('year', minYear);
         }
         if (maxYear) {
-          query = query.lte('data->>year', maxYear);
+          query = query.lte('year', maxYear);
+        }
+        if (search) {
+          query = query.or(`questionText.ilike.%${search}%,topic.ilike.%${search}%`);
         }
 
         const offset = (pageNum - 1) * pageLimit;
         query = query.range(offset, offset + pageLimit - 1);
 
         const { data: dbData, count: dbCount, error: dbErr } = await query;
-        if (!dbErr && Array.isArray(dbData)) {
+        if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
           fetchedFromDb = true;
           total = dbCount || dbData.length;
           items = dbData.map(normalizePyqItem).filter(Boolean);
+        } else {
+          // 2. Secondary fallback: Query pyqs table with JSONB data column
+          let jsonbQuery = supabaseServer
+            .from('pyqs')
+            .select('id, data', { count: 'exact' });
+
+          if (exam) {
+            const cleanExam = exam.replace(/_/g, '%');
+            jsonbQuery = jsonbQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
+          }
+          if (stage) {
+            jsonbQuery = jsonbQuery.eq('data->>stage', stage);
+          }
+          if (difficulty && difficulty !== 'All') {
+            jsonbQuery = jsonbQuery.eq('data->>difficulty', difficulty);
+          }
+          if (language && language !== 'All') {
+            jsonbQuery = jsonbQuery.ilike('data->>language', language);
+          }
+          if (minYear) {
+            jsonbQuery = jsonbQuery.gte('data->>year', minYear);
+          }
+          if (maxYear) {
+            jsonbQuery = jsonbQuery.lte('data->>year', maxYear);
+          }
+          jsonbQuery = jsonbQuery.range(offset, offset + pageLimit - 1);
+
+          const { data: jData, count: jCount, error: jErr } = await jsonbQuery;
+          if (!jErr && Array.isArray(jData) && jData.length > 0) {
+            fetchedFromDb = true;
+            total = jCount || jData.length;
+            items = jData.map(normalizePyqItem).filter(Boolean);
+          }
         }
-      } catch (e) {
-        // Fallback to in-memory store if DB query fails
+        if (dbErr) {
+          console.warn('[ACADEMIC DB NOTICE] pyq_bank query returned notice:', dbErr.message);
+        }
+      } catch (e: any) {
+        console.error('[ACADEMIC DB ERROR] /api/academic/pyqs:', e?.message || e);
       }
     }
 
@@ -1671,19 +1711,32 @@ router.get('/api/academic/questions', async (req, res) => {
 
     if (supabaseServer) {
       try {
+        // 1. Primary: Query question_bank with flat columns
         let query = supabaseServer
-          .from('pyqs')
-          .select('id, data', { count: 'exact' });
+          .from('question_bank')
+          .select('*', { count: 'exact' });
 
         if (exam) {
           const cleanExam = exam.replace(/_/g, '%');
-          query = query.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
+          query = query.or(`exam.ilike.%${exam}%,exam.ilike.%${cleanExam}%`);
+        }
+        if (subject && subject !== 'All') {
+          query = query.ilike('subject', `%${subject}%`);
+        }
+        if (topic && topic !== 'All') {
+          query = query.ilike('topic', `%${topic}%`);
+        }
+        if (type && type !== 'All') {
+          query = query.eq('type', type);
+        }
+        if (status && status !== 'All') {
+          query = query.eq('status', status);
         }
         if (difficulty && difficulty !== 'All') {
-          query = query.eq('data->>difficulty', difficulty);
+          query = query.eq('difficulty', difficulty);
         }
-        if (language && language !== 'All') {
-          query = query.ilike('data->>language', language);
+        if (search) {
+          query = query.or(`questionText.ilike.%${search}%,topic.ilike.%${search}%`);
         }
 
         const offset = (pageNum - 1) * pageLimit;
@@ -1694,9 +1747,36 @@ router.get('/api/academic/questions', async (req, res) => {
           fetchedFromDb = true;
           total = dbCount || dbData.length;
           items = dbData.map(normalizeQuestionItem).filter(Boolean);
+        } else {
+          // 2. Secondary fallback: Query pyqs table with JSONB data column
+          let pyqQuery = supabaseServer
+            .from('pyqs')
+            .select('id, data', { count: 'exact' });
+
+          if (exam) {
+            const cleanExam = exam.replace(/_/g, '%');
+            pyqQuery = pyqQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
+          }
+          if (difficulty && difficulty !== 'All') {
+            pyqQuery = pyqQuery.eq('data->>difficulty', difficulty);
+          }
+          if (language && language !== 'All') {
+            pyqQuery = pyqQuery.ilike('data->>language', language);
+          }
+          pyqQuery = pyqQuery.range(offset, offset + pageLimit - 1);
+
+          const { data: pData, count: pCount, error: pErr } = await pyqQuery;
+          if (!pErr && Array.isArray(pData) && pData.length > 0) {
+            fetchedFromDb = true;
+            total = pCount || pData.length;
+            items = pData.map(normalizeQuestionItem).filter(Boolean);
+          }
         }
-      } catch (e) {
-        // Fallback to in-memory store if DB query fails
+        if (dbErr) {
+          console.warn('[ACADEMIC DB NOTICE] question_bank query notice:', dbErr.message);
+        }
+      } catch (e: any) {
+        console.error('[ACADEMIC DB ERROR] /api/academic/questions:', e?.message || e);
       }
     }
 
@@ -1769,9 +1849,15 @@ router.get('/api/academic/questions/:id', async (req, res) => {
       return res.json({ success: true, question: questionBankStore.get(id) });
     }
     if (supabaseServer) {
-      const { data, error } = await supabaseServer.from('question_bank').select('id, data').eq('id', id).single();
+      const { data, error } = await supabaseServer.from('question_bank').select('*').eq('id', id).maybeSingle();
       if (!error && data) {
         const item = normalizeQuestionItem(data);
+        return res.json({ success: true, question: item });
+      }
+      // Fallback check pyqs table
+      const { data: pyqData, error: pyqErr } = await supabaseServer.from('pyqs').select('id, data').eq('id', id).maybeSingle();
+      if (!pyqErr && pyqData) {
+        const item = normalizeQuestionItem(pyqData);
         return res.json({ success: true, question: item });
       }
     }

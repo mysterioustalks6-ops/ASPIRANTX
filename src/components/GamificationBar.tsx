@@ -127,17 +127,6 @@ export const GamificationBar: React.FC<GamificationBarProps> = ({
 
         {/* Coins & Premium Redemption & Referral Section */}
         <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
-          {/* Direct Install App Button */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('trigger_app_download_modal'))}
-            className="px-2 sm:px-2.5 py-1 rounded-lg sm:rounded-xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 border border-indigo-500/40 text-indigo-300 font-extrabold text-[10px] sm:text-[11px] flex items-center gap-1 transition-all shadow-sm shrink-0 active:scale-95 cursor-pointer"
-            title="Download / Install Mobile App"
-          >
-            <Sparkles className="w-3 h-3 text-indigo-400" />
-            <span className="hidden sm:inline">📱 Install App</span>
-            <span className="sm:hidden">📱 App</span>
-          </button>
-
           {/* Refer & Earn Quick Button */}
           {onOpenReferralModal && (
             <button

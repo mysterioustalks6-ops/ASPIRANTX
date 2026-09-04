@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Smartphone, Download, Globe, X, Share, PlusSquare, Sparkles, ShieldCheck, Zap } from 'lucide-react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 export const AppDownloadModal: React.FC = () => {
   const {
@@ -86,8 +87,8 @@ export const AppDownloadModal: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-2.5">
                 {/* Direct Android APK Download Button */}
                 <a
-                  href="/aspirantx.apk"
-                  download="AspirantX.apk"
+                  href={CANONICAL_APP_RELEASE.apkDownloadUrl}
+                  download={CANONICAL_APP_RELEASE.apkFileName}
                   onClick={handleDismiss}
                   className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer active:scale-95 text-center"
                 >

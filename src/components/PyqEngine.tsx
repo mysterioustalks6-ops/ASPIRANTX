@@ -217,7 +217,41 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
     setLoading(true);
     let loadedFromApi = false;
 
-    // 1. Instant Local-First query from IndexedDB (0ms latency, zero cloud traffic)
+    // 1. When online, query canonical Backend API first for complete question database
+    const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
+    if (isOnline) {
+      try {
+        const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
+        const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
+        const topicParam = selectedTopic !== 'All' ? `&topic=${encodeURIComponent(selectedTopic)}` : '';
+        const yearParam = selectedSpecificYear !== 'All' ? `&minYear=${selectedSpecificYear}&maxYear=${selectedSpecificYear}` : '';
+        const diffParam = difficultyFilter !== 'All' ? `&difficulty=${difficultyFilter}` : '';
+        const repeatParam = repeatFilter !== 'All' ? `&repeatFilter=${repeatFilter}&minRepeats=${minRepeats}&minYears=${minYears}` : '';
+
+        const url = `/api/academic/pyqs?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
+          searchQuery
+        )}${langParam}${subjParam}${topicParam}${yearParam}${diffParam}${repeatParam}`;
+
+        const res = await dedupFetch(url, signal ? { signal } : undefined);
+        if (res.ok) {
+          const data = await res.json();
+          if ((!signal || !signal.aborted) && data.success && Array.isArray(data.pyqs)) {
+            setPyqs(data.pyqs);
+            setTotal(data.total !== undefined ? data.total : 0);
+            setTotalPages(data.totalPages || 1);
+            loadedFromApi = true;
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          console.warn('Backend API unreachable, trying local and direct Supabase fallback:', e?.message || e);
+        }
+      }
+    }
+
+    // 2. Local-First query from IndexedDB (offline or API fallback)
     try {
       const localRes = await contentPackageManager.getLocalPyqs(selectedExam, {
         subject: selectedSubject,
@@ -235,63 +269,31 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         return;
       }
     } catch (localErr) {
-      console.warn('[PyqEngine] Local-first query skipped:', localErr);
+      console.warn('[PyqEngine] Local query skipped:', localErr);
     }
 
-    try {
-      const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
-      const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
-      const topicParam = selectedTopic !== 'All' ? `&topic=${encodeURIComponent(selectedTopic)}` : '';
-      const yearParam = selectedSpecificYear !== 'All' ? `&minYear=${selectedSpecificYear}&maxYear=${selectedSpecificYear}` : '';
-      const diffParam = difficultyFilter !== 'All' ? `&difficulty=${difficultyFilter}` : '';
-      const repeatParam = repeatFilter !== 'All' ? `&repeatFilter=${repeatFilter}&minRepeats=${minRepeats}&minYears=${minYears}` : '';
-
-      const url = `/api/academic/pyqs?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
-        searchQuery
-      )}${langParam}${subjParam}${topicParam}${yearParam}${diffParam}${repeatParam}`;
-
-      const res = await dedupFetch(url, signal ? { signal } : undefined);
-      if (res.ok) {
-        const data = await res.json();
-        if ((!signal || !signal.aborted) && data.success && Array.isArray(data.pyqs) && data.pyqs.length > 0) {
-          setPyqs(data.pyqs);
-          setTotal(data.total || 0);
-          setTotalPages(data.totalPages || 1);
-          loadedFromApi = true;
-        }
-      }
-    } catch (e: any) {
-      if (e.name !== 'AbortError') {
-        console.warn('Backend API unreachable, trying direct Supabase fallback:', e.message);
-      }
-    }
-
-    // Direct Supabase Fallback: 100% Reliable in Native APK even without Node.js backend
+    // 3. Direct Supabase Fallback for standalone native APK
     if (!loadedFromApi && (!signal || !signal.aborted)) {
       try {
         const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
         if (isSupabaseConfigured) {
-          let query = supabase
-            .from('pyqs')
-            .select('id, data', { count: 'exact' });
+          // Primary: Query pyq_bank (flat columns)
+          let query = supabase.from('pyq_bank').select('*', { count: 'exact' });
 
           if (selectedExam) {
             const cleanExam = selectedExam.replace(/_/g, '%');
-            query = query.or(`data->>exam.ilike.%${selectedExam}%,data->>exam.ilike.%${cleanExam}%`);
-          }
-          if (stageFilter && stageFilter !== 'All') {
-            query = query.eq('data->>stage', stageFilter);
+            query = query.or(`exam.ilike.%${selectedExam}%,exam.ilike.%${cleanExam}%`);
           }
           if (difficultyFilter && difficultyFilter !== 'All') {
-            query = query.eq('data->>difficulty', difficultyFilter);
+            query = query.eq('difficulty', difficultyFilter);
           }
-          if (languageFilter && languageFilter !== 'All') {
-            query = query.ilike('data->>language', languageFilter);
+          if (selectedSubject !== 'All') {
+            query = query.ilike('subject', `%${selectedSubject}%`);
           }
           if (selectedSpecificYear !== 'All') {
-            query = query.eq('data->>year', Number(selectedSpecificYear));
+            query = query.eq('year', Number(selectedSpecificYear));
           } else {
-            query = query.gte('data->>year', minYear).lte('data->>year', maxYear);
+            query = query.gte('year', minYear).lte('year', maxYear);
           }
 
           const offset = (page - 1) * limit;
@@ -299,28 +301,27 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
           const { data: dbData, count: dbCount, error: dbErr } = await query;
           if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
-            const mappedPyqs = dbData.map((row: any) => {
-              const d = row.data || row;
-              return {
-                id: row.id || d.id,
-                exam: d.exam || selectedExam,
-                year: d.year || 2024,
-                stage: d.stage || 'Prelims',
-                paper: d.paper || 'Paper 1',
-                subject: d.subject || 'General',
-                topic: d.topic || 'General Topic',
-                questionText: d.questionText || d.question_text || '',
-                options: Array.isArray(d.options) ? d.options : ['Option A', 'Option B', 'Option C', 'Option D'],
-                correctOption: typeof d.correctOption === 'number' ? d.correctOption : (d.correct_option || 0),
-                explanation: d.explanation || 'Detailed solution verified.',
-                difficulty: d.difficulty || 'Medium',
-                language: d.language || 'English',
-              };
-            });
+            const mappedPyqs = dbData.map((d: any) => ({
+              id: d.id,
+              exam: d.exam || selectedExam,
+              year: d.year || 2024,
+              stage: d.stage || 'Prelims',
+              paper: d.paper || 'Paper 1',
+              subject: d.subject || 'General',
+              topic: d.topic || 'General Topic',
+              questionText: d.questionText || d.question_text || '',
+              options: Array.isArray(d.options) ? d.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+              correctOption: typeof d.correctOption === 'number' ? d.correctOption : (d.correct_option || 0),
+              explanation: d.explanation || 'Detailed solution verified.',
+              difficulty: d.difficulty || 'Medium',
+              language: d.language || 'English',
+            }));
             setPyqs(mappedPyqs);
             setTotal(dbCount || mappedPyqs.length);
             setTotalPages(Math.max(1, Math.ceil((dbCount || mappedPyqs.length) / limit)));
             loadedFromApi = true;
+            setLoading(false);
+            return;
           }
         }
       } catch (sbDirectErr) {

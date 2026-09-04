@@ -174,7 +174,37 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
     setLoading(true);
     let loaded = false;
 
-    // 1. Instant Local-First query from IndexedDB (0ms latency, zero cloud traffic)
+    // 1. When online, query canonical Backend API first for complete question database
+    const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
+    if (isOnline) {
+      try {
+        const typeParam = typeFilter !== 'All' ? `&type=${typeFilter}` : '';
+        const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
+        const statusParam = statusFilter !== 'All' ? `&status=${statusFilter}` : '';
+        const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
+
+        const url = `/api/academic/questions?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
+          searchQuery
+        )}${subjParam}${typeParam}${statusParam}${langParam}`;
+
+        const res = await dedupFetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.questions)) {
+            setQuestions(data.questions);
+            setTotal(data.total !== undefined ? data.total : data.questions.length);
+            setTotalPages(data.totalPages || 1);
+            loaded = true;
+            setLoading(false);
+            return;
+          }
+        }
+      } catch (e: any) {
+        console.warn('Backend API unreachable, checking local and direct Supabase fallback:', e?.message || e);
+      }
+    }
+
+    // 2. Local-First query from IndexedDB (offline or API fallback)
     try {
       const localRes = await contentPackageManager.getLocalQuestions(selectedExam, {
         subject: selectedSubject,
@@ -193,74 +223,48 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
         return;
       }
     } catch (localErr) {
-      console.warn('[QuestionBank] Local-first query skipped:', localErr);
+      console.warn('[QuestionBank] Local query skipped:', localErr);
     }
 
-    try {
-      const typeParam = typeFilter !== 'All' ? `&type=${typeFilter}` : '';
-      const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
-      const statusParam = statusFilter !== 'All' ? `&status=${statusFilter}` : '';
-      const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
-
-      const url = `/api/academic/questions?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
-        searchQuery
-      )}${subjParam}${typeParam}${statusParam}${langParam}`;
-
-      const res = await dedupFetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && Array.isArray(data.questions) && data.questions.length > 0) {
-          setQuestions(data.questions);
-          setTotal(data.total || data.questions.length);
-          setTotalPages(data.totalPages || 1);
-          loaded = true;
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Backend API unreachable, checking direct Supabase question store...');
-    }
-
-    // Direct Supabase Fallback for native APK
+    // 3. Direct Supabase Fallback for standalone native APK
     if (!loaded) {
       try {
         const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
         if (isSupabaseConfigured) {
-          let query = supabase.from('pyqs').select('id, data', { count: 'exact' });
+          // Query question_bank (flat columns) first
+          let query = supabase.from('question_bank').select('*', { count: 'exact' });
           if (selectedExam) {
             const cleanExam = selectedExam.replace(/_/g, '%');
-            query = query.or(`data->>exam.ilike.%${selectedExam}%,data->>exam.ilike.%${cleanExam}%`);
+            query = query.or(`exam.ilike.%${selectedExam}%,exam.ilike.%${cleanExam}%`);
           }
           if (selectedSubject !== 'All') {
-            query = query.ilike('data->>subject', `%${selectedSubject}%`);
+            query = query.ilike('subject', `%${selectedSubject}%`);
           }
           const offset = (page - 1) * limit;
           query = query.range(offset, offset + limit - 1);
           const { data: dbData, count: dbCount, error: dbErr } = await query;
           if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
-            const mapped = dbData.map((row: any) => {
-              const d = row.data || row;
-              return {
-                id: row.id || d.id,
-                exam: d.exam || selectedExam,
-                subject: d.subject || 'General',
-                topic: d.topic || 'General Topic',
-                questionText: d.questionText || d.question_text || '',
-                type: 'mcq' as const,
-                options: Array.isArray(d.options) ? d.options : ['Option A', 'Option B', 'Option C', 'Option D'],
-                correctOption: typeof d.correctOption === 'number' ? d.correctOption : 0,
-                solutionText: d.explanation || 'Detailed solution verified.',
-                difficulty: d.difficulty || 'Medium',
-                status: 'published' as const,
-                language: d.language || 'English',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              };
-            });
+            const mapped = dbData.map((d: any) => ({
+              id: d.id,
+              exam: d.exam || selectedExam,
+              subject: d.subject || 'General',
+              topic: d.topic || 'General Topic',
+              questionText: d.questionText || d.question_text || '',
+              type: (d.type || 'mcq') as any,
+              options: Array.isArray(d.options) ? d.options : ['Option A', 'Option B', 'Option C', 'Option D'],
+              correctOption: typeof d.correctOption === 'number' ? d.correctOption : 0,
+              solutionText: d.explanation || d.solutionText || 'Detailed solution verified.',
+              difficulty: d.difficulty || 'Medium',
+              status: (d.status || 'published') as any,
+              language: d.language || 'English',
+              createdAt: d.createdAt || new Date().toISOString(),
+              updatedAt: d.updatedAt || new Date().toISOString(),
+            }));
             setQuestions(mapped);
             setTotal(dbCount || mapped.length);
             setTotalPages(Math.max(1, Math.ceil((dbCount || mapped.length) / limit)));
             loaded = true;
+            setLoading(false);
             return;
           }
         }

@@ -54,9 +54,10 @@ export const aiRateLimiter = rateLimit({
 
 export const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 
-export const rawServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
+const rawCandidateSecret = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '';
+export const rawServiceKey = rawCandidateSecret && rawCandidateSecret !== 'your-secret-key' ? rawCandidateSecret : '';
 
-export const SUPABASE_KEY = rawServiceKey || process.env.VITE_SUPABASE_ANON_KEY || '';
+export const SUPABASE_KEY = rawServiceKey || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!rawServiceKey || (process.env.VITE_SUPABASE_ANON_KEY && rawServiceKey === process.env.VITE_SUPABASE_ANON_KEY)) {
   console.error('CRITICAL: Service role key (SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY) is missing or equals the anon key! Admin settings will not persist. Set the real service_role key in deployment env vars.');
