@@ -27,8 +27,11 @@ import {
   ChevronRight,
   User,
   GraduationCap,
-  Smartphone
+  Smartphone,
+  Download
 } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { AppCustomizerSettings } from '../lib/customizer';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
 import { loadWorkspaceConfig, ALL_WORKSPACE_FEATURES } from '../lib/workspacePreferences';
@@ -326,6 +329,24 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
               {/* Workspace Personalization & Logout Buttons */}
               <div className="pt-2 border-t border-slate-800/80 space-y-2">
+
+                {/* Download Android APK Button (for Web Users) */}
+                {!Capacitor.isNativePlatform() && (
+                  <div>
+                    <a
+                      href={CANONICAL_APP_RELEASE.apkDownloadUrl}
+                      download={CANONICAL_APP_RELEASE.apkFileName}
+                      onClick={onClose}
+                      className="w-full min-h-[44px] px-3 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 text-center cursor-pointer"
+                    >
+                      <Download className="w-4 h-4 shrink-0" />
+                      <span>Download Android App (.APK v{CANONICAL_APP_RELEASE.version})</span>
+                    </a>
+                    <p className="text-[10px] text-slate-400 text-center mt-1 px-1">
+                      Tap downloaded file → Allow installation from this source if prompted.
+                    </p>
+                  </div>
+                )}
 
                 {onOpenWorkspaceCustomizer && (
                   <button

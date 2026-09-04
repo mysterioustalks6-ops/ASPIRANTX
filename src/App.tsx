@@ -40,6 +40,7 @@ import { OnboardingTour } from './components/OnboardingTour';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileDrawer } from './components/MobileDrawer';
 import { ReminderSettingsModal } from './components/ReminderSettingsModal';
+import { AppDownloadModal } from './components/AppDownloadModal';
 import { ExamWallpaperWidget } from './components/ExamWallpaperWidget';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
@@ -1793,6 +1794,9 @@ function AppContent() {
         setActiveTab={handleSelectTab}
         onOpenMore={() => setIsMobileDrawerOpen(true)}
       />
+
+      {/* Optional App Download vs Web Continuation Modal for Web Users */}
+      <AppDownloadModal />
     </div>
       </SecurityWrapper>
     </ErrorBoundary>
