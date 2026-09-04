@@ -234,7 +234,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           isCollapsed ? 'justify-center px-2' : 'justify-between px-3'
         } py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group relative ${
           isActive
-            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+            ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
             : isAdmin
             ? 'text-rose-400 hover:bg-rose-500/10 hover:text-rose-300'
             : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/80'
@@ -275,7 +275,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isCollapsed ? (
           <div className="flex flex-col items-center gap-2 pb-3 border-b border-slate-800/80">
             <div
-              onClick={handleLogoSecretClick}
               onDoubleClick={handleLogoSecretClick}
               title={`${customizer?.brandName || 'ASPIRANTX'} - Double-tap logo for secret Admin Mode`}
               className="cursor-pointer select-none group"
@@ -287,7 +286,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-sm group-hover:scale-105 transition-transform" 
                 />
               ) : (
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-indigo-600/20 group-hover:scale-105 transition-transform shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-sky-600/25 group-hover:scale-105 transition-transform shrink-0">
                   {customizer?.logoIconText || 'AX'}
                 </div>
               )}
@@ -296,7 +295,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {onOpenWorkspaceCustomizer && (
               <button
                 onClick={onOpenWorkspaceCustomizer}
-                className="p-1.5 rounded-lg bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-400 hover:text-indigo-200 transition-colors"
+                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/60 text-slate-300 hover:text-white transition-colors"
                 title="Customize Workspace Features & Layout"
                 aria-label="Customize Workspace"
               >
@@ -316,7 +315,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           <div className="flex items-center justify-between pb-4 border-b border-slate-800/80 px-1">
             <div
-              onClick={handleLogoSecretClick}
               onDoubleClick={handleLogoSecretClick}
               title="Double-tap logo for secret Admin Mode"
               className="flex items-center gap-3 cursor-pointer select-none group flex-1 min-w-0"
@@ -328,7 +326,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-sm group-hover:scale-105 transition-transform shrink-0" 
                 />
               ) : (
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-indigo-600/20 group-hover:scale-105 transition-transform shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-sky-600/25 group-hover:scale-105 transition-transform shrink-0">
                   {customizer?.logoIconText || 'AX'}
                 </div>
               )}
@@ -337,7 +335,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <h1 className="font-bold text-slate-100 tracking-wide text-sm truncate">
                     {customizer?.brandName || 'ASPIRANTX'}
                   </h1>
-                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-md uppercase shrink-0">
+                  <span className="px-1.5 py-0.5 text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-md uppercase shrink-0">
                     {customizer?.brandBadge || 'PRO'}
                   </span>
                 </div>
@@ -351,7 +349,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {onOpenWorkspaceCustomizer && (
                 <button
                   onClick={onOpenWorkspaceCustomizer}
-                  className="p-2 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-400 hover:text-indigo-200 transition-colors shrink-0 shadow-sm"
+                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/60 text-slate-300 hover:text-white transition-colors shrink-0 shadow-sm"
                   title="Personalize My Workspace (Drag & Drop, Rename & Select Features)"
                 >
                   <Sliders className="w-3.5 h-3.5" />
@@ -385,7 +383,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-card space-y-2">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                <Target className="w-3.5 h-3.5 text-indigo-400" /> Target Exam
+                <Target className="w-3.5 h-3.5 text-sky-400" /> Target Exam
               </span>
               <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
                 <Flame className="w-3 h-3 text-amber-400 fill-amber-400/30" />
@@ -417,7 +415,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {getCustomExamsFromStorage().length > 0 && (
                     <optgroup label="My Custom Exams">
                       {getCustomExamsFromStorage().map((ce) => (
-                        <option key={ce.id} value={ce.id} className="bg-slate-900 text-indigo-300 font-semibold">
+                        <option key={ce.id} value={ce.id} className="bg-slate-900 text-sky-300 font-semibold">
                           ✨ {ce.label}
                         </option>
                       ))}
@@ -430,7 +428,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
               <button
                 onClick={onOpenProfileModal}
-                className="text-[10px] text-indigo-400 hover:text-indigo-300 font-semibold px-1.5 py-0.5 rounded transition-colors shrink-0 ml-1"
+                className="text-[10px] text-sky-400 hover:text-sky-300 font-semibold px-1.5 py-0.5 rounded transition-colors shrink-0 ml-1"
               >
                 Edit
               </button>
@@ -464,7 +462,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="space-y-1.5 pt-1">
             <div className="flex items-center justify-between px-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Sliders className="w-3 h-3 text-indigo-400" />
+                <Sliders className="w-3 h-3 text-sky-400" />
                 My Workspace
               </span>
               {onOpenWorkspaceCustomizer && (
@@ -473,7 +471,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     dismissCustomizeHint();
                     onOpenWorkspaceCustomizer();
                   }}
-                  className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold transition-colors flex items-center gap-1"
+                  className="text-[10px] text-sky-400 hover:text-sky-300 font-bold transition-colors flex items-center gap-1"
                   title="Add, remove or reorder tools"
                 >
                   <span>Customize</span>
@@ -494,15 +492,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     dismissCustomizeHint();
                     if (onOpenWorkspaceCustomizer) onOpenWorkspaceCustomizer();
                   }}
-                  className="relative z-20 p-2.5 rounded-xl bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 border border-indigo-500/50 shadow-lg shadow-indigo-950/60 flex items-center justify-between gap-2 cursor-pointer group hover:border-indigo-400 transition-all"
+                  className="relative z-20 p-2.5 rounded-xl bg-gradient-to-r from-sky-950/60 via-slate-900 to-sky-950/60 border border-sky-500/40 shadow-lg shadow-sky-950/50 flex items-center justify-between gap-2 cursor-pointer group hover:border-sky-400 transition-all"
                   title="Click to customize workspace"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="relative flex h-2.5 w-2.5 shrink-0">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
                     </span>
-                    <p className="text-[11px] font-semibold text-indigo-200 group-hover:text-white leading-tight">
+                    <p className="text-[11px] font-semibold text-sky-200 group-hover:text-white leading-tight">
                       Tap here to add or remove tools anytime
                     </p>
                   </div>
@@ -762,7 +760,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 text-xs font-semibold text-slate-300 hover:text-white transition-all group"
             >
               <div className="flex items-center gap-2 truncate">
-                <Plus className="w-3.5 h-3.5 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
+                <Plus className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
                 <span className="truncate">Add More Features</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
@@ -792,7 +790,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       title={meta.shortDescription}
                     >
                       <div className="flex items-center gap-2 truncate">
-                        <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-400 shrink-0" />
+                        <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-400 shrink-0" />
                         <span className="text-xs text-slate-300 group-hover:text-white truncate font-medium">
                           {meta.defaultLabel}
                         </span>
@@ -800,7 +798,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                       <button
                         onClick={(e) => handleQuickAddFeature(e, pref.featureId)}
-                        className="px-2 py-0.5 rounded bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 text-[10px] font-bold flex items-center gap-1 transition-colors shrink-0"
+                        className="px-2 py-0.5 rounded bg-sky-600/20 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/30 text-[10px] font-bold flex items-center gap-1 transition-colors shrink-0"
                         title="Add this feature to active workspace"
                       >
                         <Plus className="w-2.5 h-2.5" />
@@ -813,7 +811,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {onOpenWorkspaceCustomizer && (
                   <button
                     onClick={onOpenWorkspaceCustomizer}
-                    className="w-full text-center py-1.5 text-[11px] text-indigo-400 hover:text-indigo-300 font-bold transition-colors"
+                    className="w-full text-center py-1.5 text-[11px] text-sky-400 hover:text-sky-300 font-bold transition-colors"
                   >
                     Open Full Customizer →
                   </button>
@@ -844,7 +842,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <img
                   src={user.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                   alt={user.name}
-                  className="w-8 h-8 rounded-full object-cover border border-slate-700 group-hover:border-indigo-500 transition-colors"
+                  className="w-8 h-8 rounded-full object-cover border border-slate-700 group-hover:border-sky-500 transition-colors"
                 />
               </div>
               <button
@@ -866,10 +864,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <img
                   src={user.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                   alt={user.name}
-                  className="w-8 h-8 rounded-full object-cover border border-slate-700 group-hover:border-indigo-500 transition-colors shrink-0"
+                  className="w-8 h-8 rounded-full object-cover border border-slate-700 group-hover:border-sky-500 transition-colors shrink-0"
                 />
                 <div className="truncate min-w-0">
-                  <p className="text-xs font-semibold text-slate-200 group-hover:text-indigo-300 transition-colors truncate">{user.name}</p>
+                  <p className="text-xs font-semibold text-slate-200 group-hover:text-sky-300 transition-colors truncate">{user.name}</p>
                   <p className="text-[10px] text-slate-400 truncate">My Account Settings</p>
                 </div>
               </div>

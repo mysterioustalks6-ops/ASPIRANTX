@@ -33,8 +33,10 @@ import { WALLPAPER_PERSONAS, WallpaperPersona } from '../lib/wallpaperPersonas';
 import { 
   requestSetLiveWallpaper, 
   checkIsLiveWallpaperActive, 
-  syncAuthoritativeWallpaperToNative 
+  syncAuthoritativeWallpaperToNative,
+  addWallpaperResumeListener
 } from '../lib/nativeWallpaperBridge';
+import { Capacitor } from '@capacitor/core';
 
 interface ExamWallpaperWidgetProps {
   user: UserProfile;
@@ -56,14 +58,6 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
     getAuthoritativeWallpaperTelemetry(user.id, activeExam, userTargetDate)
   );
 
-  const [hasPermission, setHasPermission] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('aspirantx_wallpaper_permission') === 'granted';
-    } catch {
-      return false;
-    }
-  });
-
   const [selectedPersona, setSelectedPersona] = useState<WallpaperPersona>(() => {
     try {
       const saved = localStorage.getItem('aspirantx_wallpaper_persona_id');
@@ -79,6 +73,49 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
   const [showPersonaSelector, setShowPersonaSelector] = useState<boolean>(false);
   const [showLiveCompanionModal, setShowLiveCompanionModal] = useState<boolean>(false);
 
+  // Authoritative State Machine derived strictly from Android OS / WallpaperManager
+  const [wallpaperStatus, setWallpaperStatus] = useState<
+    'NOT_SUPPORTED' | 'READY' | 'PREVIEW_OPENED' | 'ACTIVE' | 'INACTIVE' | 'REPLACED'
+  >(() => {
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+      return 'NOT_SUPPORTED';
+    }
+    return 'READY';
+  });
+
+  const [isSettingLive, setIsSettingLive] = useState<boolean>(false);
+
+  // Authoritative re-verification against Android WallpaperManager
+  const verifyActiveStatus = useCallback(async () => {
+    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+      setWallpaperStatus('NOT_SUPPORTED');
+      return;
+    }
+    try {
+      const res = await checkIsLiveWallpaperActive();
+      if (res.isActive) {
+        setWallpaperStatus('ACTIVE');
+      } else {
+        setWallpaperStatus(prev => (prev === 'ACTIVE' || prev === 'PREVIEW_OPENED') ? 'INACTIVE' : 'READY');
+      }
+    } catch {
+      setWallpaperStatus('READY');
+    }
+  }, []);
+
+  useEffect(() => {
+    verifyActiveStatus();
+
+    // Register real lifecycle resume listener so returning from Android settings/preview re-checks state
+    const unsubscribe = addWallpaperResumeListener(() => {
+      verifyActiveStatus();
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [verifyActiveStatus, activeExam]);
+
   // Refresh authoritative telemetry whenever activeExam, user, or storage events trigger
   const refreshTelemetry = useCallback(() => {
     const updated = getAuthoritativeWallpaperTelemetry(user.id, activeExam, userTargetDate);
@@ -91,7 +128,10 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
 
   // Reactive listeners for external syllabus progress, timer sessions, CBT tests, streak changes
   useEffect(() => {
-    const handleProgressChange = () => refreshTelemetry();
+    const handleProgressChange = () => {
+      refreshTelemetry();
+      syncAuthoritativeWallpaperToNative(user.id, activeExam, selectedPersona, user.name).catch(() => {});
+    };
 
     window.addEventListener('aspirantx_exam_changed', handleProgressChange);
     window.addEventListener('aspirantx_subtopic_progress_updated', handleProgressChange);
@@ -108,33 +148,30 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
       window.removeEventListener('aspirantx_cbt_results_updated', handleProgressChange);
       window.removeEventListener('aspirantx_local_store_updated', handleProgressChange);
     };
-  }, [refreshTelemetry]);
+  }, [refreshTelemetry, user.id, activeExam, selectedPersona, user.name]);
 
   const handleSelectPersona = (p: WallpaperPersona) => {
     setSelectedPersona(p);
     try {
       localStorage.setItem('aspirantx_wallpaper_persona_id', p.id);
     } catch {}
+
+    // Immediately push new theme and quote to native Android live wallpaper
+    syncAuthoritativeWallpaperToNative(user.id, activeExam, p, user.name).catch(() => {});
   };
 
   const todayStr = getISTDateString(new Date());
   const todayBox = telemetry.dateBoxes.find(b => b.isToday);
   const isTodayCompleted = todayBox?.isCompleted || false;
 
-  const [isLiveActive, setIsLiveActive] = useState<boolean>(false);
-  const [isSettingLive, setIsSettingLive] = useState<boolean>(false);
-
-  useEffect(() => {
-    checkIsLiveWallpaperActive().then(setIsLiveActive).catch(() => {});
-  }, [activeExam]);
-
   const handleSetLiveWallpaper = async () => {
     setIsSettingLive(true);
+    setWallpaperStatus('PREVIEW_OPENED');
     try {
-      await requestSetLiveWallpaper(user.id, activeExam);
-      setTimeout(() => {
-        checkIsLiveWallpaperActive().then(setIsLiveActive).catch(() => {});
-      }, 1500);
+      await requestSetLiveWallpaper(user.id, activeExam, selectedPersona, user.name);
+    } catch (err) {
+      console.error('Failed to open wallpaper preview:', err);
+      verifyActiveStatus();
     } finally {
       setIsSettingLive(false);
     }
@@ -147,7 +184,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
     refreshTelemetry();
 
     // Push updated telemetry to Native Live Wallpaper immediately (0 network calls)
-    syncAuthoritativeWallpaperToNative(user.id, activeExam).catch(() => {});
+    syncAuthoritativeWallpaperToNative(user.id, activeExam, selectedPersona, user.name).catch(() => {});
 
     // Award XP
     await awardXPAndCoins(25, 5, 'Daily Box Completed', user.id);
@@ -158,13 +195,6 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
         detail: { streakDays: telemetry.currentStreak + 1 },
       })
     );
-  };
-
-  const handleGrantPermission = () => {
-    try {
-      localStorage.setItem('aspirantx_wallpaper_permission', 'granted');
-      setHasPermission(true);
-    } catch {}
   };
 
   // ── Universal Rounded Rect Canvas Helper ────────────────────────────────────
@@ -214,204 +244,252 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
       ctx.fillRect(0, 0, 1080, 2400);
 
       // 2. Ambient Aura Glow Circle
-      const radialGlow = ctx.createRadialGradient(540, 480, 40, 540, 480, 600);
+      const radialGlow = ctx.createRadialGradient(540, 420, 40, 540, 420, 600);
       radialGlow.addColorStop(0, selectedPersona.glowColor);
       radialGlow.addColorStop(0.6, 'rgba(0, 0, 0, 0.05)');
       radialGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = radialGlow;
       ctx.fillRect(0, 0, 1080, 1000);
 
-      // 3. Top System / Persona Badge
-      ctx.fillStyle = selectedPersona.accentColor;
-      ctx.font = 'bold 28px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`⚡ ${selectedPersona.characterTitle.toUpperCase()} ⚡`, 540, 190);
+      // Launcher-Safe Layout Geometry (W: 1080, H: 2400)
+      const margin = 1080 * 0.055; // 59.4px
+      const contentWidth = 1080 - (margin * 2); // 961.2px
+      let currentY = 2400 * 0.138; // 331px (clears status bar & at-a-glance date/weather)
+      const itemGap = 2400 * 0.008; // 19.2px
 
-      // 4. Candidate Name & Target Exam Name
+      // 3. Top Persona Eyebrow / System Badge
+      ctx.fillStyle = selectedPersona.accentColor;
+      ctx.font = 'bold 29px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`⚡  ${selectedPersona.characterTitle.toUpperCase()}  ⚡`, margin, currentY);
+      currentY += 1080 * 0.046;
+
+      // 4. Candidate Name
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 60px sans-serif';
-      ctx.fillText(user.name || 'Dedicated Aspirant', 540, 265);
+      ctx.font = 'bold 56px sans-serif';
+      ctx.fillText(user.name || 'Dedicated Aspirant', margin, currentY);
+      currentY += 1080 * 0.042;
 
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = 'bold 36px sans-serif';
-      const cleanExamTitle = telemetry.examName || activeExam.replace(/_/g, ' ');
-      ctx.fillText(cleanExamTitle, 540, 320);
-
-      // 5. Hero Days Remaining Pill
-      ctx.fillStyle = '#0f172a';
-      drawRoundRect(ctx, 280, 355, 520, 80, 40);
-      ctx.fill();
-      ctx.strokeStyle = selectedPersona.accentColor;
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      ctx.fillStyle = selectedPersona.accentColor;
-      ctx.font = 'bold 36px sans-serif';
-      if (telemetry.schedule.hasDate && telemetry.schedule.daysRemaining !== null) {
-        ctx.fillText(`${telemetry.schedule.daysRemaining} DAYS REMAINING`, 540, 408);
-      } else {
-        ctx.fillText(`EXAM: SCHEDULE PENDING`, 540, 408);
-      }
-
-      // Date subtitle below pill
+      // 5. Target Exam & Date
       ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText(telemetry.schedule.formattedDate, 540, 470);
+      ctx.font = '500 31px sans-serif';
+      const cleanExamTitle = telemetry.examName || activeExam.replace(/_/g, ' ');
+      const combinedExamDate = `${cleanExamTitle} • ${telemetry.schedule.formattedDate}`;
+      ctx.fillText(combinedExamDate, margin, currentY);
+      currentY += 1080 * 0.038 + itemGap;
 
-      // 6. Two High-Yield Metric Cards (Syllabus % + Real Streak)
-      // Left Card: Syllabus %
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-      drawRoundRect(ctx, 80, 505, 430, 150, 24);
+      // 6. Hero Countdown Pill Banner
+      const pillHeight = 1080 * 0.092; // 99px
+      const pillGrad = ctx.createLinearGradient(margin, currentY, margin + contentWidth, currentY + pillHeight);
+      pillGrad.addColorStop(0, '#4f46e5');
+      pillGrad.addColorStop(1, selectedPersona.accentColor);
+      ctx.fillStyle = pillGrad;
+      drawRoundRect(ctx, margin, currentY, contentWidth, pillHeight, pillHeight / 2);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 45px sans-serif';
+      ctx.textAlign = 'center';
+      const countdownText = (telemetry.schedule.hasDate && telemetry.schedule.daysRemaining !== null)
+        ? `${telemetry.schedule.daysRemaining} DAYS REMAINING`
+        : 'EXAM: SCHEDULE PENDING';
+      ctx.fillText(countdownText, 540, currentY + (pillHeight * 0.63));
+      currentY += pillHeight + itemGap + 7;
+
+      // 7. Two High-Yield Metric Cards (Syllabus % + Real Streak)
+      const cardGap = 1080 * 0.030; // 32.4px
+      const cardWidth = (contentWidth - cardGap) / 2; // 464.4px
+      const cardHeight = 1080 * 0.170; // 183.6px
+
+      // Left Card: Syllabus Progress
+      ctx.fillStyle = '#0f172a';
+      drawRoundRect(ctx, margin, currentY, cardWidth, cardHeight, 20);
+      ctx.fill();
+      ctx.strokeStyle = '#1e293b';
       ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 22px sans-serif';
+      ctx.font = 'bold 24px sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('SYLLABUS PROGRESS', 110, 545);
+      ctx.fillText('SYLLABUS PROGRESS', margin + (cardWidth * 0.09), currentY + (cardHeight * 0.32));
 
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 44px sans-serif';
-      ctx.fillText(`${telemetry.syllabusPercentage}%`, 110, 600);
+      ctx.fillStyle = selectedPersona.accentColor;
+      ctx.font = 'bold 50px sans-serif';
+      ctx.fillText(`${telemetry.syllabusPercentage}%`, margin + (cardWidth * 0.09), currentY + (cardHeight * 0.64));
 
       // Mini Progress bar
+      const barMargin = cardWidth * 0.09;
+      const barHeight = 1080 * 0.015;
+      const barY = currentY + cardHeight - (cardHeight * 0.22);
       ctx.fillStyle = '#1e293b';
-      drawRoundRect(ctx, 110, 620, 370, 16, 8);
+      drawRoundRect(ctx, margin + barMargin, barY, cardWidth - (barMargin * 2), barHeight, barHeight / 2);
       ctx.fill();
 
-      ctx.fillStyle = '#38bdf8';
-      const progWidth = Math.max(16, (370 * telemetry.syllabusPercentage) / 100);
-      drawRoundRect(ctx, 110, 620, progWidth, 16, 8);
+      ctx.fillStyle = selectedPersona.accentColor;
+      const progFillWidth = Math.max(barHeight, ((cardWidth - (barMargin * 2)) * telemetry.syllabusPercentage) / 100);
+      drawRoundRect(ctx, margin + barMargin, barY, progFillWidth, barHeight, barHeight / 2);
       ctx.fill();
 
-      // Right Card: Verified Streak
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-      drawRoundRect(ctx, 570, 505, 430, 150, 24);
+      // Right Card: Active Streak
+      const rightCardX = margin + cardWidth + cardGap;
+      ctx.fillStyle = '#0f172a';
+      drawRoundRect(ctx, rightCardX, currentY, cardWidth, cardHeight, 20);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.strokeStyle = '#1e293b';
       ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.fillStyle = '#94a3b8';
-      ctx.font = 'bold 22px sans-serif';
-      ctx.fillText('ACTIVE STREAK', 600, 545);
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('ACTIVE STREAK', rightCardX + (cardWidth * 0.09), currentY + (cardHeight * 0.32));
 
       ctx.fillStyle = '#f59e0b';
-      ctx.font = 'bold 44px sans-serif';
-      ctx.fillText(`${telemetry.currentStreak} DAYS 🔥`, 600, 600);
+      ctx.font = 'bold 50px sans-serif';
+      ctx.fillText(`${telemetry.currentStreak} Days`, rightCardX + (cardWidth * 0.09), currentY + (cardHeight * 0.64));
 
-      ctx.fillStyle = '#64748b';
-      ctx.font = 'bold 18px sans-serif';
-      ctx.fillText(`${telemetry.totalCompletedDays} verified study days logged`, 600, 634);
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 22px sans-serif';
+      ctx.fillText(`${telemetry.totalCompletedDays} Days Verified`, rightCardX + (cardWidth * 0.09), currentY + cardHeight - (cardHeight * 0.18));
 
-      // 7. Motivational Character Quote Banner
-      ctx.textAlign = 'center';
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
-      drawRoundRect(ctx, 80, 685, 920, 75, 20);
+      currentY += cardHeight + itemGap;
+
+      // 8. Motivational Character Quote Card
+      const quoteHeight = 1080 * 0.092; // 99px
+      ctx.fillStyle = '#0a0f1d';
+      drawRoundRect(ctx, margin, currentY, contentWidth, quoteHeight, 20);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.strokeStyle = '#1e293b';
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
+      // Decorative quote marks
+      ctx.fillStyle = '#334155';
+      ctx.font = 'bold 64px serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('“', margin + 35, currentY + (quoteHeight * 0.72));
+      ctx.textAlign = 'right';
+      ctx.fillText('”', margin + contentWidth - 35, currentY + quoteHeight - (quoteHeight * 0.15));
+
+      // Centered Quote Text
       ctx.fillStyle = '#f1f5f9';
-      ctx.font = 'italic bold 24px sans-serif';
-      ctx.fillText(`"${selectedPersona.characterQuote}"`, 540, 732);
+      ctx.font = 'italic bold 26px sans-serif';
+      ctx.textAlign = 'center';
+      const quoteDisplay = selectedPersona.characterQuote.length > 55
+        ? selectedPersona.characterQuote.substring(0, 52) + '...'
+        : selectedPersona.characterQuote;
+      ctx.fillText(`"${quoteDisplay}"`, 540, currentY + (quoteHeight * 0.58));
 
-      // 8. Daily Study Habit Calendar Grid (4 rows x 7 cols = 28 days)
-      ctx.fillStyle = '#cbd5e1';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText('DAILY STUDY HABIT CALENDAR • REAL VERIFIED ACTIVITY', 540, 800);
+      currentY += quoteHeight + itemGap;
 
+      // 9. Daily Study Habit Calendar Card (28-Day Circular Matrix with Page Dots)
       const cols = 7;
-      const boxSize = 105;
-      const gapX = 22;
-      const gapY = 22;
-      const gridWidth = cols * boxSize + (cols - 1) * gapX;
-      const startX = (1080 - gridWidth) / 2;
-      const startY = 835;
+      const rows = 4;
+      const circleSize = 1080 * 0.056;
+      const gridInnerWidth = contentWidth - (1080 * 0.07);
+      const gapX = (gridInnerWidth - (cols * circleSize)) / (cols - 1);
+      const gapY = 1080 * 0.012;
+      const gridHeight = (rows * circleSize) + ((rows - 1) * gapY);
+
+      const cardPaddingTop = 1080 * 0.026;
+      const headerHeight = 1080 * 0.046;
+      const pageDotsHeight = 1080 * 0.030;
+      const cardPaddingBottom = 1080 * 0.018;
+      const totalCardHeight = cardPaddingTop + headerHeight + gridHeight + pageDotsHeight + cardPaddingBottom;
+
+      ctx.fillStyle = '#0a0f1d';
+      drawRoundRect(ctx, margin, currentY, contentWidth, totalCardHeight, 26);
+      ctx.fill();
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Card Header
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('DAILY STUDY HABIT CALENDAR (28 DAYS)', margin + (1080 * 0.038), currentY + cardPaddingTop + (1080 * 0.024));
+
+      const gridStartX = margin + (1080 * 0.035);
+      const gridStartY = currentY + cardPaddingTop + headerHeight;
 
       telemetry.dateBoxes.slice(0, 28).forEach((box, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        const x = startX + col * (boxSize + gapX);
-        const y = startY + row * (boxSize + gapY);
+        const c = i % cols;
+        const r = Math.floor(i / cols);
+        const cx = gridStartX + (c * (circleSize + gapX)) + (circleSize / 2);
+        const cy = gridStartY + (r * (circleSize + gapY)) + (circleSize / 2);
+        const radius = circleSize / 2;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
 
         if (box.isCompleted) {
-          // Completed Study Day: Glowing accent box with green check
-          ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
-          drawRoundRect(ctx, x, y, boxSize, boxSize, 18);
-          ctx.fill();
-          ctx.strokeStyle = '#10b981';
-          ctx.lineWidth = 3;
-          ctx.stroke();
-
-          // Date number top left
-          ctx.fillStyle = '#a7f3d0';
-          ctx.font = 'bold 20px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(box.dayNumber, x + boxSize / 2, y + 36);
-
-          // Big bold checkmark
           ctx.fillStyle = '#10b981';
-          ctx.font = 'bold 44px sans-serif';
-          ctx.fillText('✓', x + boxSize / 2, y + 84);
-        } else if (box.isToday) {
-          // Today (active, awaiting completion or active)
-          ctx.fillStyle = '#4f46e5';
-          drawRoundRect(ctx, x, y, boxSize, boxSize, 18);
           ctx.fill();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 4;
+
+          ctx.fillStyle = '#022c22';
+          ctx.font = 'bold 24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(String(box.dayNumber), cx, cy - (circleSize * 0.06));
+
+          ctx.font = 'bold 20px sans-serif';
+          ctx.fillText('✓', cx, cy + (circleSize * 0.28));
+        } else if (box.isToday) {
+          ctx.fillStyle = '#1e1b4b';
+          ctx.fill();
+          ctx.strokeStyle = selectedPersona.accentColor;
+          ctx.lineWidth = 2.5;
           ctx.stroke();
 
           ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 22px sans-serif';
+          ctx.font = 'bold 25px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(box.dayNumber, x + boxSize / 2, y + 42);
-
-          ctx.font = 'bold 26px sans-serif';
-          ctx.fillText('NOW', x + boxSize / 2, y + 80);
+          ctx.fillText(String(box.dayNumber), cx, cy + (circleSize * 0.12));
         } else if (box.isMissed) {
-          // Missed Past Day: Dark subtle box with day number, NO check
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
-          drawRoundRect(ctx, x, y, boxSize, boxSize, 18);
+          ctx.fillStyle = '#0f172a';
           ctx.fill();
-          ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          ctx.fillStyle = '#64748b';
-          ctx.font = 'bold 22px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(box.dayNumber, x + boxSize / 2, y + 48);
-
-          ctx.font = 'bold 16px sans-serif';
-          ctx.fillStyle = '#ef4444';
-          ctx.fillText('—', x + boxSize / 2, y + 78);
-        } else {
-          // Future Scheduled Day
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
-          drawRoundRect(ctx, x, y, boxSize, boxSize, 18);
-          ctx.fill();
-          ctx.strokeStyle = 'rgba(51, 65, 85, 0.6)';
-          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 1.5;
           ctx.stroke();
 
           ctx.fillStyle = '#475569';
           ctx.font = 'bold 24px sans-serif';
           ctx.textAlign = 'center';
-          ctx.fillText(box.dayNumber, x + boxSize / 2, y + 62);
+          ctx.fillText('—', cx, cy + (circleSize * 0.10));
+        } else {
+          ctx.fillStyle = '#0f172a';
+          ctx.fill();
+          ctx.strokeStyle = '#1e293b';
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          ctx.fillStyle = '#475569';
+          ctx.font = 'bold 22px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(String(box.dayNumber), cx, cy + (circleSize * 0.12));
         }
       });
 
-      // 9. Bottom Footer & Live Timestamp
-      ctx.fillStyle = '#475569';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.textAlign = 'center';
-      const istFormatted = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-      ctx.fillText(`ASPIRANTX DYNAMIC SYSTEM • SYNCED ${istFormatted.toUpperCase()}`, 540, 2260);
+      // 3 Minimalist Page Indicator Dots
+      const dotsY = gridStartY + gridHeight + (1080 * 0.024);
+      const dotRadius = 1080 * 0.007;
+      const dotGap = 1080 * 0.024;
+
+      // Left dot
+      ctx.beginPath();
+      ctx.arc(540 - dotGap, dotsY, dotRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#334155';
+      ctx.fill();
+      // Center active dot
+      ctx.beginPath();
+      ctx.arc(540, dotsY, dotRadius * 1.2, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      // Right dot
+      ctx.beginPath();
+      ctx.arc(540 + dotGap, dotsY, dotRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#334155';
+      ctx.fill();
 
       const dataUrl = canvas.toDataURL('image/png');
       const filename = `AspirantX_${activeExam}_${selectedPersona.id}_Wallpaper.png`;
@@ -518,27 +596,62 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
             <span>Live Companion</span>
           </button>
 
-          {/* REAL Android Live Wallpaper Button */}
-          <button
-            onClick={handleSetLiveWallpaper}
-            disabled={isSettingLive}
-            id="btn-set-live-wallpaper"
-            className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-bold text-xs shadow-lg transition-all cursor-pointer ${
-              isLiveActive
-                ? 'bg-emerald-700/80 hover:bg-emerald-600 text-white border border-emerald-500/50 shadow-emerald-700/30'
-                : 'bg-gradient-to-r from-cyan-600 via-indigo-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white shadow-cyan-600/30 animate-pulse'
-            }`}
-            title="Set real auto-updating Android home/lockscreen live wallpaper"
-          >
-            {isSettingLive ? (
-              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : isLiveActive ? (
-              <Check className="w-3.5 h-3.5 text-emerald-300" />
-            ) : (
-              <Smartphone className="w-3.5 h-3.5 text-cyan-200" />
-            )}
-            <span>{isLiveActive ? 'Live Wallpaper Active' : 'Set as Live Wallpaper'}</span>
-          </button>
+          {/* REAL Android Live Wallpaper Button Group */}
+          {wallpaperStatus === 'ACTIVE' ? (
+            <div className="flex items-center gap-1.5 bg-emerald-950/70 p-1 rounded-xl border border-emerald-500/50">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-300">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Wallpaper Active</span>
+              </span>
+              <button
+                onClick={handleSetLiveWallpaper}
+                disabled={isSettingLive}
+                id="btn-manage-live-wallpaper"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+                title="Change theme or reconfigure live wallpaper"
+              >
+                <span>Manage Wallpaper</span>
+              </button>
+            </div>
+          ) : wallpaperStatus === 'PREVIEW_OPENED' ? (
+            <button
+              disabled
+              id="btn-set-live-wallpaper"
+              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-indigo-900/60 text-indigo-300 border border-indigo-500/40 font-bold text-xs"
+            >
+              <div className="w-3.5 h-3.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+              <span>Confirm in Android Preview...</span>
+            </button>
+          ) : wallpaperStatus === 'REPLACED' || wallpaperStatus === 'INACTIVE' ? (
+            <button
+              onClick={handleSetLiveWallpaper}
+              disabled={isSettingLive}
+              id="btn-set-live-wallpaper"
+              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-600/30 transition-all cursor-pointer"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Re-activate Live Wallpaper</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleSetLiveWallpaper}
+              disabled={isSettingLive || wallpaperStatus === 'NOT_SUPPORTED'}
+              id="btn-set-live-wallpaper"
+              className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-bold text-xs shadow-lg transition-all cursor-pointer ${
+                wallpaperStatus === 'NOT_SUPPORTED'
+                  ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-cyan-600 via-indigo-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white shadow-cyan-600/30'
+              }`}
+              title={wallpaperStatus === 'NOT_SUPPORTED' ? 'Live wallpaper is a native Android feature. Export HD PNG below.' : 'Set real auto-updating Android home/lockscreen live wallpaper'}
+            >
+              {isSettingLive ? (
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Smartphone className="w-3.5 h-3.5 text-cyan-200" />
+              )}
+              <span>{wallpaperStatus === 'NOT_SUPPORTED' ? 'Android Live Feature' : 'Set as Live Wallpaper'}</span>
+            </button>
+          )}
 
           {/* Generate HD Static Wallpaper */}
           <button
@@ -667,19 +780,11 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Permission banner */}
-      {!hasPermission && (
-        <div className="relative z-10 p-3 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-center justify-between gap-3 text-xs text-slate-300">
-          <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="text-[11px] sm:text-xs">Dynamic lockscreen wallpaper syncs with your real daily habit activity.</span>
-          </div>
-          <button
-            onClick={handleGrantPermission}
-            className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shrink-0 cursor-pointer"
-          >
-            Acknowledge
-          </button>
+      {/* Informational banner */}
+      {wallpaperStatus !== 'ACTIVE' && (
+        <div className="relative z-10 p-3 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-center gap-2 text-xs text-slate-300">
+          <Info className="w-4 h-4 text-indigo-400 shrink-0" />
+          <span className="text-[11px] sm:text-xs">Dynamic lockscreen wallpaper syncs with your real daily habit activity and exam countdown.</span>
         </div>
       )}
 

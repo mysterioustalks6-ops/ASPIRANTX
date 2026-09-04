@@ -1247,15 +1247,14 @@ function AppContent() {
         <main className={`flex-1 p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8 w-full mx-auto transition-all duration-200 ${
           isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
         }`}>
-          {/* Onboarding Tour (Global across all tabs until dismissed) */}
-          <OnboardingTour
-            onNavigate={(t) => setActiveTab(t as ActiveTab)}
-            onOpenProfileModal={() => setShowProfileModal(true)}
-            onToggleSidebar={handleToggleSidebarCollapse}
-          />
-
           {(activeTab === 'dashboard' || activeTab === 'student_dashboard') && (
             <>
+              {/* Onboarding Tour (Dashboard onboarding checklist) */}
+              <OnboardingTour
+                onNavigate={(t) => setActiveTab(t as ActiveTab)}
+                onOpenProfileModal={() => setShowProfileModal(true)}
+                onToggleSidebar={handleToggleSidebarCollapse}
+              />
               {/* Top Announcement Ticker (Customizable) */}
               {customizer.showAnnouncementTicker && (
                 <div className="w-full px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs shadow-md">
@@ -1341,7 +1340,8 @@ function AppContent() {
               <PremiumGate
                 featureName="syllabus"
                 featureTitle="Interactive Syllabus Tracker"
-                isUserPremium={user.isPremium}
+                isUserPremium={user.isPremium || isAdmin}
+                isAdmin={isAdmin}
                 isGuest={user.isGuest}
                 featureFlags={featureFlagsMap}
                 onOpenPremium={() => setActiveTab('premium')}
@@ -1351,7 +1351,7 @@ function AppContent() {
                   exam={selectedExam} 
                   userId={user.id} 
                   isGuest={user.isGuest}
-                  isUserPremium={user.isPremium}
+                  isUserPremium={user.isPremium || isAdmin}
                   featureFlags={featureFlagsMap}
                   onOpenPremium={() => setActiveTab('premium')}
                   onRequireLogin={() => setUser(null)}
@@ -1363,7 +1363,8 @@ function AppContent() {
               <PremiumGate
                 featureName="pyq"
                 featureTitle="Enterprise PYQ Archive (1991–2026)"
-                isUserPremium={user.isPremium}
+                isUserPremium={user.isPremium || isAdmin}
+                isAdmin={isAdmin}
                 isGuest={user.isGuest}
                 featureFlags={featureFlagsMap}
                 onOpenPremium={() => setActiveTab('premium')}
@@ -1377,7 +1378,8 @@ function AppContent() {
               <PremiumGate
                 featureName="question_bank"
                 featureTitle="Question Bank & Practice Engine"
-                isUserPremium={user.isPremium}
+                isUserPremium={user.isPremium || isAdmin}
+                isAdmin={isAdmin}
                 isGuest={user.isGuest}
                 featureFlags={featureFlagsMap}
                 onOpenPremium={() => setActiveTab('premium')}
@@ -1391,7 +1393,8 @@ function AppContent() {
               <PremiumGate
                 featureName="timer"
                 featureTitle="Pomodoro Group Timer & Study Engine"
-                isUserPremium={user.isPremium}
+                isUserPremium={user.isPremium || isAdmin}
+                isAdmin={isAdmin}
                 isGuest={user.isGuest}
                 featureFlags={featureFlagsMap}
                 onOpenPremium={() => setActiveTab('premium')}
@@ -1405,7 +1408,8 @@ function AppContent() {
               <PremiumGate
                 featureName="task"
                 featureTitle="Daily Study Planner & Task Manager"
-                isUserPremium={user.isPremium}
+                isUserPremium={user.isPremium || isAdmin}
+                isAdmin={isAdmin}
                 isGuest={user.isGuest}
                 featureFlags={featureFlagsMap}
                 onOpenPremium={() => setActiveTab('premium')}
@@ -1419,7 +1423,8 @@ function AppContent() {
               <PremiumGate
                 featureName="chat"
                 featureTitle="1-on-1 AI Study Mentor & Answer Evaluator"
-                isUserPremium={user.isPremium}
+                isUserPremium={user.isPremium || isAdmin}
+                isAdmin={isAdmin}
                 isGuest={user.isGuest}
                 featureFlags={featureFlagsMap}
                 onOpenPremium={() => setActiveTab('premium')}
@@ -1446,7 +1451,8 @@ function AppContent() {
                 <PremiumGate
                   featureName="cbt"
                   featureTitle="AspirantX All-India Mock Test & CBT Simulator"
-                  isUserPremium={user.isPremium}
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
                   isGuest={user.isGuest}
                   featureFlags={featureFlagsMap}
                   onOpenPremium={() => setActiveTab('premium')}
@@ -1491,7 +1497,8 @@ function AppContent() {
                 <PremiumGate
                   featureName="library"
                   featureTitle="Aspirants Reference Library & NCERT Notes"
-                  isUserPremium={user.isPremium}
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
                   isGuest={user.isGuest}
                   featureFlags={featureFlagsMap}
                   onOpenPremium={() => setActiveTab('premium')}

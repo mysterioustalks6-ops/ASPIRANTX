@@ -464,13 +464,13 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400">
+          <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
             <BookMarked className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
               Enterprise PYQ Engine (1991 – 2026)
-              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
                 35+ Years Archive
               </span>
             </h1>
@@ -484,7 +484,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           {onOpenBulkImport && (
             <button
               onClick={onOpenBulkImport}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-xs font-bold text-purple-300 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-xs font-bold text-sky-300 transition-all"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>Bulk PYQ Import</span>
@@ -494,7 +494,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           {isAdmin && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-xs font-bold text-white transition-all shadow-lg"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:opacity-90 text-xs font-bold text-white transition-all shadow-lg"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add PYQ</span>
@@ -512,7 +512,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           onClick={() => setSubTab('practice')}
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
             subTab === 'practice'
-              ? 'bg-purple-600 text-white shadow-lg'
+              ? 'bg-sky-600 text-white shadow-lg'
               : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -522,7 +522,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           onClick={() => setSubTab('pdfs')}
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
             subTab === 'pdfs'
-              ? 'bg-purple-600 text-white shadow-lg'
+              ? 'bg-sky-600 text-white shadow-lg'
               : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -547,7 +547,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           onClick={() => setSubTab('ocr')}
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
             subTab === 'ocr'
-              ? 'bg-purple-600 text-white shadow-lg'
+              ? 'bg-sky-600 text-white shadow-lg'
               : 'text-slate-400 hover:text-white'
           }`}
         >
@@ -563,9 +563,9 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
             <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
               Active Exam Context
             </label>
-            <div className="w-full px-3 py-2 rounded-xl bg-purple-950/40 border border-purple-500/40 text-xs text-purple-200 font-extrabold flex items-center justify-between shadow-inner">
+            <div className="w-full px-3 py-2 rounded-xl bg-slate-900/40 border border-sky-500/40 text-xs text-sky-200 font-extrabold flex items-center justify-between shadow-inner">
               <span className="truncate">{EXAM_LIST.find((ex) => ex.id === selectedExam)?.label || selectedExam}</span>
-              <span className="text-[9px] bg-purple-500/20 text-purple-300 border border-purple-400/30 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Profile Bounded</span>
+              <span className="text-[9px] bg-sky-500/20 text-sky-300 border border-sky-400/30 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Profile Bounded</span>
             </div>
           </div>
 
@@ -594,7 +594,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                 <select
                   value={selectedTopic}
                   onChange={(e) => setSelectedTopic(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-purple-500/30 text-xs text-purple-300 focus:outline-none focus:border-purple-400 font-extrabold cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-sky-500/30 text-xs text-sky-300 focus:outline-none focus:border-sky-400 font-extrabold cursor-pointer"
                 >
                   <option value="All">🎯 All Topics</option>
                   {availableTopics.map((t) => (
@@ -611,7 +611,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                 <select
                   value={selectedSpecificYear}
                   onChange={(e) => setSelectedSpecificYear(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-purple-500/30 text-xs text-white focus:outline-none focus:border-purple-400 font-extrabold"
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-sky-500/30 text-xs text-white focus:outline-none focus:border-sky-400 font-extrabold"
                 >
                   <option value="All">📅 All Exam Years (1991–2026)</option>
                   {Array.from({ length: 35 }, (_, i) => 2025 - i).map((y) => (
@@ -641,7 +641,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                 <select
                   value={languageFilter}
                   onChange={(e) => setLanguageFilter(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-purple-400"
+                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-sky-400"
                 >
                   <option value="All">🌐 All Languages</option>
                   <option value="English">🇬🇧 English</option>
@@ -663,16 +663,16 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                 placeholder={subTab === 'practice' ? "Search PYQs..." : "Search PDF Papers..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400"
+                className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400"
               />
             </div>
           </div>
         </div>
 
         {subTab === 'practice' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-black/40 border border-purple-500/20 shadow-lg">
-            <div className="text-xs font-bold text-purple-300 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-xl bg-purple-500/10 border border-purple-500/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-black/40 border border-sky-500/20 shadow-lg">
+            <div className="text-xs font-bold text-sky-300 flex items-center gap-2">
+              <span className="px-3 py-1 rounded-xl bg-sky-500/10 border border-sky-500/30">
                 📚 <strong>{total}</strong> Questions Available for {selectedExam.replace(/_/g, ' ')}
               </span>
               {total > 0 && (
@@ -687,7 +687,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               <button
                 disabled={page <= 1 || loading}
                 onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
               >
                 <span>← Previous</span>
               </button>
@@ -697,7 +697,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               <button
                 disabled={page >= totalPages || loading}
                 onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
               >
                 <span>Next →</span>
               </button>
@@ -708,7 +708,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
       {/* Content Rendering based on Tab */}
       {subTab === 'practice' ? (
-        <div className="space-y-4 max-h-[82vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-purple-500/40 scrollbar-track-transparent">
+        <div className="space-y-4 max-h-[82vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-sky-500/40 scrollbar-track-transparent">
           {pyqs.length === 0 ? (
             <div className="p-12 text-center rounded-2xl bg-black/40 border border-white/10 space-y-3">
               <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
@@ -738,20 +738,20 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                 const isCollapsed = collapsedYears[String(year)] ?? false;
 
                 return (
-                  <div key={year} className="rounded-2xl bg-slate-900/80 border border-purple-500/30 overflow-hidden shadow-xl transition-all">
+                  <div key={year} className="rounded-2xl bg-slate-900/80 border border-sky-500/30 overflow-hidden shadow-xl transition-all">
                     {/* Year Folder Accordion Header */}
                     <div
                       onClick={() => setCollapsedYears(prev => ({ ...prev, [String(year)]: !prev[String(year)] }))}
-                      className="p-4 bg-gradient-to-r from-purple-950/60 via-slate-900/80 to-purple-950/60 flex items-center justify-between cursor-pointer hover:bg-purple-900/20 transition-all select-none border-b border-white/5"
+                      className="p-4 bg-gradient-to-r from-slate-900/60 via-slate-900/80 to-slate-900/60 flex items-center justify-between cursor-pointer hover:bg-slate-900/20 transition-all select-none border-b border-white/5"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center font-extrabold text-sm shadow-inner">
+                        <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center justify-center font-extrabold text-sm shadow-inner">
                           {year}
                         </div>
                         <div className="text-left">
                           <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
                             <span>{selectedExam.replace(/_/g, ' ')} — Exam Year {year}</span>
-                            <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-[10px] text-purple-300 font-black">
+                            <span className="px-2 py-0.5 rounded-full bg-sky-500/20 border border-sky-500/40 text-[10px] text-sky-300 font-black">
                               {yearQuestions.length} Questions
                             </span>
                           </h3>
@@ -762,10 +762,10 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <span className="text-[10px] text-purple-400 font-bold hidden sm:inline-block">
+                        <span className="text-[10px] text-sky-400 font-bold hidden sm:inline-block">
                           {isCollapsed ? 'Click to Expand' : 'Click to Collapse'}
                         </span>
-                        <div className="p-1.5 rounded-lg bg-white/5 text-purple-300 border border-white/10">
+                        <div className="p-1.5 rounded-lg bg-white/5 text-sky-300 border border-white/10">
                           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                         </div>
                       </div>
@@ -782,11 +782,11 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                           return (
                             <div
                               key={pyq.id}
-                              className="p-4 rounded-xl bg-slate-950/70 border border-white/10 space-y-3 text-left transition-all hover:border-purple-500/30"
+                              className="p-4 rounded-xl bg-slate-950/70 border border-white/10 space-y-3 text-left transition-all hover:border-sky-500/30"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
                                 <div className="flex items-center gap-2">
-                                  <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-black">
+                                  <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-black">
                                     Year {pyq.year}
                                   </span>
                                   <span className="text-xs font-bold text-slate-300">{getStandardSubject(selectedExam, pyq.subject)}</span>
@@ -807,7 +807,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                               </div>
 
                               <div className="text-xs font-semibold text-slate-100 whitespace-pre-line leading-relaxed">
-                                <span className="text-purple-400 font-extrabold mr-1.5">Q{index + 1}.</span>
+                                <span className="text-sky-400 font-extrabold mr-1.5">Q{index + 1}.</span>
                                 {pyq.questionText}
                               </div>
 
@@ -855,7 +855,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                                     onClick={() =>
                                       setShowExplanations((prev) => ({ ...prev, [pyq.id]: !prev[pyq.id] }))
                                     }
-                                    className="text-[11px] text-purple-400 hover:text-purple-300 underline font-semibold flex items-center gap-1"
+                                    className="text-[11px] text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
                                   >
                                     <Sparkles className="w-3 h-3" />
                                     {showExplanations[pyq.id] ? 'Hide Explanation' : 'View Model Solution & Explanation'}
@@ -865,9 +865,9 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                                     <motion.div
                                       initial={{ opacity: 0, height: 0 }}
                                       animate={{ opacity: 1, height: 'auto' }}
-                                      className="mt-2 p-3 rounded-xl bg-purple-950/40 border border-purple-500/20 text-xs text-purple-200 leading-relaxed"
+                                      className="mt-2 p-3 rounded-xl bg-slate-900/40 border border-sky-500/20 text-xs text-sky-200 leading-relaxed"
                                     >
-                                      <strong className="block font-black text-purple-300 mb-0.5">
+                                      <strong className="block font-black text-sky-300 mb-0.5">
                                         Official Solution & Explanation:
                                       </strong>
                                       {pyq.explanation}
@@ -910,7 +910,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                         {/* PYQ Meta Badge Header */}
                         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
                           <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[11px] font-extrabold">
+                            <span className="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] font-extrabold">
                               Year {pyq.year}
                             </span>
                             <span className="px-2 py-0.5 rounded bg-white/5 text-slate-300 text-[11px] font-semibold">
@@ -947,7 +947,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
                         {/* Question Body */}
                         <div className="text-sm font-semibold text-slate-100 whitespace-pre-line leading-relaxed">
-                          <span className="text-purple-400 font-extrabold mr-2">Q{(page - 1) * limit + index + 1}.</span>
+                          <span className="text-sky-400 font-extrabold mr-2">Q{(page - 1) * limit + index + 1}.</span>
                           {pyq.questionText}
                         </div>
 
@@ -997,7 +997,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                               onClick={() =>
                                 setShowExplanations((prev) => ({ ...prev, [pyq.id]: !prev[pyq.id] }))
                               }
-                              className="text-xs text-purple-400 hover:text-purple-300 underline font-semibold flex items-center gap-1"
+                              className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
                             >
                               <Sparkles className="w-3.5 h-3.5" />
                               {showExplanations[pyq.id] ? 'Hide Solution Explanation' : 'View Model Solution & Explanation'}
@@ -1007,9 +1007,9 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                               <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
-                                className="mt-2 p-3.5 rounded-xl bg-purple-950/30 border border-purple-500/20 text-xs text-purple-200 leading-relaxed"
+                                className="mt-2 p-3.5 rounded-xl bg-slate-900/30 border border-sky-500/20 text-xs text-sky-200 leading-relaxed"
                               >
-                                <strong className="block font-black text-purple-300 mb-1">
+                                <strong className="block font-black text-sky-300 mb-1">
                                   Official Key & Detailed Explanation:
                                 </strong>
                                 {pyq.explanation}
@@ -1022,7 +1022,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                   })}
 
                   {/* Bottom Pagination Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-black/40 border border-purple-500/20 shadow-lg mt-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-black/40 border border-sky-500/20 shadow-lg mt-6">
                     <div className="text-xs text-slate-300 font-extrabold">
                       Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} Questions Total)
                     </div>
@@ -1030,14 +1030,14 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                       <button
                         disabled={page <= 1 || loading}
                         onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
                       >
                         ← Previous Page
                       </button>
                       <button
                         disabled={page >= totalPages || loading}
                         onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
                       >
                         Next Page →
                       </button>
@@ -1052,7 +1052,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         <div className="space-y-4">
           {pdfPapers.length === 0 ? (
             <div className="p-12 text-center rounded-2xl bg-black/40 border border-white/10 space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
                 <AlertTriangle className="w-6 h-6 animate-pulse" />
               </div>
               <h3 className="text-base font-bold text-white">No PDF Papers found for {EXAM_LIST.find(e => e.id === selectedExam)?.label}</h3>
@@ -1065,18 +1065,18 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               {pdfPapers.map((paper) => (
                 <div
                   key={paper.id}
-                  className="p-5 rounded-2xl bg-gradient-to-br from-black/40 to-purple-950/15 border border-white/10 hover:border-purple-500/30 transition-all duration-300 flex items-center justify-between gap-4 group"
+                  className="p-5 rounded-2xl bg-gradient-to-br from-black/40 to-slate-900/15 border border-white/10 hover:border-sky-500/30 transition-all duration-300 flex items-center justify-between gap-4 group"
                 >
                   <div className="space-y-2 flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-black uppercase">
+                      <span className="px-2.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-black uppercase">
                         {paper.year}
                       </span>
                       <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                         {paper.exam.replace('_', ' ')}
                       </span>
                     </div>
-                    <h4 className="text-sm font-bold text-slate-200 group-hover:text-purple-300 transition-colors leading-relaxed">
+                    <h4 className="text-sm font-bold text-slate-200 group-hover:text-sky-300 transition-colors leading-relaxed">
                       {paper.title}
                     </h4>
                   </div>
@@ -1084,7 +1084,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                     href={paper.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center px-4 py-2.5 rounded-xl bg-purple-600/10 hover:bg-purple-600 border border-purple-500/20 text-purple-400 hover:text-white transition-all text-xs font-extrabold shrink-0 shadow-lg shadow-purple-950/20 hover:scale-105"
+                    className="flex items-center justify-center px-4 py-2.5 rounded-xl bg-sky-600/10 hover:bg-sky-600 border border-sky-500/20 text-sky-400 hover:text-white transition-all text-xs font-extrabold shrink-0 shadow-lg shadow-slate-900/20 hover:scale-105"
                   >
                     Download
                   </a>
@@ -1099,7 +1099,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         <div className="space-y-6 text-left">
           {/* Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-black/40 border border-purple-500/30 space-y-1">
+            <div className="p-4 rounded-2xl bg-black/40 border border-sky-500/30 space-y-1">
               <span className="text-[10px] uppercase font-bold text-slate-400">Total Analyzed PYQs</span>
               <div className="text-2xl font-black text-white">{analyticsData?.totalQuestions || total}</div>
             </div>
@@ -1163,7 +1163,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
           {ocrStatus === 'idle' ? (
             <div className="p-8 border-2 border-dashed border-white/10 rounded-2xl text-center space-y-4">
-              <BookOpen className="w-12 h-12 text-purple-400 mx-auto animate-pulse" />
+              <BookOpen className="w-12 h-12 text-sky-400 mx-auto animate-pulse" />
               <div className="space-y-1">
                 <p className="text-xs text-white font-bold">Select Scanned UPSC/SSC Question PDF</p>
                 <p className="text-[10px] text-slate-500">Supported types: Scanned UPSC GS Prelims PDF, SSC CGL Tier-1 PDF</p>
@@ -1184,20 +1184,20 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                     });
                   }, 200);
                 }}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-xl shadow-lg transition-all mx-auto block"
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-black text-xs rounded-xl shadow-lg transition-all mx-auto block"
               >
                 Simulate PDF to Word Conversion
               </button>
             </div>
           ) : ocrStatus === 'scanning' ? (
             <div className="p-12 text-center space-y-3.5">
-              <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
               <div className="space-y-1">
                 <p className="text-xs text-white font-bold">Converting PDF Scanned Fonts...</p>
                 <p className="text-[10px] text-slate-500">Progress: {ocrProgress}% Completed</p>
               </div>
               <div className="w-48 bg-slate-950 h-1.5 rounded-full overflow-hidden mx-auto">
-                <div className="bg-purple-500 h-full transition-all" style={{ width: `${ocrProgress}%` }} />
+                <div className="bg-sky-500 h-full transition-all" style={{ width: `${ocrProgress}%` }} />
               </div>
             </div>
           ) : (
@@ -1220,7 +1220,7 @@ A . 1   o n ly   |   B . 2   o n ly   |   C . Bo th   |   D . N on e`}
                 </div>
 
                 {/* Right: Beautified Editable Word Layout (Font normalized) */}
-                <div className="p-4 rounded-xl bg-slate-950/80 border border-purple-500/30 space-y-3">
+                <div className="p-4 rounded-xl bg-slate-950/80 border border-sky-500/30 space-y-3">
                   <span className="text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-black uppercase">
                     Beautified Microsoft Word Layout Font
                   </span>
@@ -1268,7 +1268,7 @@ A . 1   o n ly   |   B . 2   o n ly   |   C . Bo th   |   D . N on e`}
                     setSubTab('practice');
                     alert('Success: Converted questions successfully integrated into the active PYQ Practice Pool!');
                   }}
-                  className="px-5 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg hover:brightness-110"
+                  className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg hover:brightness-110"
                 >
                   Send to PYQ Section (Practice Pool)
                 </button>
@@ -1372,7 +1372,7 @@ A . 1   o n ly   |   B . 2   o n ly   |   C . Bo th   |   D . N on e`}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 font-extrabold text-white"
+                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 font-extrabold text-white"
                 >
                   Save PYQ
                 </button>

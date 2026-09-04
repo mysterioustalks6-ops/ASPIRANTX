@@ -69,6 +69,12 @@ export const Header: React.FC<HeaderProps> = ({
 
   const getTabTitle = () => {
     switch (activeTab) {
+      case 'dashboard':
+      case 'student_dashboard':
+        return {
+          title: 'Candidate Command Center',
+          subtitle: 'Live Study Telemetry & High-Impact Priority Actions',
+        };
       case 'syllabus':
         return {
           title: 'Syllabus Command Center',
@@ -107,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
         };
       case 'timer':
         return {
-          title: 'Focus Deep-Work Timer',
+          title: 'Deep-Work Focus Timer',
           subtitle: 'Pomodoro focus intervals with ambient soundscapes',
         };
       case 'tasks':
@@ -125,10 +131,25 @@ export const Header: React.FC<HeaderProps> = ({
           title: 'Peer Study Community',
           subtitle: 'Collaborate with fellow serious aspirants',
         };
+      case 'study_buddy':
+        return {
+          title: 'Study Buddy Sync',
+          subtitle: 'Accountability partner & co-study session',
+        };
       case 'weakness':
         return {
           title: 'AI Weakness Detector',
           subtitle: 'Telemetry diagnostic & targeted revision roadmap',
+        };
+      case 'leaderboard':
+        return {
+          title: 'All-India Rank & Leaderboard',
+          subtitle: 'Benchmark your preparation against aspirants nationwide',
+        };
+      case 'eligibility':
+        return {
+          title: 'Exam Eligibility Checker',
+          subtitle: 'Age, educational qualification & reservation matrix',
         };
       case 'premium':
       case 'earn_premium':
@@ -136,8 +157,48 @@ export const Header: React.FC<HeaderProps> = ({
           title: 'AspirantX PRO Access',
           subtitle: 'Unlock unlimited AI evaluation & mock test series',
         };
+      case 'reward_milestones':
+        return {
+          title: 'Study Milestones & Rewards',
+          subtitle: 'Redeem your consistency streak coins for PRO access',
+        };
+      case 'teachers':
+        return {
+          title: 'Teacher & Faculty Portal',
+          subtitle: 'Manage student cohorts, assignments, and test series',
+        };
+      case 'collaboration':
+        return {
+          title: 'Classroom Collaboration',
+          subtitle: 'Group study sessions & collective problem solving',
+        };
+      case 'blog':
+        return {
+          title: 'Aspirant Insights & Articles',
+          subtitle: 'Exam strategies, toppers notes, and subject deep-dives',
+        };
+      case 'blog_submit':
+        return {
+          title: 'Publish Editorial Article',
+          subtitle: 'Submit subject articles and study notes for review',
+        };
+      case 'feedback':
+        return {
+          title: 'Candidate Feedback',
+          subtitle: 'Help shape and improve the AspirantX study platform',
+        };
+      case 'podcasts':
+        return {
+          title: 'Audio Lecture Series',
+          subtitle: 'High-yield audio revisions & daily editorial analysis',
+        };
+      case 'admin':
+        return {
+          title: 'Master Operations & Admin Panel',
+          subtitle: 'Platform analytics, content databases, payments & operations',
+        };
       default:
-        return { title: 'Candidate Telemetry', subtitle: 'Live Study Dashboard & Metrics' };
+        return { title: 'Candidate Command Center', subtitle: 'Live Study Dashboard & Metrics' };
     }
   };
 
@@ -162,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({
             <h2 className="text-sm sm:text-base md:text-lg font-bold text-slate-100 tracking-tight truncate">
               {title}
             </h2>
-            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
+            <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0">
               <Sparkles className="w-3 h-3" /> Live
             </span>
           </div>
@@ -181,7 +242,7 @@ export const Header: React.FC<HeaderProps> = ({
                 ? 'bg-rose-500/10 text-rose-300 border border-rose-500/30 animate-pulse'
                 : (demoSecondsRemaining !== undefined && demoSecondsRemaining < 60)
                 ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30 animate-pulse'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                : 'bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-600/25'
             }`}
           >
             <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -201,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200 transition-colors"
           title="Change Target Exam"
         >
-          <GraduationCap className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+          <GraduationCap className="w-3.5 h-3.5 text-sky-400 shrink-0" />
           <select
             value={selectedExam || user?.exam || 'NEET_UG'}
             onChange={(e) => {
@@ -212,7 +273,7 @@ export const Header: React.FC<HeaderProps> = ({
                 onExamChange(val);
               }
             }}
-            className="bg-transparent font-bold text-indigo-300 max-w-[85px] sm:max-w-[140px] md:max-w-[180px] truncate focus:outline-none cursor-pointer border-none p-0 text-xs"
+            className="bg-transparent font-bold text-sky-300 max-w-[85px] sm:max-w-[140px] md:max-w-[180px] truncate focus:outline-none cursor-pointer border-none p-0 text-xs"
           >
             {EXAM_LIST.map((ex) => (
               <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200 font-medium">
@@ -229,10 +290,10 @@ export const Header: React.FC<HeaderProps> = ({
         {onOpenWorkspaceCustomizer && (
           <button
             onClick={onOpenWorkspaceCustomizer}
-            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/50 border border-indigo-500/30 text-xs font-semibold text-indigo-300 transition-colors shadow-sm"
+            className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/60 text-xs font-semibold text-slate-300 hover:text-white transition-colors shadow-sm"
             title="Personalize My Workspace"
           >
-            <LayoutGrid className="w-3.5 h-3.5 text-indigo-400" />
+            <LayoutGrid className="w-3.5 h-3.5 text-sky-400" />
             <span className="hidden lg:inline">Workspace</span>
           </button>
         )}
@@ -273,7 +334,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="hidden md:flex p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
           title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
         >
-          {isFullscreen ? <Minimize className="w-4 h-4 text-indigo-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
+          {isFullscreen ? <Minimize className="w-4 h-4 text-sky-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
         </button>
 
         {/* Notification Bell */}

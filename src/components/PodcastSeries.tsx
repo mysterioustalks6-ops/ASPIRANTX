@@ -217,15 +217,15 @@ export const PodcastSeries: React.FC = () => {
       />
 
       {/* Header section */}
-      <div className="flex items-center gap-3 bg-slate-900/40 border border-white/10 rounded-2xl p-5 backdrop-blur-md">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-500 flex items-center justify-center text-white shadow-lg animate-pulse">
+      <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-2xl p-5 backdrop-blur-md shadow-sm">
+        <div className="w-10 h-10 rounded-xl bg-sky-600 flex items-center justify-center text-white shadow-sm">
           <Mic className="w-5 h-5" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
             Topper Podcasts & Strategy Hub
-            <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30 font-black">
-              LIVE AUDIO ENGINE
+            <span className="text-[9px] bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded border border-sky-500/20 font-semibold tracking-wider uppercase">
+              Audio Engine
             </span>
           </h1>
           <p className="text-xs text-slate-400">
@@ -247,7 +247,7 @@ export const PodcastSeries: React.FC = () => {
         <div className="lg:col-span-2 space-y-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-sky-400" />
               <p className="text-xs font-semibold">Loading podcast episodes from backend...</p>
             </div>
           ) : podcasts.length === 0 ? (
@@ -261,15 +261,15 @@ export const PodcastSeries: React.FC = () => {
               return (
                 <div 
                   key={pod.id}
-                  className={`bg-slate-900/60 border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all ${
-                    isCurrent ? 'border-emerald-500/50 shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-slate-900' : 'border-white/10 hover:border-white/20'
+                  className={`bg-slate-900 border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all ${
+                    isCurrent ? 'border-sky-500/50 shadow-sm bg-slate-900' : 'border-slate-800 hover:border-slate-700'
                   }`}
                 >
                   <div className="flex gap-4 items-start text-left">
                     <button
                       onClick={() => togglePlay(pod)}
                       className={`w-12 h-12 rounded-full flex items-center justify-center text-slate-950 shrink-0 transition-transform hover:scale-105 ${
-                        isCurrent && isPlaying ? 'bg-emerald-400 shadow-lg shadow-emerald-400/25' : 'bg-white'
+                        isCurrent && isPlaying ? 'bg-sky-400 shadow-md shadow-sky-400/25' : 'bg-white hover:bg-slate-100'
                       }`}
                     >
                       {isCurrent && isPlaying ? (
@@ -281,17 +281,17 @@ export const PodcastSeries: React.FC = () => {
                     
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] bg-slate-950 text-emerald-400 border border-white/10 px-2 py-0.5 rounded font-black uppercase">
+                        <span className="text-[10px] bg-slate-950 text-sky-400 border border-slate-800 px-2 py-0.5 rounded font-semibold uppercase">
                           {pod.rank}
                         </span>
-                        <span className="text-[10px] text-slate-500 font-bold">{pod.duration} Min Duration</span>
+                        <span className="text-[10px] text-slate-400 font-medium">{pod.duration} Min Duration</span>
                         {hasResume && !isCurrent && (
-                          <span className="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-1.5 py-0.5 rounded font-mono flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5" /> Resume available ({formatTime(parseFloat(savedPos))})
+                          <span className="text-[9px] bg-sky-500/10 text-sky-300 border border-sky-500/20 px-1.5 py-0.5 rounded font-mono flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5 text-sky-400" /> Resume available ({formatTime(parseFloat(savedPos))})
                           </span>
                         )}
                       </div>
-                      <h3 className="font-extrabold text-white text-sm sm:text-base leading-snug">{pod.topperName} - {pod.subject}</h3>
+                      <h3 className="font-bold text-white text-sm sm:text-base leading-snug">{pod.topperName} - {pod.subject}</h3>
                       <p className="text-xs text-slate-400 leading-relaxed">{pod.description}</p>
                     </div>
                   </div>
@@ -311,32 +311,32 @@ export const PodcastSeries: React.FC = () => {
         </div>
 
         {/* Floating Custom Audio Media Control Deck */}
-        <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-4 h-fit sticky top-4">
-          <h3 className="font-extrabold text-white text-xs uppercase tracking-wider pb-3 border-b border-white/5 flex items-center justify-between">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 h-fit sticky top-4 shadow-sm">
+          <h3 className="font-bold text-white text-xs uppercase tracking-wider pb-3 border-b border-slate-800 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <Mic className="w-4 h-4 text-emerald-400" /> Currently Playing Strategy
+              <Mic className="w-4 h-4 text-sky-400" /> Currently Playing Strategy
             </span>
             {isPlaying && (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
             )}
           </h3>
 
           {currentPlaying ? (
             <div className="space-y-4 text-left">
               <div>
-                <h4 className="font-black text-white text-sm leading-tight">{currentPlaying.topperName}</h4>
-                <p className="text-[10px] text-emerald-400 font-bold mt-0.5">{currentPlaying.subject}</p>
+                <h4 className="font-bold text-white text-sm leading-tight">{currentPlaying.topperName}</h4>
+                <p className="text-[10px] text-sky-400 font-semibold mt-0.5">{currentPlaying.subject}</p>
               </div>
 
               {/* Progress Slider (Real Sync) */}
               <div className="space-y-1.5">
                 <div 
-                  className="w-full bg-slate-950 h-2 rounded-full overflow-hidden relative cursor-pointer border border-white/5 group" 
+                  className="w-full bg-slate-950 h-2 rounded-full overflow-hidden relative cursor-pointer border border-slate-800 group" 
                   onClick={handleSeek}
                   title="Click to seek"
                 >
                   <div 
-                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all relative" 
+                    className="bg-sky-500 h-full transition-all relative" 
                     style={{ width: `${progress}%` }} 
                   />
                 </div>
@@ -351,18 +351,18 @@ export const PodcastSeries: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleMuteToggle}
-                    className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors border border-white/5"
+                    className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors border border-slate-800"
                     title={isMuted ? 'Unmute' : 'Mute'}
                   >
-                    {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                    {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-sky-400" />}
                   </button>
 
                   <button
                     onClick={handleRestart}
-                    className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors border border-white/5"
+                    className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors border border-slate-800"
                     title="Restart podcast"
                   >
-                    <RotateCcw className="w-4 h-4 text-indigo-400" />
+                    <RotateCcw className="w-4 h-4 text-sky-400" />
                   </button>
                 </div>
 
@@ -372,10 +372,10 @@ export const PodcastSeries: React.FC = () => {
                     <button
                       key={sp}
                       onClick={() => handleSpeedChange(sp)}
-                      className={`px-2 py-1 rounded text-[9px] font-black border transition-all ${
+                      className={`px-2 py-1 rounded text-[9px] font-semibold border transition-all ${
                         speed === sp 
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40' 
-                          : 'bg-slate-950 text-slate-500 border-white/5 hover:text-white'
+                          ? 'bg-sky-500/20 text-sky-400 border-sky-500/40' 
+                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
                       }`}
                     >
                       {sp}x
@@ -386,14 +386,14 @@ export const PodcastSeries: React.FC = () => {
 
               {/* Mapped Strategy Book Checklist */}
               {Array.isArray(currentPlaying.booklist) && currentPlaying.booklist.length > 0 && (
-                <div className="space-y-2 pt-4 border-t border-white/5">
-                  <span className="text-[10px] text-slate-500 font-extrabold uppercase flex items-center gap-1">
-                    <ListChecks className="w-3.5 h-3.5 text-emerald-400" /> Mapped Topper Booklist:
+                <div className="space-y-2 pt-4 border-t border-slate-800">
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider flex items-center gap-1">
+                    <ListChecks className="w-3.5 h-3.5 text-sky-400" /> Mapped Topper Booklist:
                   </span>
                   <div className="space-y-1.5">
                     {currentPlaying.booklist.map((book, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-[10px] text-slate-300 font-semibold bg-slate-950 px-2.5 py-1.5 rounded-lg border border-white/5">
-                        <UserCheck className="w-3 h-3 text-emerald-400 shrink-0" /> <span className="line-clamp-1">{book}</span>
+                      <div key={idx} className="flex items-center gap-2 text-[10px] text-slate-300 font-medium bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800">
+                        <UserCheck className="w-3 h-3 text-sky-400 shrink-0" /> <span className="line-clamp-1">{book}</span>
                       </div>
                     ))}
                   </div>
@@ -402,8 +402,8 @@ export const PodcastSeries: React.FC = () => {
             </div>
           ) : (
             <div className="py-12 text-center text-slate-500 space-y-2">
-              <Mic className="w-8 h-8 mx-auto opacity-35 animate-bounce" />
-              <p className="text-[11px] font-medium max-w-[180px] mx-auto leading-normal">
+              <Mic className="w-8 h-8 mx-auto opacity-35 animate-bounce text-sky-400" />
+              <p className="text-[11px] font-medium max-w-[180px] mx-auto leading-normal text-slate-400">
                 Click on any play button to stream the strategist audio podcast live.
               </p>
             </div>

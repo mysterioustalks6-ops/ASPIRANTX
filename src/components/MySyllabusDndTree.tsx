@@ -107,8 +107,8 @@ function SubtopicItem({ node, isDone, timeText, onToggle, onDelete }: SubtopicIt
       style={style}
       className={`p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 flex items-center justify-between gap-2.5 group ${
         isDone
-          ? 'bg-[#00FF94]/10 border-[#00FF94]/30 text-slate-300 shadow-[0_0_10px_rgba(0,255,148,0.1)]'
-          : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/15 text-slate-200'
+          ? 'bg-sky-500/10 border-sky-500/30 text-slate-200 shadow-sm'
+          : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-200'
       }`}
     >
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -129,11 +129,11 @@ function SubtopicItem({ node, isDone, timeText, onToggle, onDelete }: SubtopicIt
           className="shrink-0 cursor-pointer"
         >
           {isDone ? (
-            <div className="w-5 h-5 rounded-lg bg-[#00FF94] text-black flex items-center justify-center font-bold shadow-[0_0_10px_rgba(0,255,148,0.5)]">
+            <div className="w-5 h-5 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold shadow-sm">
               <Check className="w-3.5 h-3.5 stroke-[3]" />
             </div>
           ) : (
-            <div className="w-5 h-5 rounded-lg border-2 border-slate-600 group-hover:border-[#00FF94] transition-colors" />
+            <div className="w-5 h-5 rounded-lg border-2 border-slate-600 group-hover:border-sky-500 transition-colors" />
           )}
         </div>
 
@@ -148,14 +148,14 @@ function SubtopicItem({ node, isDone, timeText, onToggle, onDelete }: SubtopicIt
           </span>
 
           {node.origin_official_id && (
-            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-slate-800 text-sky-400 border border-slate-700 flex items-center gap-1">
               <Tag className="w-2.5 h-2.5" /> Imported
             </span>
           )}
 
           {timeText && (
-            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-              <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
+            <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-sky-400" />
               {timeText}
             </span>
           )}
@@ -246,12 +246,12 @@ function ChapterGroup({
       style={topicStyle}
       className={`rounded-3xl border transition-all duration-300 overflow-hidden ${
         isChapterOver
-          ? 'bg-purple-900/30 border-purple-400 ring-2 ring-purple-400/50 shadow-[0_0_25px_rgba(168,85,247,0.3)]'
+          ? 'bg-sky-500/10 border-sky-400 ring-2 ring-sky-400/50'
           : isFullyCompleted
-          ? 'bg-[#00FF94]/5 border-[#00FF94]/30 shadow-[0_0_15px_rgba(0,255,148,0.08)]'
+          ? 'bg-sky-500/5 border-sky-500/20 shadow-sm'
           : isExpanded
-          ? 'bg-gradient-to-br from-[#0e0e12] to-[#08080a] border-white/15 shadow-xl'
-          : 'bg-black/40 border-white/10 hover:border-white/20'
+          ? 'bg-slate-900 border-slate-700 shadow-md'
+          : 'bg-slate-950 border-slate-800 hover:border-slate-700'
       }`}
     >
       {/* Chapter Accordion Header */}
@@ -266,7 +266,7 @@ function ChapterGroup({
             {...topicAttrs}
             {...topicListeners}
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 cursor-grab active:cursor-grabbing shrink-0 touch-none"
+            className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 cursor-grab active:cursor-grabbing shrink-0 touch-none"
             title="Drag topic & all its subtopics to another subject"
           >
             <GripVertical className="w-5 h-5" />
@@ -279,13 +279,13 @@ function ChapterGroup({
               e.stopPropagation();
               onToggleTopic(nodes, chapterName);
             }}
-            className="text-slate-400 hover:text-[#00FF94] transition-colors shrink-0 cursor-pointer"
+            className="text-slate-400 hover:text-sky-400 transition-colors shrink-0 cursor-pointer"
             title={isFullyCompleted ? 'Uncheck all subtopics' : 'Check all subtopics'}
           >
             {isFullyCompleted ? (
-              <CheckCircle2 className="w-5 h-5 text-[#00FF94] fill-[#00FF94]/20 shadow-[0_0_10px_rgba(0,255,148,0.4)]" />
+              <CheckCircle2 className="w-5 h-5 text-sky-400 fill-sky-400/20 shadow-sm" />
             ) : (
-              <Circle className="w-5 h-5 text-slate-600 hover:text-[#00FF94]" />
+              <Circle className="w-5 h-5 text-slate-600 hover:text-sky-400" />
             )}
           </button>
 
@@ -298,14 +298,14 @@ function ChapterGroup({
               >
                 {chapterName}
               </h4>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-purple-300 border border-purple-500/30">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-sky-300 border border-slate-800">
                 {subCount} subtopic{subCount === 1 ? '' : 's'}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
               <span>{subjectName}</span>
               <span>•</span>
-              <span className="text-[#00FF94] font-semibold">
+              <span className="text-sky-400 font-semibold">
                 {completedCount} of {subCount} completed
               </span>
             </p>
@@ -315,10 +315,10 @@ function ChapterGroup({
         <div className="flex items-center gap-3 shrink-0">
           <div className="hidden sm:flex flex-col items-end">
             <span className="text-xs font-black text-white">{topicPercentage}%</span>
-            <div className="w-16 h-1.5 bg-black/60 rounded-full overflow-hidden mt-1 border border-white/10">
+            <div className="w-16 h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1 border border-slate-800">
               <div
                 className={`h-full rounded-full transition-all duration-300 ${
-                  isFullyCompleted ? 'bg-[#00FF94]' : 'bg-purple-400'
+                  isFullyCompleted ? 'bg-sky-500' : 'bg-sky-600'
                 }`}
                 style={{ width: `${topicPercentage}%` }}
               />
@@ -331,12 +331,12 @@ function ChapterGroup({
               e.stopPropagation();
               onOpenAddSubtopic(subjectName, chapterName);
             }}
-            className="px-2 py-1 rounded-lg text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30 transition-all flex items-center gap-1 cursor-pointer"
+            className="px-2 py-1 rounded-lg text-[10px] font-bold bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 transition-all flex items-center gap-1 cursor-pointer"
           >
             <Plus className="w-3 h-3" /> <span className="hidden sm:inline">Subtopic</span>
           </button>
 
-          <div className="p-1.5 rounded-xl bg-white/5 border border-white/10 text-slate-400">
+          <div className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
             {isExpanded ? <ChevronUp className="w-4 h-4 text-white" /> : <ChevronDown className="w-4 h-4 text-white" />}
           </div>
         </div>
@@ -783,16 +783,16 @@ export const MySyllabusDndTree: React.FC<MySyllabusDndTreeProps> = ({
     <div className="space-y-6 relative">
       {/* Toast Notification with Undo (5-second window) */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-slate-900 border border-[#00FF94]/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] text-white text-xs font-bold flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-slate-900 border border-sky-500/40 shadow-2xl text-white text-xs font-bold flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#00FF94]" />
+            <Sparkles className="w-4 h-4 text-sky-400" />
             <span>{toast.message}</span>
           </div>
 
           <button
             type="button"
             onClick={handleUndo}
-            className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0"
+            className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer shrink-0"
           >
             <Undo2 className="w-3.5 h-3.5" /> Undo
           </button>
@@ -809,7 +809,7 @@ export const MySyllabusDndTree: React.FC<MySyllabusDndTreeProps> = ({
       >
         <div className="space-y-6">
           {subjectNames.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-black/40 border border-white/10 space-y-3">
+            <div className="p-12 text-center rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
               <FolderOpen className="w-12 h-12 text-slate-600 mx-auto" />
               <p className="text-slate-300 font-bold">No custom subjects in My Syllabus yet</p>
               <p className="text-slate-500 text-xs">
@@ -818,7 +818,7 @@ export const MySyllabusDndTree: React.FC<MySyllabusDndTreeProps> = ({
               <button
                 type="button"
                 onClick={onOpenAddSubject}
-                className="mt-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs transition-all shadow-md inline-flex items-center gap-1.5 cursor-pointer"
+                className="mt-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add New Subject
               </button>
@@ -845,25 +845,25 @@ export const MySyllabusDndTree: React.FC<MySyllabusDndTreeProps> = ({
         {/* Drag Overlay Ghost Preview */}
         <DragOverlay dropAnimation={dropAnimation}>
           {activeSubtopicNode ? (
-            <div className="p-3.5 rounded-2xl bg-purple-900 border-2 border-purple-400 text-white text-xs font-bold shadow-[0_10px_25px_rgba(168,85,247,0.5)] opacity-95 flex items-center gap-3">
-              <GripVertical className="w-4 h-4 text-purple-300" />
+            <div className="p-3.5 rounded-2xl bg-slate-900 border-2 border-sky-400 text-white text-xs font-bold shadow-xl opacity-95 flex items-center gap-3">
+              <GripVertical className="w-4 h-4 text-sky-400" />
               <span>{activeSubtopicNode.subtopic || activeSubtopicNode.topic || 'Subtopic'}</span>
-              <span className="px-2 py-0.5 rounded text-[10px] bg-purple-950 text-purple-200 border border-purple-400/40">
+              <span className="px-2 py-0.5 rounded text-[10px] bg-slate-950 text-sky-300 border border-slate-700">
                 Moving Subtopic
               </span>
             </div>
           ) : activeTopicInfo ? (
-            <div className="p-4 rounded-3xl bg-slate-900 border-2 border-purple-400 text-white text-sm font-extrabold shadow-[0_15px_35px_rgba(168,85,247,0.5)] opacity-95 flex items-center justify-between gap-4">
+            <div className="p-4 rounded-3xl bg-slate-900 border-2 border-sky-400 text-white text-sm font-bold shadow-2xl opacity-95 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <GripVertical className="w-5 h-5 text-purple-400" />
+                <GripVertical className="w-5 h-5 text-sky-400" />
                 <div>
                   <h4>{activeTopicInfo.chapter}</h4>
-                  <p className="text-xs text-purple-300">
+                  <p className="text-xs text-slate-400">
                     Moving Topic with {activeTopicInfo.count} subtopic{activeTopicInfo.count === 1 ? '' : 's'}
                   </p>
                 </div>
               </div>
-              <span className="px-3 py-1 rounded-full text-xs font-black bg-purple-500 text-white shadow-md">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-sky-600 text-white shadow-md">
                 {activeTopicInfo.subject}
               </span>
             </div>

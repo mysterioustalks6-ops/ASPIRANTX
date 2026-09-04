@@ -10,6 +10,7 @@ interface PremiumGateProps {
   featureName: string;
   featureTitle?: string;
   isUserPremium?: boolean;
+  isAdmin?: boolean;
   isGuest?: boolean;
   featureFlags?: FeatureFlagsMap;
   onOpenPremium?: () => void;
@@ -21,12 +22,17 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
   featureName,
   featureTitle,
   isUserPremium = false,
+  isAdmin = false,
   isGuest = false,
   featureFlags = {},
   onOpenPremium,
   onRequireLogin,
   children,
 }) => {
+  // Administrators have full unrestricted access to all platform features
+  if (isAdmin) {
+    return <>{children}</>;
+  }
   // Check Guest Strict Lock setting (default false so demo users get full access during session timer)
   const isGuestStrictLock = isGuest && localStorage.getItem('aspirantx_guest_strict_lock') === 'true';
 

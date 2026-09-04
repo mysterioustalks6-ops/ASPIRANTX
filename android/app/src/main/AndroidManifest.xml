@@ -61,4 +61,19 @@
     <!-- Features & Permissions -->
     <uses-feature android:name="android.software.live_wallpaper" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Android 11+ Package Visibility Queries for System Wallpaper Picker -->
+    <queries>
+        <intent>
+            <action android:name="android.service.wallpaper.WallpaperService" />
+        </intent>
+        <intent>
+            <action android:name="android.service.wallpaper.CHANGE_LIVE_WALLPAPER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SET_WALLPAPER" />
+        </intent>
+        <package android:name="com.android.wallpaper.livepicker" />
+        <package android:name="com.google.android.apps.wallpaper" />
+    </queries>
 </manifest>

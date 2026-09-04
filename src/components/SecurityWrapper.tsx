@@ -104,15 +104,17 @@ export const SecurityWrapper: React.FC<SecurityWrapperProps> = ({
       }
     }, 1000);
 
-    // 6. Docked DevTools Detection (Checks window size ratios)
+    // 6. Docked DevTools Detection (Checks window size ratios on desktop)
     const handleResize = () => {
+      // Ignore mobile devices, touch devices, and mobile viewports (<= 768px)
+      if (window.innerWidth <= 768 || 'ontouchstart' in window || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0)) {
+        return;
+      }
       const threshold = 160;
       const isDevToolsOpenHorizontally = window.outerWidth - window.innerWidth > threshold;
       const isDevToolsOpenVertically = window.outerHeight - window.innerHeight > threshold;
 
       if (isDevToolsOpenHorizontally || isDevToolsOpenVertically) {
-        // If window is resized to a state where inner width/height is significantly smaller than outer
-        // it usually indicates a docked DevTools panel is open.
         setIsViolationTriggered(true);
         setViolationType('Docked Developer Inspect Panel detected.');
       }

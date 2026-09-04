@@ -21,6 +21,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
   return (
     <nav 
+      id="mobile-bottom-nav"
       aria-label="Mobile Navigation Bar"
       className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-2xl border-t border-slate-800/90 pb-safe md:hidden transition-all shadow-[0_-4px_20px_rgba(0,0,0,0.6)]"
     >

@@ -800,7 +800,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       <div className="w-full space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-          <div className="flex items-center space-x-2 text-indigo-600 font-semibold mb-1 text-xs sm:text-sm">
+          <div className="flex items-center space-x-2 text-sky-600 font-semibold mb-1 text-xs sm:text-sm">
             <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>National Standard Exam Portal</span>
           </div>
@@ -816,7 +816,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               { key: 'results', label: 'My Results', icon: BarChart2 },
             ] as const).map(({ key, label, icon: Icon }) => (
               <button key={key} onClick={() => { setActiveTab(key); if (key === 'custom' && subjects.length === 0) fetchSubjects(builder.exam); }}
-                className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all min-h-[40px] ${activeTab === key ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+                className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all min-h-[40px] ${activeTab === key ? 'bg-sky-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
                 <Icon className="w-4 h-4" /><span>{label}</span>
                 {key === 'live' && liveExams.length > 0 && <span className="w-4 h-4 bg-rose-500 text-white text-[10px] rounded-full flex items-center justify-center">{liveExams.length}</span>}
               </button>
@@ -828,12 +828,12 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         {activeTab === 'available' && (
           loading ? (
             <div className="p-12 text-center text-slate-500">
-              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <div className="w-8 h-8 border-4 border-sky-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
               Loading Examination Series...
             </div>
           ) : availableTests.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-xl mx-auto shadow-sm space-y-4 my-6">
-              <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center justify-center mx-auto text-indigo-600">
+              <div className="w-14 h-14 bg-sky-50 border border-sky-100 rounded-2xl flex items-center justify-center mx-auto text-sky-600">
                 <AlertCircle className="w-7 h-7" />
               </div>
               <div className="space-y-2">
@@ -845,7 +845,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               <div className="pt-2">
                 <button
                   onClick={() => setActiveTab('custom')}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md transition-all inline-flex items-center space-x-2"
+                  className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow-md transition-all inline-flex items-center space-x-2"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Build Custom Test for {activeExamKey.replace(/_/g, ' ')}</span>
@@ -855,10 +855,10 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {availableTests.map((test) => (
-                <div key={test.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-indigo-400 hover:shadow-md transition-all flex flex-col justify-between">
+                <div key={test.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:border-sky-400 hover:shadow-md transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex justify-between items-start mb-3">
-                      <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase">{test.exam?.replace(/_/g, ' ')}</span>
+                      <span className="px-2.5 py-1 text-xs font-bold rounded-md bg-sky-50 text-sky-700 border border-sky-100 uppercase">{test.exam?.replace(/_/g, ' ')}</span>
                       <span className="text-xs text-slate-500 font-medium flex items-center"><Clock className="w-3.5 h-3.5 mr-1 text-slate-400" />{test.durationMinutes} Mins</span>
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2">{test.title}</h3>
@@ -868,7 +868,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                       <div className="flex justify-between"><span>Marking Scheme:</span><span className="font-semibold text-emerald-600">+{test.markingScheme.correct} / -{test.markingScheme.incorrect}</span></div>
                     </div>
                   </div>
-                  <button onClick={() => handleStartExam(test)} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
+                  <button onClick={() => handleStartExam(test)} className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
                     <Zap className="w-4 h-4" /><span>Start Live CBT Exam</span>
                   </button>
                 </div>
@@ -881,7 +881,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         {activeTab === 'custom' && (
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6">
             <div className="flex items-center space-x-2 mb-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center"><Plus className="w-4 h-4 text-white" /></div>
+              <div className="w-8 h-8 bg-gradient-to-br from-sky-500 to-purple-600 rounded-lg flex items-center justify-center"><Plus className="w-4 h-4 text-white" /></div>
               <div><h2 className="font-bold text-slate-900">Custom Test Builder</h2><p className="text-xs text-slate-500">Apne exam ke subjects aur topics choose karke custom practice test banao</p></div>
             </div>
 
@@ -891,11 +891,11 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 onClick={() => setBankSource('ai')}
                 className={`flex items-start space-x-3 p-4 rounded-2xl border-2 text-left transition-all ${
                   bankSource === 'ai'
-                    ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-200'
+                    ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200'
                     : 'border-slate-200 hover:border-slate-300 bg-white'
                 }`}
               >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${bankSource === 'ai' ? 'bg-indigo-600' : 'bg-slate-100'}`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${bankSource === 'ai' ? 'bg-sky-600' : 'bg-slate-100'}`}>
                   <Sparkles className={`w-4 h-4 ${bankSource === 'ai' ? 'text-white' : 'text-slate-500'}`} />
                 </div>
                 <div>
@@ -1048,8 +1048,8 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             <div className="flex items-center space-x-2">
               {[1,2,3,4].map((s) => (
                 <React.Fragment key={s}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${builder.step >= s ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-300'}`}>{s}</div>
-                  {s < 4 && <div className={`flex-1 h-0.5 ${builder.step > s ? 'bg-indigo-600' : 'bg-slate-200'}`} />}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${builder.step >= s ? 'bg-sky-600 text-white border-sky-600' : 'bg-white text-slate-400 border-slate-300'}`}>{s}</div>
+                  {s < 4 && <div className={`flex-1 h-0.5 ${builder.step > s ? 'bg-sky-600' : 'bg-slate-200'}`} />}
                 </React.Fragment>
               ))}
             </div>
@@ -1061,9 +1061,9 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             {builder.step >= 1 && (
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Active Profile Exam Target</label>
-                <div className="w-full border border-indigo-500/30 bg-indigo-50 text-indigo-900 font-bold rounded-xl px-4 py-2.5 text-sm flex items-center justify-between">
+                <div className="w-full border border-sky-500/30 bg-sky-50 text-slate-900 font-bold rounded-xl px-4 py-2.5 text-sm flex items-center justify-between">
                   <span>{EXAM_LIST.find((ex) => ex.id === activeExamKey)?.label || activeExamKey}</span>
-                  <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 bg-indigo-200 text-indigo-900 rounded font-black">Authoritative</span>
+                  <span className="text-[10px] uppercase tracking-widest px-2 py-0.5 bg-sky-200 text-slate-900 rounded font-black">Authoritative</span>
                 </div>
                 {builder.step === 1 && subjects.length > 0 && (
                   <div>
@@ -1074,7 +1074,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                           key={sub}
                           data-testid="cbt-builder-subject-btn"
                           onClick={() => handleBuilderSubjectSelect(sub)}
-                          className="cbt-builder-subject-btn p-3 text-sm text-left rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all font-medium text-slate-700"
+                          className="cbt-builder-subject-btn p-3 text-sm text-left rounded-xl border border-slate-200 hover:border-sky-400 hover:bg-sky-50 transition-all font-medium text-slate-700"
                         >
                           {sub}
                         </button>
@@ -1089,9 +1089,9 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             {builder.step >= 2 && builder.subject && (
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-semibold text-slate-700">Step 2: Topics choose karo <span className="text-indigo-600">({builder.subject})</span></label>
+                  <label className="text-sm font-semibold text-slate-700">Step 2: Topics choose karo <span className="text-sky-600">({builder.subject})</span></label>
                   <div className="flex space-x-2">
-                    <button id="cbt-builder-select-all-topics" onClick={() => setBuilder(prev => ({ ...prev, selectedTopics: topics }))} className="text-xs text-indigo-600 hover:underline">Select All</button>
+                    <button id="cbt-builder-select-all-topics" onClick={() => setBuilder(prev => ({ ...prev, selectedTopics: topics }))} className="text-xs text-sky-600 hover:underline">Select All</button>
                     <button onClick={() => setBuilder(prev => ({ ...prev, selectedTopics: [] }))} className="text-xs text-slate-500 hover:underline">Clear</button>
                   </div>
                 </div>
@@ -1100,8 +1100,8 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                     const sel = builder.selectedTopics.includes(topic);
                     return (
                       <button key={topic} onClick={() => toggleTopic(topic)}
-                        className={`flex items-center space-x-2 p-2.5 rounded-lg text-sm text-left border transition-all ${sel ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-semibold' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}>
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${sel ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'}`}>
+                        className={`flex items-center space-x-2 p-2.5 rounded-lg text-sm text-left border transition-all ${sel ? 'bg-sky-50 border-sky-400 text-slate-900 font-semibold' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-300'}`}>
+                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${sel ? 'bg-sky-600 border-sky-600' : 'border-slate-300'}`}>
                           {sel && <Check className="w-3 h-3 text-white" />}
                         </div>
                         <span className="line-clamp-1">{topic}</span>
@@ -1111,7 +1111,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 </div>
                 {builder.selectedTopics.length > 0 && builder.step === 2 && (
                   <button id="cbt-builder-next-configure" onClick={() => setBuilder(prev => ({ ...prev, step: 3 }))}
-                    className="mt-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all">
+                    className="mt-2 px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-lg transition-all">
                     Next: Configure →
                   </button>
                 )}
@@ -1147,8 +1147,8 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 </div>
 
                 {/* Summary */}
-                <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200 text-sm space-y-1">
-                  <div className="font-bold text-indigo-900 mb-2">Test Summary</div>
+                <div className="p-4 bg-sky-50 rounded-xl border border-sky-200 text-sm space-y-1">
+                  <div className="font-bold text-slate-900 mb-2">Test Summary</div>
                   <div className="flex justify-between text-slate-700"><span>Exam:</span><span className="font-semibold">{EXAM_LIST.find(e => e.id === builder.exam)?.label || builder.exam}</span></div>
                   <div className="flex justify-between text-slate-700"><span>Subject:</span><span className="font-semibold">{builder.subject}</span></div>
                   <div className="flex justify-between text-slate-700"><span>Topics Selected:</span><span className="font-semibold">{builder.selectedTopics.length} topics</span></div>
@@ -1158,7 +1158,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 </div>
 
                 <button id="cbt-builder-generate-start-btn" onClick={handleGenerateCustomExam} disabled={generating}
-                  className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-70">
+                  className="w-full py-3 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-70">
                   {generating ? (
                     <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /><span>AI Questions Generate ho rahi hain...</span></>
                   ) : (
@@ -1178,7 +1178,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2"><Radio className="w-5 h-5 text-rose-500" /><span>Live & Upcoming Admin Exams</span></h2>
-              <button onClick={fetchLiveExams} className="text-xs text-indigo-600 font-semibold hover:underline flex items-center space-x-1"><RotateCcw className="w-3 h-3" /><span>Refresh</span></button>
+              <button onClick={fetchLiveExams} className="text-xs text-sky-600 font-semibold hover:underline flex items-center space-x-1"><RotateCcw className="w-3 h-3" /><span>Refresh</span></button>
             </div>
 
             {liveExams.length === 0 ? (
@@ -1192,7 +1192,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 {liveExams.map((ex) => {
                   const isLive = ex.status === 'live' || liveCountdowns[ex.id] === 'LIVE NOW';
                   return (
-                    <div key={ex.id} className={`rounded-2xl border p-5 shadow-sm transition-all ${isLive ? 'border-rose-400 bg-rose-50 ring-2 ring-rose-200' : 'border-slate-200 bg-white hover:border-indigo-300'}`}>
+                    <div key={ex.id} className={`rounded-2xl border p-5 shadow-sm transition-all ${isLive ? 'border-rose-400 bg-rose-50 ring-2 ring-rose-200' : 'border-slate-200 bg-white hover:border-sky-300'}`}>
                       <div className="flex justify-between items-start mb-3">
                         <span className={`px-2.5 py-1 text-xs font-bold rounded-md uppercase ${isLive ? 'bg-rose-600 text-white animate-pulse' : 'bg-amber-100 text-amber-800 border border-amber-200'}`}>
                           {isLive ? '🔴 LIVE' : '📅 Upcoming'}
@@ -1229,7 +1229,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         {activeTab === 'results' && (
           loadingHistory ? (
             <div className="p-12 text-center text-slate-500">
-              <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <div className="w-8 h-8 border-4 border-sky-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
               Loading Results History...
             </div>
           ) : testHistory.length === 0 ? (
@@ -1243,7 +1243,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               </div>
               <button
                 onClick={() => setActiveTab('available')}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
               >
                 Browse CBT Tests
               </button>
@@ -1255,13 +1255,13 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   <h3 className="font-bold text-slate-900 text-base">Completed Tests ({testHistory.length})</h3>
                   <p className="text-xs text-slate-500">Verified scores and performance history for {examOption?.label || activeExamKey.replace(/_/g, ' ')}</p>
                 </div>
-                <span className="text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-lg">
+                <span className="text-xs font-semibold text-sky-600 bg-sky-50 border border-sky-100 px-3 py-1 rounded-lg">
                   Exam: {activeExamKey.replace(/_/g, ' ')}
                 </span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {testHistory.map((item: any, idx: number) => (
-                  <div key={item.testId ? `${item.testId}_${idx}` : `hist_${idx}`} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-indigo-300 transition-all flex flex-col justify-between">
+                  <div key={item.testId ? `${item.testId}_${idx}` : `hist_${idx}`} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-sky-300 transition-all flex flex-col justify-between">
                     <div>
                       <div className="flex justify-between items-start mb-2">
                         <span className="px-2 py-0.5 text-[11px] font-bold rounded bg-slate-100 text-slate-700">
@@ -1275,7 +1275,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                       <div className="grid grid-cols-3 gap-2 bg-slate-50 rounded-xl p-3 text-center mb-4">
                         <div>
                           <div className="text-[10px] text-slate-500 uppercase font-semibold">Score</div>
-                          <div className="text-sm font-black text-indigo-600">{item.score} <span className="text-[10px] text-slate-400 font-normal">/ {item.totalPossibleScore || 200}</span></div>
+                          <div className="text-sm font-black text-sky-600">{item.score} <span className="text-[10px] text-slate-400 font-normal">/ {item.totalPossibleScore || 200}</span></div>
                         </div>
                         <div>
                           <div className="text-[10px] text-slate-500 uppercase font-semibold">AIR Rank</div>
@@ -1289,7 +1289,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                     </div>
                     <button
                       onClick={() => setExamResult(item)}
-                      className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-1.5"
+                      className="w-full py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-1.5"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span>Review Detailed Analytics</span>
@@ -1310,14 +1310,14 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   if (examResult) {
     return (
       <div id="cbt-result-scorecard" className="w-full space-y-4 sm:space-y-6">
-        <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-indigo-800/60 pb-4 mb-4 sm:mb-6">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4 mb-4 sm:mb-6">
             <div>
-              <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-md">
+              <span className="px-3 py-1 bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold rounded-md">
                 CBT EXAM EVALUATION
               </span>
               <h2 className="text-xl sm:text-2xl font-bold mt-2">{examResult.testTitle}</h2>
-              <p className="text-indigo-200 text-xs sm:text-sm">Server-authoritative evaluation & AI Diagnostic report</p>
+              <p className="text-sky-200 text-xs sm:text-sm">Server-authoritative evaluation & AI Diagnostic report</p>
             </div>
             <button
               onClick={() => {
@@ -1325,7 +1325,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 setSessionState(null);
                 setExamResult(null);
               }}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md w-full sm:w-auto"
+              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md w-full sm:w-auto"
             >
               Back to Exam Portal
             </button>
@@ -1333,21 +1333,21 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 text-center">
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
-              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">Final Score</div>
+              <div className="text-[11px] sm:text-xs text-sky-300 font-medium">Final Score</div>
               <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">
                 {examResult.score} / {examResult.totalPossibleScore}
               </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
-              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">National Rank</div>
+              <div className="text-[11px] sm:text-xs text-sky-300 font-medium">National Rank</div>
               <div className="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-1">#{examResult.globalRank}</div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
-              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">Percentile</div>
+              <div className="text-[11px] sm:text-xs text-sky-300 font-medium">Percentile</div>
               <div className="text-2xl sm:text-3xl font-extrabold text-cyan-300 mt-1">{examResult.percentile}%</div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
-              <div className="text-[11px] sm:text-xs text-indigo-300 font-medium">Accuracy</div>
+              <div className="text-[11px] sm:text-xs text-sky-300 font-medium">Accuracy</div>
               <div className="text-2xl sm:text-3xl font-extrabold text-purple-300 mt-1">{examResult.accuracy}%</div>
             </div>
           </div>
@@ -1357,7 +1357,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
             <h3 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
-              <BarChart2 className="w-5 h-5 text-indigo-600" />
+              <BarChart2 className="w-5 h-5 text-sky-600" />
               <span>Performance Summary</span>
             </h3>
             <div className="space-y-3">
@@ -1394,7 +1394,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   <p key={i}>• {m}</p>
                 ))}
               </div>
-              <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-900">
+              <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-slate-900">
                 <div className="font-bold mb-1">Targeted Action Plan:</div>
                 {examResult.aiImprovementSuggestions.map((s, i) => (
                   <p key={i}>• {s}</p>
@@ -1440,7 +1440,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       {/* CBT HEADER BAR */}
       <header className="bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between border-b border-slate-800 shadow-md">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-600 text-white font-bold flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
             CBT
           </div>
           <div className="min-w-0">
@@ -1453,7 +1453,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           {/* Palette Button on Mobile */}
           <button
             onClick={() => setIsMobilePaletteOpen(true)}
-            className="md:hidden px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shrink-0"
+            className="md:hidden px-2.5 py-1.5 bg-sky-600 hover:bg-sky-500 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shrink-0"
           >
             <span>Q {sessionState.currentQuestionIndex + 1}/{selectedTest.questions.length}</span>
           </button>
@@ -1495,7 +1495,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           <div className="px-3 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-bold uppercase text-slate-500">Question No.</span>
-              <span className="w-7 h-7 bg-indigo-600 text-white font-bold rounded-md flex items-center justify-center text-sm">
+              <span className="w-7 h-7 bg-sky-600 text-white font-bold rounded-md flex items-center justify-center text-sm">
                 {sessionState.currentQuestionIndex + 1}
               </span>
               <span className="text-xs text-slate-400">/ {selectedTest.questions.length}</span>
@@ -1523,7 +1523,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               )}
 
               {currentQuestion.assertionText && (
-                <div className="p-3.5 sm:p-4 bg-indigo-50/60 border border-indigo-200 rounded-xl text-slate-800 text-xs sm:text-sm space-y-2">
+                <div className="p-3.5 sm:p-4 bg-sky-50/60 border border-sky-200 rounded-xl text-slate-800 text-xs sm:text-sm space-y-2">
                   <p className="font-semibold">{currentQuestion.assertionText}</p>
                   <p className="font-semibold">{currentQuestion.reasonText}</p>
                 </div>
@@ -1547,12 +1547,12 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                       onClick={() => handleSelectOption(optIdx)}
                       className={`w-full p-3 sm:p-4 text-left rounded-xl border transition-all flex items-start space-x-3 cursor-pointer ${
                         isSelected
-                          ? 'bg-indigo-50 border-indigo-600 text-indigo-950 font-semibold ring-2 ring-indigo-200'
+                          ? 'bg-sky-50 border-sky-600 text-slate-950 font-semibold ring-2 ring-sky-200'
                           : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300'
                       }`}
                     >
                       <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
-                        isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 border-slate-300'
+                        isSelected ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-100 text-slate-600 border-slate-300'
                       }`}>
                         {String.fromCharCode(65 + optIdx)}
                       </span>
@@ -1619,7 +1619,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               <button
                 id="cbt-btn-submit-exam"
                 onClick={() => setShowSubmitModal(true)}
-                className="px-3 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
+                className="px-3 sm:px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
               >
                 <Send className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
                 <span className="hidden sm:inline">Submit Exam</span>
@@ -1681,7 +1681,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                     key={q.id}
                     onClick={() => handleJumpToQuestion(idx)}
                     className={`h-9 font-bold text-xs rounded transition-all flex items-center justify-center ${bgClass} ${
-                      isCurrent ? 'ring-2 ring-indigo-900 ring-offset-1 font-black shadow-md' : ''
+                      isCurrent ? 'ring-2 ring-slate-900 ring-offset-1 font-black shadow-md' : ''
                     }`}
                   >
                     {idx + 1}
@@ -1695,7 +1695,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           <div className="p-4 bg-white border-t border-slate-200">
             <button
               onClick={() => setShowSubmitModal(true)}
-              className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
+              className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
             >
               <Send className="w-4 h-4" />
               <span>Submit Examination</span>
@@ -1760,7 +1760,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                         setIsMobilePaletteOpen(false);
                       }}
                       className={`h-9 font-bold text-xs rounded flex items-center justify-center ${bgClass} ${
-                        isCurrent ? 'ring-2 ring-indigo-900 ring-offset-1 font-black' : ''
+                        isCurrent ? 'ring-2 ring-slate-900 ring-offset-1 font-black' : ''
                       }`}
                     >
                       {idx + 1}
@@ -1776,7 +1776,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   setIsMobilePaletteOpen(false);
                   setShowSubmitModal(true);
                 }}
-                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2"
+                className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-2"
               >
                 <Send className="w-4 h-4" />
                 <span>Submit Examination</span>
@@ -1824,7 +1824,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 id="cbt-btn-confirm-submit"
                 onClick={() => handleFinalSubmit()}
                 disabled={submitting}
-                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all"
+                className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all"
               >
                 {submitting ? 'Evaluating...' : 'Yes, Submit Test'}
               </button>

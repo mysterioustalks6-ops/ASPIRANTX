@@ -259,13 +259,13 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-[#0b0f19] border border-cyan-500/30 rounded-3xl shadow-[0_0_50px_rgba(6,182,212,0.2)] text-slate-100 p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl text-slate-100 p-6 md:p-8 space-y-6 max-h-[90vh] overflow-y-auto my-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
-              <Sparkles className="w-6 h-6 animate-pulse" />
+            <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
+              <Sparkles className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-xl md:text-2xl font-extrabold text-white">Create Custom Exam & Syllabus</h2>
@@ -275,14 +275,14 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+            className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* STEP 1: EXAM BASIC INFO */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
           <div className="md:col-span-2 space-y-1.5">
             <label className="text-xs font-bold text-slate-300">Exam Title / Full Name *</label>
             <input
@@ -290,7 +290,7 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
               value={examTitle}
               onChange={(e) => setExamTitle(e.target.value)}
               placeholder="e.g. GATE Computer Science 2026, WBCS Mains, REET Level 1..."
-              className="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-slate-700 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none font-medium"
             />
           </div>
 
@@ -300,33 +300,33 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
               type="number"
               value={targetYear}
               onChange={(e) => setTargetYear(Number(e.target.value) || 2026)}
-              className="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-slate-700 text-sm text-white focus:border-cyan-400 focus:outline-none"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white focus:border-sky-500 focus:outline-none font-medium"
             />
           </div>
         </div>
 
         {/* AI SYLLABUS IMPORT PASTE BOX */}
-        <div className="bg-gradient-to-r from-purple-950/40 via-indigo-950/40 to-slate-900/60 p-4 rounded-2xl border border-purple-500/30 space-y-2">
+        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-extrabold text-purple-300 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" /> Paste Syllabus for AI Auto-Structuring (Optional)
+            <label className="text-xs font-bold text-sky-400 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-sky-400" /> Paste Syllabus for Structure Parsing (Optional)
             </label>
-            <span className="text-[10px] text-purple-300/80">AI will automatically build topics & subtopics!</span>
+            <span className="text-[10px] text-slate-400">Structured topics & subtopics will be generated</span>
           </div>
           <textarea
             value={rawSyllabusText}
             onChange={(e) => setRawSyllabusText(e.target.value)}
             rows={3}
             placeholder="Paste raw syllabus text, official PDF contents, or subject list here... (e.g. '1. Data Structures: Arrays, Stacks, Queues. 2. Algorithms: Sorting, Searching, Graphs...')"
-            className="w-full px-3.5 py-2.5 rounded-xl bg-black/70 border border-purple-500/30 text-xs text-white placeholder-slate-500 focus:border-purple-400 focus:outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none font-medium"
           />
         </div>
 
         {/* STEP 2: CUSTOM SUBJECTS BUILDER */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-extrabold text-cyan-300 flex items-center gap-2">
-              <BookOpen className="w-4 h-4" /> 1. Define Exam Subjects
+            <label className="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-sky-400" /> 1. Define Exam Subjects
             </label>
             <span className="text-xs text-slate-400">{subjects.length} Subjects Defined</span>
           </div>
@@ -339,11 +339,11 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
               onChange={(e) => setNewSubjectInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddSubject()}
               placeholder="Add Subject (e.g. Data Structures, General Science, Geography...)"
-              className="flex-1 px-4 py-2 rounded-xl bg-black/60 border border-slate-700 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+              className="flex-1 px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
             <button
               onClick={handleAddSubject}
-              className="px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-xs font-bold hover:bg-cyan-500/30 transition-all flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-sky-600/20 text-sky-300 border border-sky-500/30 text-xs font-bold hover:bg-sky-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Add Subject
             </button>
@@ -357,8 +357,8 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                 onClick={() => setActiveSubjectTab(subj)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center gap-2 border ${
                   activeSubjectTab === subj
-                    ? 'bg-cyan-500 text-black border-cyan-400 font-extrabold shadow-[0_0_15px_rgba(6,182,212,0.4)]'
-                    : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                    ? 'bg-sky-600 text-white border-sky-500 font-bold shadow-md shadow-sky-600/20'
+                    : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'
                 }`}
               >
                 <span>{subj}</span>
@@ -367,7 +367,7 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                     e.stopPropagation();
                     handleRemoveSubject(subj);
                   }}
-                  className="w-3.5 h-3.5 text-red-400 hover:text-red-300"
+                  className="w-3.5 h-3.5 text-rose-400 hover:text-rose-300"
                 />
               </div>
             ))}
@@ -376,10 +376,10 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
 
         {/* STEP 3: CUSTOM TOPICS & SUBTOPICS SYLLABUS BUILDER */}
         {activeSubjectTab && (
-          <div className="space-y-4 bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
+          <div className="space-y-4 bg-slate-950 p-5 rounded-2xl border border-slate-800">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-amber-400" /> Syllabus Topics for: <span className="text-cyan-400">{activeSubjectTab}</span>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Layers className="w-4 h-4 text-sky-400" /> Syllabus Topics for: <span className="text-sky-400">{activeSubjectTab}</span>
               </h3>
             </div>
 
@@ -391,11 +391,11 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                 onChange={(e) => setNewTopicInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
                 placeholder={`Add Topic under ${activeSubjectTab} (e.g. Fundamental Rights, Percentage, Mechanics...)`}
-                className="flex-1 px-4 py-2 rounded-xl bg-black/60 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+                className="flex-1 px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <button
                 onClick={handleAddTopic}
-                className="px-4 py-2 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/30 transition-all flex items-center gap-1.5"
+                className="px-4 py-2 rounded-xl bg-sky-600/20 text-sky-300 border border-sky-500/30 text-xs font-bold hover:bg-sky-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Add Topic
               </button>
@@ -409,15 +409,15 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                 </p>
               ) : (
                 (topicsBySubject[activeSubjectTab] || []).map((topicItem, tIdx) => (
-                  <div key={tIdx} className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
+                  <div key={tIdx} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                        <span className="w-2 h-2 rounded-full bg-sky-400" />
                         <span className="text-xs font-extrabold text-white">{topicItem.topicName}</span>
                       </div>
                       <button
                         onClick={() => handleRemoveTopic(tIdx)}
-                        className="text-slate-500 hover:text-red-400 text-xs flex items-center gap-1"
+                        className="text-slate-500 hover:text-rose-400 text-xs flex items-center gap-1 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" /> Remove
                       </button>
@@ -447,11 +447,11 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                           setNewSubtopicInput(e.target.value);
                         }}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddSubtopic(tIdx)}
-                        className="flex-1 px-3 py-1 rounded-lg bg-black/60 border border-slate-800 text-[11px] text-white focus:border-cyan-400 focus:outline-none"
+                        className="flex-1 px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-white focus:border-sky-500 focus:outline-none"
                       />
                       <button
                         onClick={() => handleAddSubtopic(tIdx)}
-                        className="px-3 py-1 rounded-lg bg-slate-800 text-slate-200 text-[11px] font-bold hover:bg-slate-700"
+                        className="px-3 py-1 rounded-lg bg-slate-800 text-slate-200 text-[11px] font-bold hover:bg-slate-700 cursor-pointer"
                       >
                         + Subtopic
                       </button>
@@ -466,22 +466,22 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
         {/* FOOTER ACTIONS */}
         <div className="flex items-center justify-between border-t border-slate-800 pt-4">
           <div className="text-xs text-slate-400 flex items-center gap-1.5">
-            <Shield className="w-4 h-4 text-emerald-400" />
+            <Shield className="w-4 h-4 text-sky-400" />
             <span>Syllabus Tracker, CBT Mock Engine & AI Chat will adapt to this exam!</span>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-all"
+              className="px-5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSaveAndApply}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 text-slate-950 font-black text-xs shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:brightness-110 transition-all flex items-center gap-2"
+              className="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4 fill-slate-950 text-cyan-400" /> Create & Apply Target Exam
+              <CheckCircle2 className="w-4 h-4 text-white" /> Create & Apply Target Exam
             </button>
           </div>
         </div>

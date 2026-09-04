@@ -148,7 +148,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             {/* Header Handle & Close */}
             <div className="p-4 border-b border-slate-800/80 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white text-xs shadow-md">
+                <div className="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-xs shadow-md shadow-sky-600/25">
                   {customizer?.logoIconText || 'AX'}
                 </div>
                 <div>
@@ -195,7 +195,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         onClose();
                         onOpenProfileModal();
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-bold text-[11px] shrink-0"
+                      className="px-3 py-1.5 rounded-xl bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/30 text-sky-300 font-bold text-[11px] shrink-0"
                     >
                       Profile
                     </button>
@@ -206,7 +206,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               {/* Target Exam Switcher */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <GraduationCap className="w-3.5 h-3.5 text-indigo-400" /> Target Examination
+                  <GraduationCap className="w-3.5 h-3.5 text-sky-400" /> Target Examination
                 </label>
                 <select
                   value={selectedExam || user?.exam || 'NEET_UG'}
@@ -219,7 +219,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                       onExamChange(val);
                     }
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-indigo-300 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-sky-300 focus:outline-none focus:border-sky-500"
                 >
                   <optgroup label="Preset Competitive Exams">
                     {EXAM_LIST.map((ex) => (
@@ -259,7 +259,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                           onClick={() => handleNavClick(item.id)}
                           className={`w-full min-h-[44px] px-3 py-2.5 rounded-xl text-left flex items-center justify-between transition-all ${
                             isActive
-                              ? 'bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/20'
+                              ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-600/25'
                               : 'bg-slate-950/40 text-slate-300 hover:bg-slate-800 hover:text-white border border-slate-800/60'
                           }`}
                         >
@@ -270,7 +270,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                           {item.badge && (
                             <span
                               className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                                isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-indigo-300 border border-slate-700'
+                                isActive ? 'bg-white/20 text-white' : 'bg-slate-800 text-sky-300 border border-slate-700'
                               }`}
                             >
                               {item.badge}
@@ -295,7 +295,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                         onClick={() => handleNavClick('teachers')}
                         className={`w-full min-h-[44px] px-3 py-2.5 rounded-xl text-left flex items-center justify-between transition-all ${
                           activeTab === 'teachers'
-                            ? 'bg-indigo-600 text-white font-bold'
+                            ? 'bg-sky-600 text-white font-bold shadow-md shadow-sky-600/25'
                             : 'bg-slate-950/40 text-slate-300 hover:bg-slate-800 border border-slate-800/60'
                         }`}
                       >
@@ -349,9 +349,9 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                       onClose();
                       onOpenWorkspaceCustomizer();
                     }}
-                    className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-slate-950 border border-indigo-500/30 text-indigo-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2"
+                    className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-slate-950 border border-sky-500/30 text-sky-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2"
                   >
-                    <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+                    <Sliders className="w-3.5 h-3.5 text-sky-400" />
                     <span>Personalize Workspace Order</span>
                   </button>
                 )}

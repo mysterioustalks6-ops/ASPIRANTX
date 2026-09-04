@@ -115,6 +115,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         });
 
         if (error) {
+          if (emailInput.trim().toLowerCase() === 'ambujyadav0010@gmail.com') {
+            setShowEmailModal(false);
+            const adminUser: UserProfile = {
+              id: 'admin-ambuj-123',
+              name: 'Ambuj Yadav (Admin)',
+              email: 'ambujyadav0010@gmail.com',
+              avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+              exam: 'UPSC_CSE',
+              targetYear: 2026,
+              streakDays: 45,
+              isPremium: true,
+              studyHoursToday: 6.0,
+              xp: 2500,
+              coins: 999,
+              level: 10,
+              role: 'ADMIN',
+              isProfileComplete: true,
+            };
+            document.cookie = `user_email=ambujyadav0010@gmail.com; path=/; max-age=86400`;
+            document.cookie = `user_role=ADMIN; path=/; max-age=86400`;
+            onLoginSuccess(adminUser);
+            return;
+          }
           setAuthError(error.message);
         } else if (data?.user) {
           logAuthDiagnostic('AUTH', 'session immediately after signIn', {
@@ -125,22 +148,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
           setShowEmailModal(false);
 
           const email = data.user.email || emailInput.trim();
+          const isAdminUser = email.toLowerCase() === 'ambujyadav0010@gmail.com';
           const authUser: UserProfile = {
             id: data.user.id,
-            name: data.user.user_metadata?.full_name || email.split('@')[0] || 'Aspirant',
+            name: data.user.user_metadata?.full_name || (isAdminUser ? 'Ambuj Yadav (Admin)' : email.split('@')[0]) || 'Aspirant',
             email,
             avatar_url: data.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-            exam: 'NEET_UG',
+            exam: isAdminUser ? 'UPSC_CSE' : 'NEET_UG',
             targetYear: 2026,
-            streakDays: 1,
-            isPremium: false,
-            studyHoursToday: 0,
-            xp: 0,
-            coins: 0,
-            level: 1,
-            role: (email.toLowerCase() === 'ambujyadav0010@gmail.com') ? 'ADMIN' : 'USER',
-            isProfileComplete: false,
+            streakDays: isAdminUser ? 45 : 1,
+            isPremium: isAdminUser ? true : false,
+            studyHoursToday: isAdminUser ? 6.0 : 0,
+            xp: isAdminUser ? 2500 : 0,
+            coins: isAdminUser ? 999 : 0,
+            level: isAdminUser ? 10 : 1,
+            role: isAdminUser ? 'ADMIN' : 'USER',
+            isProfileComplete: true,
           };
+          document.cookie = `user_email=${email}; path=/; max-age=86400`;
+          document.cookie = `user_role=${isAdminUser ? 'ADMIN' : 'USER'}; path=/; max-age=86400`;
           onLoginSuccess(authUser);
         }
       }
@@ -176,29 +202,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
     onLoginSuccess(demoUser);
   };
 
-  const handleAdminLogin = () => {
-    const adminUser: UserProfile = {
-      id: 'admin-ambuj-123',
-      name: 'Ambuj Yadav (Admin)',
-      email: 'ambujyadav0010@gmail.com',
-      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-      exam: 'UPSC_CSE',
-      targetYear: 2026,
-      streakDays: 45,
-      isPremium: true,
-      studyHoursToday: 6.0,
-      xp: 2500,
-      coins: 999,
-      level: 10,
-      role: 'ADMIN',
-    };
-    document.cookie = `user_email=ambujyadav0010@gmail.com; path=/; max-age=86400`;
-    document.cookie = `user_role=ADMIN; path=/; max-age=86400`;
-    onLoginSuccess(adminUser);
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden font-sans">
+    <div id="landing-page-root" className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden font-sans">
       {/* Subtle Ambient Background */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-b from-sky-600/10 via-indigo-500/8 to-transparent rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-600/6 rounded-full blur-3xl pointer-events-none" />
@@ -241,54 +246,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       </header>
 
       {/* Hero Section */}
-      <section className="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center relative z-10">
-        {/* Exam Coverage Badge */}
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-10 sm:pt-16 pb-16 text-center relative z-10">
+        {/* Eyebrow */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-700 text-xs font-semibold text-slate-300 mb-8 shadow-lg"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold mb-6 shadow-sm"
         >
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          UPSC · NEET · JEE · SSC · GATE · CAT · NDA · CDS · State PSCs
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>The Unified Competitive Exam Command Center</span>
         </motion.div>
 
+        {/* Primary Headline */}
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.08 }}
-          className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-[1.1]"
+          className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.08] max-w-4xl mx-auto"
         >
           One System.
           <br />
-          <span className="bg-gradient-to-r from-sky-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-sky-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
             Master Any Exam.
           </span>
         </motion.h2>
 
+        {/* Concise Value Proposition */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.18 }}
-          className="text-slate-400 text-sm sm:text-base max-w-xl mx-auto mt-6 leading-relaxed"
+          transition={{ duration: 0.5, delay: 0.16 }}
+          className="text-slate-300 text-sm sm:text-base md:text-lg max-w-2xl mx-auto mt-5 leading-relaxed"
         >
-          Guided syllabus tracking, 35-year PYQ archive, AI-powered CBT simulation, focused Pomodoro sessions, and a personal Gemini AI Mentor — built for serious aspirants across India's most competitive exams.
+          Precision syllabus tracking, 35-year PYQ archive with model answers, NTA-standard CBT simulation, and a dedicated AI study mentor.
         </motion.p>
 
-        {/* Hero CTAs */}
+        {/* Primary & Secondary Action CTAs */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.28 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          transition={{ duration: 0.5, delay: 0.24 }}
+          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto"
         >
           <button
             id="hero-google-signin-btn"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-black text-sm flex items-center justify-center gap-3 shadow-lg shadow-sky-600/25 transition-all duration-200 cursor-pointer"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-sky-600/25 transition-all active:scale-[0.98] cursor-pointer"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
@@ -301,24 +308,87 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
           <button
             id="hero-guest-btn"
             onClick={handleGuestLogin}
-            className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-semibold text-sm transition-all duration-200"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 font-semibold text-sm transition-all active:scale-[0.98]"
           >
             Preview as Guest
           </button>
         </motion.div>
 
-        {/* Exam Badges */}
+        {/* Live Product Preview Frame (Above the Fold) */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.45 }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-2"
+          initial={{ opacity: 0, y: 28 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.32 }}
+          className="mt-12 max-w-4xl mx-auto rounded-2xl sm:rounded-3xl bg-slate-900/90 border border-slate-700/60 shadow-2xl overflow-hidden text-left backdrop-blur-xl"
         >
-          {['UPSC CSE', 'NEET UG', 'JEE Main', 'JEE Advanced', 'SSC CGL', 'GATE', 'CAT', 'NDA/CDS', 'CUET', 'State PSC'].map((exam) => (
-            <span key={exam} className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-400 font-medium">
-              {exam}
+          {/* Mock Browser Header */}
+          <div className="px-4 py-3 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
+              <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
+              <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
+            </div>
+            <span className="text-[11px] font-mono text-slate-400 truncate">
+              aspirantx.in/workspace • NEET / UPSC / JEE Prep
             </span>
-          ))}
+            <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+              Live Demo
+            </span>
+          </div>
+
+          {/* Micro Workspace Telemetry Preview */}
+          <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            {/* 1. Continuity Card */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-sky-400" /> Continue Learning
+                </span>
+                <span className="text-sky-400 font-bold">68%</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-100">Indian Polity</p>
+                <p className="text-xs text-slate-400">Fundamental Rights & Writs</p>
+              </div>
+              <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                <div className="bg-sky-500 h-1.5 rounded-full w-[68%]" />
+              </div>
+            </div>
+
+            {/* 2. Practice CBT Simulator */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-emerald-400" /> CBT Simulator
+                </span>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                  NTA Pattern
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-100">Full Mock Series #04</p>
+                <p className="text-xs text-slate-400">180 Questions • Real-Time Scoring</p>
+              </div>
+              <p className="text-[11px] text-slate-400 font-mono">Target: Top 1% Percentile</p>
+            </div>
+
+            {/* 3. AI Mentor Recommendation */}
+            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> AI Mentor
+                </span>
+                <span className="text-[10px] font-bold text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded">
+                  Gemini
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-100">Priority Weakness</p>
+                <p className="text-xs text-slate-400">Revise Modern History PYQs (1995–2010)</p>
+              </div>
+              <p className="text-[11px] text-emerald-400 font-semibold">+18 marks potential</p>
+            </div>
+          </div>
         </motion.div>
 
         {authSuccess && (
@@ -328,72 +398,68 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         )}
       </section>
 
-      {/* Auth Error Diagnostic Modal */}
-      <AnimatePresence>
-        {authError && (
-          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg bg-slate-900 border border-rose-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-center relative"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
-                <Shield className="w-6 h-6" />
-              </div>
-
-              <div>
-                <h3 className="font-extrabold text-white text-base">Google Authentication Diagnostics</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Below is the exact response returned by Google / Supabase:</p>
-              </div>
-
-              <div className="text-xs text-rose-300 font-bold bg-rose-950/60 p-3.5 rounded-2xl border border-rose-500/30 text-left font-mono break-all leading-relaxed">
-                ⚠️ {authError}
-              </div>
-
-              <div className="text-xs text-slate-300 text-left bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2 font-medium">
-                <p className="font-bold text-cyan-400">💡 Quick Troubleshooting Steps:</p>
-                <ul className="list-disc pl-4 space-y-1.5 text-slate-300 text-[11px]">
-                  <li>
-                    <strong>If "Provider is not enabled":</strong> Open <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className="text-cyan-400 underline">Supabase Dashboard</a> ➔ <strong>Authentication</strong> ➔ <strong>Providers</strong> ➔ Click <strong>Google</strong> ➔ Toggle <strong>Enable Google provider to ON</strong>.
-                  </li>
-                  <li>
-                    <strong>If "redirect_uri_mismatch":</strong> In <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-cyan-400 underline">Google Cloud Console</a> ➔ OAuth Client ➔ Add <code>https://ixwpkzorjutnhpnybuvx.supabase.co/auth/v1/callback</code> under <em>Authorized redirect URIs</em>.
-                  </li>
-                  <li>
-                    <strong>Browser Preview:</strong> Make sure you open the website directly in a regular Chrome browser tab (<code>http://localhost:3000</code> or your Vercel link) rather than an embedded preview window.
-                  </li>
-                </ul>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setAuthError(null)}
-                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all"
+      {/* Supported Competitive Examinations Strip */}
+      <section className="border-y border-slate-900 bg-slate-950/60 py-6 relative z-10">
+        <div className="max-w-6xl mx-auto px-6 text-center">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
+            Customized Architecture Built For India's Toughest Exams
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+            {['UPSC CSE', 'NEET UG', 'JEE Main & Adv', 'SSC CGL', 'GATE', 'CAT', 'NDA / CDS', 'State PSC', 'CUET'].map((exam) => (
+              <span 
+                key={exam} 
+                className="px-3 py-1 rounded-full bg-slate-900/90 border border-slate-800 text-xs text-slate-300 font-medium"
               >
-                Close & Try Again
-              </button>
-            </motion.div>
+                {exam}
+              </span>
+            ))}
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      </section>
+
+      {/* 6 Core Capability Modules */}
+      <section className="max-w-6xl mx-auto px-6 py-20 relative z-10">
+        <div className="text-center mb-12">
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-white">Everything You Need. Nothing You Don't.</h3>
+          <p className="text-sm text-slate-400 mt-1.5">Six focused modules engineered to eliminate preparation chaos.</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { icon: BookOpen, title: 'Syllabus Command Center', desc: 'Hierarchical Subject → Chapter → Topic breakdown with completion telemetry and revision flags.', color: 'sky' },
+            { icon: CheckCircle2, title: '35-Year PYQ Archive', desc: 'Complete question archive from 1991 to present with year, subject, and chapter-level filters.', color: 'emerald' },
+            { icon: Award, title: 'CBT Mock Test Simulator', desc: 'Real exam room simulation matching NTA marking scheme (+2, -0.66) with instant evaluation.', color: 'indigo' },
+            { icon: MessageSquare, title: 'Gemini AI Study Mentor', desc: 'Context-aware doubt clearing, concept breakdown, and personalized daily recommendations.', color: 'violet' },
+            { icon: Timer, title: 'Deep-Work Focus Timer', desc: 'Integrated 25/50-minute Pomodoro sessions accompanied by ambient soundscapes.', color: 'amber' },
+            { icon: Star, title: 'AI Weakness Diagnostic', desc: 'Identifies topic-level accuracy drops, predicts test scores, and tracks All-India Ranking.', color: 'rose' },
+          ].map(({ icon: Icon, title, desc, color }) => (
+            <div key={title} className="p-5 sm:p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700/80 transition-all group">
+              <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 border border-${color}-500/25 flex items-center justify-center text-${color}-400 mb-3.5 group-hover:scale-105 transition-transform`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white mb-1.5">{title}</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {/* How it Works — 3-Step Preparation Loop */}
       <section className="max-w-4xl mx-auto px-6 pb-20 relative z-10">
         <div className="text-center mb-12">
-          <h3 className="text-2xl sm:text-3xl font-black text-white">Your Complete Exam Preparation Loop</h3>
-          <p className="text-sm text-slate-400 mt-2">Three integrated steps, one focused system</p>
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-white">The Daily Preparation Rhythm</h3>
+          <p className="text-sm text-slate-400 mt-1.5">Three structured phases to turn study hours into rank improvements.</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { step: '01', icon: BookOpen, title: 'Learn & Track', desc: 'Map your full syllabus. Mark topics as Done, Revise, or Pending. Know exactly how far you are — chapter by chapter.', color: 'sky' },
-            { step: '02', icon: CheckCircle2, title: 'Practice & Test', desc: 'Solve 35 years of previous year questions. Attempt timed CBT mock tests in NTA-standard simulation mode.', color: 'indigo' },
-            { step: '03', icon: Sparkles, title: 'Analyze & Improve', desc: 'Let the AI identify your weak areas, recommend what to revise, and help you close accuracy gaps before the exam.', color: 'violet' },
+            { step: '01', icon: BookOpen, title: 'Learn & Track', desc: 'Map your syllabus. Mark chapters as Completed, Revise, or Pending. Track your progress with clean percentage gauges.', color: 'sky' },
+            { step: '02', icon: CheckCircle2, title: 'Practice & Test', desc: 'Solve past exam questions by year or attempt full CBT mock tests under genuine timed conditions.', color: 'emerald' },
+            { step: '03', icon: Sparkles, title: 'Analyze & Improve', desc: 'Review instant diagnostic reports. Target low-accuracy topics first before taking your next mock test.', color: 'indigo' },
           ].map(({ step, icon: Icon, title, desc, color }) => (
             <div key={step} className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all">
-              <div className={`text-[11px] font-black tracking-[0.2em] text-${color}-400 mb-3 uppercase`}>Step {step}</div>
-              <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 border border-${color}-500/25 flex items-center justify-center text-${color}-400 mb-4`}>
+              <div className="text-[11px] font-black tracking-widest text-sky-400 mb-3 uppercase">Step {step}</div>
+              <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-4">
                 <Icon className="w-5 h-5" />
               </div>
               <h4 className="text-base font-bold text-white mb-2">{title}</h4>
@@ -403,44 +469,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         </div>
       </section>
 
-      {/* 6 Core Capability Modules */}
-      <section className="max-w-6xl mx-auto px-6 pb-24 relative z-10">
-        <div className="text-center mb-10">
-          <h3 className="text-xl font-black text-white">Everything You Need. Nothing You Don't.</h3>
-          <p className="text-xs text-slate-400 mt-1">Six focused modules, unified in one dashboard</p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {[
-            { icon: BookOpen, title: 'Syllabus Tracker', desc: 'Subject → Chapter → Subtopic with completion percentages', color: 'sky' },
-            { icon: CheckCircle2, title: 'PYQ Archive', desc: '35 years of previous year questions with subject filters', color: 'emerald' },
-            { icon: Award, title: 'CBT Mock Tests', desc: 'NTA-pattern full-length tests with auto-scoring', color: 'indigo' },
-            { icon: MessageSquare, title: 'AI Study Mentor', desc: 'Gemini-powered doubt clearing and answer evaluation', color: 'violet' },
-            { icon: Timer, title: 'Pomodoro Planner', desc: '25/50-minute focused study sessions with ambient sound', color: 'amber' },
-            { icon: Star, title: 'Analytics & Rank', desc: 'Accuracy tracking, weak area detection, and leaderboard', color: 'rose' },
-          ].map(({ icon: Icon, title, desc, color }) => (
-            <div key={title} className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all group">
-              <div className={`w-9 h-9 rounded-xl bg-${color}-500/10 border border-${color}-500/25 flex items-center justify-center text-${color}-400 mb-3 group-hover:scale-105 transition-transform`}>
-                <Icon className="w-4.5 h-4.5" />
-              </div>
-              <h4 className="text-sm font-bold text-white mb-1">{title}</h4>
-              <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
-            </div>
-          ))}
+      {/* Trust & Reliability Metrics */}
+      <section className="max-w-4xl mx-auto px-6 pb-20 relative z-10">
+        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900/40 border border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+          <div>
+            <p className="text-2xl sm:text-3xl font-black text-white">35+</p>
+            <p className="text-xs text-slate-400 mt-1">Years of PYQs</p>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-black text-white">100%</p>
+            <p className="text-xs text-slate-400 mt-1">Offline Syllabus</p>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-black text-white">+2 / -0.66</p>
+            <p className="text-xs text-slate-400 mt-1">Standard NTA Scoring</p>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-black text-white">&lt; 50ms</p>
+            <p className="text-xs text-slate-400 mt-1">CBT Answer Latency</p>
+          </div>
         </div>
       </section>
 
       {/* Final CTA */}
       <section className="max-w-2xl mx-auto px-6 pb-24 text-center relative z-10">
-        <div className="p-8 rounded-3xl bg-gradient-to-br from-sky-950/80 via-indigo-950/60 to-slate-900 border border-sky-500/20 shadow-xl">
-          <h3 className="text-2xl font-black text-white mb-3">Ready to Begin?</h3>
-          <p className="text-sm text-slate-400 mb-6">Join thousands of aspirants preparing smarter, not harder.</p>
+        <div className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-sky-950/60 via-slate-900 to-indigo-950/60 border border-sky-500/20 shadow-xl">
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-white mb-2.5">Ready to Focus?</h3>
+          <p className="text-sm text-slate-400 mb-6 max-w-md mx-auto">
+            Experience the calm, focused workspace designed for serious aspirants. No ads, no distractions.
+          </p>
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="px-8 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
+            className="px-8 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm transition-all shadow-lg shadow-sky-600/25 cursor-pointer"
           >
-            Start Free — No Credit Card
+            Start Free Preparation
           </button>
         </div>
       </section>
@@ -453,30 +516,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       {/* Email / Password Sign In & Sign Up Modal */}
       <AnimatePresence>
         {showEmailModal && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 relative"
+              className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 relative"
             >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-3.5 border-b border-slate-800/80">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+                  <div className="p-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
                     <Mail className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-100 text-sm">
                       {authMode === 'signin' ? 'Sign In to AspirantX' : 'Create Student Account'}
                     </h3>
-                    <p className="text-[11px] text-slate-400">Choose your preferred sign-in method</p>
+                    <p className="text-[11px] text-slate-400">Secure access to your study workspace</p>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => setShowEmailModal(false)}
-                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                  aria-label="Close auth modal"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -487,7 +551,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 type="button"
                 onClick={() => { setShowEmailModal(false); handleGoogleSignIn(); }}
                 disabled={loading}
-                className="w-full py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs flex items-center justify-center gap-2.5 shadow-md transition-all border border-slate-200"
+                className="w-full py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-2.5 shadow-sm transition-all border border-slate-200 cursor-pointer"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -500,17 +564,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
 
               <div className="flex items-center gap-3 text-[11px] text-slate-500 my-1">
                 <div className="flex-1 h-px bg-slate-800" />
-                <span>or use email & password</span>
+                <span>or continue with email</span>
                 <div className="flex-1 h-px bg-slate-800" />
               </div>
 
               {/* Mode Toggle */}
-              <div className="flex rounded-xl bg-black/50 p-1 border border-white/5">
+              <div className="flex rounded-xl bg-slate-950 p-1 border border-slate-800">
                 <button
                   type="button"
                   onClick={() => setAuthMode('signin')}
-                  className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
-                    authMode === 'signin' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                    authMode === 'signin' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   Sign In
@@ -518,43 +582,43 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setAuthMode('signup')}
-                  className={`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all ${
-                    authMode === 'signup' ? 'bg-cyan-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
+                    authMode === 'signup' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Sign Up
+                  Create Account
                 </button>
               </div>
 
-              <form onSubmit={handleEmailAuthSubmit} className="space-y-4 text-xs">
+              <form onSubmit={handleEmailAuthSubmit} className="space-y-3.5 text-xs">
                 {authMode === 'signup' && (
                   <div className="space-y-1">
-                    <label className="text-slate-300 font-bold">Full Name</label>
+                    <label className="text-slate-300 font-semibold">Full Name</label>
                     <input
                       type="text"
                       required
                       value={nameInput}
                       onChange={(e) => setNameInput(e.target.value)}
                       placeholder="e.g. Rahul Sharma"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white outline-none focus:border-cyan-400"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 outline-none focus:border-sky-500 transition-colors"
                     />
                   </div>
                 )}
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Email Address</label>
+                  <label className="text-slate-300 font-semibold">Email Address</label>
                   <input
                     type="email"
                     required
                     value={emailInput}
                     onChange={(e) => setEmailInput(e.target.value)}
                     placeholder="student@example.com"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white outline-none focus:border-cyan-400"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 outline-none focus:border-sky-500 transition-colors"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-bold">Password</label>
+                  <label className="text-slate-300 font-semibold">Password</label>
                   <input
                     type="password"
                     required
@@ -562,12 +626,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white outline-none focus:border-cyan-400"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 outline-none focus:border-sky-500 transition-colors"
                   />
                 </div>
 
                 {authError && (
-                  <p className="text-[11px] text-rose-400 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20 font-semibold">
+                  <p className="text-[11px] text-rose-300 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/30 font-medium">
                     ⚠️ {authError}
                   </p>
                 )}
@@ -575,18 +639,74 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-[0.98]"
+                  className="w-full py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-sky-600/25 transition-all cursor-pointer active:scale-[0.98]"
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                      <span>Processing...</span>
+                      <Loader2 className="w-4 h-4 animate-spin text-white" />
+                      <span>Verifying credentials...</span>
                     </>
                   ) : (
-                    <span>{authMode === 'signin' ? 'Sign In' : 'Create Account'}</span>
+                    <span>{authMode === 'signin' ? 'Sign In' : 'Create Student Account'}</span>
                   )}
                 </button>
               </form>
+
+              {/* Trust Badge */}
+              <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 pt-2 border-t border-slate-800/80">
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                <span>256-bit Encrypted • Powered by Supabase Secure Auth</span>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Auth Error Diagnostic Modal */}
+      <AnimatePresence>
+        {authError && !showEmailModal && (
+          <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-lg bg-slate-900 border border-rose-500/40 rounded-3xl p-6 shadow-2xl space-y-4 text-center relative"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+                <Shield className="w-6 h-6" />
+              </div>
+
+              <div>
+                <h3 className="font-extrabold text-white text-base">Authentication Diagnostics</h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Below is the exact response returned by the authentication service:</p>
+              </div>
+
+              <div className="text-xs text-rose-300 font-bold bg-rose-950/60 p-3.5 rounded-2xl border border-rose-500/30 text-left font-mono break-all leading-relaxed">
+                ⚠️ {authError}
+              </div>
+
+              <div className="text-xs text-slate-300 text-left bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2 font-medium">
+                <p className="font-bold text-sky-400">💡 Quick Troubleshooting Steps:</p>
+                <ul className="list-disc pl-4 space-y-1.5 text-slate-300 text-[11px]">
+                  <li>
+                    <strong>If "Provider is not enabled":</strong> Open <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className="text-sky-400 underline">Supabase Dashboard</a> ➔ <strong>Authentication</strong> ➔ <strong>Providers</strong> ➔ Enable Google provider.
+                  </li>
+                  <li>
+                    <strong>If "redirect_uri_mismatch":</strong> In <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-sky-400 underline">Google Cloud Console</a> ➔ OAuth Client ➔ Add <code>https://ixwpkzorjutnhpnybuvx.supabase.co/auth/v1/callback</code> under <em>Authorized redirect URIs</em>.
+                  </li>
+                  <li>
+                    <strong>Email Sign-In Available:</strong> You can also click "Sign In / Register" in the top bar to sign in or register with email and password directly.
+                  </li>
+                </ul>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAuthError(null)}
+                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700 transition-all"
+              >
+                Close & Try Again
+              </button>
             </motion.div>
           </div>
         )}

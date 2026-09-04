@@ -248,31 +248,54 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   const examCfg2 = getExamConfig(activeExamTag);
   const primarySuggestion = data.aiSuggestions?.[0] || `Focus on ${examCfg2.subjects?.[0] || 'core topics'} today.`;
-  const secondarySuggestion = data.aiSuggestions?.[1];
+  const secondarySuggestion = data.aiSuggestions?.[1] || null;
+  const [showAllShortcuts, setShowAllShortcuts] = useState<boolean>(false);
 
   if (loading || !data) {
     return (
       <div className="p-12 text-center text-slate-400">
         <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        Syncing Dashboard...
+        <p className="text-xs font-semibold text-slate-400">Syncing Dashboard Telemetry...</p>
       </div>
     );
   }
 
-  return (
-    <div className="w-full space-y-4 pb-24 md:pb-6">
+  // Derive target action tab from AI recommendation
+  const getRecommendationAction = () => {
+    const text = (primarySuggestion || '').toLowerCase();
+    if (text.includes('cbt') || text.includes('mock') || text.includes('test series')) {
+      return { label: 'Take Mock Test', tab: 'cbt' as ActiveTab };
+    }
+    if (text.includes('pyq') || text.includes('previous')) {
+      return { label: 'Solve PYQs', tab: 'pyq' as ActiveTab };
+    }
+    if (text.includes('mcq') || text.includes('question') || text.includes('practice')) {
+      return { label: 'Practice MCQs', tab: 'question_bank' as ActiveTab };
+    }
+    return { label: 'Practice Now', tab: 'pyq' as ActiveTab };
+  };
 
-      {/* ── REGION 1: HEADER ─────────────────────────────────────────────── */}
-      <div className="ax-card p-4 sm:p-5 border-slate-800/80">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Left: Greeting + Exam Selector */}
+  const recAction = getRecommendationAction();
+  const allFeatures = getActiveFeaturesInOrder(workspaceConfig);
+  const displayedShortcuts = showAllShortcuts ? allFeatures : allFeatures.slice(0, 6);
+
+  return (
+    <div id="student-dashboard" className="w-full space-y-5 pb-24 md:pb-8 font-sans">
+
+      {/* ── 1. HEADER & GREETING (Above the Fold) ─────────────────────────── */}
+      <div className="ax-card p-4 sm:p-6 border-slate-800 bg-slate-900/90">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Left: User Identity & Target Exam */}
           <div>
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-0.5">Dashboard</p>
-            <h1 className="text-lg sm:text-xl font-bold text-slate-100">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+              <p className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">Candidate Workspace</p>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               Welcome back, <span className="text-sky-400">{userProfile.name?.split(' ')[0] || 'Aspirant'}</span>
             </h1>
-            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className="text-xs text-slate-500">Preparing for</span>
+            <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
+              <span className="text-slate-400 font-medium">Target Exam:</span>
               <select
                 value={selectedExam || userProfile.exam || 'NEET_UG'}
                 onChange={(e) => {
@@ -283,9 +306,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                     onExamChange(val);
                   }
                 }}
-                className="bg-slate-900 border border-slate-700 text-sky-300 font-bold text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-sky-500 cursor-pointer"
+                className="bg-slate-950 border border-slate-700 text-sky-300 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-sky-500 cursor-pointer shadow-sm"
               >
-                <optgroup label="Preset Exams">
+                <optgroup label="Standard Exams">
                   {EXAM_LIST.map((ex) => (
                     <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200">
                       {ex.label}
@@ -293,33 +316,35 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   ))}
                 </optgroup>
                 <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
-                  + Custom Exam...
+                  + Create Custom Exam...
                 </option>
               </select>
             </div>
           </div>
 
-          {/* Right: Streak + Days Left */}
+          {/* Right: Key Exam Timeline Telemetry (Streak + Countdown) */}
           <div className="flex items-center gap-3">
-            <div className="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-amber-500/20 flex items-center gap-2">
-              <Flame className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+            <div className="px-4 py-2.5 rounded-2xl bg-slate-950 border border-amber-500/30 flex items-center gap-2.5 shadow-sm">
+              <Flame className="w-5 h-5 text-amber-400 fill-amber-400/20" />
               <div>
-                <div className="text-[10px] text-slate-500 font-medium">Streak</div>
-                <div className="text-sm font-black text-slate-100">{userProfile.streakDays || data.currentStreak || 1}d 🔥</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Daily Streak</div>
+                <div className="text-sm font-black text-white">{userProfile.streakDays || data.currentStreak || 1} Days 🔥</div>
               </div>
             </div>
-            <div className="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
-              <Target className="w-4 h-4 text-rose-400" />
+
+            <div className="px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-2.5 shadow-sm">
+              <Target className="w-5 h-5 text-rose-400" />
               <div>
-                <div className="text-[10px] text-slate-500 font-medium">Days Left</div>
-                <div className="text-sm font-black text-slate-100">{data.daysLeftForExam}d</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Countdown</div>
+                <div className="text-sm font-black text-white">{data.daysLeftForExam} Days Left</div>
               </div>
             </div>
+
             {onOpenWorkspaceCustomizer && (
               <button
                 onClick={onOpenWorkspaceCustomizer}
-                title="Personalize"
-                className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-400 hover:text-sky-400 transition-all"
+                title="Personalize Workspace"
+                className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/50 text-slate-400 hover:text-sky-400 transition-all cursor-pointer shadow-sm"
               >
                 <Sliders className="w-4 h-4" />
               </button>
@@ -328,96 +353,119 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       </div>
 
-      {/* ── REGION 2: CONTINUE + TODAY'S FOCUS ──────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      {/* ── 2. ABOVE THE FOLD: PRIMARY ACTION & INTEL COMMAND ────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
-        {/* Continue Where You Left Off (3/5 width) */}
-        <div className="lg:col-span-3 ax-card p-4 sm:p-5 border-sky-500/15 bg-gradient-to-br from-slate-900 to-sky-950/20">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/25 flex items-center justify-center">
-              <BookOpen className="w-3.5 h-3.5 text-sky-400" />
-            </div>
-            <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Continue Studying</span>
-          </div>
-
-          <div className="mb-4">
-            <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mb-1">{lastTopic.subject}</div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-100 leading-tight mb-1">{lastTopic.chapter}</h3>
-            <p className="text-xs text-slate-400">{lastTopic.subtopic}</p>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-slate-500">Syllabus Coverage</span>
-              <span className="font-bold text-sky-400">{data.overallProgressPercent}%</span>
-            </div>
-            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-sky-500 rounded-full transition-all duration-700"
-                style={{ width: `${data.overallProgressPercent}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[10px] text-slate-600 mt-1">
-              <span>{data.topicsCompleted} topics done</span>
-              <span>{data.totalTopics - data.topicsCompleted} remaining</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => { if (onNavigate) onNavigate(lastTopic.tab || 'syllabus'); }}
-            className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all"
-          >
-            <span>Resume Where I Left Off</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* Today's Focus + AI Next Action (2/5 width) */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          {/* Today's Focus */}
-          <div className="ax-card p-4 sm:p-5 border-indigo-500/15 flex-1">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 text-indigo-400" />
+        {/* PRIMARY CARD: Continue Learning (Dominant action area, 7 of 12 cols) */}
+        <div className="lg:col-span-7 ax-card p-5 sm:p-6 border-sky-500/20 bg-slate-900 flex flex-col justify-between relative overflow-hidden">
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+                  <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                </div>
+                <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Continue Learning</span>
               </div>
-              <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Today's Focus</span>
+              <span className="text-xs font-extrabold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
+                {data.overallProgressPercent}% Complete
+              </span>
             </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Study Time</span>
-                <span className="font-bold text-slate-200">{Math.floor(data.todayStudyMinutes / 60)}h {data.todayStudyMinutes % 60}m</span>
+
+            <div className="space-y-1 mb-5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{lastTopic.subject}</span>
+              <h2 className="text-lg sm:text-xl font-extrabold text-white leading-tight">{lastTopic.chapter}</h2>
+              <p className="text-xs text-slate-400 font-medium">{lastTopic.subtopic}</p>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="space-y-1.5 mb-5">
+              <div className="flex justify-between text-xs font-semibold text-slate-400">
+                <span>Syllabus Milestone</span>
+                <span className="text-slate-300">{data.topicsCompleted} of {data.totalTopics} Topics Finished</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Target</span>
-                <span className="font-bold text-slate-200">{data.dailyTargetHours}h / day</span>
-              </div>
-              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
                 <div
-                  className="h-full bg-indigo-500 rounded-full"
-                  style={{ width: `${Math.min(100, Math.round((data.todayStudyMinutes / (data.dailyTargetHours * 60)) * 100))}%` }}
+                  className="h-full bg-sky-500 rounded-full transition-all duration-700 shadow-sm"
+                  style={{ width: `${Math.max(5, data.overallProgressPercent)}%` }}
                 />
               </div>
             </div>
           </div>
 
-          {/* AI Next Best Action */}
-          <div className="ax-card p-4 sm:p-5 border-amber-500/15">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <button
+            onClick={() => { if (onNavigate) onNavigate(lastTopic.tab || 'syllabus'); }}
+            className="w-full py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all cursor-pointer"
+          >
+            <span>Continue</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* NEXT BEST ACTION & SMALL SUMMARY (5 of 12 cols) */}
+        <div className="lg:col-span-5 flex flex-col gap-4">
+
+          {/* NEXT BEST ACTION: Single visually strong AI recommendation card */}
+          <div className="ax-card p-5 border-slate-800 bg-slate-900 flex-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  </div>
+                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">Recommended Next</span>
+                </div>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">High Yield</span>
               </div>
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">AI Recommends</span>
+
+              <h3 className="text-sm sm:text-base font-bold text-slate-100 leading-snug mb-2">
+                {primarySuggestion}
+              </h3>
+
+              {secondarySuggestion && (
+                <p className="text-xs text-slate-400 leading-relaxed line-clamp-2 mt-1">
+                  {secondarySuggestion}
+                </p>
+              )}
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">{primarySuggestion}</p>
-            {secondarySuggestion && (
-              <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-800">{secondarySuggestion}</p>
-            )}
+
+            <button
+              onClick={() => { if (onNavigate) onNavigate(recAction.tab); }}
+              className="mt-4 w-full py-3 rounded-xl bg-slate-800 hover:bg-sky-600 border border-slate-700 hover:border-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-[0.98]"
+            >
+              <span>{recAction.label}</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
+
+          {/* SMALL PROGRESS SUMMARY: Compact metric strip */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
+                <Zap className="w-4 h-4 text-sky-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Daily Quota</p>
+                <p className="text-xs font-extrabold text-slate-200">
+                  {Math.floor(data.todayStudyMinutes / 60)}h {data.todayStudyMinutes % 60}m <span className="text-[10px] text-slate-500 font-normal">/ {data.dailyTargetHours}h</span>
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <Target className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Test Accuracy</p>
+                <p className="text-xs font-extrabold text-slate-200">{data.testAccuracyPercent}% <span className="text-[10px] text-emerald-400 font-bold">Accuracy</span></p>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      {/* ── REGION 3: PERFORMANCE METRICS ───────────────────────────────── */}
+      {/* ── 3. PERFORMANCE TELEMETRY HUB ─────────────────────────────────── */}
       <CircularPerformanceHub
         syllabusPercent={data.overallProgressPercent}
         revisionPercent={data.revisionProgressPercent || 35}
@@ -426,56 +474,72 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         dailyTargetMinutes={data.dailyTargetHours * 60}
       />
 
-      {/* AdSense In-Feed (non-intrusive, after fold) */}
+      {/* Non-intrusive in-feed slot (suppressed for premium candidates) */}
       <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />
 
-      {/* ── REGION 4: WORKSPACE QUICK LAUNCH ────────────────────────────── */}
-      <div className="ax-card p-4 sm:p-5">
+      {/* ── 4. COMPACT QUICK LAUNCH (4–6 Primary Shortcuts by default) ─────── */}
+      <div className="ax-card p-5 border-slate-800 bg-slate-900">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
-              <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />
+            <div className="w-7 h-7 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center">
+              <LayoutGrid className="w-3.5 h-3.5 text-sky-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 Quick Launch
                 {workspaceConfig.preset && (
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 uppercase tracking-wider">
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase tracking-wider">
                     {workspaceConfig.preset}
                   </span>
                 )}
               </h3>
-              <p className="text-[11px] text-slate-500">Jump directly to any module</p>
+              <p className="text-[11px] text-slate-400">Direct shortcuts to primary study modules</p>
             </div>
           </div>
-          {onOpenWorkspaceCustomizer && (
-            <button
-              onClick={onOpenWorkspaceCustomizer}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all"
-            >
-              <Sliders className="w-3 h-3" />
-              Customize
-            </button>
-          )}
+
+          <div className="flex items-center gap-2">
+            {allFeatures.length > 6 && (
+              <button
+                onClick={() => setShowAllShortcuts(!showAllShortcuts)}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+              >
+                {showAllShortcuts ? 'Show Top 6' : `Show All (${allFeatures.length})`}
+              </button>
+            )}
+            {onOpenWorkspaceCustomizer && (
+              <button
+                onClick={onOpenWorkspaceCustomizer}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Sliders className="w-3 h-3 text-sky-400" />
+                <span>Customize</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-          {getActiveFeaturesInOrder(workspaceConfig).map((item) => (
+        {/* Grid of Compact Shortcuts */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+          {displayedShortcuts.map((item) => (
             <button
               key={item.id}
               onClick={() => {
                 recordFeatureUsage(item.id, userProfile.id);
                 if (onNavigate) onNavigate(item.id as ActiveTab);
               }}
-              className="p-3 rounded-xl bg-slate-900/80 hover:bg-sky-950/40 border border-slate-800 hover:border-sky-500/30 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer"
+              className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-sky-500/40 transition-all text-center group flex flex-col items-center gap-2 cursor-pointer shadow-sm"
             >
-              <div className="w-8 h-8 rounded-lg bg-slate-800 group-hover:bg-sky-500/15 border border-slate-700 group-hover:border-sky-500/25 flex items-center justify-center text-base font-black text-slate-400 group-hover:text-sky-400 transition-all">
+              <div className="w-9 h-9 rounded-xl bg-slate-900 group-hover:bg-sky-500/15 border border-slate-800 group-hover:border-sky-500/30 flex items-center justify-center text-sm font-black text-slate-400 group-hover:text-sky-400 transition-all">
                 {item.label.charAt(0)}
               </div>
-              <div className="flex items-center gap-0.5">
-                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-slate-200 transition-colors leading-tight text-center">{item.label}</span>
+              <div className="min-w-0 w-full text-center">
+                <span className="text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors block truncate">
+                  {item.label}
+                </span>
                 {item.meta.badge && (
-                  <span className="px-1 rounded text-[8px] font-black bg-indigo-500/15 text-indigo-400 uppercase">{item.meta.badge}</span>
+                  <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[8px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase">
+                    {item.meta.badge}
+                  </span>
                 )}
               </div>
             </button>
@@ -483,7 +547,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       </div>
 
-      {/* ── REGION 5: EXAM WALLPAPER + DAILY SUMMARY (Moved below fold) ── */}
+      {/* ── 5. LOWER REGIONS (Secondary Information) ─────────────────────── */}
       <ExamWallpaperWidget
         user={userProfile}
         selectedExam={activeExamTag}

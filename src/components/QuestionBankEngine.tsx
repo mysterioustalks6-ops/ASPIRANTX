@@ -391,15 +391,15 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
   return (
     <div className="space-y-6">
       {/* Upper Navigation Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 backdrop-blur-xl shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+          <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
             <HelpCircle className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
               Enterprise Question Bank & Analytics
-              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
                 Pattern Analyzer
               </span>
             </h1>
@@ -413,7 +413,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
           {isAdmin && (
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-xs font-bold text-white transition-all shadow-lg"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-semibold text-white transition-all shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Question</span>
@@ -426,12 +426,12 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
       <AdSenseBanner slotType="inFeed" />
 
       {/* Main Tab selector */}
-      <div className="flex items-center gap-2.5 border-b border-white/10 pb-3">
+      <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3">
         <button
           onClick={() => { setActiveEngineTab('browse'); setQuizActive(false); }}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
+          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all border ${
             activeEngineTab === 'browse'
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
               : 'bg-transparent text-slate-400 border-transparent hover:text-white'
           }`}
         >
@@ -439,9 +439,9 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
         </button>
         <button
           onClick={() => { setActiveEngineTab('quiz'); }}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
+          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all border ${
             activeEngineTab === 'quiz'
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
               : 'bg-transparent text-slate-400 border-transparent hover:text-white'
           }`}
         >
@@ -449,9 +449,9 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
         </button>
         <button
           onClick={() => { setActiveEngineTab('patterns'); setQuizActive(false); }}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
+          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all border ${
             activeEngineTab === 'patterns'
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
               : 'bg-transparent text-slate-400 border-transparent hover:text-white'
           }`}
         >
@@ -463,26 +463,26 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
       {activeEngineTab === 'browse' && (
         <div className="space-y-6">
           {/* Filter Toolbar */}
-          <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
               {/* Read-Only Active Exam Badge */}
               <div>
-                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">
                   Active Exam Context
                 </label>
-                <div className="w-full px-3 py-2 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-xs text-emerald-200 font-extrabold flex items-center justify-between shadow-inner">
+                <div className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-sky-300 font-semibold flex items-center justify-between shadow-inner">
                   <span className="truncate">{EXAM_LIST.find((ex) => ex.id === selectedExam)?.label || selectedExam}</span>
-                  <span className="text-[9px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">Profile Bounded</span>
+                  <span className="text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/20 px-1.5 py-0.5 rounded font-semibold uppercase shrink-0">Profile Bounded</span>
                 </div>
               </div>
 
               {/* Subject Filter */}
               <div>
-                <label className="text-[10px] font-bold uppercase text-slate-400 block mb-1">Subject</label>
+                <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 block mb-1">Subject</label>
                 <select
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-xs text-emerald-300 focus:outline-none focus:border-emerald-400 font-extrabold cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-semibold cursor-pointer"
                 >
                   <option value="All">📖 All Subjects ({total} Qs)</option>
                   {getExamSubjects(selectedExam).map(s => (

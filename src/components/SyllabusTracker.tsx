@@ -690,20 +690,20 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       </PremiumGate>
 
       {/* Main Header & Actions */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-black/40 border border-white/10 backdrop-blur-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-xl">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 backdrop-blur-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-[#00FF94]" />
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-sky-400" />
               {EXAM_LIST.find((ex) => ex.id === selectedExam)?.label || selectedExam} Syllabus Engine
             </h3>
             <span
               className={`px-3 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition-all ${
                 syncState.status === 'synced'
-                  ? 'bg-[#00FF94]/10 text-[#00FF94] border-[#00FF94]/30'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   : syncState.status === 'saving'
                   ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse'
-                  : 'bg-white/5 text-slate-400 border-white/10'
+                  : 'bg-slate-900 text-slate-400 border-slate-800'
               }`}
             >
               <CloudCheck className="w-3.5 h-3.5" />
@@ -711,7 +711,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Switch between official standard syllabus and your personalized custom study roadmap.
+            Structured learning tree: switch between official standard syllabus and your personalized custom study roadmap.
           </p>
         </div>
 
@@ -719,30 +719,30 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-cyan-300 transition-all flex items-center justify-center gap-2 min-h-[44px]"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-sky-400 transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
           >
-            <Search className="w-4 h-4 text-cyan-400" />
+            <Search className="w-4 h-4 text-sky-400" />
             <span>Search All</span>
           </button>
 
           <button
             onClick={() => setIsMySyllabusModalOpen(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-purple-600/80 hover:bg-purple-500 text-white font-extrabold text-xs transition-all shadow-[0_0_15px_rgba(168,85,247,0.3)] border border-purple-400/30 flex items-center justify-center gap-2 min-h-[44px]"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
           >
-            <Layers className="w-4 h-4 text-purple-200" />
-            Bulk CSV Upload
+            <Layers className="w-4 h-4 text-sky-400" />
+            <span>Bulk CSV Upload</span>
           </button>
 
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#00FF94] to-cyan-400 hover:opacity-90 text-black font-extrabold text-xs transition-all shadow-[0_0_15px_rgba(0,255,148,0.3)] flex items-center justify-center gap-2 min-h-[44px]"
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md shadow-sky-600/25 active:scale-[0.98] flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
           >
-            <FileSpreadsheet className="w-4 h-4" /> Import Sheet
+            <FileSpreadsheet className="w-4 h-4" /> <span>Import Sheet</span>
           </button>
 
           <button
             onClick={handleResetProgress}
-            className="p-2.5 rounded-xl bg-white/5 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-white/10 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-2.5 rounded-xl bg-slate-900 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
             title="Reset All Progress"
           >
             <RotateCcw className="w-4 h-4" />
@@ -755,28 +755,28 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-2xl bg-[#00FF94]/10 border border-[#00FF94]/30 text-[#00FF94] text-xs font-bold flex items-center gap-3 shadow-[0_0_20px_rgba(0,255,148,0.2)]"
+          className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs font-bold flex items-center gap-3 shadow-md"
         >
-          <Sparkles className="w-5 h-5 shrink-0" />
+          <Sparkles className="w-5 h-5 shrink-0 text-sky-400" />
           <span>{importNotification}</span>
         </motion.div>
       )}
 
       {/* TOP LEVEL TAB TOGGLE: Official Syllabus vs My Syllabus */}
-      <div className="p-2 rounded-3xl bg-slate-900/80 border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 w-full sm:w-auto p-1 bg-black/60 rounded-2xl border border-white/10">
+      <div className="p-2 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2 w-full sm:w-auto p-1 bg-slate-950 rounded-2xl border border-slate-800">
           <button
             onClick={() => setActiveTab('official')}
-            className={`flex-1 sm:flex-initial px-6 py-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'official'
-                ? 'bg-gradient-to-r from-[#00FF94] to-cyan-400 text-black shadow-[0_0_20px_rgba(0,255,148,0.3)]'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
             }`}
           >
             <BookOpen className="w-4 h-4" />
             <span>Official Syllabus</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-              activeTab === 'official' ? 'bg-black/30 text-black' : 'bg-white/10 text-slate-300'
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === 'official' ? 'bg-black/25 text-white' : 'bg-slate-900 text-slate-400'
             }`}>
               {officialStats.completedSubs}/{officialStats.totalSubs}
             </span>
@@ -784,16 +784,16 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={() => setActiveTab('personal')}
-            className={`flex-1 sm:flex-initial px-6 py-3 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'personal'
-                ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.3)]'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
             }`}
           >
             <User className="w-4 h-4" />
             <span>My Syllabus</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-              activeTab === 'personal' ? 'bg-black/30 text-white' : 'bg-white/10 text-slate-300'
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === 'personal' ? 'bg-black/25 text-white' : 'bg-slate-900 text-slate-400'
             }`}>
               {personalStats.completedSubs}/{personalStats.totalSubs}
             </span>
@@ -801,20 +801,18 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         </div>
 
         {/* Tab Progress Bar Indicator */}
-        <div className="w-full sm:w-72 px-4 py-2 bg-black/40 rounded-2xl border border-white/5 flex flex-col justify-center">
+        <div className="w-full sm:w-72 px-4 py-2 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col justify-center">
           <div className="flex items-center justify-between text-[11px] font-bold mb-1">
-            <span className="text-slate-300">
+            <span className="text-slate-400">
               {activeTab === 'official' ? 'Official Coverage' : 'My Syllabus Coverage'}
             </span>
-            <span className={activeTab === 'official' ? 'text-[#00FF94]' : 'text-purple-400'}>
+            <span className="text-sky-400 font-extrabold">
               {activeTab === 'official' ? `${officialStats.percent}%` : `${personalStats.percent}%`}
             </span>
           </div>
-          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden border border-white/10">
+          <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
             <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                activeTab === 'official' ? 'bg-gradient-to-r from-[#00FF94] to-cyan-400' : 'bg-gradient-to-r from-purple-500 to-indigo-500'
-              }`}
+              className="h-full rounded-full transition-all duration-500 bg-sky-500"
               style={{
                 width: `${activeTab === 'official' ? officialStats.percent : personalStats.percent}%`
               }}
@@ -825,20 +823,20 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
       {/* Tab Specific Helper Header & Builder Trigger */}
       {activeTab === 'personal' && (
-        <div className="p-4 rounded-2xl bg-purple-950/30 border border-purple-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h4 className="text-xs font-black text-purple-200 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-purple-400" /> Custom Student Hierarchy
+            <h4 className="text-xs font-bold text-white flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-sky-400" /> Custom Student Learning Path
             </h4>
-            <p className="text-[11px] text-purple-300/80 mt-0.5">
+            <p className="text-[11px] text-slate-400 mt-0.5">
               Add custom subjects, chapters, topics, or subtopics directly or import from Official Syllabus.
             </p>
           </div>
           <button
             onClick={openAddSubject}
-            className="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-black font-black text-xs transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md shadow-sky-600/25 flex items-center gap-1.5 cursor-pointer"
           >
-            <Plus className="w-4 h-4 stroke-[3]" /> Add New Subject
+            <Plus className="w-4 h-4" /> Add New Subject
           </button>
         </div>
       )}
@@ -848,7 +846,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         {/* Stage Filter Buttons */}
         <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
           <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 mr-2 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-[#00FF94]" /> Stage:
+            <Filter className="w-3.5 h-3.5 text-sky-400" /> Stage:
           </span>
           {stages.map((stage) => (
             <button
@@ -856,8 +854,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               onClick={() => setActiveStageFilter(stage)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
                 activeStageFilter === stage
-                  ? 'bg-[#00FF94]/20 text-[#00FF94] border border-[#00FF94]/40 shadow-[0_0_10px_rgba(0,255,148,0.2)]'
-                  : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-white'
+                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
+                  : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800 hover:text-white'
               }`}
             >
               {stage}
@@ -874,7 +872,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search topics or sub-topics..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-[#00FF94] transition-all"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-all font-medium"
             />
           </div>
 
@@ -883,14 +881,14 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               type="checkbox"
               checked={searchBothTabs}
               onChange={(e) => setSearchBothTabs(e.target.checked)}
-              className="rounded accent-[#00FF94]"
+              className="rounded accent-sky-500"
             />
             <span>Search both tabs</span>
           </label>
 
           <button
             onClick={() => toggleExpandAll(currentTopics)}
-            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-xs font-semibold shrink-0 transition-colors cursor-pointer"
+            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold shrink-0 transition-colors cursor-pointer"
           >
             Expand/Collapse All
           </button>
@@ -919,7 +917,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       ) : (
         <div className="space-y-4">
           {filteredTopics.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-black/40 border border-white/10">
+            <div className="p-12 text-center rounded-3xl bg-slate-900 border border-slate-800">
               <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <p className="text-slate-300 font-bold">
                 No official topics match your filter
@@ -937,7 +935,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               return (
                 <div
                   key={topic.id}
-                  className="p-5 rounded-3xl bg-slate-900/60 border border-amber-500/20 backdrop-blur-md relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group shadow-lg"
+                  className="p-5 rounded-3xl bg-slate-900 border border-amber-500/20 backdrop-blur-md relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group shadow-lg"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
@@ -983,10 +981,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 key={topic.id}
                 className={`rounded-3xl border transition-all duration-300 overflow-hidden ${
                   isFullyCompleted
-                    ? 'bg-[#00FF94]/5 border-[#00FF94]/30 shadow-[0_0_20px_rgba(0,255,148,0.1)]'
+                    ? 'bg-sky-500/5 border-sky-500/20 shadow-sm'
                     : isExpanded
-                    ? 'bg-gradient-to-br from-[#0e0e12] to-[#08080a] border-white/15 shadow-xl'
-                    : 'bg-black/40 border-white/10 hover:border-white/20'
+                    ? 'bg-slate-900 border-slate-700 shadow-md'
+                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
                 }`}
               >
                 {/* Topic Accordion Header */}
@@ -1001,13 +999,13 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                         e.stopPropagation();
                         toggleParentTopicCompletion(filteredTopics, topic.id);
                       }}
-                      className="mt-0.5 text-slate-400 hover:text-[#00FF94] transition-colors shrink-0 cursor-pointer"
+                      className="mt-0.5 text-slate-400 hover:text-sky-400 transition-colors shrink-0 cursor-pointer"
                       title={isFullyCompleted ? 'Uncheck all subtopics' : 'Check all subtopics'}
                     >
                       {isFullyCompleted ? (
-                        <CheckCircle2 className="w-6 h-6 text-[#00FF94] fill-[#00FF94]/20 shadow-[0_0_10px_rgba(0,255,148,0.4)]" />
+                        <CheckCircle2 className="w-6 h-6 text-sky-400 fill-sky-400/20" />
                       ) : (
-                        <Circle className="w-6 h-6 text-slate-600 hover:text-[#00FF94]" />
+                        <Circle className="w-6 h-6 text-slate-600 hover:text-sky-400" />
                       )}
                     </button>
 
@@ -1027,7 +1025,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                         >
                           {topic.weightage} Weight
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-cyan-300 border border-white/10">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-sky-300 border border-slate-800">
                           {topic.stage}
                         </span>
 
@@ -1048,21 +1046,21 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                             handleImportNode(items);
                           }}
                           disabled={isEntireTopicImported}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all flex items-center gap-1 cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             isEntireTopicImported
-                              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 opacity-70 cursor-not-allowed'
-                              : 'bg-purple-600 hover:bg-purple-500 text-white shadow-md'
+                              ? 'bg-slate-800 text-slate-500 border border-slate-700 opacity-70 cursor-not-allowed'
+                              : 'bg-slate-850 hover:bg-slate-800 text-sky-400 border border-slate-700 shadow-sm'
                           }`}
                         >
                           <Download className="w-3 h-3" />
-                          {isEntireTopicImported ? '✓ In My Syllabus' : 'Import This Subject'}
+                          {isEntireTopicImported ? '✓ In My Syllabus' : 'Import Subject'}
                         </button>
                       </div>
 
                       <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
                         <span>{topic.category}</span>
                         <span>•</span>
-                        <span className="text-[#00FF94] font-semibold">
+                        <span className="text-sky-400 font-semibold">
                           {completedCount} of {subCount} Sub-topics Completed
                         </span>
                       </p>
@@ -1072,17 +1070,17 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="hidden sm:flex flex-col items-end">
                       <span className="text-xs font-black text-white">{topicPercentage}%</span>
-                      <div className="w-20 h-1.5 bg-black/60 rounded-full overflow-hidden mt-1 border border-white/10">
+                      <div className="w-20 h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1 border border-slate-800">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
-                            isFullyCompleted ? 'bg-[#00FF94]' : 'bg-cyan-400'
+                            isFullyCompleted ? 'bg-sky-500' : 'bg-sky-600'
                           }`}
                           style={{ width: `${topicPercentage}%` }}
                         />
                       </div>
                     </div>
 
-                    <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-slate-400">
+                    <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
                       {isExpanded ? <ChevronUp className="w-5 h-5 text-white" /> : <ChevronDown className="w-5 h-5" />}
                     </div>
                   </div>
@@ -1096,11 +1094,11 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.25 }}
-                      className="border-t border-white/10 bg-black/60 p-5 sm:p-6 space-y-3"
+                      className="border-t border-slate-800 bg-slate-950 p-5 sm:p-6 space-y-3"
                     >
                       <div className="flex items-center justify-between text-xs text-slate-400 mb-2 px-1">
                         <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5 text-[#00FF94]" /> Sub-topics Checklist ({subList.length})
+                          <Layers className="w-3.5 h-3.5 text-sky-400" /> Sub-topics Checklist ({subList.length})
                         </span>
                       </div>
 
@@ -1123,18 +1121,18 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                 onClick={() => toggleSubtopicCompletion(sub.id, topic.category, topic.title, sub.title)}
                                 className={`p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group ${
                                   isDone
-                                    ? 'bg-[#00FF94]/10 border-[#00FF94]/30 text-slate-300 shadow-[0_0_10px_rgba(0,255,148,0.1)]'
-                                    : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.06] hover:border-white/15 text-slate-200'
+                                    ? 'bg-sky-500/10 border-sky-500/30 text-slate-200 shadow-sm'
+                                    : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-200'
                                 }`}
                               >
                                 <div className="flex items-center gap-3 min-w-0">
                                   <div className="shrink-0">
                                     {isDone ? (
-                                      <div className="w-5 h-5 rounded-lg bg-[#00FF94] text-black flex items-center justify-center font-bold shadow-[0_0_10px_rgba(0,255,148,0.5)]">
+                                      <div className="w-5 h-5 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold shadow-sm">
                                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                                       </div>
                                     ) : (
-                                      <div className="w-5 h-5 rounded-lg border-2 border-slate-600 group-hover:border-[#00FF94] transition-colors" />
+                                      <div className="w-5 h-5 rounded-lg border-2 border-slate-600 group-hover:border-sky-500 transition-colors" />
                                     )}
                                   </div>
 
@@ -1145,8 +1143,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
                                     {/* PHASE 5: Time Studied Badge */}
                                     {studiedSecs > 0 && (
-                                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
-                                        <Clock className="w-3 h-3 text-cyan-400 animate-pulse" />
+                                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1">
+                                        <Clock className="w-3 h-3 text-sky-400" />
                                         {timeText}
                                       </span>
                                     )}
@@ -1172,8 +1170,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                     disabled={isImported}
                                     className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
                                       isImported
-                                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30 cursor-not-allowed opacity-80'
-                                        : 'bg-purple-600/80 hover:bg-purple-500 text-white shadow-md'
+                                        ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed opacity-80'
+                                        : 'bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-700 shadow-sm'
                                     }`}
                                   >
                                     {importingNodeId === sub.id ? (
@@ -1183,13 +1181,13 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                     ) : (
                                       <>
                                         <Download className="w-3 h-3" />
-                                        <span>Import to My Syllabus</span>
+                                        <span>Import</span>
                                       </>
                                     )}
                                   </button>
 
-                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-slate-400 border border-white/10 flex items-center gap-1">
-                                    <Clock className="w-3 h-3 text-[#00FF94]" /> {sub.estimatedHours || 2.5} hrs
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1">
+                                    <Clock className="w-3 h-3 text-sky-400" /> {sub.estimatedHours || 2.5} hrs
                                   </span>
                                 </div>
                               </div>
@@ -1199,8 +1197,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                       )}
 
                       {topic.notes && (
-                        <div className="mt-4 p-3 rounded-2xl bg-white/5 border border-white/10 text-xs text-slate-300 flex items-start gap-2">
-                          <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                        <div className="mt-4 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
+                          <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
                           <span><strong>Note:</strong> {topic.notes}</span>
                         </div>
                       )}
@@ -1222,18 +1220,18 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-purple-500/30 shadow-2xl space-y-4"
+              className="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4"
             >
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-purple-400" />
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-sky-400" />
                   {builderMode === 'subject' && 'Add New Custom Subject'}
                   {builderMode === 'topic' && `Add Topic under "${targetSubject}"`}
                   {builderMode === 'subtopic' && `Add Subtopic under "${targetChapter}"`}
                 </h3>
                 <button
                   onClick={() => setIsBuilderModalOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1248,7 +1246,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                       value={inputSubject}
                       onChange={(e) => setInputSubject(e.target.value)}
                       placeholder="e.g. Ancient Indian History, Ethics, Python..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-purple-400"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500"
                     />
                   </div>
                 )}
@@ -1261,7 +1259,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                       value={inputChapter}
                       onChange={(e) => setInputChapter(e.target.value)}
                       placeholder="e.g. Indus Valley Civilization, Moral Philosophy..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-purple-400"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500"
                     />
                   </div>
                 )}
@@ -1273,7 +1271,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     value={inputSubtopic}
                     onChange={(e) => setInputSubtopic(e.target.value)}
                     placeholder="e.g. Harappan Seals, Categorical Imperative..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-purple-400"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500"
                   />
                 </div>
 
@@ -1283,7 +1281,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     <select
                       value={inputStage}
                       onChange={(e) => setInputStage(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-400"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-sky-500 font-semibold"
                     >
                       <option value="Prelims">Prelims</option>
                       <option value="Mains">Mains</option>
@@ -1296,7 +1294,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     <select
                       value={inputWeightage}
                       onChange={(e) => setInputWeightage(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-black/60 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-400"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-sky-500 font-semibold"
                     >
                       <option value="High">High</option>
                       <option value="Medium">Medium</option>
@@ -1306,16 +1304,16 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
                 <button
                   onClick={() => setIsBuilderModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-colors"
+                  className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveBuilderNode}
-                  className="px-5 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-black font-black text-xs transition-all shadow-md"
+                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   Save to My Syllabus
                 </button>
