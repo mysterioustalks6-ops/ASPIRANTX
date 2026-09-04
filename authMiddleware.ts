@@ -148,8 +148,13 @@ export async function expressEdgeMiddleware(req: any, res: any, next: any) {
     }
 
     const result = await middleware(req);
-    if (result && result.status === 302 && result.headers?.Location) {
-      return res.redirect(result.headers.Location);
+    if (result && result.status === 302) {
+      if (pathname.startsWith('/api/')) {
+        return res.status(401).json({ success: false, error: 'Unauthorized: Admin authentication required.' });
+      }
+      if (result.headers?.Location) {
+        return res.redirect(result.headers.Location);
+      }
     }
   } catch (err) {
     console.error('[Edge Middleware Error]:', err);

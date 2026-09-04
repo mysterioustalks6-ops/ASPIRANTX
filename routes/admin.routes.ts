@@ -157,7 +157,8 @@ import {
   requireEnterprisePermission,
   rewardClaimsStore,
   rewardMilestonesStore,
-  sanitizeAiPrompt,
+  persistAdminUserAtomic,
+  persistSubscriptionAtomic,
   saveAdminStoreToDisk,
   seedDefaultSponsorshipTiers,
   sendTransactionalEmail,
@@ -871,12 +872,7 @@ router.post('/api/admin/utr/approve', adminMutationLimiter, verifyAdminAuth, asy
     currency: 'INR',
   };
 
-  serverSubscriptionsDb.set(utrRecord.userEmail, subRecord);
-  if (supabaseServer) {
-    await supabaseServer.from('user_subscriptions').upsert([
-      { ...subRecord, updated_at: new Date().toISOString() }
-    ], { onConflict: 'userEmail' });
-  }
+  await persistSubscriptionAtomic(subRecord);
   saveAdminStoreToDisk();
 
   recordAdminAuditLog({
@@ -1133,7 +1129,7 @@ router.post('/api/admin/subscriptions/activate', adminMutationLimiter, verifyAdm
     currency: 'INR',
   };
 
-  serverSubscriptionsDb.set(cleanEmail, subRecord);
+  await persistSubscriptionAtomic(subRecord);
 
   let user = adminUsersDb.find((u) => u.email.toLowerCase() === cleanEmail);
   if (user) {
@@ -1156,20 +1152,8 @@ router.post('/api/admin/subscriptions/activate', adminMutationLimiter, verifyAdm
       joinedAt: new Date().toISOString(),
       status: 'ACTIVE',
     };
-    adminUsersDb.push(user);
   }
-
-  if (supabaseServer) {
-    await Promise.all([
-      supabaseServer.from('user_subscriptions').upsert([
-        { ...subRecord, updated_at: new Date().toISOString() }
-      ], { onConflict: 'userEmail' }),
-      supabaseServer.from('admin_users').upsert([
-        { ...user, updated_at: new Date().toISOString() }
-      ], { onConflict: 'id' })
-    ]);
-  }
-
+  await persistAdminUserAtomic(user);
   saveAdminStoreToDisk();
 
   recordAdminAuditLog({
@@ -1189,26 +1173,91 @@ router.post('/api/admin/subscriptions/activate', adminMutationLimiter, verifyAdm
   });
 });
 
-router.get('/api/admin/users', verifyAdminAuth, async (_req, res) => {
+router.get('/api/admin/users', verifyAdminAuth, async (req, res) => {
   try {
-    let profileMap = new Map<string, string>();
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 50));
+    const search = (req.query.search as string || '').toLowerCase().trim();
+    const role = (req.query.role as string || '').toUpperCase().trim();
+    const status = (req.query.status as string || '').toUpperCase().trim();
+
+    // 1. Try Supabase query with range pagination
     if (supabaseServer) {
-      const { data: profiles } = await supabaseServer.from('user_profiles').select('id, avatar_url');
-      if (profiles) {
-        for (const p of profiles) {
-          if (p.id && p.avatar_url) {
-            profileMap.set(p.id, p.avatar_url);
-          }
+      try {
+        let query = supabaseServer.from('admin_users').select('*', { count: 'exact' });
+        if (search) {
+          query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
         }
+        if (role && role !== 'ALL') {
+          query = query.eq('role', role);
+        }
+        if (status && status !== 'ALL') {
+          query = query.eq('status', status);
+        }
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+        const { data, count, error } = await query.range(from, to).order('updated_at', { ascending: false });
+
+        if (!error && Array.isArray(data) && data.length > 0) {
+          const total = count ?? data.length;
+          const totalPages = Math.ceil(total / limit) || 1;
+          const mappedUsers = data.map((row: any) => ({
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role,
+            isPremium: row.is_premium,
+            planName: row.plan_name,
+            streakDays: row.streak_days,
+            xp: row.xp,
+            coins: row.coins,
+            level: row.level,
+            completedTopicsCount: 0,
+            joinedAt: row.updated_at || new Date().toISOString(),
+            status: row.status
+          }));
+          return res.json({
+            success: true,
+            users: mappedUsers,
+            total,
+            page,
+            totalPages
+          });
+        }
+      } catch (dbErr) {
+        // Fall back to memory cache
       }
     }
-    const mergedUsers = adminUsersDb.map(u => ({
-      ...u,
-      avatar_url: profileMap.get(u.id) || u.avatar_url
-    }));
-    res.json({ success: true, users: mergedUsers });
+
+    // 2. In-memory fallback
+    let allUsers = [...adminUsersDb];
+    if (search) {
+      allUsers = allUsers.filter(u => 
+        (u.name && u.name.toLowerCase().includes(search)) || 
+        (u.email && u.email.toLowerCase().includes(search))
+      );
+    }
+    if (role && role !== 'ALL') {
+      allUsers = allUsers.filter(u => u.role === role);
+    }
+    if (status && status !== 'ALL') {
+      allUsers = allUsers.filter(u => u.status === status);
+    }
+
+    const total = allUsers.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const startIndex = (page - 1) * limit;
+    const paginatedUsers = allUsers.slice(startIndex, startIndex + limit);
+
+    res.json({
+      success: true,
+      users: paginatedUsers,
+      total,
+      page,
+      totalPages
+    });
   } catch (err: any) {
-    res.json({ success: true, users: adminUsersDb });
+    res.json({ success: true, users: adminUsersDb.slice(0, 50), total: adminUsersDb.length, page: 1, totalPages: 1 });
   }
 });
 

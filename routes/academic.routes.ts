@@ -107,6 +107,7 @@ import {
   feedbackReportsStore,
   generateRealisticSyllabus,
   getCachedAcademicResult,
+  getCbtHistoryForUser,
   getErrorLogEncryptionKeyBuffer,
   getGeminiClient,
   getISTDateString,
@@ -138,6 +139,7 @@ import {
   officeActivityFeed,
   parseFreeformSyllabus,
   paymentRateLimiter,
+  persistCbtResultAtomic,
   pendingContentUploadsDb,
   pendingUtrRequestsDb,
   personalSyllabusNodesStore,
@@ -526,9 +528,87 @@ router.get('/api/academic/syllabus', async (req, res) => {
       );
     }
 
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=600');
     res.json({ success: true, count: items.length, syllabus: items });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch syllabus nodes', details: err.message });
+  }
+});
+
+router.get('/api/academic/syllabus/stats', async (req, res) => {
+  try {
+    const exam = (req.query.exam as string) || '';
+    let items = Array.from(syllabusNodesStore.values());
+
+    if (exam) {
+      items = items.filter((i) => {
+        const itemExam = i.exam || i.data?.exam || '';
+        return normalizeExam(itemExam) === normalizeExam(exam);
+      });
+
+      if (items.length === 0 && customExamsStore.size > 0) {
+        const examParam = String(exam || '').toLowerCase();
+        const customMatch = Array.from(customExamsStore.values()).find(
+          (c: any) =>
+            (c.id && c.id.toLowerCase() === examParam) ||
+            (c.label && c.label.toLowerCase().includes(examParam)) ||
+            (c.name && c.name.toLowerCase().includes(examParam)) ||
+            (c.id && normalizeExam(c.id) === normalizeExam(exam))
+        );
+        if (customMatch && Array.isArray(customMatch.syllabus) && customMatch.syllabus.length > 0) {
+          items = customMatch.syllabus;
+        }
+      }
+
+      if (items.length === 0) {
+        const generated = generateRealisticSyllabus(exam);
+        generated.forEach((node) => {
+          syllabusNodesStore.set(node.id, node);
+        });
+        items = generated;
+      }
+    }
+
+    const total = items.length;
+    let completed = 0;
+    const subjectMap = new Map<string, { total: number; completed: number }>();
+
+    for (const item of items) {
+      const isDone = Boolean(
+        item.status === 'completed' ||
+        item.status === 'mastered' ||
+        item.isCompleted ||
+        item.completed ||
+        item.data?.status === 'completed'
+      );
+      if (isDone) completed++;
+
+      const subj = item.subject || item.data?.subject || 'General Studies';
+      const existing = subjectMap.get(subj) || { total: 0, completed: 0 };
+      existing.total++;
+      if (isDone) existing.completed++;
+      subjectMap.set(subj, existing);
+    }
+
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const subjects = Array.from(subjectMap.entries()).map(([subject, stats]) => ({
+      subject,
+      total: stats.total,
+      completed: stats.completed,
+      percentage: stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
+    }));
+
+    res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+    res.json({
+      success: true,
+      exam,
+      total,
+      completed,
+      percentage,
+      subjects
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to compute syllabus statistics', details: err.message });
   }
 });
 
@@ -2400,8 +2480,23 @@ router.get('/api/academic/cbt/tests/:id', (req, res) => {
 
 router.post('/api/academic/cbt/submit', async (req, res) => {
   try {
-    const { testId, sessionState, userId = 'default_user' } = req.body;
-    const test = cbtTestsStore.get(testId);
+    const { testId, sessionState, userId = 'default_user', test: clientTest, testPayload } = req.body;
+    let test = cbtTestsStore.get(testId) || clientTest || testPayload;
+
+    // Resilient fallback: If test was evicted from in-memory store due to server restart, reconstruct from payload
+    if (!test && (req.body.questions || sessionState?.questions)) {
+      const qs = req.body.questions || sessionState.questions;
+      test = {
+        id: testId,
+        title: req.body.testTitle || 'CBT Examination',
+        exam: req.body.exam || 'UPSC_CSE',
+        durationMinutes: 60,
+        totalMarks: qs.length * 2,
+        questions: qs,
+        sections: [{ name: 'General', totalQuestions: qs.length }],
+        markingScheme: { correct: 2, incorrect: 0.66, unattempted: 0 }
+      };
+    }
 
     if (!test) {
       return res.status(404).json({ error: 'Invalid Test ID' });
@@ -2417,36 +2512,51 @@ router.post('/api/academic/cbt/submit', async (req, res) => {
     const subjectPerformance: Record<string, { correct: number; total: number }> = {};
     const topicPerformance: Record<string, { correct: number; total: number }> = {};
 
-    const responses = sessionState.responses || {};
+    const responses = sessionState?.responses || req.body.responses || {};
 
     test.questions.forEach((q: any) => {
       const resp = responses[q.id];
       const selected = resp?.selectedOption;
       const timeSpent = resp?.timeSpentSeconds || 0;
 
+      const subj = q.subject || 'General';
+      const top = q.topic || 'General';
+
       timePerQuestion[q.id] = timeSpent;
-      timePerSubject[q.subject] = (timePerSubject[q.subject] || 0) + timeSpent;
+      timePerSubject[subj] = (timePerSubject[subj] || 0) + timeSpent;
 
-      if (!subjectPerformance[q.subject]) subjectPerformance[q.subject] = { correct: 0, total: 0 };
-      subjectPerformance[q.subject].total += 1;
+      if (!subjectPerformance[subj]) subjectPerformance[subj] = { correct: 0, total: 0 };
+      subjectPerformance[subj].total += 1;
 
-      if (!topicPerformance[q.topic]) topicPerformance[q.topic] = { correct: 0, total: 0 };
-      topicPerformance[q.topic].total += 1;
+      if (!topicPerformance[top]) topicPerformance[top] = { correct: 0, total: 0 };
+      topicPerformance[top].total += 1;
 
-      const isCorrect = (q.correctOptionId !== undefined && q.correctOptionId !== null)
-        ? (q.options?.[selected]?.id === q.correctOptionId || `opt_${selected}` === q.correctOptionId || String(selected) === String(q.correctOptionId))
-        : (selected === q.correctOption);
+      const correctMark = Math.abs(q.marks ?? test.markingScheme?.correct ?? 2);
+      const incorrectMark = Math.abs(q.negativeMarks ?? test.markingScheme?.incorrect ?? 0.66);
+
+      let isCorrect = false;
+      if (selected !== undefined && selected !== null) {
+        if (typeof q.correctOption === 'number') {
+          isCorrect = (selected === q.correctOption || Number(selected) === q.correctOption);
+        } else if (q.correctOptionId) {
+          isCorrect = (
+            q.options?.[selected]?.id === q.correctOptionId ||
+            `opt_${selected}` === q.correctOptionId ||
+            String(selected) === String(q.correctOptionId)
+          );
+        }
+      }
 
       if (selected === undefined || selected === null) {
         unattemptedCount += 1;
       } else if (isCorrect) {
         correctCount += 1;
-        score += q.marks || test.markingScheme.correct;
-        subjectPerformance[q.subject].correct += 1;
-        topicPerformance[q.topic].correct += 1;
+        score += correctMark;
+        subjectPerformance[subj].correct += 1;
+        topicPerformance[top].correct += 1;
       } else {
         incorrectCount += 1;
-        score -= q.negativeMarks || test.markingScheme.incorrect;
+        score -= incorrectMark;
       }
     });
 
@@ -2527,14 +2637,7 @@ router.post('/api/academic/cbt/submit', async (req, res) => {
       recommendedTopics: weakTopics.length > 0 ? weakTopics : ['Polity', 'Economy']
     };
 
-    const userHistory = cbtResultsStore.get(userId) || [];
-    userHistory.unshift(result);
-    cbtResultsStore.set(userId, userHistory);
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('cbt_results').upsert([{ user_id: userId, data: userHistory, updated_at: new Date().toISOString() }], { onConflict: 'user_id' });
-      } catch (e) {}
-    }
+    await persistCbtResultAtomic(userId, result);
 
     // Trigger daily study streak update for CBT test completion
     let streakResult = { streakDays: 1 };
@@ -2550,14 +2653,11 @@ router.post('/api/academic/cbt/submit', async (req, res) => {
   }
 });
 
-router.get('/api/academic/cbt/history', (req, res) => {
+router.get('/api/academic/cbt/history', async (req, res) => {
   try {
     const userId = (req.query.userId as string) || 'default_user';
     const exam = (req.query.exam as string) || '';
-    let history = cbtResultsStore.get(userId) || [];
-    if (exam) {
-      history = history.filter((h: any) => !h.exam || normalizeExam(h.exam) === normalizeExam(exam));
-    }
+    const history = await getCbtHistoryForUser(userId, exam);
     res.json({ success: true, history });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch CBT history' });
@@ -2583,6 +2683,7 @@ router.get('/api/academic/syllabus/subjects', (req, res) => {
       const subj = i.subject || i.data?.subject || '';
       if (subj) subjectSet.add(subj);
     });
+    res.setHeader('Cache-Control', 'public, max-age=600, stale-while-revalidate=1200');
     res.json({ success: true, subjects: Array.from(subjectSet).sort() });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch subjects', details: err.message });
@@ -2615,6 +2716,7 @@ router.get('/api/academic/syllabus/topics', (req, res) => {
       const t = i.topic || i.data?.topic || '';
       if (t) topicSet.add(t);
     });
+    res.setHeader('Cache-Control', 'public, max-age=600, stale-while-revalidate=1200');
     res.json({ success: true, topics: Array.from(topicSet).sort() });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch topics', details: err.message });
@@ -2675,6 +2777,22 @@ router.post('/api/academic/cbt/from-bank', async (req, res) => {
       });
     }
 
+    // Fall back to pyqStore if questionBankStore pool is empty
+    if (pool.length === 0) {
+      pool = Array.from(pyqStore.values()).filter((q: any) => {
+        return normalizeExam(q.exam || '') === normalizeExam(exam) &&
+          (q.type === 'mcq' || !q.type);
+      });
+    }
+
+    // Fall back to DEFAULT_CBT_MOCKS questions if still empty
+    if (pool.length === 0) {
+      const matchMocks = DEFAULT_CBT_MOCKS.filter(m => normalizeExam(m.exam || '') === normalizeExam(exam));
+      matchMocks.forEach(m => {
+        if (Array.isArray(m.questions)) pool.push(...m.questions);
+      });
+    }
+
     if (pool.length === 0) {
       return res.status(404).json({
         error: `No questions found in question bank for exam: ${exam}. Try AI generation instead.`
@@ -2699,20 +2817,23 @@ router.post('/api/academic/cbt/from-bank', async (req, res) => {
       questionText: q.questionText || q.question || '',
       options: Array.isArray(q.options) ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'],
       correctOption: typeof q.correctOption === 'number' ? q.correctOption : 0,
-      solution: q.solutionText || q.explanation || '',
+      explanation: q.solutionText || q.explanation || 'Verified question bank solution.',
       subject: q.subject || subject || 'General',
       topic: q.topic || '',
       difficulty: q.difficulty || 'Medium',
       section: q.subject || subject || 'General',
-      marks: markingScheme.correct,
-      negativeMarks: markingScheme.incorrect,
-      imageUrl: q.imageUrl || null
+      marks: Math.abs(markingScheme.correct ?? 4),
+      negativeMarks: Math.abs(markingScheme.incorrect ?? 1),
+      imageUrl: q.imageUrl || null,
+      language: 'English',
+      type: 'mcq'
     }));
 
     // Build unique sections from selected questions
     const uniqueSubjects = [...new Set(questions.map((q) => q.subject))];
     const sections = uniqueSubjects.map((s) => ({
       name: s,
+      totalQuestions: questions.filter((q) => q.subject === s).length,
       questionCount: questions.filter((q) => q.subject === s).length,
       timeLimit: null
     }));
@@ -2731,8 +2852,12 @@ router.post('/api/academic/cbt/from-bank', async (req, res) => {
       exam,
       subject: subject || 'Mixed',
       durationMinutes,
-      totalMarks: questions.length * markingScheme.correct,
-      markingScheme,
+      totalMarks: questions.length * Math.abs(markingScheme.correct ?? 4),
+      markingScheme: {
+        correct: Math.abs(markingScheme.correct ?? 4),
+        incorrect: Math.abs(markingScheme.incorrect ?? 1),
+        unattempted: 0
+      },
       sections,
       questions,
       sourceType: 'question_bank',
@@ -2742,6 +2867,7 @@ router.post('/api/academic/cbt/from-bank', async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
+    cbtTestsStore.set(examId, cbtTest);
     res.json({ success: true, test: cbtTest, availableCount: pool.length });
   } catch (err: any) {
     console.error('[CBT from-bank] Error:', err);
@@ -2784,105 +2910,191 @@ router.get('/api/academic/cbt/bank-stats', async (req, res) => {
 router.post('/api/academic/cbt/generate-custom', async (req, res) => {
   try {
     const { exam, subject, topics, questionCount = 20, durationMinutes = 30, difficulty = 'Medium' } = req.body;
-    if (!exam || !subject || !topics || topics.length === 0) {
+    if (!exam || !subject || !topics || !Array.isArray(topics) || topics.length === 0) {
       return res.status(400).json({ error: 'exam, subject, and topics are required.' });
     }
 
+    const normExam = normalizeExam(exam);
     const topicList = (topics as string[]).join(', ');
-    const prompt = `Generate exactly ${questionCount} multiple-choice questions (MCQs) for a competitive exam.
-Exam: ${exam.replace(/_/g, ' ')}
+    const count = Math.min(50, Math.max(5, Number(questionCount) || 20));
+
+    const prompt = `You are an expert exam paper setter for competitive examinations like ${normExam.replace(/_/g, ' ')}.
+Generate exactly ${count} high-yield, realistic multiple-choice questions (MCQs) for:
 Subject: ${subject}
 Topics: ${topicList}
 Difficulty: ${difficulty}
 
-For each question provide:
-1. A clear, concise question stem
-2. Exactly 4 options labeled A, B, C, D
-3. The correct option index (0=A, 1=B, 2=C, 3=D)
-4. A brief explanation
+REQUIREMENTS:
+1. Clear, realistic question stem reflecting actual exam pattern.
+2. Exactly 4 options (Option A, B, C, D) as strings.
+3. correctOptionIndex must be an integer between 0 and 3 (0=A, 1=B, 2=C, 3=D).
+4. Comprehensive explanation for the correct answer.
+5. Provide the specific topic name for each question.
 
-Respond in this exact JSON array format:
+Respond in this exact JSON array format with NO markdown wrapping and NO commentary:
 [
   {
     "question": "Question text here",
     "options": ["Option A", "Option B", "Option C", "Option D"],
     "correctOptionIndex": 0,
-    "explanation": "Brief explanation of the correct answer",
+    "explanation": "Explanation of correct answer",
     "topic": "Topic name"
   }
-]
-Only return valid JSON. No markdown, no extra text.`;
+]`;
 
-    let questions: any[] = [];
-    try {
-      const aiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + (process.env.GEMINI_API_KEY || ''), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    let generatedQuestions: any[] = [];
+    const gemini = getGeminiClient();
+
+    if (gemini) {
+      try {
+        const response = await gemini.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: [{ parts: [{ text: prompt }] }]
+        });
+        const rawText = response.text || '';
+        const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          if (Array.isArray(parsed)) generatedQuestions = parsed;
+        }
+      } catch (geminiErr) {
+        console.warn('[CBT AI Gen] Gemini client error, checking fetch fallback:', geminiErr);
+      }
+    } else if (process.env.GEMINI_API_KEY) {
+      try {
+        const aiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + (process.env.GEMINI_API_KEY || ''), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const rawText = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const jsonMatch = rawText.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (Array.isArray(parsed)) generatedQuestions = parsed;
+          }
+        }
+      } catch (fetchErr) {
+        console.warn('[CBT AI Gen] Direct fetch error:', fetchErr);
+      }
+    }
+
+    // Strict validation of AI questions
+    let validAiQuestions = generatedQuestions.filter((q: any) => (
+      q &&
+      typeof q.question === 'string' &&
+      q.question.trim().length > 5 &&
+      Array.isArray(q.options) &&
+      q.options.length >= 4 &&
+      typeof q.correctOptionIndex === 'number' &&
+      q.correctOptionIndex >= 0 &&
+      q.correctOptionIndex < 4
+    ));
+
+    // Fallback: If AI failed or returned fewer questions, fill from real questionBankStore, pyqStore, or DEFAULT_CBT_MOCKS.
+    // NEVER generate fake dummy text questions!
+    if (validAiQuestions.length < count) {
+      let bankPool = Array.from(questionBankStore.values()).filter((q: any) => {
+        const matchesExam = normalizeExam(q.exam || '') === normExam;
+        const matchesSubj = !subject || String(q.subject || '').toLowerCase().includes(subject.toLowerCase());
+        const isMcq = q.type === 'mcq' || !q.type;
+        return matchesExam && matchesSubj && isMcq;
       });
-      const aiData = await aiRes.json();
-      const raw = aiData?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-      const cleaned = raw.replace(/```json|```/g, '').trim();
-      questions = JSON.parse(cleaned);
-    } catch (e) {
-      console.error('AI generation failed, using fallback questions:', e);
+
+      if (bankPool.length === 0) {
+        bankPool = Array.from(pyqStore.values()).filter((q: any) => {
+          const matchesExam = normalizeExam(q.exam || '') === normExam;
+          const matchesSubj = !subject || String(q.subject || '').toLowerCase().includes(subject.toLowerCase());
+          const isMcq = q.type === 'mcq' || !q.type;
+          return matchesExam && matchesSubj && isMcq;
+        });
+      }
+
+      if (bankPool.length === 0) {
+        const matchMocks = DEFAULT_CBT_MOCKS.filter(m => normalizeExam(m.exam || '') === normExam);
+        matchMocks.forEach(m => {
+          if (Array.isArray(m.questions)) {
+            const subQuestions = m.questions.filter((q: any) => !subject || String(q.subject || q.section || '').toLowerCase().includes(subject.toLowerCase()));
+            bankPool.push(...(subQuestions.length > 0 ? subQuestions : m.questions));
+          }
+        });
+      }
+
+      const fallbackPool = bankPool.length > 0 ? bankPool : Array.from(questionBankStore.values()).filter((q: any) => normalizeExam(q.exam || '') === normExam);
+
+      if (fallbackPool.length > 0) {
+        const needed = count - validAiQuestions.length;
+        const shuffled = fallbackPool.sort(() => Math.random() - 0.5).slice(0, needed);
+        const converted = shuffled.map((q: any) => ({
+          question: q.questionText || q.question || '',
+          options: Array.isArray(q.options) && q.options.length >= 4 ? q.options.slice(0, 4) : ['A', 'B', 'C', 'D'],
+          correctOptionIndex: typeof q.correctOption === 'number' ? q.correctOption : 0,
+          explanation: q.solutionText || q.explanation || 'Verified answer key explanation.',
+          topic: q.topic || topics[0] || subject
+        }));
+        validAiQuestions = [...validAiQuestions, ...converted];
+      }
     }
 
-    // Fallback if AI fails
-    if (!Array.isArray(questions) || questions.length === 0) {
-      const topicsArr = topics as string[];
-      questions = topicsArr.flatMap((topic: string, ti: number) =>
-        Array.from({ length: Math.ceil(questionCount / topicsArr.length) }, (_, qi) => ({
-          question: `Which of the following best describes a key concept in "${topic}"?`,
-          options: [
-            `Core principle of ${topic}`,
-            `Secondary aspect of ${topic}`,
-            `Unrelated concept`,
-            `Advanced application of ${topic}`
-          ],
-          correctOptionIndex: 0,
-          explanation: `The first option correctly identifies the core principle of ${topic}.`,
-          topic
-        }))
-      ).slice(0, questionCount);
+    if (validAiQuestions.length === 0) {
+      return res.status(503).json({
+        error: 'Unable to generate questions at this time. Please ensure your AI API key is configured or select Question Bank mode.'
+      });
     }
 
-    // Build CbtTest structure
     const testId = `custom_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const cbtQuestions = questions.map((q: any, idx: number) => ({
-      id: `${testId}_q${idx + 1}`,
-      questionText: q.question,
-      options: (q.options || []).map((opt: string, oi: number) => ({ id: `opt_${oi}`, text: opt })),
-      correctOptionId: `opt_${q.correctOptionIndex ?? 0}`,
-      explanation: q.explanation || '',
-      subject,
-      topic: q.topic || topics[0],
-      difficulty,
-      section: subject,
-      marks: 4,
-      negativeMarks: -1,
-      type: 'MCQ'
-    }));
+    const cbtQuestions = validAiQuestions.slice(0, count).map((q: any, idx: number) => {
+      const rawOpts = Array.isArray(q.options) ? q.options : ['A', 'B', 'C', 'D'];
+      const stringOpts = rawOpts.slice(0, 4).map((opt: any) => {
+        if (typeof opt === 'string') return opt.trim();
+        if (typeof opt === 'object' && opt !== null) return String(opt.text || opt.label || JSON.stringify(opt)).trim();
+        return String(opt).trim();
+      });
+
+      const correctIdx = typeof q.correctOptionIndex === 'number' && q.correctOptionIndex >= 0 && q.correctOptionIndex < 4
+        ? q.correctOptionIndex
+        : 0;
+
+      return {
+        id: `${testId}_q${idx + 1}`,
+        type: 'mcq',
+        section: subject,
+        questionText: String(q.question).trim(),
+        options: stringOpts,
+        correctOption: correctIdx,
+        explanation: String(q.explanation || '').trim(),
+        subject,
+        topic: String(q.topic || topics[0] || subject).trim(),
+        difficulty,
+        marks: 4,
+        negativeMarks: 1, // Stored as positive magnitude
+        language: 'English'
+      };
+    });
 
     const customTest = {
       id: testId,
-      title: `Custom ${subject} Test - ${topics.slice(0, 2).join(' & ')}${topics.length > 2 ? ` +${topics.length - 2} more` : ''}`,
-      exam,
+      title: `Custom ${subject} Test - ${(topics as string[]).slice(0, 2).join(' & ')}${(topics as string[]).length > 2 ? ` +${(topics as string[]).length - 2} more` : ''}`,
+      exam: normExam,
       subject,
       topics,
-      durationMinutes,
+      durationMinutes: Number(durationMinutes) || 30,
       totalMarks: cbtQuestions.length * 4,
       questions: cbtQuestions,
-      sections: [{ name: subject, questionCount: cbtQuestions.length }],
-      markingScheme: { correct: 4, incorrect: -1, unattempted: 0 },
+      sections: [{ name: subject, totalQuestions: cbtQuestions.length }],
+      markingScheme: { correct: 4, incorrect: 1, unattempted: 0 },
       difficulty,
       isCustom: true,
+      sourceType: 'ai',
       createdAt: new Date().toISOString()
     };
 
     cbtTestsStore.set(testId, customTest);
     res.json({ success: true, test: customTest });
   } catch (err: any) {
+    console.error('[CBT generate-custom] Error:', err);
     res.status(500).json({ error: 'Failed to generate custom CBT test', details: err.message });
   }
 });
@@ -2936,20 +3148,26 @@ Respond in this exact JSON array format - only valid JSON, no extra text:
     }
 
     const examId = `admin_cbt_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const cbtQuestions = questions.map((q: any, idx: number) => ({
-      id: `${examId}_q${idx + 1}`,
-      questionText: q.question,
-      options: (q.options || []).map((opt: string, oi: number) => ({ id: `opt_${oi}`, text: opt })),
-      correctOptionId: `opt_${q.correctOptionIndex ?? 0}`,
-      explanation: q.explanation || '',
-      subject: subject || 'General Studies',
-      topic: q.topic || (topics || [])[0] || subject,
-      difficulty,
-      section: subject || 'General Studies',
-      marks: markingScheme.correct,
-      negativeMarks: markingScheme.incorrect,
-      type: 'MCQ'
-    }));
+    const cbtQuestions = questions.map((q: any, idx: number) => {
+      const rawOpts = Array.isArray(q.options) ? q.options : ['Option A', 'Option B', 'Option C', 'Option D'];
+      const stringOpts = rawOpts.slice(0, 4).map((opt: any) => typeof opt === 'string' ? opt : (opt?.text || String(opt)));
+      const correctIdx = typeof q.correctOptionIndex === 'number' && q.correctOptionIndex >= 0 && q.correctOptionIndex < 4 ? q.correctOptionIndex : 0;
+      return {
+        id: `${examId}_q${idx + 1}`,
+        questionText: q.question,
+        options: stringOpts,
+        correctOption: correctIdx,
+        explanation: q.explanation || '',
+        subject: subject || 'General Studies',
+        topic: q.topic || (topics || [])[0] || subject,
+        difficulty,
+        section: subject || 'General Studies',
+        marks: Math.abs(markingScheme.correct ?? 4),
+        negativeMarks: Math.abs(markingScheme.incorrect ?? 1),
+        type: 'mcq',
+        language: 'English'
+      };
+    });
 
     const adminExam = {
       id: examId,
@@ -2958,9 +3176,9 @@ Respond in this exact JSON array format - only valid JSON, no extra text:
       subject: subject || 'General Studies',
       topics: topics || [],
       durationMinutes,
-      totalMarks: cbtQuestions.length * markingScheme.correct,
+      totalMarks: cbtQuestions.length * Math.abs(markingScheme.correct ?? 4),
       questions: cbtQuestions,
-      sections: [{ name: subject || 'General Studies', questionCount: cbtQuestions.length }],
+      sections: [{ name: subject || 'General Studies', totalQuestions: cbtQuestions.length }],
       markingScheme,
       difficulty,
       instructions,

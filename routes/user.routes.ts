@@ -111,6 +111,7 @@ import {
   getGeminiClient,
   getISTDateString,
   getStandardSubject,
+  getSubscriptionForEmail,
   getSystemInstructionForMode,
   getTokens,
   getWritableDataFilePath,
@@ -140,6 +141,7 @@ import {
   paymentRateLimiter,
   pendingContentUploadsDb,
   pendingUtrRequestsDb,
+  persistSubscriptionAtomic,
   personalSyllabusNodesStore,
   podcastsStore,
   processedSessionsStore,
@@ -1470,31 +1472,9 @@ router.post('/api/payments/verify-payment', paymentRateLimiter, async (req, res)
     currency: 'INR',
   };
 
-  serverSubscriptionsDb.set(cleanEmail, newSubRecord);
+  await persistSubscriptionAtomic(newSubRecord);
   if (supabaseServer) {
     try {
-      const { error: supaErr } = await supabaseServer.from('user_subscriptions').upsert([
-        {
-          userEmail: cleanEmail,
-          planId: newSubRecord.planId,
-          isPremium: newSubRecord.isPremium,
-          activatedAt: newSubRecord.activatedAt,
-          expiresAt: newSubRecord.expiresAt,
-          paymentId: newSubRecord.paymentId,
-          orderId: newSubRecord.orderId,
-          verificationMethod: newSubRecord.verificationMethod,
-          amountPaid: newSubRecord.amountPaid,
-          currency: newSubRecord.currency,
-          updated_at: new Date().toISOString()
-        }
-      ], { onConflict: 'userEmail' });
-
-      if (supaErr) {
-        console.error('Failed to upsert user_subscriptions in Supabase:', supaErr);
-      } else {
-        console.log(`[SUPABASE] User subscription updated successfully for ${cleanEmail}`);
-      }
-
       const adminUser = adminUsersDb.find(u => u.email?.trim().toLowerCase() === cleanEmail);
       if (adminUser?.id && isValidUUID(adminUser.id)) {
         await supabaseServer.from('user_profiles').upsert({
@@ -1583,10 +1563,7 @@ router.post('/api/payments/razorpay-webhook', async (req, res) => {
           currency: paymentEntity?.currency || 'INR',
           updated_at: new Date().toISOString(),
         };
-        serverSubscriptionsDb.set(cleanEmail, subRec);
-        if (supabaseServer) {
-          await supabaseServer.from('user_subscriptions').upsert([subRec], { onConflict: 'userEmail' });
-        }
+        await persistSubscriptionAtomic(subRec);
         processedWebhookEvents.add(eventId);
         saveAdminStoreToDisk();
 
@@ -1712,8 +1689,8 @@ router.get('/api/user/subscription', async (req, res) => {
     return res.json({ isPremium: false, planId: 'FREE', expiresAt: null, premiumSource: null });
   }
 
-  const isPaidPremium = checkUserServerPremiumStatus(cleanEmail);
-  const sub = serverSubscriptionsDb.get(cleanEmail);
+  const sub = await getSubscriptionForEmail(cleanEmail);
+  const isPaidPremium = sub ? (Boolean(sub.isPremium) && (!sub.expiresAt || new Date(sub.expiresAt).getTime() > Date.now())) : checkUserServerPremiumStatus(cleanEmail);
 
   if (isPaidPremium && sub) {
     return res.json({

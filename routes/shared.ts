@@ -1538,7 +1538,7 @@ export async function saveAdminStoreToDisk() {
     };
     fs.writeFileSync(targetFile, JSON.stringify(store, null, 2), 'utf-8');
 
-    // Synchronous/Awaited sync to Primary Database (Supabase PostgreSQL) when configured
+    // Synchronous/Awaited sync to Primary Database for global config only (NOT whole-table dumps)
     if (supabaseServer) {
       try {
         await Promise.all([
@@ -1550,84 +1550,11 @@ export async function saveAdminStoreToDisk() {
             is_premium: Boolean(f.is_premium),
             updated_at: new Date().toISOString()
           })), { onConflict: 'feature_name' }),
-          supabaseServer.from('admin_users').upsert(adminUsersDb.map((u) => ({
-            id: u.id || `usr_${Math.random().toString(36).substring(2, 9)}`,
-            email: String(u.email || '').trim().toLowerCase(),
-            name: u.name || 'User',
-            role: u.role || 'STUDENT',
-            is_premium: Boolean(u.isPremium),
-            plan_name: u.planName || 'FREE',
-            streak_days: Number(u.streakDays || 0),
-            xp: Number(u.xp || 0),
-            coins: Number(u.coins || 0),
-            level: Number(u.level || 1),
-            status: u.status || 'ACTIVE',
-            updated_at: new Date().toISOString()
-          })), { onConflict: 'id' }),
           supabaseServer.from('admin_content').upsert([{ id: 'global', data: adminContentDb, updated_at: new Date().toISOString() }], { onConflict: 'id' }),
-          supabaseServer.from('user_subscriptions').upsert(
-            Array.from(serverSubscriptionsDb.values()).map((sub) => ({
-              userEmail: String(sub.userEmail || '').trim().toLowerCase(),
-              planId: sub.planId || 'monthly',
-              isPremium: Boolean(sub.isPremium),
-              activatedAt: sub.activatedAt || new Date().toISOString(),
-              expiresAt: sub.expiresAt || new Date().toISOString(),
-              paymentId: sub.paymentId || null,
-              orderId: sub.orderId || null,
-              verificationMethod: sub.verificationMethod || 'ADMIN_VERIFIED',
-              amountPaid: Number(sub.amountPaid || 0),
-              currency: sub.currency || 'INR',
-              updated_at: new Date().toISOString()
-            })),
-            { onConflict: 'userEmail' }
-          ),
-          supabaseServer.from('study_heartbeats').upsert(
-            Array.from(studyHeartbeatsStore.values()).flat().map((hb) => ({
-              id: hb.id,
-              user_id: hb.userId || hb.user_id,
-              session_id: hb.sessionId || hb.session_id,
-              subject: hb.subject,
-              topic_id: hb.topicId || hb.topic_id || null,
-              pinged_at: hb.pingedAt || hb.pinged_at || new Date().toISOString()
-            })),
-            { onConflict: 'id' }
-          ),
-          supabaseServer.from('reward_milestones').upsert(
-            Array.from(rewardMilestonesStore.values()).map((m) => ({
-              id: m.id,
-              data: m,
-              updated_at: m.updated_at || new Date().toISOString()
-            })),
-            { onConflict: 'id' }
-          ),
-          supabaseServer.from('reward_claims').upsert(
-            Array.from(rewardClaimsStore.values()).map((c) => ({
-              id: c.id,
-              data: c,
-              updated_at: c.updated_at || c.claimedAt || new Date().toISOString()
-            })),
-            { onConflict: 'id' }
-          ),
-          supabaseServer.from('syllabus_nodes').upsert(
-            Array.from(syllabusNodesStore.values()).map((n) => ({
-              id: n.id,
-              data: n,
-              updated_at: n.updatedAt || new Date().toISOString()
-            })),
-            { onConflict: 'id' }
-          ),
-          supabaseServer.from('pyqs').upsert(
-            Array.from(pyqStore.values()).map((p) => ({
-              id: p.id,
-              data: p,
-              updated_at: p.updatedAt || p.createdAt || new Date().toISOString()
-            })),
-            { onConflict: 'id' }
-          ),
         ]);
-        console.log('[SUPABASE SYNC SUCCESS] All server records upserted to Supabase PostgreSQL successfully.');
+        console.log('[SUPABASE CONFIG SYNC] Admin configuration saved successfully.');
       } catch (dbErr: any) {
-        console.error('[SUPABASE SYNC ERROR]', dbErr?.message || dbErr);
+        console.error('[SUPABASE CONFIG SYNC ERROR]', dbErr?.message || dbErr);
       }
     }
   } catch (err: any) {
@@ -1643,7 +1570,7 @@ export function lockRazorpayEnvironment() {
   }
 }
 
-export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
+export async function hydrateFromPrimaryDatabase(timeoutMs = 5000) {
   if (!supabaseServer) return;
 
   const controller = new AbortController();
@@ -1652,7 +1579,7 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
   const timeoutPromise = new Promise<never>((_, reject) => {
     timerId = setTimeout(() => {
       controller.abort();
-      reject(new Error(`[HYDRATION TIMEOUT] DB hydration exceeded ${timeoutMs}ms limit.`));
+      reject(new Error(`[HYDRATION TIMEOUT] DB configuration hydration exceeded ${timeoutMs}ms limit.`));
     }, timeoutMs);
   });
 
@@ -1671,51 +1598,23 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
 
   const performHydration = async () => {
     const signal = controller.signal;
+    // ARCHITECTURAL RULE: Startup loads ONLY small, bounded, static global settings.
+    // Unbounded domain data (users, subscriptions, results, questions) are loaded on-demand.
     const settledResults = await Promise.allSettled([
       supabaseServer.from('admin_settings').select('*').eq('id', 'global').abortSignal(signal).maybeSingle(),
       supabaseServer.from('feature_flags').select('*').abortSignal(signal),
-      supabaseServer.from('admin_users').select('*').abortSignal(signal),
       supabaseServer.from('admin_content').select('*').eq('id', 'global').abortSignal(signal).maybeSingle(),
-      supabaseServer.from('user_subscriptions').select('*').abortSignal(signal),
-      supabaseServer.from('community_groups').select('*').abortSignal(signal),
-      supabaseServer.from('notifications').select('*').abortSignal(signal),
-      supabaseServer.from('orders').select('*').abortSignal(signal),
-      supabaseServer.from('cbt_results').select('*').abortSignal(signal),
-      supabaseServer.from('ad_rewards').select('*').abortSignal(signal),
-      supabaseServer.from('study_buddy_queue').select('*').abortSignal(signal),
-      supabaseServer.from('study_buddy_matches').select('*').abortSignal(signal),
-      supabaseServer.from('study_heartbeats').select('*').abortSignal(signal),
-      supabaseServer.from('reward_milestones').select('*').abortSignal(signal),
-      supabaseServer.from('reward_claims').select('*').abortSignal(signal),
-      supabaseServer.from('utr_requests').select('*').abortSignal(signal),
-      supabaseServer.from('admin_announcements').select('*').abortSignal(signal),
-      supabaseServer.from('personal_syllabus_nodes').select('*').abortSignal(signal),
     ]);
 
     const settingsRes = getQueryResult(settledResults[0]);
     const flagsRes = getQueryResult(settledResults[1]);
-    const usersRes = getQueryResult(settledResults[2]);
-    const contentRes = getQueryResult(settledResults[3]);
-    const subsRes = getQueryResult(settledResults[4]);
-    const groupsRes = getQueryResult(settledResults[5]);
-    const notifsRes = getQueryResult(settledResults[6]);
-    const ordersRes = getQueryResult(settledResults[7]);
-    const cbtRes = getQueryResult(settledResults[8]);
-    const adRes = getQueryResult(settledResults[9]);
-    const queueRes = getQueryResult(settledResults[10]);
-    const matchesRes = getQueryResult(settledResults[11]);
-    const heartbeatsRes = getQueryResult(settledResults[12]);
-    const milestonesRes = getQueryResult(settledResults[13]);
-    const claimsRes = getQueryResult(settledResults[14]);
-    const utrRes = getQueryResult(settledResults[15]);
-    const announcementsRes = getQueryResult(settledResults[16]);
-    const personalSyllabusRes = getQueryResult(settledResults[17]);
+    const contentRes = getQueryResult(settledResults[2]);
 
-    // Independent per-table check: Admin Settings
+    // Admin Settings
     if (settingsRes.error) {
       console.error('[HYDRATION ERROR] admin_settings fetch failed:', settingsRes.error.message || settingsRes.error);
     } else if (!settingsRes.data || !settingsRes.data.data) {
-      console.warn('[SEED] admin_settings global row confirmed empty (no row/data, no error) - seeding defaults');
+      console.warn('[SEED] admin_settings global row confirmed empty - seeding defaults');
       lockRazorpayEnvironment();
       try {
         await supabaseServer.from('admin_settings').upsert([{ id: 'global', data: globalAdminSettings, updated_at: new Date().toISOString() }], { onConflict: 'id' });
@@ -1726,11 +1625,11 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
       globalAdminSettings = mergeAdminSettings(globalAdminSettings, settingsRes.data.data);
     }
 
-    // Independent per-table check: Feature Flags
+    // Feature Flags
     if (flagsRes.error) {
       console.error('[HYDRATION ERROR] feature_flags fetch failed:', flagsRes.error.message || flagsRes.error);
     } else if (Array.isArray(flagsRes.data) && flagsRes.data.length === 0) {
-      console.warn('[SEED] feature_flags table confirmed empty (0 rows, no error) - seeding defaults');
+      console.warn('[SEED] feature_flags table confirmed empty - seeding defaults');
       try {
         await supabaseServer.from('feature_flags').upsert(featureFlagsStore.map((f) => ({
           feature_name: f.feature_name,
@@ -1746,52 +1645,10 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
       featureFlagsStore = flagsRes.data;
     }
 
-    // Independent per-table check: Admin Users
-    if (usersRes.error) {
-      console.error('[HYDRATION ERROR] admin_users fetch failed:', usersRes.error.message || usersRes.error);
-    } else if (Array.isArray(usersRes.data) && usersRes.data.length === 0) {
-      console.warn('[SEED] admin_users table confirmed empty (0 rows, no error) - seeding defaults');
-      try {
-        await supabaseServer.from('admin_users').upsert(adminUsersDb.map((u) => ({
-          id: u.id || `usr_${Math.random().toString(36).substring(2, 9)}`,
-          email: String(u.email || '').trim().toLowerCase(),
-          name: u.name || 'User',
-          role: u.role || 'STUDENT',
-          is_premium: Boolean(u.isPremium),
-          plan_name: u.planName || 'FREE',
-          streak_days: Number(u.streakDays || 0),
-          xp: Number(u.xp || 0),
-          coins: Number(u.coins || 0),
-          level: Number(u.level || 1),
-          status: u.status || 'ACTIVE',
-          updated_at: new Date().toISOString()
-        })), { onConflict: 'id' });
-      } catch (e) {
-        console.error('[SEED ERROR] admin_users:', e);
-      }
-    } else if (Array.isArray(usersRes.data) && usersRes.data.length > 0) {
-      adminUsersDb = usersRes.data.map((row: any) => ({
-        id: row.id,
-        name: row.name,
-        email: row.email,
-        role: row.role,
-        isPremium: row.is_premium,
-        planName: row.plan_name,
-        streakDays: row.streak_days,
-        xp: row.xp,
-        coins: row.coins,
-        level: row.level,
-        completedTopicsCount: 0,
-        joinedAt: row.updated_at || new Date().toISOString(),
-        status: row.status
-      }));
-    }
-
-    // Independent per-table check: Admin Content
+    // Admin Content
     if (contentRes.error) {
       console.error('[HYDRATION ERROR] admin_content fetch failed:', contentRes.error.message || contentRes.error);
     } else if (!contentRes.data || !contentRes.data.data) {
-      console.warn('[SEED] admin_content global row confirmed empty (no row/data, no error) - seeding defaults');
       try {
         await supabaseServer.from('admin_content').upsert([{ id: 'global', data: adminContentDb, updated_at: new Date().toISOString() }], { onConflict: 'id' });
       } catch (e) {
@@ -1801,394 +1658,203 @@ export async function hydrateFromPrimaryDatabase(timeoutMs = 15000) {
       adminContentDb = { ...adminContentDb, ...contentRes.data.data };
     }
 
-    // Independent per-table check: User Subscriptions
-    if (subsRes.error) {
-      console.error('[HYDRATION ERROR] user_subscriptions fetch failed:', subsRes.error.message || subsRes.error);
-    } else if (Array.isArray(subsRes.data) && subsRes.data.length > 0) {
-      serverSubscriptionsDb.clear();
-      for (const sub of subsRes.data) {
-        if (sub.userEmail) {
-          serverSubscriptionsDb.set(sub.userEmail.trim().toLowerCase(), {
-            userEmail: sub.userEmail,
-            planId: sub.planId,
-            isPremium: sub.isPremium,
-            activatedAt: sub.activatedAt,
-            expiresAt: sub.expiresAt,
-            paymentId: sub.paymentId,
-            orderId: sub.orderId,
-            verificationMethod: sub.verificationMethod,
-            amountPaid: sub.amountPaid,
-            currency: sub.currency
-          });
-        }
-      }
-    }
-
-    // Independent per-table check: Community Groups
-    if (groupsRes.error) {
-      console.error('[HYDRATION ERROR] community_groups fetch failed:', groupsRes.error.message || groupsRes.error);
-    } else if (Array.isArray(groupsRes.data) && groupsRes.data.length === 0) {
-      console.warn('[SEED] community_groups table confirmed empty (0 rows, no error) - seeding defaults');
-      if (communityGroupsStore.size > 0) {
-        try {
-          await supabaseServer.from('community_groups').upsert(Array.from(communityGroupsStore.values()).map(g => ({ id: g.id, data: g, updated_at: new Date().toISOString() })), { onConflict: 'id' });
-        } catch (e) {
-          console.error('[SEED ERROR] community_groups:', e);
-        }
-      }
-    } else if (Array.isArray(groupsRes.data) && groupsRes.data.length > 0) {
-      communityGroupsStore.clear();
-      for (const r of groupsRes.data) {
-        if (r.id && r.data) communityGroupsStore.set(r.id, r.data);
-      }
-    }
-
-    // Independent per-table check: Notifications
-    if (notifsRes.error) {
-      console.error('[HYDRATION ERROR] notifications fetch failed:', notifsRes.error.message || notifsRes.error);
-    } else if (Array.isArray(notifsRes.data) && notifsRes.data.length === 0) {
-      console.warn('[SEED] notifications table confirmed empty (0 rows, no error) - seeding defaults');
-      if (userNotificationsStore.size > 0) {
-        try {
-          await supabaseServer.from('notifications').upsert(Array.from(userNotificationsStore.entries()).map(([userId, notifs]) => ({ user_id: userId, data: notifs, updated_at: new Date().toISOString() })), { onConflict: 'user_id' });
-        } catch (e) {
-          console.error('[SEED ERROR] notifications:', e);
-        }
-      }
-    } else if (Array.isArray(notifsRes.data) && notifsRes.data.length > 0) {
-      userNotificationsStore.clear();
-      for (const r of notifsRes.data) {
-        if (r.user_id && r.data) userNotificationsStore.set(r.user_id, r.data);
-      }
-    }
-
-    // Independent per-table check: Orders
-    if (ordersRes.error) {
-      console.error('[HYDRATION ERROR] orders fetch failed:', ordersRes.error.message || ordersRes.error);
-    } else if (Array.isArray(ordersRes.data) && ordersRes.data.length > 0) {
-      for (const r of ordersRes.data) {
-        if (r.id && r.data) serverOrdersDb.set(r.id, r.data);
-      }
-    }
-
-    // Independent per-table check: CBT Results
-    if (cbtRes.error) {
-      console.error('[HYDRATION ERROR] cbt_results fetch failed:', cbtRes.error.message || cbtRes.error);
-    } else if (Array.isArray(cbtRes.data) && cbtRes.data.length === 0) {
-      console.warn('[SEED] cbt_results table confirmed empty (0 rows, no error) - seeding defaults');
-      if (cbtResultsStore.size > 0) {
-        try {
-          await supabaseServer.from('cbt_results').upsert(Array.from(cbtResultsStore.entries()).map(([userId, resList]) => ({ user_id: userId, data: resList, updated_at: new Date().toISOString() })), { onConflict: 'user_id' });
-        } catch (e) {
-          console.error('[SEED ERROR] cbt_results:', e);
-        }
-      }
-    } else if (Array.isArray(cbtRes.data) && cbtRes.data.length > 0) {
-      cbtResultsStore.clear();
-      for (const r of cbtRes.data) {
-        if (r.user_id && r.data) cbtResultsStore.set(r.user_id, r.data);
-      }
-    }
-
-    // Independent per-table check: Ad Rewards
-    if (adRes.error) {
-      console.error('[HYDRATION ERROR] ad_rewards fetch failed:', adRes.error.message || adRes.error);
-    } else if (Array.isArray(adRes.data) && adRes.data.length === 0) {
-      console.warn('[SEED] ad_rewards table confirmed empty (0 rows, no error) - seeding defaults');
-      if (adRewardsDb.size > 0) {
-        try {
-          await supabaseServer.from('ad_rewards').upsert(Array.from(adRewardsDb.entries()).map(([email, rec]) => ({ id: email, email, data: rec, updated_at: new Date().toISOString() })), { onConflict: 'id' });
-        } catch (e) {
-          console.error('[SEED ERROR] ad_rewards:', e);
-        }
-      }
-    } else if (Array.isArray(adRes.data) && adRes.data.length > 0) {
-      adRewardsDb.clear();
-      for (const r of adRes.data) {
-        if (r.email && r.data) adRewardsDb.set(r.email.toLowerCase(), r.data);
-        else if (r.id && r.data) adRewardsDb.set(r.id.toLowerCase(), r.data);
-      }
-    }
-
-    // Independent per-table check: Study Buddy Queue
-    if (queueRes.error) {
-      console.error('[HYDRATION ERROR] study_buddy_queue fetch failed:', queueRes.error.message || queueRes.error);
-    } else if (Array.isArray(queueRes.data) && queueRes.data.length > 0) {
-      studyBuddyQueue.clear();
-      for (const r of queueRes.data) {
-        if (r.email && r.data) studyBuddyQueue.set(r.email.toLowerCase(), r.data);
-      }
-    }
-
-    // Independent per-table check: Study Buddy Matches
-    if (matchesRes.error) {
-      console.error('[HYDRATION ERROR] study_buddy_matches fetch failed:', matchesRes.error.message || matchesRes.error);
-    } else if (Array.isArray(matchesRes.data) && matchesRes.data.length > 0) {
-      studyBuddyMatches.clear();
-      for (const r of matchesRes.data) {
-        if (r.room_id && r.data) studyBuddyMatches.set(r.room_id, r.data);
-        else if (r.id && r.data) studyBuddyMatches.set(r.id, r.data);
-      }
-    }
-
-    // Independent per-table check: Study Heartbeats
-    if (heartbeatsRes.error) {
-      console.error('[HYDRATION ERROR] study_heartbeats fetch failed:', heartbeatsRes.error.message || heartbeatsRes.error);
-    } else if (Array.isArray(heartbeatsRes.data) && heartbeatsRes.data.length > 0) {
-      studyHeartbeatsStore.clear();
-      for (const r of heartbeatsRes.data) {
-        const sid = r.session_id;
-        if (!sid) continue;
-        if (!studyHeartbeatsStore.has(sid)) studyHeartbeatsStore.set(sid, []);
-        studyHeartbeatsStore.get(sid)!.push({
-          id: r.id,
-          userId: r.user_id,
-          sessionId: r.session_id,
-          subject: r.subject,
-          topicId: r.topic_id,
-          pingedAt: r.pinged_at
-        });
-      }
-    }
-
-    // Independent per-table check: Reward Milestones
-    if (milestonesRes.error) {
-      console.error('[HYDRATION ERROR] reward_milestones fetch failed:', milestonesRes.error.message || milestonesRes.error);
-    } else if (Array.isArray(milestonesRes.data) && milestonesRes.data.length > 0) {
-      for (const r of milestonesRes.data) {
-        if (r.id && r.data) rewardMilestonesStore.set(r.id, r.data);
-      }
-    }
-
-    // Independent per-table check: Reward Claims
-    if (claimsRes.error) {
-      console.error('[HYDRATION ERROR] reward_claims fetch failed:', claimsRes.error.message || claimsRes.error);
-    } else if (Array.isArray(claimsRes.data) && claimsRes.data.length > 0) {
-      for (const r of claimsRes.data) {
-        if (r.id && r.data) rewardClaimsStore.set(r.id, r.data);
-      }
-    }
-
-    // Independent per-table check: UTR Requests
-    if (utrRes.error) {
-      console.error('[HYDRATION ERROR] utr_requests fetch failed:', utrRes.error.message || utrRes.error);
-    } else if (Array.isArray(utrRes.data) && utrRes.data.length > 0) {
-      pendingUtrRequestsDb.clear();
-      for (const r of utrRes.data) {
-        const rec = mapRowToUtrRecord(r);
-        if (rec.id) pendingUtrRequestsDb.set(rec.id, rec);
-      }
-    }
-
-    // Independent per-table check: Admin Announcements
-    if (announcementsRes.error) {
-      console.error('[HYDRATION ERROR] admin_announcements fetch failed:', announcementsRes.error.message || announcementsRes.error);
-    } else if (Array.isArray(announcementsRes.data) && announcementsRes.data.length > 0) {
-      adminAnnouncementsStore.clear();
-      for (const r of announcementsRes.data) {
-        if (r.id && r.data) {
-          adminAnnouncementsStore.set(r.id, r.data);
-        }
-      }
-    }
-
-    // Independent per-table check: Personal Syllabus Nodes
-    if (personalSyllabusRes.error) {
-      console.error('[HYDRATION ERROR] personal_syllabus_nodes fetch failed:', personalSyllabusRes.error.message || personalSyllabusRes.error);
-    } else if (Array.isArray(personalSyllabusRes.data) && personalSyllabusRes.data.length > 0) {
-      personalSyllabusNodesStore.clear();
-      for (const r of personalSyllabusRes.data) {
-        if (r.id) personalSyllabusNodesStore.set(r.id, r);
-      }
-    }
-
-    // Optional check: Syllabus Time Log (if table exists)
-    try {
-      const { data: timeLogData } = await supabaseServer.from('syllabus_time_log').select('*');
-      if (Array.isArray(timeLogData) && timeLogData.length > 0) {
-        syllabusTimeLogsStore.clear();
-        for (const r of timeLogData) {
-          const uid = r.user_id || 'guest';
-          if (!syllabusTimeLogsStore.has(uid)) syllabusTimeLogsStore.set(uid, []);
-          syllabusTimeLogsStore.get(uid)!.push(r);
-        }
-      }
-    } catch (_tlErr) {}
-      try {
-        const { data: fbData } = await supabaseServer.from('feedback_reports').select('id, section, type, description, user_email, email, status, admin_note, resolved_by, resolved_at, is_guest_submission, created_at');
-        if (fbData && fbData.length > 0) {
-          feedbackReportsStore.clear();
-          fbData.forEach((r: any) => {
-            feedbackReportsStore.set(r.id, {
-              id: r.id,
-              section: r.section,
-              type: r.type,
-              description: r.description,
-              user_email: r.user_email || r.email || '',
-              status: r.status || 'Pending',
-              admin_note: r.admin_note || null,
-              resolved_by: r.resolved_by || null,
-              resolved_at: r.resolved_at || null,
-              is_guest_submission: Boolean(r.is_guest_submission),
-              created_at: r.created_at || new Date().toISOString()
-            });
-          });
-        }
-      } catch (_fbErr) {}
-      try {
-        const { data: edData } = await supabaseServer.from('educators').select('id, name, title, bio, avatar, rating, hourly_rate, subjects, data');
-        if (edData && edData.length > 0) {
-          educatorsStore.clear();
-          for (const r of edData) {
-            if (r.id) educatorsStore.set(r.id, r.data || r);
-          }
-        } else {
-          for (const ed of DEFAULT_EDUCATORS_LIST) {
-            await supabaseServer.from('educators').upsert([{ id: ed.id, data: ed, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-          }
-        }
-      } catch (_edErr) {}
-      try {
-        const { data: bkData } = await supabaseServer.from('educator_bookings').select('id, educator_id, user_email, date, slot, status, created_at, data');
-        if (bkData && bkData.length > 0) {
-          educatorBookingsStore.clear();
-          for (const r of bkData) {
-            if (r.id) educatorBookingsStore.set(r.id, r.data || r);
-          }
-        }
-      } catch (_bkErr) {}
-      try {
-        const { data: podData } = await supabaseServer.from('podcasts').select('id, title, description, audio_url, duration, category, created_at, data');
-        if (podData && podData.length > 0) {
-          podcastsStore.clear();
-          for (const r of podData) {
-            if (r.id) podcastsStore.set(r.id, r.data || r);
-          }
-        } else {
-          for (const pod of DEFAULT_PODCASTS_LIST) {
-            await supabaseServer.from('podcasts').upsert([{ id: pod.id, data: pod, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-          }
-        }
-      } catch (_podErr) {}
-      try {
-        const { data: spData } = await supabaseServer.from('sponsors').select('id, name, logo, website, tier, status, data');
-        if (spData && spData.length > 0) {
-          sponsorsDb = spData.map((r: any) => r.data || r);
-        } else {
-          for (const sp of DEFAULT_SPONSORS_LIST) {
-            await supabaseServer.from('sponsors').upsert([{ id: sp.id, data: sp, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-          }
-        }
-      } catch (_spErr) {}
-      try {
-        const { data: colData } = await supabaseServer.from('collaborators').select('id, name, role, avatar, bio, data');
-        if (colData && colData.length > 0) {
-          collaboratorsDb = colData.map((r: any) => r.data || r);
-        } else {
-          for (const col of DEFAULT_COLLABORATORS_LIST) {
-            await supabaseServer.from('collaborators').upsert([{ id: col.id, data: col, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-          }
-        }
-      } catch (_colErr) {}
-      try {
-        const { data: inqData } = await supabaseServer.from('sponsor_inquiries').select('id, company_name, contact_email, message, created_at, data');
-        if (inqData && inqData.length > 0) {
-          sponsorInquiriesDb = inqData.map((r: any) => r.data || r);
-        }
-      } catch (_inqErr) {}
-      try {
-        const { data: actData } = await supabaseServer.from('office_activity_feed').select('id, action, user_name, timestamp, details, data');
-        if (actData && actData.length > 0) {
-          const loadedActs = actData.map((r: any) => r.data || r);
-          loadedActs.sort((a: any, b: any) => new Date(b.timestamp || b.createdAt || 0).getTime() - new Date(a.timestamp || a.createdAt || 0).getTime());
-          officeActivityFeed = loadedActs.slice(0, 100);
-        } else {
-          for (const act of DEFAULT_OFFICE_ACTIVITIES) {
-            await supabaseServer.from('office_activity_feed').upsert([{ id: act.id, data: act, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-          }
-        }
-      } catch (_actErr) {}
-      try {
-        const { data: blogData } = await supabaseServer.from('blog_posts').select('id, title, slug, summary, content, author, published_at, data');
-        if (blogData && blogData.length > 0) {
-          blogPostsStore.clear();
-          for (const r of blogData) {
-            const post = r.data ? { ...r.data, id: r.id } : r;
-            if (post.id) blogPostsStore.set(post.id, post);
-          }
-        } else {
-          for (const post of DEFAULT_BLOG_POSTS) {
-            await supabaseServer.from('blog_posts').upsert([{ id: post.id, data: post, updated_at: new Date().toISOString() }], { onConflict: 'id' });
-          }
-        }
-      } catch (_bpErr) {}
-      try {
-        const { data: reqData } = await supabaseServer.from('blog_content_requests').select('id, user_email, topic, description, votes, created_at, data');
-        if (reqData && reqData.length > 0) {
-          blogRequestsStore.clear();
-          for (const r of reqData) {
-            const reqItem = r.data ? { ...r.data, id: r.id } : r;
-            if (reqItem.id) blogRequestsStore.set(reqItem.id, reqItem);
-          }
-        }
-      } catch (_bqrErr) {}
-      try {
-        const { data: errData } = await supabaseServer.from('user_error_logs').select('id, user_id, error_message, stack_trace, path, created_at, data');
-        if (errData && errData.length > 0) {
-          userErrorLogsStore.clear();
-          for (const r of errData) {
-            const item = r.data ? { ...r.data, id: r.id } : r;
-            if (item && item.id) {
-              userErrorLogsStore.set(item.id, item);
-            }
-          }
-        }
-      } catch (_errLogErr) {}
-      try {
-        const { data: teamAppData } = await supabaseServer.from('team_applications').select('id, user_email, name, role_applied, message, status, created_at, data');
-        if (teamAppData && teamAppData.length > 0) {
-          teamApplicationsDb = teamAppData.map((r: any) => r.data || r);
-        }
-      } catch (_teamAppErr) {}
-      try {
-        const { data: pomData } = await supabaseServer.from('user_pomodoro_sessions').select('id, user_id, duration_minutes, completed_at, mode, task_name, created_at');
-        if (pomData && pomData.length > 0) {
-          userPomodoroSessionsDb = pomData.map((s: any) => ({
-            id: s.id,
-            userId: s.user_id,
-            subject: s.subject || 'General Study',
-            topic: s.topic || 'General Topic',
-            duration: Number(s.duration) || 25,
-            startTime: s.start_time,
-            endTime: s.end_time,
-            completedDuration: Number(s.completed_duration) || 0,
-            status: s.status || 'COMPLETED',
-            questionsAttempted: Number(s.questions_attempted) || 0,
-            correctAnswers: Number(s.correct_answers) || 0,
-            questionIds: Array.isArray(s.question_ids) ? s.question_ids : [],
-            questionSources: Array.isArray(s.question_sources) ? s.question_sources : [],
-            manualQuestions: Array.isArray(s.manual_questions) ? s.manual_questions : [],
-            selectedQuestions: Array.isArray(s.selected_questions) ? s.selected_questions : [],
-            accuracy: Number(s.accuracy) || 0,
-            xpEarned: Number(s.xp_earned) || 0,
-            createdAt: s.created_at || new Date().toISOString()
-          }));
-        }
-      } catch (_pomErr) {}
-      lockRazorpayEnvironment();
-      console.log(`[PRIMARY DB] Hydrated server state from Supabase Primary Database successfully.`);
+    lockRazorpayEnvironment();
+    console.log(`[PRIMARY DB] Global configuration hydrated successfully (zero unbounded queries).`);
   };
 
   try {
     await Promise.race([performHydration(), timeoutPromise]);
   } catch (err: any) {
     if (err?.name === 'AbortError' || err?.message?.includes('HYDRATION TIMEOUT')) {
-      console.log(`[PRIMARY DB] DB hydration timed out (${timeoutMs}ms) - falling back to local cached state.`);
+      console.log(`[PRIMARY DB] Config hydration timed out (${timeoutMs}ms) - using cached state.`);
     } else {
-      console.warn('[PRIMARY DB] Failed to hydrate state from Supabase DB:', err?.message || err);
+      console.warn('[PRIMARY DB] Failed to hydrate config from Supabase DB:', err?.message || err);
     }
   } finally {
     if (timerId) clearTimeout(timerId);
+  }
+}
+
+// ============================================================================
+// ATOMIC ON-DEMAND PERSISTENCE & BOUNDED CACHE HELPERS
+// ============================================================================
+
+/**
+ * On-demand subscription lookup with bounded cache read-through
+ */
+export async function getSubscriptionForEmail(email?: string): Promise<SubscriptionRecord | null> {
+  if (!email || typeof email !== 'string') return null;
+  const cleanEmail = email.trim().toLowerCase();
+  
+  // 1. Fast in-memory check
+  const cached = serverSubscriptionsDb.get(cleanEmail);
+  if (cached) return cached;
+
+  // 2. Read-through to Supabase for this specific user
+  if (supabaseServer) {
+    try {
+      const { data, error } = await supabaseServer
+        .from('user_subscriptions')
+        .select('*')
+        .eq('userEmail', cleanEmail)
+        .maybeSingle();
+
+      if (!error && data) {
+        const subRecord: SubscriptionRecord = {
+          userEmail: data.userEmail,
+          planId: data.planId,
+          isPremium: Boolean(data.isPremium),
+          activatedAt: data.activatedAt,
+          expiresAt: data.expiresAt,
+          paymentId: data.paymentId,
+          orderId: data.orderId,
+          verificationMethod: data.verificationMethod,
+          amountPaid: data.amountPaid,
+          currency: data.currency
+        };
+        // Evict if cache exceeds 1000 items
+        if (serverSubscriptionsDb.size > 1000) {
+          const firstKey = serverSubscriptionsDb.keys().next().value;
+          if (firstKey) serverSubscriptionsDb.delete(firstKey);
+        }
+        serverSubscriptionsDb.set(cleanEmail, subRecord);
+        return subRecord;
+      }
+    } catch (err: any) {
+      console.warn('[SUBSCRIPTION LOOKUP ERROR]', err?.message || err);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Atomic subscription persister - updates only this subscription row in Supabase
+ */
+export async function persistSubscriptionAtomic(sub: SubscriptionRecord): Promise<void> {
+  if (!sub || !sub.userEmail) return;
+  const cleanEmail = sub.userEmail.trim().toLowerCase();
+  serverSubscriptionsDb.set(cleanEmail, sub);
+
+  if (supabaseServer) {
+    try {
+      await supabaseServer.from('user_subscriptions').upsert([{
+        userEmail: cleanEmail,
+        planId: sub.planId || 'monthly',
+        isPremium: Boolean(sub.isPremium),
+        activatedAt: sub.activatedAt || new Date().toISOString(),
+        expiresAt: sub.expiresAt || new Date().toISOString(),
+        paymentId: sub.paymentId || null,
+        orderId: sub.orderId || null,
+        verificationMethod: sub.verificationMethod || 'ADMIN_VERIFIED',
+        amountPaid: Number(sub.amountPaid || 0),
+        currency: sub.currency || 'INR',
+        updated_at: new Date().toISOString()
+      }], { onConflict: 'userEmail' });
+    } catch (err: any) {
+      console.warn('[SUBSCRIPTION PERSIST ERROR]', err?.message || err);
+    }
+  }
+}
+
+/**
+ * On-demand CBT history lookup with bounded caching
+ */
+export async function getCbtHistoryForUser(userId: string, exam?: string): Promise<any[]> {
+  if (!userId) return [];
+  
+  let history = cbtResultsStore.get(userId);
+  if (!history && supabaseServer) {
+    try {
+      const { data, error } = await supabaseServer
+        .from('cbt_results')
+        .select('data')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (!error && data && Array.isArray(data.data)) {
+        history = data.data;
+        if (cbtResultsStore.size > 500) {
+          const firstKey = cbtResultsStore.keys().next().value;
+          if (firstKey) cbtResultsStore.delete(firstKey);
+        }
+        cbtResultsStore.set(userId, history);
+      }
+    } catch (e) {}
+  }
+
+  const list = history || [];
+  if (exam) {
+    return list.filter((h: any) => !h.exam || normalizeExam(h.exam) === normalizeExam(exam));
+  }
+  return list;
+}
+
+/**
+ * Atomic CBT result persister - appends to user's history and writes only that row
+ */
+export async function persistCbtResultAtomic(userId: string, result: any): Promise<void> {
+  if (!userId || !result) return;
+  const userHistory = await getCbtHistoryForUser(userId);
+  userHistory.unshift(result);
+  cbtResultsStore.set(userId, userHistory);
+
+  if (supabaseServer) {
+    try {
+      await supabaseServer.from('cbt_results').upsert([{
+        user_id: userId,
+        data: userHistory,
+        updated_at: new Date().toISOString()
+      }], { onConflict: 'user_id' });
+    } catch (e: any) {
+      console.warn('[CBT RESULT PERSIST ERROR]', e?.message || e);
+    }
+  }
+}
+
+export interface AdminUserRecord {
+  id: string;
+  email?: string;
+  name?: string;
+  role?: string;
+  isPremium?: boolean;
+  planName?: string;
+  streakDays?: number;
+  xp?: number;
+  coins?: number;
+  level?: number;
+  status?: string;
+  [key: string]: any;
+}
+
+/**
+ * Atomic Admin User persister
+ */
+export async function persistAdminUserAtomic(user: AdminUserRecord): Promise<void> {
+  if (!user || !user.id) return;
+  const idx = adminUsersDb.findIndex(u => u.id === user.id || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
+  if (idx >= 0) adminUsersDb[idx] = user;
+  else adminUsersDb.push(user);
+
+  if (supabaseServer) {
+    try {
+      await supabaseServer.from('admin_users').upsert([{
+        id: user.id,
+        email: String(user.email || '').trim().toLowerCase(),
+        name: user.name || 'User',
+        role: user.role || 'STUDENT',
+        is_premium: Boolean(user.isPremium),
+        plan_name: user.planName || 'FREE',
+        streak_days: Number(user.streakDays || 0),
+        xp: Number(user.xp || 0),
+        coins: Number(user.coins || 0),
+        level: Number(user.level || 1),
+        status: user.status || 'ACTIVE',
+        updated_at: new Date().toISOString()
+      }], { onConflict: 'id' });
+    } catch (err: any) {
+      console.warn('[ADMIN USER PERSIST ERROR]', err?.message || err);
+    }
   }
 }
 
@@ -2241,8 +1907,11 @@ export function loadAdminStoreFromDisk() {
   }
 }
 
+let isServerStateInitialized = false;
 export async function initializeServerState() {
-  await hydrateFromPrimaryDatabase(15000);
+  if (isServerStateInitialized) return;
+  isServerStateInitialized = true;
+  await hydrateFromPrimaryDatabase(5000);
   loadAdminStoreFromDisk();
 }
 
@@ -2848,7 +2517,7 @@ export const normalizeExam = (e: string): string => {
   
   // Specific alias mappings
   if (raw === 'NEET' || raw === 'NEET_UG' || raw.includes('NEET UG') || raw.includes('NATIONAL ELIGIBILITY CUM ENTRANCE')) return 'NEET_UG';
-  if (raw === 'UPSC' || raw === 'UPSC_CSE' || raw.includes('CIVIL SERVICES')) return 'UPSC_CSE';
+  if (raw === 'UPSC' || raw === 'UPSC_CSE' || raw === 'UPSC_PRELIMS' || raw.includes('CIVIL SERVICES') || raw.includes('PRELIMS')) return 'UPSC_CSE';
   if (raw === 'SSC' || raw === 'SSC_CGL' || raw.includes('COMBINED GRADUATE LEVEL')) return 'SSC_CGL';
   if (raw === 'NDA' || raw === 'NDA_NA' || raw.includes('NATIONAL DEFENCE ACADEMY')) return 'NDA_NA';
   if (raw === 'JEE_MAIN' || raw === 'JEE' || raw.includes('JOINT ENTRANCE EXAMINATION')) return 'JEE_MAIN';
@@ -3958,13 +3627,8 @@ export function recalculateUserKarma(userId: string) {
   return record;
 }
 
-hydrateCommunityPostsFromSupabase().catch((err) => console.error('[INIT HYDRATE COMMUNITY ERROR]', err));
-
-hydrateWalletsFromSupabase().catch((err) => console.error('[INIT HYDRATE WALLETS ERROR]', err));
-
-hydratePayoutsFromSupabase().catch((err) => console.error('[INIT HYDRATE PAYOUTS ERROR]', err));
-
-hydrateKarmaFromSupabase().catch((err) => console.error('[INIT HYDRATE KARMA ERROR]', err));
+// NOTE: On-demand hydration is used when a user accesses community/wallets/payouts/karma,
+// preventing whole-database downloads into memory on server boot.
 
 export const DEFAULT_NOTIFS = [
   {

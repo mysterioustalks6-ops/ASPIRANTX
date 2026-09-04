@@ -17,6 +17,7 @@ import {
   Flame,
   Star,
   CheckCircle2,
+  Award,
   Lock as LockIcon,
   Mail,
   User as UserIcon,
@@ -198,23 +199,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden font-sans">
-      {/* Ambient Radial Background Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-b from-cyan-500/15 via-purple-500/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      {/* Subtle Ambient Background */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-to-b from-sky-600/10 via-indigo-500/8 to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-indigo-600/6 rounded-full blur-3xl pointer-events-none" />
 
       {/* Navigation Bar */}
-      <header className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between relative z-10">
+      <header className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between relative z-10 border-b border-slate-900">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-purple-500 to-pink-500 p-0.5 shadow-lg shadow-cyan-500/20">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-violet-500 p-0.5 shadow-lg shadow-sky-500/20">
             <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-black text-white text-lg">
               AX
             </div>
           </div>
           <div>
-            <h1 className="font-black text-xl tracking-wider bg-gradient-to-r from-cyan-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-              ASPIRANT<span className="text-cyan-400">X</span>
+            <h1 className="font-black text-lg tracking-widest text-white">
+              ASPIRANT<span className="text-sky-400">X</span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-semibold tracking-widest uppercase">UPSC & SSC SaaS</p>
+            <p className="text-[10px] text-slate-500 font-semibold tracking-widest uppercase">Precision Exam Prep</p>
           </div>
         </div>
 
@@ -241,63 +242,87 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
 
       {/* Hero Section */}
       <section className="max-w-6xl mx-auto px-6 pt-12 pb-20 text-center relative z-10">
+        {/* Exam Coverage Badge */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/30 text-xs font-semibold text-cyan-400 mb-6 shadow-xl backdrop-blur-md"
+          transition={{ duration: 0.4 }}
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-700 text-xs font-semibold text-slate-300 mb-8 shadow-lg"
         >
-          <Sparkles className="w-4 h-4 animate-spin text-cyan-400" />
-          The Gen-Z Operating System for UPSC CSE & SSC CGL Rankers
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          UPSC · NEET · JEE · SSC · GATE · CAT · NDA · CDS · State PSCs
         </motion.div>
 
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-tight"
+          transition={{ duration: 0.5, delay: 0.08 }}
+          className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-white leading-[1.1]"
         >
-          Crack India's Toughest Exams with{' '}
-          <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 bg-clip-text text-transparent">
-            AI & Precision Discipline
+          One System.
+          <br />
+          <span className="bg-gradient-to-r from-sky-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent">
+            Master Any Exam.
           </span>
         </motion.h2>
 
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto mt-6 leading-relaxed"
+          transition={{ duration: 0.5, delay: 0.18 }}
+          className="text-slate-400 text-sm sm:text-base max-w-xl mx-auto mt-6 leading-relaxed"
         >
-          Master syllabus coverage, execute pomodoro focus sprints, track daily PYQ routines, and clear doubts with our dedicated AI Mentor calibrated for Lal Bahadur Shastri National Academy of Administration standards.
+          Guided syllabus tracking, 35-year PYQ archive, AI-powered CBT simulation, focused Pomodoro sessions, and a personal Gemini AI Mentor — built for serious aspirants across India's most competitive exams.
         </motion.p>
 
-        {/* Hero CTA Button */}
+        {/* Hero CTAs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.28 }}
           className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
         >
           <button
             id="hero-google-signin-btn"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 hover:brightness-110 text-slate-950 font-black text-sm flex items-center justify-center gap-3 shadow-2xl shadow-cyan-500/30 transition-all duration-200 cursor-pointer"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-black text-sm flex items-center justify-center gap-3 shadow-lg shadow-sky-600/25 transition-all duration-200 cursor-pointer"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-              <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              <path fill="white" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="white" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="white" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="white" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
             </svg>
-            <span>Sign In with Google</span>
-            <ArrowRight className="w-4 h-4 stroke-[3]" />
+            <span>Start Free Preparation</span>
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+          </button>
+
+          <button
+            id="hero-guest-btn"
+            onClick={handleGuestLogin}
+            className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-semibold text-sm transition-all duration-200"
+          >
+            Preview as Guest
           </button>
         </motion.div>
 
+        {/* Exam Badges */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.45 }}
+          className="mt-10 flex flex-wrap items-center justify-center gap-2"
+        >
+          {['UPSC CSE', 'NEET UG', 'JEE Main', 'JEE Advanced', 'SSC CGL', 'GATE', 'CAT', 'NDA/CDS', 'CUET', 'State PSC'].map((exam) => (
+            <span key={exam} className="px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs text-slate-400 font-medium">
+              {exam}
+            </span>
+          ))}
+        </motion.div>
+
         {authSuccess && (
-          <p className="text-xs text-emerald-300 mt-4 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30 max-w-md mx-auto font-bold">
+          <p className="text-xs text-emerald-300 mt-6 bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30 max-w-md mx-auto font-bold">
             {authSuccess}
           </p>
         )}
@@ -353,49 +378,76 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         )}
       </AnimatePresence>
 
-      {/* Feature Grid */}
-      <section className="max-w-6xl mx-auto px-6 pb-24 relative z-10">
+      {/* How it Works — 3-Step Preparation Loop */}
+      <section className="max-w-4xl mx-auto px-6 pb-20 relative z-10">
         <div className="text-center mb-12">
-          <h3 className="text-2xl font-bold text-white">Engineered for Maximum Retention & Focus</h3>
-          <p className="text-xs text-slate-400 mt-1">Five core modules integrated into one unified dashboard</p>
+          <h3 className="text-2xl sm:text-3xl font-black text-white">Your Complete Exam Preparation Loop</h3>
+          <p className="text-sm text-slate-400 mt-2">Three integrated steps, one focused system</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl hover:border-cyan-500/40 transition-all duration-300">
-            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4">
-              <BookOpen className="w-6 h-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[
+            { step: '01', icon: BookOpen, title: 'Learn & Track', desc: 'Map your full syllabus. Mark topics as Done, Revise, or Pending. Know exactly how far you are — chapter by chapter.', color: 'sky' },
+            { step: '02', icon: CheckCircle2, title: 'Practice & Test', desc: 'Solve 35 years of previous year questions. Attempt timed CBT mock tests in NTA-standard simulation mode.', color: 'indigo' },
+            { step: '03', icon: Sparkles, title: 'Analyze & Improve', desc: 'Let the AI identify your weak areas, recommend what to revise, and help you close accuracy gaps before the exam.', color: 'violet' },
+          ].map(({ step, icon: Icon, title, desc, color }) => (
+            <div key={step} className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all">
+              <div className={`text-[11px] font-black tracking-[0.2em] text-${color}-400 mb-3 uppercase`}>Step {step}</div>
+              <div className={`w-10 h-10 rounded-xl bg-${color}-500/10 border border-${color}-500/25 flex items-center justify-center text-${color}-400 mb-4`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white mb-2">{title}</h4>
+              <p className="text-xs text-slate-400 leading-relaxed">{desc}</p>
             </div>
-            <h4 className="text-base font-bold text-white">Syllabus Command Center</h4>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Track Prelims, Mains GS1-GS4, CSAT, and Tier-1/2 topics with micro-completion percentages and weightage flags.
-            </p>
-          </div>
+          ))}
+        </div>
+      </section>
 
-          <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl hover:border-purple-500/40 transition-all duration-300">
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-4">
-              <Timer className="w-6 h-6" />
-            </div>
-            <h4 className="text-base font-bold text-white">Pomodoro & Soundscapes</h4>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              25m/50m UPSC study sprints with embedded Web Audio ambient rain sounds for distraction-free deep work.
-            </p>
-          </div>
+      {/* 6 Core Capability Modules */}
+      <section className="max-w-6xl mx-auto px-6 pb-24 relative z-10">
+        <div className="text-center mb-10">
+          <h3 className="text-xl font-black text-white">Everything You Need. Nothing You Don't.</h3>
+          <p className="text-xs text-slate-400 mt-1">Six focused modules, unified in one dashboard</p>
+        </div>
 
-          <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 backdrop-blur-xl hover:border-blue-500/40 transition-all duration-300">
-            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 mb-4">
-              <MessageSquare className="w-6 h-6" />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {[
+            { icon: BookOpen, title: 'Syllabus Tracker', desc: 'Subject → Chapter → Subtopic with completion percentages', color: 'sky' },
+            { icon: CheckCircle2, title: 'PYQ Archive', desc: '35 years of previous year questions with subject filters', color: 'emerald' },
+            { icon: Award, title: 'CBT Mock Tests', desc: 'NTA-pattern full-length tests with auto-scoring', color: 'indigo' },
+            { icon: MessageSquare, title: 'AI Study Mentor', desc: 'Gemini-powered doubt clearing and answer evaluation', color: 'violet' },
+            { icon: Timer, title: 'Pomodoro Planner', desc: '25/50-minute focused study sessions with ambient sound', color: 'amber' },
+            { icon: Star, title: 'Analytics & Rank', desc: 'Accuracy tracking, weak area detection, and leaderboard', color: 'rose' },
+          ].map(({ icon: Icon, title, desc, color }) => (
+            <div key={title} className="p-5 rounded-2xl bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-all group">
+              <div className={`w-9 h-9 rounded-xl bg-${color}-500/10 border border-${color}-500/25 flex items-center justify-center text-${color}-400 mb-3 group-hover:scale-105 transition-transform`}>
+                <Icon className="w-4.5 h-4.5" />
+              </div>
+              <h4 className="text-sm font-bold text-white mb-1">{title}</h4>
+              <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
             </div>
-            <h4 className="text-base font-bold text-white">AI Study Mentor</h4>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Powered by server-side Gemini AI for instant answer evaluation, PYQ simplification, and essay structure recommendations.
-            </p>
-          </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="max-w-2xl mx-auto px-6 pb-24 text-center relative z-10">
+        <div className="p-8 rounded-3xl bg-gradient-to-br from-sky-950/80 via-indigo-950/60 to-slate-900 border border-sky-500/20 shadow-xl">
+          <h3 className="text-2xl font-black text-white mb-3">Ready to Begin?</h3>
+          <p className="text-sm text-slate-400 mb-6">Join thousands of aspirants preparing smarter, not harder.</p>
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+            className="px-8 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm transition-all shadow-lg shadow-sky-600/20 cursor-pointer"
+          >
+            Start Free — No Credit Card
+          </button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500 relative z-10">
-        <p>© 2026 AspirantX SaaS Platform. Built for UPSC & SSC Aspirants.</p>
+      <footer className="border-t border-slate-800/60 py-8 text-center text-xs text-slate-500 relative z-10">
+        <p>© 2026 AspirantX — Precision Exam Preparation Platform. UPSC · NEET · JEE · SSC · GATE · Defence Exams.</p>
       </footer>
 
       {/* Email / Password Sign In & Sign Up Modal */}

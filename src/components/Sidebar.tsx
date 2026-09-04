@@ -30,7 +30,8 @@ import {
   Sliders,
   GripVertical,
   X,
-  ArrowDownRight
+  ArrowDownRight,
+  Smartphone
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
@@ -80,6 +81,7 @@ const ICON_MAP: Record<string, any> = {
   Gift,
   Crown,
   Handshake,
+  Smartphone,
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -521,93 +523,232 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Active Features Ordered By User */}
-        <nav className="space-y-1">
-          {activePreferences.map((pref) => {
-            const meta = metaMap.get(pref.featureId);
-            if (!meta) return null;
-            const Icon = ICON_MAP[meta.iconName] || Target;
+        {/* Grouped Information Architecture Navigation */}
+        <nav className="space-y-4">
+          {/* 1. CORE WORKSPACE */}
+          <div className="space-y-1">
+            {renderNavItem({
+              id: 'dashboard',
+              label: 'Command Center',
+              icon: Target,
+              badge: 'Live',
+            })}
+          </div>
 
-            return renderNavItem({
-              id: pref.featureId,
-              label: pref.customLabel || meta.defaultLabel,
-              defaultLabel: meta.defaultLabel,
-              icon: Icon,
-              badge: meta.badge,
-            });
-          })}
+          {/* 2. LEARN DOMAIN */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <BookOpen className="w-3 h-3 text-sky-400" />
+                  Learn
+                </span>
+                <span className="text-[9px] text-slate-600 font-mono">Content</span>
+              </div>
+            )}
+            {renderNavItem({
+              id: 'syllabus',
+              label: 'Syllabus Tracker',
+              icon: BookOpen,
+              badge: 'AI',
+            })}
+            {renderNavItem({
+              id: 'library',
+              label: 'Digital Library & Notes',
+              icon: BookMarked,
+              badge: 'PDF',
+            })}
+            {/* Optional Learn sub-tools if active */}
+            {activePreferences.some((p) => p.featureId === 'flashcards') &&
+              renderNavItem({
+                id: 'flashcards',
+                label: 'Active Recall Decks',
+                icon: Sparkles,
+                badge: 'Cards',
+              })}
+            {activePreferences.some((p) => p.featureId === 'podcasts') &&
+              renderNavItem({
+                id: 'podcasts',
+                label: 'Audio Lecture Series',
+                icon: Mic,
+                badge: 'Audio',
+              })}
+          </div>
 
-          {/* "+ N More Features" Prominent Hint Card at Bottom of Nav List */}
-          {inactivePreferences.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => {
-                dismissCustomizeHint();
-                if (onOpenWorkspaceCustomizer) {
-                  onOpenWorkspaceCustomizer();
-                } else {
-                  setIsMoreFeaturesOpen(!isMoreFeaturesOpen);
-                }
-              }}
-              className={`w-full flex items-center ${
-                isCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2.5'
-              } rounded-xl border border-dashed border-indigo-500/50 bg-indigo-950/30 hover:bg-indigo-900/40 text-indigo-300 hover:text-white transition-all duration-200 group mt-2 shadow-sm min-h-[40px]`}
-              title={`See all ${inactivePreferences.length} more available tools`}
-            >
-              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
-                <div className="w-5 h-5 rounded-full border border-dashed border-indigo-400/80 flex items-center justify-center bg-indigo-500/20 group-hover:scale-110 transition-transform shrink-0">
-                  <Plus className="w-3 h-3 text-indigo-300 group-hover:text-white" />
+          {/* 3. PRACTICE DOMAIN */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Award className="w-3 h-3 text-emerald-400" />
+                  Practice
+                </span>
+                <span className="text-[9px] text-slate-600 font-mono">Exam Prep</span>
+              </div>
+            )}
+            {renderNavItem({
+              id: 'cbt',
+              label: 'CBT Mock Tests',
+              icon: Award,
+              badge: 'NTA',
+            })}
+            {renderNavItem({
+              id: 'pyq',
+              label: 'PYQ Archive (35 Yrs)',
+              icon: BookMarked,
+              badge: '1991–26',
+            })}
+            {renderNavItem({
+              id: 'question_bank',
+              label: 'Question Bank',
+              icon: HelpCircle,
+              badge: '4000+',
+            })}
+          </div>
+
+          {/* 4. PLAN DOMAIN */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Timer className="w-3 h-3 text-indigo-400" />
+                  Plan & Focus
+                </span>
+              </div>
+            )}
+            {renderNavItem({
+              id: 'tasks',
+              label: 'Daily Study Tasks',
+              icon: CheckSquare,
+              badge: 'Tasks',
+            })}
+            {renderNavItem({
+              id: 'timer',
+              label: 'Pomodoro Focus Timer',
+              icon: Timer,
+              badge: '25/50m',
+            })}
+            {activePreferences.some((p) => p.featureId === 'study_buddy') &&
+              renderNavItem({
+                id: 'study_buddy',
+                label: 'Study Buddy',
+                icon: Users,
+                badge: 'Sync',
+              })}
+          </div>
+
+          {/* 5. IMPROVE / ANALYTICS DOMAIN */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <BarChart3 className="w-3 h-3 text-amber-400" />
+                  Improve
+                </span>
+              </div>
+            )}
+            {renderNavItem({
+              id: 'weakness',
+              label: 'Weak Areas & Accuracy',
+              icon: BarChart3,
+              badge: 'AI',
+            })}
+            {renderNavItem({
+              id: 'leaderboard',
+              label: 'All-India Rank',
+              icon: Flame,
+              badge: 'AIR',
+            })}
+            {activePreferences.some((p) => p.featureId === 'eligibility') &&
+              renderNavItem({
+                id: 'eligibility',
+                label: 'Eligibility Checker',
+                icon: ShieldCheck,
+                badge: 'Check',
+              })}
+          </div>
+
+          {/* 6. CONNECT DOMAIN */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <MessageSquare className="w-3 h-3 text-purple-400" />
+                  Connect
+                </span>
+              </div>
+            )}
+            {renderNavItem({
+              id: 'chat',
+              label: 'AI Study Mentor',
+              icon: Sparkles,
+              badge: 'Gemini',
+            })}
+            {renderNavItem({
+              id: 'community',
+              label: 'Aspirants Community',
+              icon: Users,
+              badge: 'Forum',
+            })}
+          </div>
+
+          {/* 7. ACCOUNT & PERKS DOMAIN */}
+          <div className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Crown className="w-3 h-3 text-amber-400" />
+                  Account & Perks
+                </span>
+              </div>
+            )}
+            {renderNavItem({
+              id: 'premium',
+              label: 'Premium Subscription',
+              icon: Crown,
+              badge: 'Pro',
+            })}
+            {renderNavItem({
+              id: 'reward_milestones',
+              label: 'Rewards & Milestones',
+              icon: Gift,
+              badge: 'Coins',
+            })}
+            {activePreferences.some((p) => p.featureId === 'wallpaper') &&
+              renderNavItem({
+                id: 'wallpaper',
+                label: 'Habit Wallpaper',
+                icon: Smartphone,
+                badge: 'HD',
+              })}
+          </div>
+
+          {/* 8. FACULTY / ADMIN SECTION (Role-Gated) */}
+          {(showAdmin || isTeacherOrAdmin) && (
+            <div className="pt-2 border-t border-slate-800/80 space-y-1">
+              {!isCollapsed && (
+                <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-rose-400/90 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3 h-3 text-rose-400" />
+                  Administration
                 </div>
-                {!isCollapsed && (
-                  <div className="text-left truncate">
-                    <p className="text-xs font-bold text-indigo-200 group-hover:text-white truncate">
-                      + {inactivePreferences.length} more tools available
-                    </p>
-                    <p className="text-[10px] text-indigo-400/80 font-medium truncate">
-                      Tap to add to sidebar
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {!isCollapsed && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 group-hover:bg-indigo-600 group-hover:text-white transition-colors shrink-0">
-                  Add Tools
-                </span>
               )}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                dismissCustomizeHint();
-                if (onOpenWorkspaceCustomizer) onOpenWorkspaceCustomizer();
-              }}
-              className={`w-full flex items-center ${
-                isCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2.5'
-              } rounded-xl border border-dashed border-slate-700/70 bg-slate-900/40 hover:bg-slate-900 text-slate-400 hover:text-slate-200 transition-all duration-200 group mt-2 min-h-[40px]`}
-              title="Personalize and reorder your workspace tools"
-            >
-              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} min-w-0`}>
-                <Sliders className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform shrink-0" />
-                {!isCollapsed && (
-                  <span className="text-xs font-medium text-slate-300 group-hover:text-white truncate">
-                    Personalize & reorder tools
-                  </span>
-                )}
-              </div>
-              {!isCollapsed && (
-                <span className="text-[10px] font-semibold text-slate-500 group-hover:text-indigo-300 transition-colors shrink-0">
-                  Edit →
-                </span>
+              {showAdmin && renderNavItem(adminItem, true)}
+              {isTeacherOrAdmin && (
+                <>
+                  {renderNavItem({
+                    id: 'teachers',
+                    label: 'Teacher Portal',
+                    icon: Users,
+                    badge: 'Faculty',
+                  })}
+                  {renderNavItem({
+                    id: 'blog_submit',
+                    label: 'Publish Blog Post',
+                    icon: BookOpen,
+                    badge: 'Editor',
+                  })}
+                </>
               )}
-            </button>
-          )}
-
-          {/* Admin panel if unlocked */}
-          {showAdmin && (
-            <div className="pt-2 border-t border-slate-800">
-              {renderNavItem(adminItem, true)}
             </div>
           )}
         </nav>

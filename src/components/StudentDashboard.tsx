@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Clock, Flame, Target, TrendingUp, Award, 
-  Sparkles, BookOpen, BarChart3, Zap, ShieldCheck,
-  LayoutGrid, Sliders, ChevronRight, Smartphone
+  Flame, Target,
+  Sparkles, BookOpen, Zap,
+  LayoutGrid, Sliders, ChevronRight
 } from 'lucide-react';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
 import { EXAM_LIST } from '../lib/examList';
@@ -231,68 +231,193 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     };
   }, [activeExamTag, userProfile.id, userProfile.streakDays, userProfile.xp]);
 
+  // Derive "Continue Where You Left Off" data from localStorage
+  const getLastStudiedTopic = () => {
+    try {
+      const histKey = `aspirantx_last_topic_${userProfile.id}_${activeExamTag}`;
+      const stored = localStorage.getItem(histKey);
+      if (stored) return JSON.parse(stored) as { subject: string; chapter: string; subtopic: string; tab: ActiveTab };
+    } catch {}
+    // Fallback: derive from first subject in exam config
+    const examCfg = getExamConfig(activeExamTag);
+    const subject = examCfg.subjects?.[0] || 'Core Subject';
+    return { subject, chapter: 'Chapter 1', subtopic: 'Introduction & Overview', tab: 'syllabus' as ActiveTab };
+  };
+
+  const lastTopic = getLastStudiedTopic();
+
+  const examCfg2 = getExamConfig(activeExamTag);
+  const primarySuggestion = data.aiSuggestions?.[0] || `Focus on ${examCfg2.subjects?.[0] || 'core topics'} today.`;
+  const secondarySuggestion = data.aiSuggestions?.[1];
+
   if (loading || !data) {
     return (
       <div className="p-12 text-center text-slate-400">
-        <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        Syncing Student Telemetry...
+        <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+        Syncing Dashboard...
       </div>
     );
   }
 
   return (
-    <div className="w-full space-y-3.5 sm:space-y-6 pb-24 md:pb-6">
-      {/* 1. TOP HEADER BANNER (User overview, Target Exam, Streak) */}
-      <div className="ax-card p-3.5 sm:p-6 border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
-        <div>
-          <div className="flex items-center space-x-1.5 sm:space-x-2 text-indigo-400 font-semibold text-[10px] sm:text-xs mb-0.5 sm:mb-1">
-            <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-            <span>CANDIDATE COMMAND CENTER</span>
-          </div>
-          <h1 className="text-base sm:text-xl md:text-2xl font-bold text-slate-100">Welcome back, {userProfile.name}</h1>
-          <div className="flex items-center gap-1.5 sm:gap-2 text-slate-400 text-xs mt-1 flex-wrap">
-            <span className="text-[11px] sm:text-xs">Exam:</span>
-            <select
-              value={selectedExam || userProfile.exam || 'NEET_UG'}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
-                  onOpenProfileModal();
-                } else if (onExamChange) {
-                  onExamChange(val);
-                }
-              }}
-              className="bg-slate-950 border border-slate-800 text-indigo-300 font-bold text-[11px] sm:text-xs rounded-lg px-2 py-0.5 sm:px-2.5 sm:py-1 focus:outline-none focus:border-indigo-500 cursor-pointer"
-            >
-              <optgroup label="Preset Exams">
-                {EXAM_LIST.map((ex) => (
-                  <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200 font-medium">
-                    {ex.label}
-                  </option>
-                ))}
-              </optgroup>
-              <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
-                + Custom Exam...
-              </option>
-            </select>
-            <span className="text-slate-600 hidden sm:inline">•</span>
-            <span className="text-[11px] sm:text-xs">Days Left: <span className="font-bold text-indigo-400">{data.daysLeftForExam}d</span></span>
-          </div>
-        </div>
+    <div className="w-full space-y-4 pb-24 md:pb-6">
 
-        <div className="flex items-center space-x-2.5 sm:space-x-3 bg-slate-950 px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-slate-800 w-full sm:w-auto justify-between sm:justify-start">
-          <div className="flex items-center space-x-2">
-            <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 fill-amber-400/30 animate-pulse" />
-            <div className="text-[11px] sm:text-xs text-slate-400 font-medium">Daily Streak</div>
+      {/* ── REGION 1: HEADER ─────────────────────────────────────────────── */}
+      <div className="ax-card p-4 sm:p-5 border-slate-800/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Left: Greeting + Exam Selector */}
+          <div>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest mb-0.5">Dashboard</p>
+            <h1 className="text-lg sm:text-xl font-bold text-slate-100">
+              Welcome back, <span className="text-sky-400">{userProfile.name?.split(' ')[0] || 'Aspirant'}</span>
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span className="text-xs text-slate-500">Preparing for</span>
+              <select
+                value={selectedExam || userProfile.exam || 'NEET_UG'}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
+                    onOpenProfileModal();
+                  } else if (onExamChange) {
+                    onExamChange(val);
+                  }
+                }}
+                className="bg-slate-900 border border-slate-700 text-sky-300 font-bold text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-sky-500 cursor-pointer"
+              >
+                <optgroup label="Preset Exams">
+                  {EXAM_LIST.map((ex) => (
+                    <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200">
+                      {ex.label}
+                    </option>
+                  ))}
+                </optgroup>
+                <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
+                  + Custom Exam...
+                </option>
+              </select>
+            </div>
           </div>
-          <div className="text-xs sm:text-base font-bold text-slate-100">{(userProfile.streakDays || data.currentStreak || 1)} Days 🔥</div>
+
+          {/* Right: Streak + Days Left */}
+          <div className="flex items-center gap-3">
+            <div className="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-amber-500/20 flex items-center gap-2">
+              <Flame className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+              <div>
+                <div className="text-[10px] text-slate-500 font-medium">Streak</div>
+                <div className="text-sm font-black text-slate-100">{userProfile.streakDays || data.currentStreak || 1}d 🔥</div>
+              </div>
+            </div>
+            <div className="px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
+              <Target className="w-4 h-4 text-rose-400" />
+              <div>
+                <div className="text-[10px] text-slate-500 font-medium">Days Left</div>
+                <div className="text-sm font-black text-slate-100">{data.daysLeftForExam}d</div>
+              </div>
+            </div>
+            {onOpenWorkspaceCustomizer && (
+              <button
+                onClick={onOpenWorkspaceCustomizer}
+                title="Personalize"
+                className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-400 hover:text-sky-400 transition-all"
+              >
+                <Sliders className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* AdSense In-Feed Ad Banner */}
-      <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />
+      {/* ── REGION 2: CONTINUE + TODAY'S FOCUS ──────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
-      {/* 2. DYNAMIC CIRCULAR PERFORMANCE RINGS */}
+        {/* Continue Where You Left Off (3/5 width) */}
+        <div className="lg:col-span-3 ax-card p-4 sm:p-5 border-sky-500/15 bg-gradient-to-br from-slate-900 to-sky-950/20">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-sky-500/15 border border-sky-500/25 flex items-center justify-center">
+              <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+            </div>
+            <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Continue Studying</span>
+          </div>
+
+          <div className="mb-4">
+            <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mb-1">{lastTopic.subject}</div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-100 leading-tight mb-1">{lastTopic.chapter}</h3>
+            <p className="text-xs text-slate-400">{lastTopic.subtopic}</p>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-slate-500">Syllabus Coverage</span>
+              <span className="font-bold text-sky-400">{data.overallProgressPercent}%</span>
+            </div>
+            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-sky-500 rounded-full transition-all duration-700"
+                style={{ width: `${data.overallProgressPercent}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-slate-600 mt-1">
+              <span>{data.topicsCompleted} topics done</span>
+              <span>{data.totalTopics - data.topicsCompleted} remaining</span>
+            </div>
+          </div>
+
+          <button
+            onClick={() => { if (onNavigate) onNavigate(lastTopic.tab || 'syllabus'); }}
+            className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all"
+          >
+            <span>Resume Where I Left Off</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Today's Focus + AI Next Action (2/5 width) */}
+        <div className="lg:col-span-2 flex flex-col gap-4">
+          {/* Today's Focus */}
+          <div className="ax-card p-4 sm:p-5 border-indigo-500/15 flex-1">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 text-indigo-400" />
+              </div>
+              <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Today's Focus</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400">Study Time</span>
+                <span className="font-bold text-slate-200">{Math.floor(data.todayStudyMinutes / 60)}h {data.todayStudyMinutes % 60}m</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-slate-400">Target</span>
+                <span className="font-bold text-slate-200">{data.dailyTargetHours}h / day</span>
+              </div>
+              <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 rounded-full"
+                  style={{ width: `${Math.min(100, Math.round((data.todayStudyMinutes / (data.dailyTargetHours * 60)) * 100))}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* AI Next Best Action */}
+          <div className="ax-card p-4 sm:p-5 border-amber-500/15">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              </div>
+              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">AI Recommends</span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">{primarySuggestion}</p>
+            {secondarySuggestion && (
+              <p className="text-[11px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-800">{secondarySuggestion}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── REGION 3: PERFORMANCE METRICS ───────────────────────────────── */}
       <CircularPerformanceHub
         syllabusPercent={data.overallProgressPercent}
         revisionPercent={data.revisionProgressPercent || 35}
@@ -301,130 +426,76 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         dailyTargetMinutes={data.dailyTargetHours * 60}
       />
 
-      {/* 3. MOBILE WALLPAPER & COUNTDOWN PROGRESS BOX ENGINE */}
-      <ExamWallpaperWidget
-        user={userProfile}
-        selectedExam={activeExamTag}
-        onNavigateToSyllabus={() => onNavigate && onNavigate('syllabus')}
-      />
+      {/* AdSense In-Feed (non-intrusive, after fold) */}
+      <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />
 
-      {/* 4. DAILY STUDY SUMMARY NUDGE WIDGET */}
-      <DailyStudySummaryCard
-        user={userProfile}
-        selectedExam={selectedExam}
-        onNavigate={onNavigate}
-        onOpenReminderSettings={onOpenReminderSettings}
-      />
-
-      {/* 5. WORKSPACE FOCUS HUB */}
-      <div className="ax-card p-4 sm:p-5 md:p-6 space-y-4 bg-gradient-to-br from-slate-900/90 via-slate-900/60 to-indigo-950/20 border-indigo-500/20">
-        <div className="flex items-center justify-between flex-wrap gap-3">
+      {/* ── REGION 4: WORKSPACE QUICK LAUNCH ────────────────────────────── */}
+      <div className="ax-card p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-              <LayoutGrid className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center">
+              <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />
             </div>
             <div>
-              <h3 className="text-sm md:text-base font-bold text-slate-100 flex items-center gap-2">
-                <span>Personalized Study Modules</span>
+              <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                Quick Launch
                 {workspaceConfig.preset && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wider">
-                    {workspaceConfig.preset} MODE
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 uppercase tracking-wider">
+                    {workspaceConfig.preset}
                   </span>
                 )}
               </h3>
-              <p className="text-xs text-slate-400">
-                Quick jump to your selected academic tools and practice engines
-              </p>
+              <p className="text-[11px] text-slate-500">Jump directly to any module</p>
             </div>
           </div>
-
           {onOpenWorkspaceCustomizer && (
             <button
               onClick={onOpenWorkspaceCustomizer}
-              className="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-400 hover:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all"
             >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>Personalize Hub</span>
+              <Sliders className="w-3 h-3" />
+              Customize
             </button>
           )}
         </div>
 
-        {/* Workspace Quick Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-2.5 pt-1">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
           {getActiveFeaturesInOrder(workspaceConfig).map((item) => (
             <button
               key={item.id}
               onClick={() => {
                 recordFeatureUsage(item.id, userProfile.id);
-                if (onNavigate) {
-                  onNavigate(item.id as ActiveTab);
-                }
+                if (onNavigate) onNavigate(item.id as ActiveTab);
               }}
-              className="p-2.5 sm:p-3 rounded-xl bg-slate-950/80 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/50 transition-all text-left group flex flex-col justify-between h-20 shadow-sm cursor-pointer"
+              className="p-3 rounded-xl bg-slate-900/80 hover:bg-sky-950/40 border border-slate-800 hover:border-sky-500/30 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer"
             >
-              <div className="flex items-center justify-between">
-                <span className="text-sm sm:text-base font-bold text-slate-300 group-hover:text-indigo-300">
-                  {item.label.charAt(0)}
-                </span>
-                {item.meta.badge && (
-                  <span className="px-1.5 py-0.2 rounded text-[8px] font-extrabold bg-indigo-500/20 text-indigo-300 uppercase">
-                    {item.meta.badge}
-                  </span>
-                )}
+              <div className="w-8 h-8 rounded-lg bg-slate-800 group-hover:bg-sky-500/15 border border-slate-700 group-hover:border-sky-500/25 flex items-center justify-center text-base font-black text-slate-400 group-hover:text-sky-400 transition-all">
+                {item.label.charAt(0)}
               </div>
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] sm:text-xs font-bold text-slate-200 group-hover:text-white truncate">
-                  {item.label}
-                </span>
-                <ChevronRight className="w-3 h-3 text-slate-600 group-hover:text-indigo-400 transition-transform group-hover:translate-x-0.5 shrink-0" />
+              <div className="flex items-center gap-0.5">
+                <span className="text-[10px] font-semibold text-slate-400 group-hover:text-slate-200 transition-colors leading-tight text-center">{item.label}</span>
+                {item.meta.badge && (
+                  <span className="px-1 rounded text-[8px] font-black bg-indigo-500/15 text-indigo-400 uppercase">{item.meta.badge}</span>
+                )}
               </div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* 6. ALL INDIA RANK PROGRESSION & AI INSIGHTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        <div className="lg:col-span-2 ax-card p-4 sm:p-6 space-y-4">
-          <h3 className="text-sm sm:text-base font-bold text-slate-100 flex items-center space-x-2">
-            <BarChart3 className="w-5 h-5 text-indigo-400" />
-            <span>All India Rank & Accuracy Telemetry</span>
-          </h3>
+      {/* ── REGION 5: EXAM WALLPAPER + DAILY SUMMARY (Moved below fold) ── */}
+      <ExamWallpaperWidget
+        user={userProfile}
+        selectedExam={activeExamTag}
+        onNavigateToSyllabus={() => onNavigate && onNavigate('syllabus')}
+      />
 
-          <div className="p-3.5 sm:p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-3">
-            {data.rankTrend.map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-400 w-16 sm:w-20">{item.date}</span>
-                <div className="flex items-center space-x-3 flex-1 mx-2 sm:mx-4">
-                  <div className="flex-1 bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
-                    <div
-                      className="bg-indigo-600 h-full rounded-full"
-                      style={{ width: `${Math.min(100, Math.max(5, 100 - (item.rank / 20)))}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <span className="font-bold text-indigo-300 text-xs shrink-0">Rank #{item.rank}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="ax-card p-4 sm:p-6 space-y-4">
-          <h3 className="text-sm sm:text-base font-bold text-slate-100 flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <span>AI Study Insights</span>
-          </h3>
-
-          <div className="space-y-2.5 sm:space-y-3">
-            {data.aiSuggestions.map((sugg, i) => (
-              <div key={i} className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300 leading-relaxed">
-                <span className="font-semibold text-amber-400 block mb-0.5">Insight #{i + 1}:</span>
-                {sugg}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <DailyStudySummaryCard
+        user={userProfile}
+        selectedExam={selectedExam}
+        onNavigate={onNavigate}
+        onOpenReminderSettings={onOpenReminderSettings}
+      />
     </div>
   );
 };

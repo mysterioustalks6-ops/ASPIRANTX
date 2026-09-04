@@ -10,6 +10,8 @@
  * - Durable Offline Synchronization Queue
  */
 
+import type { CbtQuestion, CbtSection } from '../types';
+
 const DB_NAME = 'aspirantx_local_db_v1';
 const DB_VERSION = 2;
 
@@ -76,14 +78,18 @@ export interface LocalPyqRecord {
 export interface LocalCbtRecord {
   id: string;
   examId: string;
+  exam?: string;
   title: string;
   durationMinutes: number;
   totalMarks: number;
   totalQuestions: number;
   negativeMarking: number;
-  questions: any[];
+  questions: CbtQuestion[] | any[];
+  sections?: CbtSection[];
+  markingScheme?: { correct: number; incorrect: number; unattempted?: number };
   difficulty?: string;
   isMock?: boolean;
+  schemaVersion?: number;
 }
 
 export interface LocalUserProgressRecord {

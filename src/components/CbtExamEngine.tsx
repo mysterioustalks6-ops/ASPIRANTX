@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { 
   CbtTest, CbtQuestion, CbtExamSessionState, CbtUserResponse, 
-  CbtQuestionStatus, CbtExamResult, UserProfile 
+  CbtQuestionStatus, CbtExamResult, UserProfile, CbtSection
 } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { INITIAL_CBT_TESTS } from '../data/cbtData';
@@ -15,6 +15,11 @@ import { normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { contentPackageManager } from '../lib/contentPackageManager';
 import { syncWorker } from '../lib/syncWorker';
+import { getApiUrl } from '../lib/apiConfig';
+
+import { normalizeCbtQuestion, normalizeCbtTest } from '../lib/cbtNormalizer.js';
+export { normalizeCbtQuestion, normalizeCbtTest };
+
 
 interface CbtExamEngineProps {
   userProfile: UserProfile;
@@ -75,12 +80,23 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
+  const isSubmittingRef = useRef<boolean>(false);
+  const startTimeMsRef = useRef<number | null>(null);
+
   useEffect(() => {
     setSelectedTest(null);
     setSessionState(null);
     setExamResult(null);
+    setBuilder(prev => ({ ...prev, exam: activeExamKey, subject: '', selectedTopics: [], step: 1 }));
     fetchTests();
+    fetchSubjects(activeExamKey);
   }, [activeExamKey]);
+
+  useEffect(() => {
+    if (activeTab === 'custom') {
+      fetchSubjects(activeExamKey);
+    }
+  }, [activeTab, activeExamKey]);
 
   useEffect(() => { fetchLiveExams(); }, []);
 
@@ -108,23 +124,23 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       // 1. Instant Local-First read from IndexedDB (0ms network)
       const localTests = await contentPackageManager.getLocalCbtTests(activeExamKey);
       if (localTests && localTests.length > 0) {
-        setAvailableTests(localTests as any);
+        setAvailableTests(localTests.map(t => normalizeCbtTest(t, activeExamKey)));
         setLoading(false);
         return;
       }
 
       // 2. Fallback to API if not seeded yet
-      const res = await fetch(`/api/academic/cbt/tests?exam=${activeExamKey}`);
+      const res = await fetch(getApiUrl(`/api/academic/cbt/tests?exam=${encodeURIComponent(activeExamKey)}`));
       const data = await res.json();
       if (data.success && data.tests && data.tests.length > 0) {
-        setAvailableTests(data.tests);
+        setAvailableTests(data.tests.map((t: any) => normalizeCbtTest(t, activeExamKey)));
       } else {
-        const fallback = INITIAL_CBT_TESTS.filter(t => normalizeExamId(t.exam) === activeExamKey);
+        const fallback = INITIAL_CBT_TESTS.filter(t => normalizeExamId(t.exam) === activeExamKey).map(t => normalizeCbtTest(t, activeExamKey));
         setAvailableTests(fallback);
       }
     } catch (err) {
       console.warn('Failed to load CBT tests from API, using cached tests:', err);
-      const fallback = INITIAL_CBT_TESTS.filter(t => normalizeExamId(t.exam) === activeExamKey);
+      const fallback = INITIAL_CBT_TESTS.filter(t => normalizeExamId(t.exam) === activeExamKey).map(t => normalizeCbtTest(t, activeExamKey));
       setAvailableTests(fallback);
     } finally {
       setLoading(false);
@@ -133,9 +149,9 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
 
   const fetchLiveExams = async () => {
     try {
-      const res = await fetch('/api/academic/cbt/live-exams');
+      const res = await fetch(getApiUrl('/api/academic/cbt/live-exams'));
       const data = await res.json();
-      if (data.success) setLiveExams(data.exams);
+      if (data.success && Array.isArray(data.exams)) setLiveExams(data.exams);
     } catch (e) { console.error('Failed to fetch live exams:', e); }
   };
 
@@ -153,7 +169,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         }
       }
 
-      const res = await fetch(`/api/academic/cbt/history?userId=${userProfile.id || 'guest'}&exam=${activeExamKey}`);
+      const res = await fetch(getApiUrl(`/api/academic/cbt/history?userId=${encodeURIComponent(userProfile.id || 'guest')}&exam=${encodeURIComponent(activeExamKey)}`));
       if (res.ok) {
         const data = await res.json();
         if (data.success && Array.isArray(data.history)) {
@@ -178,15 +194,33 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
 
   // ── Custom Builder helpers ────────────────────────────────────────────────
   const fetchSubjects = async (examId: string) => {
-    const res = await fetch(`/api/academic/syllabus/subjects?exam=${examId}`);
-    const data = await res.json();
-    if (data.success) setSubjects(data.subjects);
+    try {
+      const res = await fetch(getApiUrl(`/api/academic/syllabus/subjects?exam=${encodeURIComponent(examId)}`));
+      const data = await res.json();
+      if (data.success && Array.isArray(data.subjects) && data.subjects.length > 0) {
+        setSubjects(data.subjects);
+        return;
+      }
+    } catch (e) { console.error('Failed to fetch subjects:', e); }
+
+    const norm = normalizeExamId(examId);
+    if (norm === 'NEET') setSubjects(['Biology (Botany & Zoology)', 'Chemistry', 'Physics']);
+    else if (norm === 'JEE_MAIN' || norm === 'JEE_ADVANCED') setSubjects(['Physics', 'Chemistry', 'Mathematics']);
+    else if (norm === 'UPSC_CSE') setSubjects(['General Studies', 'CSAT']);
+    else setSubjects(['General Awareness', 'Quantitative Aptitude', 'Reasoning']);
   };
 
   const fetchTopics = async (examId: string, subject: string) => {
-    const res = await fetch(`/api/academic/syllabus/topics?exam=${encodeURIComponent(examId)}&subject=${encodeURIComponent(subject)}`);
-    const data = await res.json();
-    if (data.success) setTopics(data.topics);
+    try {
+      const res = await fetch(getApiUrl(`/api/academic/syllabus/topics?exam=${encodeURIComponent(examId)}&subject=${encodeURIComponent(subject)}`));
+      const data = await res.json();
+      if (data.success && Array.isArray(data.topics) && data.topics.length > 0) {
+        setTopics(data.topics);
+        return;
+      }
+    } catch (e) { console.error('Failed to fetch topics:', e); }
+
+    setTopics(['Fundamentals & Core Concepts', 'Important Past-Year Focus Areas', 'High-Yield Mock Applications']);
   };
 
   const handleBuilderExamChange = async (examId: string) => {
@@ -212,7 +246,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     if (!builder.subject || builder.selectedTopics.length === 0) return;
     setGenerating(true);
     try {
-      const res = await fetch('/api/academic/cbt/generate-custom', {
+      const res = await fetch(getApiUrl('/api/academic/cbt/generate-custom'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -225,16 +259,25 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         })
       });
       const data = await res.json();
-      if (data.success) handleStartExam(data.test);
-    } catch (e) { console.error('Generate custom exam failed:', e); }
-    finally { setGenerating(false); }
+      if (data.success && data.test) {
+        const normalized = normalizeCbtTest(data.test, builder.exam);
+        handleStartExam(normalized);
+      } else {
+        alert(data.error || 'Failed to generate test. Please try with different topics or Bank mode.');
+      }
+    } catch (e) { 
+      console.error('Generate custom exam failed:', e); 
+      alert('Network error while generating exam. Please try again.');
+    } finally { 
+      setGenerating(false); 
+    }
   };
 
   const fetchBankStats = async (examId: string) => {
     try {
-      const res = await fetch(`/api/academic/cbt/bank-stats?exam=${examId}`);
+      const res = await fetch(getApiUrl(`/api/academic/cbt/bank-stats?exam=${encodeURIComponent(examId)}`));
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.byExam) {
         setBankStats(data.byExam[examId] || data.byExam[Object.keys(data.byExam)[0]] || null);
         const subs = data.byExam[examId] ? Object.keys(data.byExam[examId].subjects) : [];
         setBankSubjects(subs);
@@ -267,30 +310,38 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       if (bankMode === 'subject' || bankMode === 'topic') payload.subject = bankSelectedSubject;
       if (bankMode === 'topic') payload.topics = bankSelectedTopics;
 
-      const res = await fetch('/api/academic/cbt/from-bank', {
+      const res = await fetch(getApiUrl('/api/academic/cbt/from-bank'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (data.success) {
-        handleStartExam(data.test);
+      if (data.success && data.test) {
+        const normalized = normalizeCbtTest(data.test, builder.exam);
+        handleStartExam(normalized);
       } else {
         alert(data.error || 'Question bank mein kafi questions nahi mile. AI mode try karo.');
       }
-    } catch (e) { console.error('From-bank failed:', e); alert('Failed to build exam from bank.'); }
-    finally { setGenerating(false); }
+    } catch (e) { 
+      console.error('From-bank failed:', e); 
+      alert('Failed to build exam from bank.'); 
+    } finally { 
+      setGenerating(false); 
+    }
   };
 
   const handleJoinLiveExam = async (ex: any) => {
     try {
-      const res = await fetch('/api/academic/cbt/join-admin-exam', {
+      const res = await fetch(getApiUrl('/api/academic/cbt/join-admin-exam'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ examId: ex.id, userId: userProfile.id || userProfile.email || 'guest' })
       });
       const data = await res.json();
-      if (data.success) handleStartExam(data.test);
+      if (data.success && data.test) {
+        const normalized = normalizeCbtTest(data.test, ex.exam || activeExamKey);
+        handleStartExam(normalized);
+      }
     } catch (e) { console.error('Join live exam failed:', e); }
   };
 
@@ -301,7 +352,12 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (!parsed.isSubmitted) setSessionState(parsed);
+          if (!parsed.isSubmitted) {
+            setSessionState(parsed);
+            if (parsed.startTimeIso) {
+              startTimeMsRef.current = new Date(parsed.startTimeIso).getTime();
+            }
+          }
         } catch (e) { console.error('Failed to restore CBT session:', e); }
       }
     }
@@ -313,19 +369,39 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     }
   }, [sessionState, selectedTest]);
 
+  // Wall-clock authoritative timer
   useEffect(() => {
     if (sessionState && !sessionState.isSubmitted && selectedTest) {
+      if (!startTimeMsRef.current) {
+        startTimeMsRef.current = sessionState.startTimeIso 
+          ? new Date(sessionState.startTimeIso).getTime() 
+          : Date.now();
+      }
+
       timerRef.current = setInterval(() => {
-        setSessionState((prev) => {
-          if (!prev) return prev;
-          const nextElapsed = prev.elapsedSeconds + 1;
-          const totalMaxSeconds = selectedTest.durationMinutes * 60;
-          if (nextElapsed >= totalMaxSeconds) {
-            clearInterval(timerRef.current as NodeJS.Timeout);
-            handleFinalSubmit(prev);
+        const now = Date.now();
+        const start = startTimeMsRef.current || now;
+        const actualElapsed = Math.max(0, Math.floor((now - start) / 1000));
+        const totalMaxSeconds = selectedTest.durationMinutes * 60;
+
+        if (actualElapsed >= totalMaxSeconds) {
+          if (timerRef.current) clearInterval(timerRef.current);
+          setSessionState(prev => {
+            if (!prev || prev.isSubmitted) return prev;
             return { ...prev, elapsedSeconds: totalMaxSeconds };
+          });
+          // Auto-submit outside of React updater
+          if (!isSubmittingRef.current) {
+            handleFinalSubmit();
           }
+          return;
+        }
+
+        setSessionState(prev => {
+          if (!prev || prev.isSubmitted) return prev;
           const currentQ = selectedTest.questions[prev.currentQuestionIndex];
+          if (!currentQ) return { ...prev, elapsedSeconds: actualElapsed };
+
           const currResp = prev.responses[currentQ.id] || {
             questionId: currentQ.id, selectedOption: null, status: 'not_visited', timeSpentSeconds: 0
           };
@@ -334,7 +410,11 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             status: currResp.status === 'not_visited' ? 'not_answered' : currResp.status,
             timeSpentSeconds: currResp.timeSpentSeconds + 1
           };
-          return { ...prev, elapsedSeconds: nextElapsed, responses: { ...prev.responses, [currentQ.id]: updatedResp } };
+          return {
+            ...prev,
+            elapsedSeconds: actualElapsed,
+            responses: { ...prev.responses, [currentQ.id]: updatedResp }
+          };
         });
       }, 1000);
     }
@@ -342,80 +422,238 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   }, [sessionState?.isSubmitted, selectedTest]);
 
   const handleStartExam = (test: CbtTest) => {
-    setSelectedTest(test);
+    const normalized = normalizeCbtTest(test, activeExamKey);
+    setSelectedTest(normalized);
+    const startIso = new Date().toISOString();
+    startTimeMsRef.current = Date.now();
+    isSubmittingRef.current = false;
+
     const initialResponses: Record<string, CbtUserResponse> = {};
-    test.questions.forEach((q, idx) => {
-      initialResponses[q.id] = { questionId: q.id, selectedOption: null, status: idx === 0 ? 'not_answered' : 'not_visited', timeSpentSeconds: 0 };
+    normalized.questions.forEach((q, idx) => {
+      initialResponses[q.id] = {
+        questionId: q.id,
+        selectedOption: null,
+        status: idx === 0 ? 'not_answered' : 'not_visited',
+        timeSpentSeconds: 0
+      };
     });
     setSessionState({
-      testId: test.id, startTimeIso: new Date().toISOString(), elapsedSeconds: 0,
-      currentQuestionIndex: 0, responses: initialResponses, isSubmitted: false,
-      currentSection: test.sections[0]?.name || 'General', language: 'English'
+      testId: normalized.id,
+      startTimeIso: startIso,
+      elapsedSeconds: 0,
+      currentQuestionIndex: 0,
+      responses: initialResponses,
+      isSubmitted: false,
+      currentSection: normalized.sections[0]?.name || 'General',
+      language: 'English'
     });
     setExamResult(null);
   };
 
   const handleSelectOption = (optIdx: number) => {
-    if (!sessionState || !selectedTest) return;
-    const currentQ = selectedTest.questions[sessionState.currentQuestionIndex];
-    const currResp = sessionState.responses[currentQ.id];
-    setSessionState({ ...sessionState, responses: { ...sessionState.responses, [currentQ.id]: { ...currResp, selectedOption: optIdx, status: currResp.status === 'marked_for_review' ? 'answered_and_marked' : 'answered' } } });
+    if (!selectedTest) return;
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      const currentQ = selectedTest.questions[prev.currentQuestionIndex];
+      if (!currentQ) return prev;
+      const currResp = prev.responses[currentQ.id] || {
+        questionId: currentQ.id, selectedOption: null, status: 'not_answered', timeSpentSeconds: 0
+      };
+      const nextStatus: CbtQuestionStatus = currResp.status === 'marked_for_review' || currResp.status === 'answered_and_marked'
+        ? 'answered_and_marked'
+        : 'answered';
+      return {
+        ...prev,
+        responses: {
+          ...prev.responses,
+          [currentQ.id]: {
+            ...currResp,
+            selectedOption: optIdx,
+            status: nextStatus
+          }
+        }
+      };
+    });
   };
 
   const handleClearResponse = () => {
-    if (!sessionState || !selectedTest) return;
-    const currentQ = selectedTest.questions[sessionState.currentQuestionIndex];
-    const currResp = sessionState.responses[currentQ.id];
-    setSessionState({ ...sessionState, responses: { ...sessionState.responses, [currentQ.id]: { ...currResp, selectedOption: null, status: 'not_answered' } } });
+    if (!selectedTest) return;
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      const currentQ = selectedTest.questions[prev.currentQuestionIndex];
+      if (!currentQ) return prev;
+      const currResp = prev.responses[currentQ.id] || {
+        questionId: currentQ.id, selectedOption: null, status: 'not_answered', timeSpentSeconds: 0
+      };
+      return {
+        ...prev,
+        responses: {
+          ...prev.responses,
+          [currentQ.id]: {
+            ...currResp,
+            selectedOption: null,
+            status: 'not_answered'
+          }
+        }
+      };
+    });
   };
 
   const handleMarkForReview = () => {
-    if (!sessionState || !selectedTest) return;
-    const currentQ = selectedTest.questions[sessionState.currentQuestionIndex];
-    const currResp = sessionState.responses[currentQ.id];
-    const newStatus: CbtQuestionStatus = currResp.selectedOption !== null ? 'answered_and_marked' : 'marked_for_review';
-    setSessionState({ ...sessionState, responses: { ...sessionState.responses, [currentQ.id]: { ...currResp, status: newStatus } } });
-    handleNextQuestion();
+    if (!selectedTest) return;
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      const currentQ = selectedTest.questions[prev.currentQuestionIndex];
+      if (!currentQ) return prev;
+      const currResp = prev.responses[currentQ.id] || {
+        questionId: currentQ.id, selectedOption: null, status: 'not_visited', timeSpentSeconds: 0
+      };
+      const newStatus: CbtQuestionStatus = currResp.selectedOption !== null ? 'answered_and_marked' : 'marked_for_review';
+      const updatedResponses = {
+        ...prev.responses,
+        [currentQ.id]: { ...currResp, status: newStatus }
+      };
+
+      if (prev.currentQuestionIndex < selectedTest.questions.length - 1) {
+        const nextIdx = prev.currentQuestionIndex + 1;
+        const nextQ = selectedTest.questions[nextIdx];
+        const nextResp = updatedResponses[nextQ.id] || {
+          questionId: nextQ.id, selectedOption: null, status: 'not_visited', timeSpentSeconds: 0
+        };
+        return {
+          ...prev,
+          currentQuestionIndex: nextIdx,
+          currentSection: nextQ.section || prev.currentSection,
+          responses: {
+            ...updatedResponses,
+            [nextQ.id]: {
+              ...nextResp,
+              status: nextResp.status === 'not_visited' ? 'not_answered' : nextResp.status
+            }
+          }
+        };
+      }
+      return { ...prev, responses: updatedResponses };
+    });
   };
 
   const handleSaveAndNext = () => {
-    if (!sessionState || !selectedTest) return;
-    const currentQ = selectedTest.questions[sessionState.currentQuestionIndex];
-    const currResp = sessionState.responses[currentQ.id];
-    const finalStatus: CbtQuestionStatus = currResp.selectedOption !== null ? 'answered' : 'not_answered';
-    setSessionState({ ...sessionState, responses: { ...sessionState.responses, [currentQ.id]: { ...currResp, status: finalStatus } } });
-    handleNextQuestion();
+    if (!selectedTest) return;
+    const isLast = sessionState ? sessionState.currentQuestionIndex >= selectedTest.questions.length - 1 : false;
+
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      const currentQ = selectedTest.questions[prev.currentQuestionIndex];
+      if (!currentQ) return prev;
+      const currResp = prev.responses[currentQ.id] || {
+        questionId: currentQ.id, selectedOption: null, status: 'not_visited', timeSpentSeconds: 0
+      };
+      const finalStatus: CbtQuestionStatus = currResp.selectedOption !== null ? 'answered' : 'not_answered';
+      const updatedResponses = {
+        ...prev.responses,
+        [currentQ.id]: { ...currResp, status: finalStatus }
+      };
+
+      if (prev.currentQuestionIndex < selectedTest.questions.length - 1) {
+        const nextIdx = prev.currentQuestionIndex + 1;
+        const nextQ = selectedTest.questions[nextIdx];
+        const nextResp = updatedResponses[nextQ.id] || {
+          questionId: nextQ.id, selectedOption: null, status: 'not_visited', timeSpentSeconds: 0
+        };
+        return {
+          ...prev,
+          currentQuestionIndex: nextIdx,
+          currentSection: nextQ.section || prev.currentSection,
+          responses: {
+            ...updatedResponses,
+            [nextQ.id]: {
+              ...nextResp,
+              status: nextResp.status === 'not_visited' ? 'not_answered' : nextResp.status
+            }
+          }
+        };
+      }
+      return { ...prev, responses: updatedResponses };
+    });
+
+    if (isLast) {
+      setShowSubmitModal(true);
+    }
   };
 
   const handleNextQuestion = () => {
-    if (!sessionState || !selectedTest) return;
-    if (sessionState.currentQuestionIndex < selectedTest.questions.length - 1) {
-      const nextIdx = sessionState.currentQuestionIndex + 1;
-      const nextQ = selectedTest.questions[nextIdx];
-      const nextResp = sessionState.responses[nextQ.id];
-      setSessionState({ ...sessionState, currentQuestionIndex: nextIdx, currentSection: nextQ.section, responses: { ...sessionState.responses, [nextQ.id]: { ...nextResp, status: nextResp.status === 'not_visited' ? 'not_answered' : nextResp.status } } });
-    }
+    if (!selectedTest) return;
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      if (prev.currentQuestionIndex < selectedTest.questions.length - 1) {
+        const nextIdx = prev.currentQuestionIndex + 1;
+        const nextQ = selectedTest.questions[nextIdx];
+        const nextResp = prev.responses[nextQ.id] || {
+          questionId: nextQ.id, selectedOption: null, status: 'not_visited', timeSpentSeconds: 0
+        };
+        return {
+          ...prev,
+          currentQuestionIndex: nextIdx,
+          currentSection: nextQ.section || prev.currentSection,
+          responses: {
+            ...prev.responses,
+            [nextQ.id]: {
+              ...nextResp,
+              status: nextResp.status === 'not_visited' ? 'not_answered' : nextResp.status
+            }
+          }
+        };
+      }
+      return prev;
+    });
   };
 
   const handlePrevQuestion = () => {
-    if (!sessionState || !selectedTest) return;
-    if (sessionState.currentQuestionIndex > 0) {
-      const prevIdx = sessionState.currentQuestionIndex - 1;
-      const prevQ = selectedTest.questions[prevIdx];
-      setSessionState({ ...sessionState, currentQuestionIndex: prevIdx, currentSection: prevQ.section });
-    }
+    if (!selectedTest) return;
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      if (prev.currentQuestionIndex > 0) {
+        const prevIdx = prev.currentQuestionIndex - 1;
+        const prevQ = selectedTest.questions[prevIdx];
+        return {
+          ...prev,
+          currentQuestionIndex: prevIdx,
+          currentSection: prevQ.section || prev.currentSection
+        };
+      }
+      return prev;
+    });
   };
 
   const handleJumpToQuestion = (idx: number) => {
-    if (!sessionState || !selectedTest) return;
-    const targetQ = selectedTest.questions[idx];
-    const targetResp = sessionState.responses[targetQ.id];
-    setSessionState({ ...sessionState, currentQuestionIndex: idx, currentSection: targetQ.section, responses: { ...sessionState.responses, [targetQ.id]: { ...targetResp, status: targetResp.status === 'not_visited' ? 'not_answered' : targetResp.status } } });
+    if (!selectedTest) return;
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      if (idx < 0 || idx >= selectedTest.questions.length) return prev;
+      const targetQ = selectedTest.questions[idx];
+      const targetResp = prev.responses[targetQ.id] || {
+        questionId: targetQ.id, selectedOption: null, status: 'not_visited', timeSpentSeconds: 0
+      };
+      return {
+        ...prev,
+        currentQuestionIndex: idx,
+        currentSection: targetQ.section || prev.currentSection,
+        responses: {
+          ...prev.responses,
+          [targetQ.id]: {
+            ...targetResp,
+            status: targetResp.status === 'not_visited' ? 'not_answered' : targetResp.status
+          }
+        }
+      };
+    });
   };
 
   const handleFinalSubmit = async (customState?: CbtExamSessionState) => {
     const finalSession = customState || sessionState;
     if (!finalSession || !selectedTest) return;
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setSubmitting(true);
 
     const saveResultToHistory = (r: any) => {
@@ -439,10 +677,16 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     };
 
     try {
-      const res = await fetch('/api/academic/cbt/submit', {
+      const res = await fetch(getApiUrl('/api/academic/cbt/submit'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ testId: selectedTest.id, sessionState: { ...finalSession, isSubmitted: true }, userId: userProfile.id || 'default_user', exam: selectedTest.exam || activeExamKey })
+        body: JSON.stringify({ 
+          testId: selectedTest.id, 
+          sessionState: { ...finalSession, isSubmitted: true }, 
+          userId: userProfile.id || 'default_user', 
+          exam: selectedTest.exam || activeExamKey,
+          test: selectedTest // Send test payload for server persistence/fallback
+        })
       });
       const data = await res.json();
       if (data.success && data.result) {
@@ -452,6 +696,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         localStorage.removeItem(`cbt_session_${selectedTest.id}`);
         setSubmitting(false);
         setShowSubmitModal(false);
+        isSubmittingRef.current = false;
         return;
       }
     } catch (err) {
@@ -470,10 +715,10 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         if (resp && resp.selectedOption !== null && resp.selectedOption !== undefined) {
           if (resp.selectedOption === q.correctOption) {
             correct++;
-            score += (q.marks || selectedTest.markingScheme?.correct || 2);
+            score += Math.abs(q.marks || selectedTest.markingScheme?.correct || 2);
           } else {
             incorrect++;
-            score -= (q.negativeMarks || selectedTest.markingScheme?.incorrect || 0.66);
+            score -= Math.abs(q.negativeMarks || selectedTest.markingScheme?.incorrect || 0.66);
           }
         } else {
           unattempted++;
@@ -481,13 +726,18 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       });
 
       const totalItems = selectedTest.questions.length;
-      const totalPossibleScore = selectedTest.totalMarks || (totalItems * 2);
+      const totalPossibleScore = selectedTest.totalMarks || (totalItems * (selectedTest.markingScheme?.correct || 2));
       const accuracy = correct + incorrect > 0 ? Math.round((correct / (correct + incorrect)) * 100) : 0;
+      const finalScore = Math.max(0, Math.round(score * 100) / 100);
+
+      const safeSections = (selectedTest.sections && selectedTest.sections.length > 0)
+        ? selectedTest.sections
+        : [{ name: 'General', totalQuestions: totalItems, marksPerQuestion: 2, negativeMarks: 0.66 }];
 
       const fallbackResult: CbtExamResult = {
         testId: selectedTest.id,
         testTitle: selectedTest.title,
-        score: Math.max(0, Math.round(score * 100) / 100),
+        score: finalScore,
         totalPossibleScore,
         accuracy: accuracy,
         accuracyPercentage: accuracy,
@@ -498,9 +748,9 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         incorrectCount: incorrect,
         unattemptedCount: unattempted,
         timeTakenSeconds: finalSession.elapsedSeconds,
-        subjectWiseBreakdown: selectedTest.sections.map((s) => ({
+        subjectWiseBreakdown: safeSections.map((s) => ({
           subject: s.name,
-          score: Math.max(0, Math.round((score / (selectedTest.sections.length || 1)) * 10) / 10),
+          score: Math.max(0, Math.round((finalScore / safeSections.length) * 10) / 10),
           accuracy: accuracy
         })),
         aiMistakeAnalysis: [
@@ -522,6 +772,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     } finally {
       setSubmitting(false);
       setShowSubmitModal(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -819,8 +1070,12 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                     <p className="text-xs text-slate-500 mt-3 mb-2 font-medium">Subject choose karo:</p>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                       {subjects.map((sub) => (
-                        <button key={sub} onClick={() => handleBuilderSubjectSelect(sub)}
-                          className="p-3 text-sm text-left rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all font-medium text-slate-700">
+                        <button
+                          key={sub}
+                          data-testid="cbt-builder-subject-btn"
+                          onClick={() => handleBuilderSubjectSelect(sub)}
+                          className="cbt-builder-subject-btn p-3 text-sm text-left rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all font-medium text-slate-700"
+                        >
                           {sub}
                         </button>
                       ))}
@@ -836,7 +1091,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-semibold text-slate-700">Step 2: Topics choose karo <span className="text-indigo-600">({builder.subject})</span></label>
                   <div className="flex space-x-2">
-                    <button onClick={() => setBuilder(prev => ({ ...prev, selectedTopics: topics }))} className="text-xs text-indigo-600 hover:underline">Select All</button>
+                    <button id="cbt-builder-select-all-topics" onClick={() => setBuilder(prev => ({ ...prev, selectedTopics: topics }))} className="text-xs text-indigo-600 hover:underline">Select All</button>
                     <button onClick={() => setBuilder(prev => ({ ...prev, selectedTopics: [] }))} className="text-xs text-slate-500 hover:underline">Clear</button>
                   </div>
                 </div>
@@ -855,7 +1110,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   })}
                 </div>
                 {builder.selectedTopics.length > 0 && builder.step === 2 && (
-                  <button onClick={() => setBuilder(prev => ({ ...prev, step: 3 }))}
+                  <button id="cbt-builder-next-configure" onClick={() => setBuilder(prev => ({ ...prev, step: 3 }))}
                     className="mt-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-all">
                     Next: Configure →
                   </button>
@@ -902,7 +1157,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   <div className="flex justify-between text-slate-700"><span>Total Marks:</span><span className="font-semibold">{builder.questionCount * 4} (4 per correct, -1 wrong)</span></div>
                 </div>
 
-                <button onClick={handleGenerateCustomExam} disabled={generating}
+                <button id="cbt-builder-generate-start-btn" onClick={handleGenerateCustomExam} disabled={generating}
                   className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-sm rounded-xl shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-70">
                   {generating ? (
                     <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /><span>AI Questions Generate ho rahi hain...</span></>
@@ -1054,7 +1309,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   // 2. RENDER EXAM RESULT VIEW (IF SUBMITTED)
   if (examResult) {
     return (
-      <div className="w-full space-y-4 sm:space-y-6">
+      <div id="cbt-result-scorecard" className="w-full space-y-4 sm:space-y-6">
         <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-indigo-800/60 pb-4 mb-4 sm:mb-6">
             <div>
@@ -1181,7 +1436,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   });
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-100 flex flex-col overflow-hidden font-sans select-none">
+    <div id="cbt-live-exam-workspace" className="fixed inset-0 z-50 bg-slate-100 flex flex-col overflow-hidden font-sans select-none">
       {/* CBT HEADER BAR */}
       <header className="bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between border-b border-slate-800 shadow-md">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
@@ -1234,10 +1489,10 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
 
       {/* CBT MAIN WORKSPACE */}
       <div className="flex-1 flex overflow-hidden">
-        {/* LEFT / CENTER: QUESTION PAPER VIEW */}
-        <div className="flex-1 flex flex-col bg-white overflow-y-auto">
-          {/* SECTION & QUESTION META BAR */}
-          <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        {/* LEFT / CENTER: QUESTION PAPER VIEW (STABLE LAYOUT: FIXED META BAR, SCROLLABLE QUESTION, FIXED ACTION BAR) */}
+        <div className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
+          {/* SECTION & QUESTION META BAR (FIXED) */}
+          <div className="px-3 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-bold uppercase text-slate-500">Question No.</span>
               <span className="w-7 h-7 bg-indigo-600 text-white font-bold rounded-md flex items-center justify-center text-sm">
@@ -1246,104 +1501,129 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               <span className="text-xs text-slate-400">/ {selectedTest.questions.length}</span>
             </div>
 
-            <div className="flex items-center space-x-4 text-xs font-semibold">
-              <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
-                Correct: +{currentQuestion.marks}
+            <div className="flex items-center space-x-2 sm:space-x-4 text-xs font-semibold">
+              <span className="text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-emerald-200">
+                +{currentQuestion.marks}
               </span>
-              <span className="text-rose-700 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
-                Incorrect: -{currentQuestion.negativeMarks}
+              <span className="text-rose-700 bg-rose-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-rose-200">
+                -{currentQuestion.negativeMarks}
               </span>
             </div>
           </div>
 
-          {/* QUESTION TEXT & OPTIONS AREA */}
-          <div className="flex-1 p-6 space-y-6 max-w-4xl">
-            {/* PASSAGE OR ASSERTION BOX IF APPLICABLE */}
-            {currentQuestion.passageText && (
-              <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-xl text-slate-800 text-sm leading-relaxed mb-4">
-                <span className="font-bold text-amber-900 block mb-1">Passage Context:</span>
-                {currentQuestion.passageText}
+          {/* QUESTION TEXT & OPTIONS AREA (THE ONLY SCROLLABLE AREA IN THE WORKSPACE) */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+            <div className="max-w-4xl mx-auto w-full space-y-4 sm:space-y-6 pb-4">
+              {/* PASSAGE OR ASSERTION BOX IF APPLICABLE */}
+              {currentQuestion.passageText && (
+                <div className="p-3.5 sm:p-4 bg-amber-50/60 border border-amber-200 rounded-xl text-slate-800 text-xs sm:text-sm leading-relaxed">
+                  <span className="font-bold text-amber-900 block mb-1">Passage Context:</span>
+                  {currentQuestion.passageText}
+                </div>
+              )}
+
+              {currentQuestion.assertionText && (
+                <div className="p-3.5 sm:p-4 bg-indigo-50/60 border border-indigo-200 rounded-xl text-slate-800 text-xs sm:text-sm space-y-2">
+                  <p className="font-semibold">{currentQuestion.assertionText}</p>
+                  <p className="font-semibold">{currentQuestion.reasonText}</p>
+                </div>
+              )}
+
+              {/* QUESTION MAIN STATEMENT */}
+              <div className="text-sm sm:text-base font-semibold text-slate-900 whitespace-pre-line leading-relaxed">
+                {currentQuestion.questionText}
               </div>
-            )}
 
-            {currentQuestion.assertionText && (
-              <div className="p-4 bg-indigo-50/60 border border-indigo-200 rounded-xl text-slate-800 text-sm space-y-2 mb-4">
-                <p className="font-semibold">{currentQuestion.assertionText}</p>
-                <p className="font-semibold">{currentQuestion.reasonText}</p>
+              {/* OPTIONS GRID */}
+              <div className="space-y-2.5 sm:space-y-3 pt-1 sm:pt-2">
+                {currentQuestion.options.map((optText, optIdx) => {
+                  const isSelected = currentResp.selectedOption === optIdx;
+                  const optionLabel = typeof optText === 'string' ? optText : ((optText as any)?.text ?? (typeof optText === 'object' && optText !== null ? JSON.stringify(optText) : ''));
+                  return (
+                    <button
+                      key={optIdx}
+                      id={`cbt-option-${optIdx}`}
+                      data-testid={`cbt-option-${optIdx}`}
+                      onClick={() => handleSelectOption(optIdx)}
+                      className={`w-full p-3 sm:p-4 text-left rounded-xl border transition-all flex items-start space-x-3 cursor-pointer ${
+                        isSelected
+                          ? 'bg-indigo-50 border-indigo-600 text-indigo-950 font-semibold ring-2 ring-indigo-200'
+                          : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300'
+                      }`}
+                    >
+                      <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
+                        isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 border-slate-300'
+                      }`}>
+                        {String.fromCharCode(65 + optIdx)}
+                      </span>
+                      <span className="text-xs sm:text-sm pt-0.5 leading-relaxed break-words">{optionLabel}</span>
+                    </button>
+                  );
+                })}
               </div>
-            )}
-
-            {/* QUESTION MAIN STATEMENT */}
-            <div className="text-base font-semibold text-slate-900 whitespace-pre-line leading-relaxed">
-              {currentQuestion.questionText}
-            </div>
-
-            {/* OPTIONS GRID */}
-            <div className="space-y-3 pt-2">
-              {currentQuestion.options.map((optText, optIdx) => {
-                const isSelected = currentResp.selectedOption === optIdx;
-                const optionLabel = typeof optText === 'string' ? optText : ((optText as any)?.text ?? (typeof optText === 'object' && optText !== null ? JSON.stringify(optText) : ''));
-                return (
-                  <button
-                    key={optIdx}
-                    onClick={() => handleSelectOption(optIdx)}
-                    className={`w-full p-4 text-left rounded-xl border transition-all flex items-start space-x-3 ${
-                      isSelected
-                        ? 'bg-indigo-50 border-indigo-600 text-indigo-950 font-semibold ring-2 ring-indigo-200'
-                        : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300'
-                    }`}
-                  >
-                    <span className={`w-6 h-6 rounded-full border text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
-                      isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-600 border-slate-300'
-                    }`}>
-                      {String.fromCharCode(65 + optIdx)}
-                    </span>
-                    <span className="text-sm pt-0.5 leading-relaxed">{optionLabel}</span>
-                  </button>
-                );
-              })}
             </div>
           </div>
 
-          {/* BOTTOM CONTROLS BAR */}
-          <div className="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
-            <div className="flex items-center space-x-2">
+          {/* BOTTOM CONTROLS BAR (ALWAYS FIXED, NEVER DISAPPEARS ON SCROLL) */}
+          <div className="p-2.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0 z-10">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
               <button
+                id="cbt-btn-review"
                 onClick={handleMarkForReview}
-                className="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-xs font-bold rounded-lg transition-all"
+                className="px-2.5 sm:px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
               >
-                Mark for Review & Next
+                <span className="hidden sm:inline">Mark for Review & Next</span>
+                <span className="sm:hidden">Review</span>
               </button>
               <button
+                id="cbt-btn-clear"
                 onClick={handleClearResponse}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition-all"
+                className="px-2.5 sm:px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
               >
-                Clear Response
+                <span className="hidden sm:inline">Clear Response</span>
+                <span className="sm:hidden">Clear</span>
               </button>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
               <button
+                id="cbt-btn-prev"
                 onClick={handlePrevQuestion}
                 disabled={sessionState.currentQuestionIndex === 0}
-                className="px-3.5 sm:px-4 py-2 bg-white border border-slate-300 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-50 disabled:opacity-50 transition-all flex items-center space-x-1"
+                className="px-2.5 sm:px-4 py-2 bg-white border border-slate-300 text-slate-700 text-[11px] sm:text-xs font-bold rounded-lg hover:bg-slate-50 disabled:opacity-40 transition-all flex items-center space-x-1 cursor-pointer"
               >
-                <ChevronLeft className="w-4 h-4" />
-                <span>Previous</span>
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">Previous</span>
               </button>
+
+              {sessionState.currentQuestionIndex >= selectedTest.questions.length - 1 ? (
+                <button
+                  id="cbt-btn-save-submit"
+                  onClick={handleSaveAndNext}
+                  className="px-3 sm:px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>Save & Submit Exam</span>
+                  <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+              ) : (
+                <button
+                  id="cbt-btn-save-next"
+                  onClick={handleSaveAndNext}
+                  className="px-3 sm:px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
+                >
+                  <span>Save & Next</span>
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
+              )}
+
               <button
-                onClick={handleSaveAndNext}
-                className="px-4 sm:px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1"
-              >
-                <span>Save & Next</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
+                id="cbt-btn-submit-exam"
                 onClick={() => setShowSubmitModal(true)}
-                className="px-4 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
+                className="px-3 sm:px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
               >
-                <Send className="w-3.5 h-3.5" />
-                <span>Submit Exam</span>
+                <Send className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                <span className="hidden sm:inline">Submit Exam</span>
+                <span className="sm:hidden">Submit</span>
               </button>
             </div>
           </div>
@@ -1541,6 +1821,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 Return to Exam
               </button>
               <button
+                id="cbt-btn-confirm-submit"
                 onClick={() => handleFinalSubmit()}
                 disabled={submitting}
                 className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all"

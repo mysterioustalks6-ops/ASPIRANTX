@@ -14,6 +14,7 @@ import { normalizeExamId, getExamConfig } from './examRegistry';
 import { DIAGNOSTIC_QUESTION_BANK } from '../data/diagnosticQuestionBank';
 import { INITIAL_CBT_TESTS } from '../data/cbtData';
 import { UPSC_SYLLABUS_DATA } from '../data/syllabus';
+import { getApiUrl } from './apiConfig';
 
 export interface PackageManifest {
   examId: string;
@@ -166,13 +167,21 @@ export class ContentPackageManager {
     const cbtRecords: LocalCbtRecord[] = matchingCbt.map(t => ({
       id: t.id,
       examId: normExam,
+      exam: normExam,
       title: t.title,
       durationMinutes: t.durationMinutes || 120,
       totalMarks: t.totalMarks || 200,
       totalQuestions: t.questions ? t.questions.length : 0,
-      negativeMarking: t.markingScheme?.incorrect || 0.33,
+      negativeMarking: Math.abs(t.markingScheme?.incorrect ?? 0.66),
+      markingScheme: {
+        correct: t.markingScheme?.correct ?? 2,
+        incorrect: Math.abs(t.markingScheme?.incorrect ?? 0.66),
+        unattempted: 0
+      },
+      sections: t.sections && t.sections.length > 0 ? t.sections : [{ name: 'General Studies', totalQuestions: t.questions?.length || 0 }],
       questions: t.questions || [],
-      isMock: true
+      isMock: true,
+      schemaVersion: 2
     }));
 
     if (cbtRecords.length > 0) {
@@ -205,7 +214,7 @@ export class ContentPackageManager {
     if (typeof navigator !== 'undefined' && !navigator.onLine) return;
 
     try {
-      const res = await fetch(`/api/content/manifests?exam=${encodeURIComponent(examId)}`);
+      const res = await fetch(getApiUrl(`/api/content/manifests?exam=${encodeURIComponent(examId)}`));
       if (!res.ok) return;
       const data = await res.json();
 
@@ -224,7 +233,7 @@ export class ContentPackageManager {
   public async installRemotePackage(examId: string): Promise<boolean> {
     try {
       const normExam = normalizeExamId(examId);
-      const res = await fetch(`/api/content/package?exam=${encodeURIComponent(normExam)}`);
+      const res = await fetch(getApiUrl(`/api/content/package?exam=${encodeURIComponent(normExam)}`));
       if (!res.ok) return false;
 
       const pkg: FullExamPackage = await res.json();
@@ -371,7 +380,40 @@ export class ContentPackageManager {
   public async getLocalCbtTests(rawExamId: string): Promise<LocalCbtRecord[]> {
     const examId = normalizeExamId(rawExamId);
     await this.ensureExamPackageInstalled(examId);
-    return await localDb.getAllFromIndex<LocalCbtRecord>('content_cbt', 'by_exam', examId);
+    const rawRecords = await localDb.getAllFromIndex<LocalCbtRecord>('content_cbt', 'by_exam', examId);
+    
+    // Sanitize and repair any old/corrupted records from previous schemas
+    const validRecords: LocalCbtRecord[] = [];
+    for (const rec of rawRecords) {
+      if (!rec || !Array.isArray(rec.questions) || rec.questions.length === 0) {
+        continue;
+      }
+      let modified = false;
+      const copy: LocalCbtRecord = { ...rec };
+      
+      if (!copy.exam) {
+        copy.exam = examId;
+        modified = true;
+      }
+      if (!copy.sections || !Array.isArray(copy.sections) || copy.sections.length === 0) {
+        copy.sections = [{ name: 'General Studies', totalQuestions: copy.questions.length }];
+        modified = true;
+      }
+      if (!copy.markingScheme) {
+        copy.markingScheme = {
+          correct: 2,
+          incorrect: Math.abs(copy.negativeMarking || 0.66),
+          unattempted: 0
+        };
+        modified = true;
+      }
+      if (modified) {
+        await localDb.put('content_cbt', copy).catch(() => {});
+      }
+      validRecords.push(copy);
+    }
+
+    return validRecords;
   }
 
   public async getInstalledPackages(): Promise<ContentPackageMeta[]> {

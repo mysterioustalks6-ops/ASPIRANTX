@@ -5,6 +5,7 @@ import { EXAM_LIST } from '../lib/examList';
 import { getDemoDurationMinutes, setDemoDurationMinutes } from '../lib/demoSession';
 import { saveUserProfile } from '../lib/gamification';
 import { AdSenseBanner } from './AdSenseBanner';
+import { getApiUrl } from '../lib/apiConfig';
 import { IngestionDashboard } from './IngestionDashboard';
 import { 
   ShieldCheck, ShieldAlert, Database, Link as LinkIcon, Users, Activity, 
@@ -1327,6 +1328,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
   const [userSearch, setUserSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'ADMIN' | 'CO_ADMIN' | 'DEVELOPER' | 'USER'>('ALL');
   const [userActionNotice, setUserActionNotice] = useState<string | null>(null);
+  const [userPage, setUserPage] = useState<number>(1);
+  const [userTotalPages, setUserTotalPages] = useState<number>(1);
+  const [userTotalCount, setUserTotalCount] = useState<number>(INITIAL_ADMIN_USERS.length);
+  const [isLoadingUsers, setIsLoadingUsers] = useState<boolean>(false);
 
   // Google AdSense Management State
   const [adsenseConfig, setAdsenseConfig] = useState(() => {
@@ -1434,6 +1439,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
     fetchModerationSettings();
   }, []);
 
+  useEffect(() => {
+    if (activeAdminTab === 'users') {
+      fetchAdminUsersList(1);
+    }
+  }, [activeAdminTab, roleFilter]);
+
   const fetchTeamAndTasks = async () => {
     try {
       const token = localStorage.getItem('aspirantx_auth_token');
@@ -1458,21 +1469,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
     return myTeamProfile?.permissions?.[perm] === true;
   };
 
-  const fetchAdminUsersList = async () => {
+  const fetchAdminUsersList = async (page = userPage) => {
+    setIsLoadingUsers(true);
     try {
       const token = localStorage.getItem('aspirantx_auth_token');
       const headers: Record<string, string> = {};
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/admin/users', { cache: 'no-store', headers });
+      const params = new URLSearchParams();
+      params.set('page', String(page));
+      params.set('limit', '50');
+      if (userSearch.trim()) params.set('search', userSearch.trim());
+      if (roleFilter !== 'ALL') params.set('role', roleFilter);
+
+      const res = await fetch(`/api/admin/users?${params.toString()}`, { cache: 'no-store', headers });
       if (res.ok) {
         const data = await res.json();
-        if (data && Array.isArray(data.users) && data.users.length > 0) {
+        if (data && Array.isArray(data.users)) {
           setUserList(data.users);
+          setUserPage(data.page || page);
+          setUserTotalPages(data.totalPages || 1);
+          setUserTotalCount(data.total ?? data.users.length);
         }
       }
     } catch (e) {
       console.warn('Failed to load admin user directory from server');
+    } finally {
+      setIsLoadingUsers(false);
     }
   };
 
@@ -2128,7 +2151,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
             const token = localStorage.getItem('aspirantx_auth_token');
             const headers: Record<string, string> = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
-            fetch('/api/admin/cbt/exams', { headers }).then(r => r.json()).then(d => { if (d.success) setCbtExams(d.exams); });
+            fetch(getApiUrl('/api/admin/cbt/exams'), { headers }).then(r => r.json()).then(d => { if (d.success) setCbtExams(d.exams); });
           }}
           className={`px-4 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
             activeAdminTab === 'cbt_management'
@@ -2832,7 +2855,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
                     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-                    const res = await fetch('/api/admin/cbt/create-exam', {
+                    const res = await fetch(getApiUrl('/api/admin/cbt/create-exam'), {
                       method: 'POST',
                       headers,
                       body: JSON.stringify({
@@ -2881,7 +2904,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                             const token = localStorage.getItem('aspirantx_auth_token');
                             const headers: Record<string, string> = {};
                             if (token) headers['Authorization'] = `Bearer ${token}`;
-                            const r = await fetch(`/api/admin/cbt/monitor/${ex.id}`, { headers });
+                            const r = await fetch(getApiUrl(`/api/admin/cbt/monitor/${ex.id}`), { headers });
                             const d = await r.json();
                             if (d.success) { setCbtMonitor(d); setCbtSubTab('monitor'); }
                           }} className="px-2 py-1 text-xs bg-indigo-700 hover:bg-indigo-600 text-white rounded-lg">Monitor</button>
@@ -2889,7 +2912,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                             const token = localStorage.getItem('aspirantx_auth_token');
                             const headers: Record<string, string> = {};
                             if (token) headers['Authorization'] = `Bearer ${token}`;
-                            await fetch(`/api/admin/cbt/publish/${ex.id}`, { method: 'POST', headers });
+                            await fetch(getApiUrl(`/api/admin/cbt/publish/${ex.id}`), { method: 'POST', headers });
                             alert('Exam published as LIVE!');
                           }} className="px-2 py-1 text-xs bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg">Go Live</button>
                         </div>
@@ -2915,7 +2938,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                       const token = localStorage.getItem('aspirantx_auth_token');
                       const headers: Record<string, string> = {};
                       if (token) headers['Authorization'] = `Bearer ${token}`;
-                      const r = await fetch(`/api/admin/cbt/monitor/${cbtSelectedExamId}`, { headers });
+                      const r = await fetch(getApiUrl(`/api/admin/cbt/monitor/${cbtSelectedExamId}`), { headers });
                       const d = await r.json();
                       if (d.success) setCbtMonitor(d);
                     }} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded-lg flex items-center space-x-1">
@@ -2962,7 +2985,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                     const token = localStorage.getItem('aspirantx_auth_token');
                     const headers: Record<string, string> = {};
                     if (token) headers['Authorization'] = `Bearer ${token}`;
-                    const r = await fetch(`/api/admin/cbt/results/${cbtSelectedExamId}`, { headers });
+                    const r = await fetch(getApiUrl(`/api/admin/cbt/results/${cbtSelectedExamId}`), { headers });
                     const d = await r.json();
                     if (d.success) { setCbtResults(d); setCbtSubTab('results'); }
                   }} className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all flex items-center justify-center space-x-2">
@@ -4333,6 +4356,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
               })}
               </tbody>
             </table>
+
+            {/* Pagination Controls */}
+            <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="text-xs text-slate-400">
+                Showing <span className="text-white font-bold">{userList.length}</span> of <span className="text-white font-bold">{userTotalCount}</span> students (Page {userPage} of {userTotalPages})
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={userPage <= 1 || isLoadingUsers}
+                  onClick={() => {
+                    const prev = Math.max(1, userPage - 1);
+                    setUserPage(prev);
+                    fetchAdminUsersList(prev);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-slate-400 font-semibold px-2">
+                  {userPage} / {userTotalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={userPage >= userTotalPages || isLoadingUsers}
+                  onClick={() => {
+                    const next = Math.min(userTotalPages, userPage + 1);
+                    setUserPage(next);
+                    fetchAdminUsersList(next);
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-bold text-slate-300 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -75,36 +75,51 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
   const navCategories = [
     {
-      title: 'Study & Practice',
+      title: 'Learn & Resources',
       items: [
-        { id: 'dashboard' as ActiveTab, label: 'Candidate Telemetry', icon: Target, badge: 'Live' },
-        { id: 'wallpaper' as ActiveTab, label: 'Habit Wallpaper Generator', icon: Smartphone, badge: 'HD' },
         { id: 'syllabus' as ActiveTab, label: 'Syllabus Tracker', icon: BookOpen, badge: 'AI' },
-        { id: 'cbt' as ActiveTab, label: 'CBT Test Series', icon: Award, badge: 'NTA' },
-        { id: 'pyq' as ActiveTab, label: 'Previous Year Papers', icon: BookMarked, badge: '35 Yrs' },
-        { id: 'question_bank' as ActiveTab, label: 'Question Bank', icon: HelpCircle, badge: '4000+' },
+        { id: 'library' as ActiveTab, label: 'Digital Library & Notes', icon: BookOpen, badge: 'PDF' },
         { id: 'flashcards' as ActiveTab, label: 'Active Recall Decks', icon: Sparkles },
-        { id: 'library' as ActiveTab, label: 'Digital Library & Notes', icon: BookOpen },
+        { id: 'podcasts' as ActiveTab, label: 'Audio Lecture Series', icon: Mic },
       ]
     },
     {
-      title: 'Productivity & AI Mentor',
+      title: 'Practice Engines',
       items: [
-        { id: 'chat' as ActiveTab, label: 'AI Study Mentor', icon: MessageSquare, badge: 'Gemini' },
-        { id: 'timer' as ActiveTab, label: 'Pomodoro Focus Timer', icon: Timer },
+        { id: 'cbt' as ActiveTab, label: 'CBT Test Series', icon: Award, badge: 'NTA' },
+        { id: 'pyq' as ActiveTab, label: 'Previous Year Papers', icon: BookMarked, badge: '35 Yrs' },
+        { id: 'question_bank' as ActiveTab, label: 'Question Bank', icon: HelpCircle, badge: '4000+' },
+      ]
+    },
+    {
+      title: 'Plan & Focus',
+      items: [
         { id: 'tasks' as ActiveTab, label: 'Daily Study Tasks', icon: CheckSquare },
+        { id: 'timer' as ActiveTab, label: 'Pomodoro Focus Timer', icon: Timer, badge: '25/50m' },
+        { id: 'study_buddy' as ActiveTab, label: 'Study Buddy', icon: Users },
+      ]
+    },
+    {
+      title: 'Improve & Analytics',
+      items: [
         { id: 'weakness' as ActiveTab, label: 'Weakness Detector', icon: BarChart3, badge: 'AI' },
-        { id: 'community' as ActiveTab, label: 'Peer Study Community', icon: Users },
-        { id: 'podcasts' as ActiveTab, label: 'Audio Lecture Series', icon: Mic },
+        { id: 'leaderboard' as ActiveTab, label: 'All-India Rank', icon: Flame, badge: 'AIR' },
         { id: 'eligibility' as ActiveTab, label: 'Exam Eligibility Check', icon: ShieldCheck },
       ]
     },
     {
-      title: 'Rewards & Perks',
+      title: 'Connect & Mentorship',
       items: [
-        { id: 'reward_milestones' as ActiveTab, label: 'Study Milestones', icon: Gift },
-        { id: 'earn_premium' as ActiveTab, label: 'Refer & Earn Coins', icon: Handshake, badge: '+150' },
+        { id: 'chat' as ActiveTab, label: 'AI Study Mentor', icon: MessageSquare, badge: 'Gemini' },
+        { id: 'community' as ActiveTab, label: 'Peer Study Community', icon: Users },
+      ]
+    },
+    {
+      title: 'Account & Perks',
+      items: [
         { id: 'premium' as ActiveTab, label: 'AspirantX PRO Access', icon: Crown, badge: 'PRO' },
+        { id: 'reward_milestones' as ActiveTab, label: 'Study Milestones', icon: Gift },
+        { id: 'wallpaper' as ActiveTab, label: 'Habit Wallpaper', icon: Smartphone, badge: 'HD' },
       ]
     }
   ];

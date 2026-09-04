@@ -378,7 +378,23 @@ router.get('/api/community/posts', async (req, res) => {
       posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
-    res.json({ success: true, posts });
+    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(String(req.query.limit || '20'), 10) || 20));
+    const total = posts.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const startIndex = (page - 1) * limit;
+    const paginatedPosts = posts.slice(startIndex, startIndex + limit);
+    const hasMore = page < totalPages;
+
+    res.json({
+      success: true,
+      posts: paginatedPosts,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasMore
+    });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch community posts' });
   }

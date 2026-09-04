@@ -1,6 +1,7 @@
 package com.aspirantx.app;
 
 import android.os.Bundle;
+import android.webkit.WebSettings;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -8,5 +9,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AspirantXWallpaperPlugin.class);
         super.onCreate(savedInstanceState);
+        if (bridge != null && bridge.getWebView() != null) {
+            bridge.getWebView().getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        }
     }
 }

@@ -6,6 +6,9 @@
  * - Automatic payload serialization & status code handling
  */
 
+import { dedupFetch, getPerfMetrics, recordPerfMarker, type PerfMetrics } from './apiDeduplicator';
+export { getPerfMetrics, recordPerfMarker, type PerfMetrics };
+
 export interface FetchOptions extends RequestInit {
   timeoutMs?: number;
   maxRetries?: number;
@@ -106,7 +109,7 @@ export async function apiFetch<T = any>(
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(url, {
+      const response = await dedupFetch(url, {
         ...restOptions,
         headers: mergedHeaders,
         signal: controller.signal,

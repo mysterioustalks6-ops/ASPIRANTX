@@ -406,15 +406,27 @@ export interface CbtQuestion {
   negativeMarks: number;
 }
 
+export interface CbtSection {
+  name: string;
+  durationMinutes?: number;
+  totalQuestions: number;
+}
+
 export interface CbtTest {
   id: string;
   title: string;
   exam: string;
   durationMinutes: number;
   totalMarks: number;
-  sections: { name: string; durationMinutes?: number; totalQuestions: number }[];
+  sections: CbtSection[];
   questions: CbtQuestion[];
-  markingScheme: { correct: number; incorrect: number };
+  markingScheme: { correct: number; incorrect: number; unattempted?: number };
+  difficulty?: string;
+  subject?: string;
+  topics?: string[];
+  isCustom?: boolean;
+  sourceType?: 'official' | 'question_bank' | 'ai' | 'admin' | string;
+  createdAt?: string;
 }
 
 export type CbtQuestionStatus = 'not_visited' | 'not_answered' | 'answered' | 'marked_for_review' | 'answered_and_marked';

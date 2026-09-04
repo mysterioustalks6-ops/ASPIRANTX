@@ -7,6 +7,7 @@ import { logAuthDiagnostic } from './lib/authDiagnostics';
 import { EXAM_LIST } from './lib/examList';
 import { ExamProvider, useExam } from './context/ExamContext';
 import { normalizeExamId } from './lib/examRegistry';
+import { academicService } from './lib/services';
 import { LandingPage } from './components/LandingPage';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
@@ -471,30 +472,32 @@ function AppContent() {
       const uniqueExams = Array.from(new Set(exams));
 
       const fetchStats = async () => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+          return; // Skip background polling when tab is not visible
+        }
         setLoadingStats(true);
         const statsMap: Record<string, { total: number; completed: number; percentage: number }> = {};
         try {
           for (const exam of uniqueExams) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 1500);
-            const res = await fetch(`/api/academic/syllabus?exam=${encodeURIComponent(exam)}`, { 
-              cache: 'no-store',
-              signal: controller.signal
-            }).catch(() => null);
-            clearTimeout(timer);
+            let completedIds: string[] = [];
+            try {
+              const saved = localStorage.getItem(`aspirantx_completed_subtopics_${exam}`);
+              if (saved) completedIds = JSON.parse(saved);
+            } catch (e) {}
 
-            if (res && res.ok) {
-              const data = await res.json().catch(() => ({}));
-              const nodes = data.syllabus || [];
-              const total = nodes.length;
-              let completedIds: string[] = [];
-              try {
-                const saved = localStorage.getItem(`aspirantx_completed_subtopics_${exam}`);
-                if (saved) completedIds = JSON.parse(saved);
-              } catch (e) {}
-              const completed = nodes.filter((n: any) => completedIds.includes(n.id) || n.completed).length;
-              const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-              statsMap[exam] = { total, completed, percentage };
+            try {
+              const data = await academicService.getSyllabusStats(exam);
+              if (data && data.success) {
+                const total = data.total || 0;
+                const completed = Math.max(data.completed || 0, completedIds.length);
+                const percentage = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+                statsMap[exam] = { total, completed, percentage };
+              }
+            } catch (fetchErr) {
+              // Graceful fallback to local count if network error
+              const localTotal = 50;
+              const completed = completedIds.length;
+              statsMap[exam] = { total: localTotal, completed, percentage: Math.round((completed / localTotal) * 100) };
             }
           }
           setCompletionStats((prev) => {
@@ -509,8 +512,19 @@ function AppContent() {
       };
 
       fetchStats();
-      const intervalId = setInterval(fetchStats, 60000); // Periodic background sync every 60 seconds
-      return () => clearInterval(intervalId);
+      const intervalId = setInterval(fetchStats, 120000); // Efficient 2-minute interval
+
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          fetchStats();
+        }
+      };
+      document.addEventListener('visibilitychange', onVisibilityChange);
+
+      return () => {
+        clearInterval(intervalId);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      };
     }, [userId, userExam]);
 
     return { completionStats, loadingStats };

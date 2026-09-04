@@ -78,8 +78,8 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
     );
   }
 
-  // If feature is NOT premium locked OR user is already premium, render children normally
-  if (!isFeaturePremiumLocked || isUserPremium) {
+  // If feature is NOT premium locked OR user is already premium OR demo user in active session, render children normally
+  if (!isFeaturePremiumLocked || isUserPremium || (isGuest && !isGuestStrictLock)) {
     return <>{children}</>;
   }
 

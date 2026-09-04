@@ -325,7 +325,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   );
 
   // Toggle completion
-  const toggleSubtopicCompletion = async (subtopicId: string) => {
+  const toggleSubtopicCompletion = async (
+    subtopicId: string,
+    subject?: string,
+    chapter?: string,
+    subtopicTitle?: string
+  ) => {
     const nextSet = new Set<string>(completedSubtopicIds);
     const isNowChecking = !nextSet.has(subtopicId);
 
@@ -336,9 +341,25 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     }
 
     setCompletedSubtopicIds(nextSet);
+
+    // Save as last studied topic for the "Continue Studying" dashboard card
+    if (subject && (subtopicTitle || chapter)) {
+      try {
+        const histKey = `aspirantx_last_topic_${userId || 'guest'}_${selectedExam || 'UPSC_CSE'}`;
+        localStorage.setItem(
+          histKey,
+          JSON.stringify({
+            subject,
+            chapter: chapter || 'Chapter 1',
+            subtopic: subtopicTitle || chapter || 'Overview',
+            tab: 'syllabus',
+          })
+        );
+      } catch {}
+    }
     
     setSyncState({ status: 'saving', message: 'Syncing progress...' });
-    const res = await saveCompletedSubtopicIds(nextSet, userId);
+    const res = await saveCompletedSubtopicIds(nextSet, userId, selectedExam);
     setSyncState(res);
 
     if (isNowChecking) {
@@ -1099,7 +1120,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                             return (
                               <div
                                 key={sub.id}
-                                onClick={() => toggleSubtopicCompletion(sub.id)}
+                                onClick={() => toggleSubtopicCompletion(sub.id, topic.category, topic.title, sub.title)}
                                 className={`p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group ${
                                   isDone
                                     ? 'bg-[#00FF94]/10 border-[#00FF94]/30 text-slate-300 shadow-[0_0_10px_rgba(0,255,148,0.1)]'

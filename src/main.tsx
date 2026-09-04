@@ -11,7 +11,11 @@ import { initTactileTouchListener } from './lib/haptics.ts';
 // In standalone native APK build, WebView origin is https://localhost.
 // Intercept ONLY relative `/api/*` fetch calls and route them directly to the live backend server.
 // Never intercept local files, assets (JS/CSS/images/fonts), UI routing, or root document.
-const BACKEND_API_ROOT = 'https://aspirantx.app';
+const BACKEND_API_ROOT = (
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_API_URL) ||
+  'http://10.0.2.2:3000'
+).replace(/\/$/, '');
 
 if (Capacitor.isNativePlatform()) {
   const originalFetch = window.fetch;
