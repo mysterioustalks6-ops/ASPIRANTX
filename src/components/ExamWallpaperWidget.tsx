@@ -34,7 +34,8 @@ import {
   requestSetLiveWallpaper, 
   checkIsLiveWallpaperActive, 
   syncAuthoritativeWallpaperToNative,
-  addWallpaperResumeListener
+  addWallpaperResumeListener,
+  isAndroidPlatform
 } from '../lib/nativeWallpaperBridge';
 import { Capacitor } from '@capacitor/core';
 
@@ -77,17 +78,26 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
   const [wallpaperStatus, setWallpaperStatus] = useState<
     'NOT_SUPPORTED' | 'READY' | 'PREVIEW_OPENED' | 'ACTIVE' | 'INACTIVE' | 'REPLACED'
   >(() => {
-    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+    if (!isAndroidPlatform()) {
       return 'NOT_SUPPORTED';
     }
     return 'READY';
   });
 
   const [isSettingLive, setIsSettingLive] = useState<boolean>(false);
+  // OEM detection state — filled after first picker attempt
+  const [oemInfo, setOemInfo] = useState<{
+    oem: string;
+    isVivoDevice: boolean;
+    isXiaomiDevice: boolean;
+    isOEMRestricted: boolean;
+    method: string;
+  } | null>(null);
+  const [showManualGuide, setShowManualGuide] = useState<boolean>(false);
 
   // Authoritative re-verification against Android WallpaperManager
   const verifyActiveStatus = useCallback(async () => {
-    if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+    if (!isAndroidPlatform()) {
       setWallpaperStatus('NOT_SUPPORTED');
       return;
     }
@@ -168,9 +178,23 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
     setIsSettingLive(true);
     setWallpaperStatus('PREVIEW_OPENED');
     try {
-      await requestSetLiveWallpaper(user.id, activeExam, selectedPersona, user.name);
+      const result = await requestSetLiveWallpaper(user.id, activeExam, selectedPersona, user.name);
+      // Save OEM info for showing the right manual guide
+      setOemInfo({
+        oem: result.oem || '',
+        isVivoDevice: !!result.isVivoDevice,
+        isXiaomiDevice: !!result.isXiaomiDevice,
+        isOEMRestricted: !!result.isOEMRestricted,
+        method: result.method || 'unknown',
+      });
+      // If picker opened via Settings or needs manual action, show guide
+      if (!result.success || result.method === 'manual' || result.method === 'settings_display') {
+        setShowManualGuide(true);
+        setWallpaperStatus('READY');
+      }
     } catch (err) {
       console.error('Failed to open wallpaper preview:', err);
+      setShowManualGuide(true);
       verifyActiveStatus();
     } finally {
       setIsSettingLive(false);
@@ -926,12 +950,128 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
                 <span>Export 1080×2400 High-Res Wallpaper</span>
               </button>
               <p className="text-[11px] text-slate-400">
-                Compatible with all Android home & lock screens
+                Compatible with all Android home &amp; lock screens
               </p>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── OEM Manual Setup Guide Modal ────────────────────────────────────── */}
+      <AnimatePresence>
+        {showManualGuide && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm px-3 pb-4 sm:pb-0"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowManualGuide(false); }}
+          >
+            <motion.div
+              initial={{ y: 60, scale: 0.97 }}
+              animate={{ y: 0, scale: 1 }}
+              exit={{ y: 60, scale: 0.97 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 300 }}
+              className="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-700/70 rounded-3xl shadow-2xl p-5 relative"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowManualGuide(false)}
+                className="absolute top-4 right-4 p-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center border border-amber-500/40 flex-shrink-0">
+                  <Smartphone className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm text-white">Live Wallpaper Setup</h3>
+                  <p className="text-[11px] text-slate-400">
+                    {oemInfo?.isVivoDevice
+                      ? '📱 Vivo — Manual Steps Required'
+                      : oemInfo?.isXiaomiDevice
+                      ? '📱 Xiaomi/MIUI — Manual Steps Required'
+                      : '📱 Manual Setup Required'}
+                  </p>
+                </div>
+              </div>
+
+              {/* OEM Notice */}
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3 mb-4">
+                <p className="text-[11px] text-amber-200 font-medium leading-relaxed">
+                  {oemInfo?.isVivoDevice
+                    ? 'Vivo (Funtouch OS) ne standard live wallpaper picker ko block kar diya hai. Neeche diye steps follow karein:'
+                    : oemInfo?.isXiaomiDevice
+                    ? 'MIUI/HyperOS ne direct live wallpaper picker ko restrict kar diya hai. Neeche diye steps follow karein:'
+                    : 'Aapke phone ka launcher direct live wallpaper setting ko support nahi karta. Neeche diye steps follow karein:'}
+                </p>
+              </div>
+
+              {/* Step-by-step Guide */}
+              <div className="space-y-2.5 mb-4">
+                {(oemInfo?.isVivoDevice ? [
+                  { step: 1, icon: '🏠', title: 'Home Screen pe jayen', desc: 'App band karein aur home screen pe ayen' },
+                  { step: 2, icon: '👆', title: 'Long Press Karen', desc: 'Home screen pe empty jagah pe 2 sec hold karein' },
+                  { step: 3, icon: '🖼️', title: '"Wallpaper" Option Select Karein', desc: 'Menu mein "Wallpapers" ya "Wallpaper & Style" pe tap karein' },
+                  { step: 4, icon: '🎬', title: '"Live Wallpapers" Tab Open Karein', desc: 'Static wallpapers wali screen mein "Live" ya "Animated" tab pe tap karein' },
+                  { step: 5, icon: '⚡', title: 'AspirantX Select Karein', desc: 'List mein "AspirantX" dhundhein aur select karein, phir "Set Wallpaper" tap karein' },
+                ] : oemInfo?.isXiaomiDevice ? [
+                  { step: 1, icon: '🏠', title: 'Home Screen pe jayen', desc: 'App close karein' },
+                  { step: 2, icon: '👆', title: 'Home Screen Long Press', desc: 'Empty area pe 2 second hold karein' },
+                  { step: 3, icon: '🖼️', title: '"Wallpaper" Pe Tap Karein', desc: 'Bottom menu se "Wallpaper" select karein' },
+                  { step: 4, icon: '🎬', title: '"Live Wallpapers" Category Chunein', desc: '"Live Wallpapers" section dhundhein' },
+                  { step: 5, icon: '⚡', title: 'AspirantX Select Karein', desc: 'AspirantX wallpaper pe tap karein aur "Apply" karein' },
+                ] : [
+                  { step: 1, icon: '⚙️', title: 'Settings Open Karein', desc: 'Phone Settings app open karein' },
+                  { step: 2, icon: '🖼️', title: 'Wallpaper Setting Dhundhein', desc: '"Wallpaper" ya "Display > Wallpaper" option dhundhein' },
+                  { step: 3, icon: '🎬', title: 'Live Wallpapers Select Karein', desc: '"Live Wallpapers" ya "Animated Wallpapers" pe tap karein' },
+                  { step: 4, icon: '⚡', title: 'AspirantX Chunein', desc: 'List mein AspirantX dhundhein aur "Set Wallpaper" karein' },
+                ]).map(({ step, icon, title, desc }) => (
+                  <div key={step} className="flex items-start gap-3">
+                    <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center flex-shrink-0 text-xs font-black text-indigo-300">
+                      {step}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-white">{icon} {title}</div>
+                      <div className="text-[11px] text-slate-400 mt-0.5">{desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tip */}
+              <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-2.5 mb-4">
+                <p className="text-[11px] text-indigo-300 font-medium">
+                  💡 <strong>Tip:</strong> AspirantX live wallpaper already install hai aur ready hai — sirf system picker se select karna hai.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowManualGuide(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 transition-all"
+                >
+                  Samajh Gaya
+                </button>
+                <button
+                  onClick={() => {
+                    setShowManualGuide(false);
+                    handleSetLiveWallpaper();
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg transition-all"
+                >
+                  Dobara Try Karein
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 };
+

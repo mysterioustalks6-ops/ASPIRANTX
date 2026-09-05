@@ -94,71 +94,152 @@ public class AspirantXWallpaperPlugin extends Plugin {
         }
     }
 
+    /**
+     * Detects the device manufacturer/OEM for OEM-specific fallback handling.
+     * Returns lowercase brand: "vivo", "xiaomi", "samsung", "oppo", "realme", etc.
+     */
+    private String getOemBrand() {
+        return Build.BRAND != null ? Build.BRAND.toLowerCase() : "";
+    }
+
+    /**
+     * Tries to start an Intent and returns true if it succeeded, false otherwise.
+     * Wraps all exceptions to prevent crashes.
+     */
+    private boolean tryStartActivity(android.app.Activity activity, Context context, Intent intent) {
+        try {
+            if (activity != null && !activity.isFinishing()) {
+                activity.startActivity(intent);
+                return true;
+            } else {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+                return true;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "startActivity failed for " + intent.getAction() + ": " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Opens the live wallpaper picker using a 5-tier fallback strategy.
+     * Returns:
+     *   success=true, method="direct"    — ACTION_CHANGE_LIVE_WALLPAPER direct to our service
+     *   success=true, method="chooser"   — ACTION_LIVE_WALLPAPER_CHOOSER generic picker
+     *   success=true, method="settings"  — Android Settings wallpaper panel
+     *   success=false, method="manual"   — All intents failed; user must set manually
+     *   Also returns: oem, androidVersion, isVivoOrOEM for JS-side OEM guide display
+     */
     @PluginMethod
     public void openLiveWallpaperPicker(PluginCall call) {
         try {
             Context context = getContext();
             android.app.Activity activity = getActivity();
             ComponentName serviceComponent = new ComponentName(context, AspirantXWallpaperService.class);
+            String oem = getOemBrand();
+            int sdkInt = Build.VERSION.SDK_INT;
 
-            Log.i(TAG, "Initiating live wallpaper preview request for: " + serviceComponent.flattenToString());
+            Log.i(TAG, "openLiveWallpaperPicker() oem=" + oem + " sdk=" + sdkInt);
+            Log.i(TAG, "Target service: " + serviceComponent.flattenToString());
 
-            Intent intent = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
-            intent.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, serviceComponent);
-
+            String method = "none";
             boolean started = false;
-            try {
-                android.os.Bundle activityOptionsBundle = null;
-                if (Build.VERSION.SDK_INT >= 34) {
-                    try {
-                        android.app.ActivityOptions options = android.app.ActivityOptions.makeBasic();
-                        options.setPendingIntentBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED);
-                        options.setPendingIntentCreatorBackgroundActivityStartMode(android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED);
-                        activityOptionsBundle = options.toBundle();
-                    } catch (Throwable ignored) {}
-                }
 
-                if (activity != null) {
-                    if (activityOptionsBundle != null) {
-                        activity.startActivity(intent, activityOptionsBundle);
-                    } else {
-                        activity.startActivity(intent);
+            // ── TIER 1: Direct ACTION_CHANGE_LIVE_WALLPAPER with component ─────────
+            if (!started) {
+                Intent intent1 = new Intent(WallpaperManager.ACTION_CHANGE_LIVE_WALLPAPER);
+                intent1.putExtra(WallpaperManager.EXTRA_LIVE_WALLPAPER_COMPONENT, serviceComponent);
+                if (sdkInt >= 34) {
+                    try {
+                        android.app.ActivityOptions opts = android.app.ActivityOptions.makeBasic();
+                        opts.setPendingIntentBackgroundActivityStartMode(
+                            android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED);
+                        android.os.Bundle optsBundle = opts.toBundle();
+                        if (activity != null && !activity.isFinishing()) {
+                            activity.startActivity(intent1, optsBundle);
+                            started = true;
+                            method = "direct";
+                        } else {
+                            intent1.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            context.startActivity(intent1, optsBundle);
+                            started = true;
+                            method = "direct";
+                        }
+                    } catch (Exception e34) {
+                        started = tryStartActivity(activity, context, intent1);
+                        if (started) method = "direct";
                     }
-                    started = true;
-                    Log.i(TAG, "Launched ACTION_CHANGE_LIVE_WALLPAPER via Activity context");
                 } else {
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    if (activityOptionsBundle != null) {
-                        context.startActivity(intent, activityOptionsBundle);
-                    } else {
-                        context.startActivity(intent);
-                    }
-                    started = true;
-                    Log.i(TAG, "Launched ACTION_CHANGE_LIVE_WALLPAPER via Application context with NEW_TASK");
+                    started = tryStartActivity(activity, context, intent1);
+                    if (started) method = "direct";
                 }
-            } catch (Exception e1) {
-                Log.w(TAG, "ACTION_CHANGE_LIVE_WALLPAPER failed, attempting fallback to chooser: " + e1.getMessage());
+            }
+
+            // ── TIER 2: ACTION_LIVE_WALLPAPER_CHOOSER ──────────────────────────────
+            if (!started) {
+                Intent intent2 = new Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER);
+                started = tryStartActivity(activity, context, intent2);
+                if (started) method = "chooser";
+            }
+
+            // ── TIER 3: Android Settings display/wallpaper panel ──────────────────
+            if (!started) {
                 try {
-                    Intent fallback = new Intent(WallpaperManager.ACTION_LIVE_WALLPAPER_CHOOSER);
-                    if (activity != null) {
-                        activity.startActivity(fallback);
-                    } else {
-                        fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        context.startActivity(fallback);
-                    }
-                    started = true;
-                    Log.i(TAG, "Launched ACTION_LIVE_WALLPAPER_CHOOSER fallback");
-                } catch (Exception e2) {
-                    Log.e(TAG, "All live wallpaper intents failed", e2);
+                    Intent intent3 = new Intent(android.provider.Settings.ACTION_DISPLAY_SETTINGS);
+                    started = tryStartActivity(activity, context, intent3);
+                    if (started) method = "settings_display";
+                } catch (Exception ignored) {}
+            }
+
+            // ── TIER 4: OEM-specific wallpaper app intents ────────────────────────
+            if (!started) {
+                String oemPkg = null;
+                String oemCls = null;
+                if (oem.contains("vivo") || oem.contains("iqoo")) {
+                    oemPkg = "com.bbk.launcher2";
+                    oemCls = "com.bbk.launcher2.wallpaper.WallpaperPickerActivity";
+                } else if (oem.contains("xiaomi") || oem.contains("redmi") || oem.contains("poco")) {
+                    oemPkg = "com.miui.home";
+                    oemCls = "com.miui.home.launcher.gallery.PhotoWallpaperPickerActivity";
+                } else if (oem.contains("oppo") || oem.contains("realme") || oem.contains("oneplus")) {
+                    oemPkg = "com.coloros.wallpaperservice";
+                    oemCls = "com.coloros.wallpaperservice.WallpaperPickerActivity";
                 }
+                if (oemPkg != null && oemCls != null) {
+                    try {
+                        Intent oemIntent = new Intent();
+                        oemIntent.setClassName(oemPkg, oemCls);
+                        started = tryStartActivity(activity, context, oemIntent);
+                        if (started) method = "oem_" + oem;
+                    } catch (Exception ignored) {}
+                }
+            }
+
+            // ── TIER 5: General SET_WALLPAPER intent ──────────────────────────────
+            if (!started) {
+                Intent intent5 = new Intent(Intent.ACTION_SET_WALLPAPER);
+                started = tryStartActivity(activity, context, intent5);
+                if (started) method = "set_wallpaper_action";
+                else method = "manual";
             }
 
             JSObject res = new JSObject();
             res.put("success", started);
+            res.put("method", method);
+            res.put("oem", oem);
+            res.put("androidVersion", sdkInt);
+            res.put("isVivoDevice", oem.contains("vivo") || oem.contains("iqoo"));
+            res.put("isXiaomiDevice", oem.contains("xiaomi") || oem.contains("redmi") || oem.contains("poco"));
+            res.put("isOEMRestricted", !started || method.equals("manual"));
+            res.put("serviceComponent", serviceComponent.flattenToString());
             call.resolve(res);
         } catch (Exception e) {
-            Log.e(TAG, "Fatal error in openLiveWallpaperPicker", e);
-            call.reject("Could not open wallpaper picker: " + e.getMessage());
+            JSObject res = new JSObject();
+            res.put("success", false);
+            res.put("method", "error");
+            res.put("error", e.getMessage());
+            call.resolve(res);
         }
     }
 
@@ -177,7 +258,6 @@ public class AspirantXWallpaperPlugin extends Plugin {
                 ComponentName targetComponent = new ComponentName(getContext(), AspirantXWallpaperService.class);
                 ComponentName currentComponent = info.getComponent();
 
-                // Check ComponentName equality or matching package and service suffix
                 if (targetComponent.equals(currentComponent)) {
                     isActive = true;
                 } else if (getContext().getPackageName().equals(activePkg) && 
@@ -190,6 +270,7 @@ public class AspirantXWallpaperPlugin extends Plugin {
             res.put("isActive", isActive);
             res.put("activePackage", activePkg);
             res.put("activeService", activeSvc);
+            res.put("oem", getOemBrand());
             call.resolve(res);
         } catch (Exception e) {
             Log.e(TAG, "Error checking active wallpaper", e);
@@ -197,6 +278,7 @@ public class AspirantXWallpaperPlugin extends Plugin {
             res.put("isActive", false);
             res.put("activePackage", null);
             res.put("activeService", null);
+            res.put("oem", getOemBrand());
             call.resolve(res);
         }
     }

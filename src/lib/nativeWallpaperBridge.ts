@@ -35,9 +35,21 @@ export interface LiveWallpaperStatusResult {
   activeService?: string | null;
 }
 
+export interface WallpaperPickerResult {
+  success: boolean;
+  method?: string;           // 'direct' | 'chooser' | 'settings_display' | 'oem_vivo' | 'set_wallpaper_action' | 'manual' | 'error'
+  oem?: string;              // lowercase brand e.g. 'vivo', 'xiaomi', 'samsung'
+  androidVersion?: number;
+  isVivoDevice?: boolean;
+  isXiaomiDevice?: boolean;
+  isOEMRestricted?: boolean; // true when device blocks all picker intents
+  serviceComponent?: string;
+  error?: string;
+}
+
 export interface AspirantXWallpaperPluginInterface {
   updateWallpaperData(data: CanonicalWallpaperState): Promise<{ success: boolean }>;
-  openLiveWallpaperPicker(): Promise<{ success: boolean }>;
+  openLiveWallpaperPicker(): Promise<WallpaperPickerResult>;
   isLiveWallpaperActive(): Promise<LiveWallpaperStatusResult>;
 }
 
@@ -129,6 +141,18 @@ export function buildCanonicalWallpaperState(
  * Bridges local authoritative study & exam metrics directly to the native
  * Android WallpaperService without any network requests.
  */
+export const isAndroidPlatform = (): boolean => {
+  try {
+    return (
+      Capacitor.getPlatform() === 'android' ||
+      Capacitor.isNativePlatform() ||
+      (typeof window !== 'undefined' && (/Android/i.test(navigator.userAgent) || !!(window as any).Capacitor))
+    );
+  } catch {
+    return false;
+  }
+};
+
 export async function syncAuthoritativeWallpaperToNative(
   userId?: string | null,
   examId?: string | null,
@@ -138,16 +162,19 @@ export async function syncAuthoritativeWallpaperToNative(
   try {
     const payload = buildCanonicalWallpaperState(userId, examId, persona, candidateName);
 
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
-      await AspirantXWallpaper.updateWallpaperData(payload);
-      return true;
-    } else {
-      // In web browser: save to localStorage for local preview / parity
+    if (isAndroidPlatform()) {
       try {
-        localStorage.setItem('aspirantx_web_live_wallpaper_state', JSON.stringify(payload));
-      } catch (ignored) {}
-      return true;
+        await AspirantXWallpaper.updateWallpaperData(payload);
+        return true;
+      } catch (nativeErr) {
+        console.warn('[AspirantX Live Wallpaper Bridge] Native plugin update failed:', nativeErr);
+      }
     }
+    // In web browser: save to localStorage for local preview / parity
+    try {
+      localStorage.setItem('aspirantx_web_live_wallpaper_state', JSON.stringify(payload));
+    } catch (ignored) {}
+    return true;
   } catch (err) {
     console.warn('[AspirantX Live Wallpaper Bridge] Sync failed:', err);
     return false;
@@ -163,21 +190,22 @@ export async function requestSetLiveWallpaper(
   examId?: string | null,
   persona?: WallpaperPersona | null,
   candidateName?: string | null
-): Promise<boolean> {
+): Promise<WallpaperPickerResult> {
   try {
     // 1. Ensure latest authoritative data and persona theme is pushed to native SharedPreferences first
     await syncAuthoritativeWallpaperToNative(userId, examId, persona, candidateName);
 
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+    if (isAndroidPlatform()) {
       const res = await AspirantXWallpaper.openLiveWallpaperPicker();
-      return !!res.success;
+      console.info('[AspirantX Wallpaper] Picker result:', JSON.stringify(res));
+      return res;
     } else {
       console.info('[AspirantX Wallpaper] Live Wallpaper picker is native Android only.');
-      return false;
+      return { success: false, method: 'not_android' };
     }
   } catch (err) {
     console.error('[AspirantX Wallpaper] Failed to open live wallpaper picker:', err);
-    return false;
+    return { success: false, method: 'error', error: String(err) };
   }
 }
 
@@ -186,7 +214,7 @@ export async function requestSetLiveWallpaper(
  */
 export async function checkIsLiveWallpaperActive(): Promise<LiveWallpaperStatusResult> {
   try {
-    if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+    if (isAndroidPlatform()) {
       const res = await AspirantXWallpaper.isLiveWallpaperActive();
       return {
         isActive: !!res.isActive,
