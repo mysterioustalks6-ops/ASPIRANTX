@@ -8,6 +8,22 @@
     <meta name="google-site-verification" content="IDJX2ngSvFQRWWM7fSDUUgOa880SAewmfcruBYAtPV8" />
     <!-- Google AdSense Official Master Script -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8740054860974100" crossorigin="anonymous"></script>
+
+    <!-- Mobile App OAuth Bridge: redirect back into native APK if auth callback is received -->
+    <script>
+      (function() {
+        try {
+          var h = window.location.hash || '';
+          var s = window.location.search || '';
+          if (h.indexOf('access_token=') !== -1 || s.indexOf('code=') !== -1) {
+            var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+            if (isMobile) {
+              window.location.replace('com.aspirantx.app://auth' + s + h);
+            }
+          }
+        } catch(e) {}
+      })();
+    </script>
     
     <!-- Primary SEO Meta Tags -->
     <title>AspirantX - Complete Online Mocks & Syllabus Tracker for UPSC, NEET, NDA, SSC</title>

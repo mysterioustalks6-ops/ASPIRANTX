@@ -37,10 +37,17 @@ if (Capacitor.isNativePlatform()) {
       await Browser.close().catch(() => {});
 
       // Parse access_token / refresh_token or PKCE code from deep link url
-      const urlObj = new URL(data.url);
+      let urlObj: URL | null = null;
+      try {
+        urlObj = new URL(data.url);
+      } catch {
+        // Fallback for custom schemes if URL constructor behaves strictly
+        const dummyBase = data.url.replace(/^com\.aspirantx\.app:\/\/?/, 'http://localhost/');
+        urlObj = new URL(dummyBase);
+      }
       
       // 1. If PKCE auth code is present in query parameters
-      const code = urlObj.searchParams.get('code');
+      const code = urlObj?.searchParams?.get('code');
       if (code) {
         const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
@@ -51,22 +58,25 @@ if (Capacitor.isNativePlatform()) {
         return;
       }
 
-      // 2. If tokens are present in URL hash (#access_token=...&refresh_token=...)
-      if (data.url.includes('#')) {
-        const hashParams = new URLSearchParams(data.url.split('#')[1]);
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
+      // 2. If tokens are present in searchParams or URL hash (#access_token=...&refresh_token=...)
+      let accessToken = urlObj?.searchParams?.get('access_token');
+      let refreshToken = urlObj?.searchParams?.get('refresh_token');
 
-        if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (error) {
-            console.error('Failed to set session from native hash tokens:', error);
-          } else {
-            console.log('✅ Native Session successfully set from deep link hash');
-          }
+      if ((!accessToken || !refreshToken) && data.url.includes('#')) {
+        const hashParams = new URLSearchParams(data.url.split('#')[1]);
+        accessToken = accessToken || hashParams.get('access_token');
+        refreshToken = refreshToken || hashParams.get('refresh_token');
+      }
+
+      if (accessToken && refreshToken) {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (error) {
+          console.error('Failed to set session from native tokens:', error);
+        } else {
+          console.log('✅ Native Session successfully set from deep link tokens');
         }
       }
     } catch (deepLinkErr) {
@@ -86,10 +96,10 @@ export async function signInWithGoogle() {
   try {
     const isNative = Capacitor.isNativePlatform();
     
-    // In native Android app: redirect back into app scheme 'com.aspirantx.app://'
+    // In native Android app: redirect via mobile OAuth bridge page which bounces straight into com.aspirantx.app://
     // On web: redirect to current window origin
     const redirectUrl = isNative 
-      ? 'com.aspirantx.app://' 
+      ? 'https://aspirantx.vercel.app/auth-callback.html' 
       : `${window.location.origin}/`;
 
     if (isNative) {
