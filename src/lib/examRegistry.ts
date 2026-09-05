@@ -35,22 +35,39 @@ export const EXAM_REGISTRY: Record<string, ExamConfig> = {
     ],
     syllabusTree: {
       'Indian Polity & Governance': {
-        topics: ['Constitutional Framework', 'Preamble & Fundamental Rights', 'Parliament & State Legislature', 'Judiciary & Judicial Review', 'Panchayati Raj & Local Bodies', 'Constitutional & Non-Constitutional Bodies'],
+        topics: [
+          'General Concepts',
+          'Constitutional Framework & Development',
+          'Fundamental Rights',
+          'Directive Principles Of State Policy',
+          'Fundamental Duties',
+          'Parliament & State Legislatures',
+          'Union & State Executive',
+          'Judiciary',
+          'Constitutional & Statutory Bodies',
+          'Federalism & Centre–State Relations',
+          'Local Government & Panchayati Raj',
+          'Elections & Electoral Reforms',
+          'Social Justice & Vulnerable Sections',
+          'Emergency Provisions',
+          'Public Finance & Finance Commission',
+          'Governance – Advisory/Executive Councils & Committees'
+        ],
       },
       'History of India': {
-        topics: ['Ancient History & Indus Valley', 'Vedic Period & Buddhism/Jainism', 'Medieval Empires & Sultanate', 'Modern India & Freedom Movement', 'Art, Architecture & Culture'],
+        topics: ['General Concepts', 'Ancient History & Indus Valley', 'Vedic Period & Buddhism/Jainism', 'Medieval Empires & Sultanate', 'Modern India & Freedom Movement', 'Art, Architecture & Culture'],
       },
       'Economy': {
-        topics: ['Indian Economy & National Income', 'Banking & Monetary Policy', 'Fiscal Policy & Budgeting', 'Financial Markets & Inflation', 'External Sector & Foreign Trade'],
+        topics: ['General Concepts', 'Indian Economy & National Income', 'Banking & Monetary Policy', 'Fiscal Policy & Budgeting', 'Financial Markets & Inflation', 'External Sector & Foreign Trade'],
       },
       'Geography': {
-        topics: ['Physical Geography & Geomorphology', 'Climatology & Oceanography', 'Indian Physical & Human Geography', 'World Physical Geography'],
+        topics: ['General Concepts', 'Physical Geography & Geomorphology', 'Climatology & Oceanography', 'Indian Physical & Human Geography', 'World Physical Geography'],
       },
       'Environment & Ecology': {
-        topics: ['Ecosystems & Biodiversity', 'Climate Change & Global Warming', 'Environmental Laws & Conventions', 'Pollution & Conservation Efforts'],
+        topics: ['General Concepts', 'Ecosystems & Biodiversity', 'Climate Change & Global Warming', 'Environmental Laws & Conventions', 'Pollution & Conservation Efforts'],
       },
       'Science & Technology': {
-        topics: ['Space Technology & ISRO', 'Defense & Nuclear Tech', 'Biotechnology & Genetics', 'IT, AI & Quantum Tech', 'General Science'],
+        topics: ['General Concepts', 'Space Technology & ISRO', 'Defense & Nuclear Tech', 'Biotechnology & Genetics', 'IT, AI & Quantum Tech', 'General Science'],
       }
     },
     aliasMap: {

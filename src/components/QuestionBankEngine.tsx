@@ -177,17 +177,26 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
     // 1. When online, query canonical Backend API first for complete question database
     const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
     if (isOnline) {
+      let url = '';
       try {
         const typeParam = typeFilter !== 'All' ? `&type=${typeFilter}` : '';
         const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
         const statusParam = statusFilter !== 'All' ? `&status=${statusFilter}` : '';
         const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
 
-        const url = getApiUrl(`/api/academic/questions?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
+        url = getApiUrl(`/api/academic/questions?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
           searchQuery
         )}${subjParam}${typeParam}${statusParam}${langParam}`);
 
-        const res = await dedupFetch(url);
+        let res = await dedupFetch(url);
+        if (!res.ok && url.includes('127.0.0.1:3000')) {
+          try {
+            const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
+            const fbRes = await dedupFetch(fallbackUrl);
+            if (fbRes.ok) res = fbRes;
+          } catch (_) {}
+        }
+
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.questions)) {
@@ -200,6 +209,24 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
           }
         }
       } catch (e: any) {
+        // If local native failed with network error, attempt live Vercel fallback
+        try {
+          if (url && url.includes('127.0.0.1:3000')) {
+            const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
+            const fbRes = await dedupFetch(fallbackUrl);
+            if (fbRes.ok) {
+              const data = await fbRes.json();
+              if (data.success && Array.isArray(data.questions)) {
+                setQuestions(data.questions);
+                setTotal(data.total !== undefined ? data.total : data.questions.length);
+                setTotalPages(data.totalPages || 1);
+                loaded = true;
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        } catch (_) {}
         console.warn('Backend API unreachable, checking local and direct Supabase fallback:', e?.message || e);
       }
     }

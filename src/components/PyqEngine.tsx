@@ -220,6 +220,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
     // 1. When online, query canonical Backend API first for complete question database
     const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
     if (isOnline) {
+      let url = '';
       try {
         const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
         const subjParam = selectedSubject !== 'All' ? `&subject=${encodeURIComponent(selectedSubject)}` : '';
@@ -228,11 +229,19 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         const diffParam = difficultyFilter !== 'All' ? `&difficulty=${difficultyFilter}` : '';
         const repeatParam = repeatFilter !== 'All' ? `&repeatFilter=${repeatFilter}&minRepeats=${minRepeats}&minYears=${minYears}` : '';
 
-        const url = getApiUrl(`/api/academic/pyqs?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
+        url = getApiUrl(`/api/academic/pyqs?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
           searchQuery
         )}${langParam}${subjParam}${topicParam}${yearParam}${diffParam}${repeatParam}`);
 
-        const res = await dedupFetch(url, signal ? { signal } : undefined);
+        let res = await dedupFetch(url, signal ? { signal } : undefined);
+        if (!res.ok && url.includes('127.0.0.1:3000')) {
+          try {
+            const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
+            const fbRes = await dedupFetch(fallbackUrl, signal ? { signal } : undefined);
+            if (fbRes.ok) res = fbRes;
+          } catch (_) {}
+        }
+
         if (res.ok) {
           const data = await res.json();
           if ((!signal || !signal.aborted) && data.success && Array.isArray(data.pyqs)) {
@@ -246,6 +255,24 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         }
       } catch (e: any) {
         if (e.name !== 'AbortError') {
+          // If local native failed with network error, attempt live Vercel fallback
+          try {
+            if (url && url.includes('127.0.0.1:3000')) {
+              const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
+              const fbRes = await dedupFetch(fallbackUrl, signal ? { signal } : undefined);
+              if (fbRes.ok) {
+                const data = await fbRes.json();
+                if ((!signal || !signal.aborted) && data.success && Array.isArray(data.pyqs)) {
+                  setPyqs(data.pyqs);
+                  setTotal(data.total !== undefined ? data.total : 0);
+                  setTotalPages(data.totalPages || 1);
+                  loadedFromApi = true;
+                  setLoading(false);
+                  return;
+                }
+              }
+            }
+          } catch (_) {}
           console.warn('Backend API unreachable, trying local and direct Supabase fallback:', e?.message || e);
         }
       }
@@ -983,32 +1010,34 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                       </div>
                     );
                   })}
-
-                  {/* Bottom Pagination Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-black/40 border border-sky-500/20 shadow-lg mt-6">
-                    <div className="text-xs text-slate-300 font-extrabold">
-                      Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} Questions Total)
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        disabled={page <= 1 || loading}
-                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
-                      >
-                        ← Previous Page
-                      </button>
-                      <button
-                        disabled={page >= totalPages || loading}
-                        onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                        className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
-                      >
-                        Next Page →
-                      </button>
-                    </div>
-                  </div>
                 </div>
               );
             })()
+          )}
+
+          {/* Bottom Pagination Bar (Available for both Flat and Year-Grouped view modes) */}
+          {pyqs.length > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-black/40 border border-sky-500/20 shadow-lg mt-6">
+              <div className="text-xs text-slate-300 font-extrabold">
+                Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} Questions Total)
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                >
+                  ← Previous Page
+                </button>
+                <button
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                >
+                  Next Page →
+                </button>
+              </div>
+            </div>
           )}
         </div>
       ) : (
