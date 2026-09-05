@@ -1064,8 +1064,9 @@ router.get('/api/academic/pyqs', async (req, res) => {
     const subject = (req.query.subject as string) || '';
     const topic = (req.query.topic as string) || '';
     const stage = (req.query.stage as string) || '';
-    const minYear = Number(req.query.minYear) || 1991;
-    const maxYear = Number(req.query.maxYear) || 2026;
+    const yearParam = req.query.year ? Number(req.query.year) : null;
+    const minYear = Number(req.query.minYear) || (yearParam || 1991);
+    const maxYear = Number(req.query.maxYear) || (yearParam || 2026);
     const difficulty = (req.query.difficulty as string) || '';
     const search = (req.query.search as string) || '';
     const language = (req.query.language as string) || '';
@@ -1138,6 +1139,12 @@ router.get('/api/academic/pyqs', async (req, res) => {
             const cleanExam = exam.replace(/_/g, '%');
             jsonbQuery = jsonbQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
           }
+          if (subject && subject !== 'All') {
+            jsonbQuery = jsonbQuery.ilike('data->>subject', `%${subject}%`);
+          }
+          if (topic && topic !== 'All') {
+            jsonbQuery = jsonbQuery.ilike('data->>topic', `%${topic}%`);
+          }
           if (stage) {
             jsonbQuery = jsonbQuery.eq('data->>stage', stage);
           }
@@ -1152,6 +1159,9 @@ router.get('/api/academic/pyqs', async (req, res) => {
           }
           if (maxYear) {
             jsonbQuery = jsonbQuery.lte('data->>year', maxYear);
+          }
+          if (search) {
+            jsonbQuery = jsonbQuery.or(`data->>questionText.ilike.%${search}%,data->>topic.ilike.%${search}%`);
           }
           jsonbQuery = jsonbQuery.range(offset, offset + pageLimit - 1);
 
