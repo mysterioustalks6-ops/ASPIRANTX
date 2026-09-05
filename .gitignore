@@ -39,6 +39,24 @@ android/app/*.jks
 # Scratch files
 scratch/
 
+# Temporary QA / debug artifacts (prevent re-contamination)
+PHASE_*_COMPLETE.md
+qa_0*.png
+*_proof.png
+*_launcher_*.png
+home_screen.png
+official_preview.png
+
+# Temporary patch and test scripts at root
+patch*.js
+patch*.cjs
+apply_setters.cjs
+test-*.ts
+test-*.js
+test-*.cjs
+test-*.html
+server_routes_patch.ts
+
 # Android build outputs
 android/app/build/
 android/build/

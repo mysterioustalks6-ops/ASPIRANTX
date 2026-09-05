@@ -11,7 +11,6 @@
 
 import { localDb, ContentPackageMeta, LocalSyllabusRecord, LocalQuestionRecord, LocalPyqRecord, LocalCbtRecord } from './localDatabase';
 import { normalizeExamId, getExamConfig } from './examRegistry';
-import { DIAGNOSTIC_QUESTION_BANK } from '../data/diagnosticQuestionBank';
 import { INITIAL_CBT_TESTS } from '../data/cbtData';
 import { UPSC_SYLLABUS_DATA } from '../data/syllabus';
 import { getApiUrl } from './apiConfig';
@@ -114,50 +113,8 @@ export class ContentPackageManager {
       await localDb.putBatch('content_syllabus', syllabusRecords);
     }
 
-    // 2. Seed Questions from diagnostic bank
-    const matchingQuestions = DIAGNOSTIC_QUESTION_BANK.filter(
-      q => normalizeExamId(q.exam) === normExam
-    );
-
-    const questionRecords: LocalQuestionRecord[] = matchingQuestions.map((q, idx) => ({
-      id: `seed_q_${normExam}_${q.id || idx}`,
-      examId: normExam,
-      subject: q.subject || 'General',
-      topic: q.topic || 'General Topic',
-      questionText: q.question,
-      options: Array.isArray(q.options) && q.options.length > 0 ? q.options : ['A', 'B', 'C', 'D'],
-      correctOption: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0,
-      solutionText: q.explanation || 'Detailed answer explanation verified.',
-      difficulty: 'Medium',
-      type: 'mcq',
-      language: 'English',
-      status: 'published'
-    }));
-
-    if (questionRecords.length > 0) {
-      await localDb.putBatch('content_questions', questionRecords);
-    }
-
-    // 3. Seed PYQs
-    const pyqRecords: LocalPyqRecord[] = matchingQuestions.map((q, idx) => ({
-      id: `seed_pyq_${normExam}_${q.id || idx}`,
-      examId: normExam,
-      year: 2024 - (idx % 6),
-      stage: 'Prelims',
-      paper: 'Paper 1',
-      subject: q.subject || 'General',
-      topic: q.topic || 'General Topic',
-      questionText: q.question,
-      options: q.options,
-      correctOption: q.correctAnswer,
-      explanation: q.explanation || 'Verified official answer key explanation.',
-      difficulty: 'Medium',
-      language: 'English'
-    }));
-
-    if (pyqRecords.length > 0) {
-      await localDb.putBatch('content_pyqs', pyqRecords);
-    }
+    // Questions and PYQs are synchronized authoritatively from the live Academic API / package downloads
+    // without injecting mock diagnostic records.
 
     // 4. Seed CBT Tests
     const matchingCbt = INITIAL_CBT_TESTS.filter(
@@ -197,8 +154,8 @@ export class ContentPackageManager {
       installedAt: Date.now(),
       itemCounts: {
         syllabusTopics: syllabusRecords.length,
-        questions: questionRecords.length,
-        pyqs: pyqRecords.length,
+        questions: 0,
+        pyqs: 0,
         cbtTests: cbtRecords.length
       }
     };

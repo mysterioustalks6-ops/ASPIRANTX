@@ -7,7 +7,6 @@ import { EXAM_LIST } from '../lib/examList';
 import { normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { AdSenseBanner } from './AdSenseBanner';
-import { DIAGNOSTIC_QUESTION_BANK } from '../data/diagnosticQuestionBank';
 import { contentPackageManager } from '../lib/contentPackageManager';
 import { 
   HelpCircle, 
@@ -273,37 +272,11 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
       }
     }
 
-    // Offline Instant Fallback from local diagnostic question database
+    // If not loaded, ensure clean empty state without mock question contamination
     if (!loaded) {
-      const normExam = normalizeExamKey(selectedExam);
-      const fallbackQuestions = DIAGNOSTIC_QUESTION_BANK
-        .filter(q => normalizeExamKey(q.exam) === normExam)
-        .map(q => ({
-          id: `q_diag_${q.id}`,
-          exam: q.exam,
-          subject: q.subject,
-          topic: q.topic,
-          questionText: q.question,
-          type: 'mcq' as const,
-          options: q.options,
-          correctOption: q.correctAnswer,
-          solutionText: q.explanation,
-          difficulty: 'Medium' as const,
-          status: 'published' as const,
-          language: 'English',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }));
-
-      if (fallbackQuestions.length > 0) {
-        setQuestions(fallbackQuestions);
-        setTotal(fallbackQuestions.length);
-        setTotalPages(Math.max(1, Math.ceil(fallbackQuestions.length / limit)));
-      } else {
-        setQuestions([]);
-        setTotal(0);
-        setTotalPages(1);
-      }
+      setQuestions([]);
+      setTotal(0);
+      setTotalPages(1);
     }
     setLoading(false);
   };

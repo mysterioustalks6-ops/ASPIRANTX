@@ -6,7 +6,6 @@ import { EXAM_LIST } from '../lib/examList';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { AdSenseBanner } from './AdSenseBanner';
-import { DIAGNOSTIC_QUESTION_BANK } from '../data/diagnosticQuestionBank';
 import { contentPackageManager } from '../lib/contentPackageManager';
 import { 
   BookOpen, 
@@ -329,49 +328,11 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
       }
     }
 
-    // Tier 3: 0ms Offline Diagnostic Academic PYQ Fallback (Strictly scoped to active exam)
+    // If not loaded, ensure clean empty state without mock PYQ contamination
     if (!loadedFromApi && (!signal || !signal.aborted)) {
-      const currentNormExam = normalizeExamId(selectedExam);
-      let matches = DIAGNOSTIC_QUESTION_BANK.filter(q => normalizeExamId(q.exam) === currentNormExam);
-
-      if (selectedSubject && selectedSubject !== 'All') {
-        const sLower = selectedSubject.toLowerCase();
-        matches = matches.filter(q => q.subject.toLowerCase().includes(sLower) || sLower.includes(q.subject.toLowerCase()));
-      }
-
-      if (searchQuery) {
-        const sQuery = searchQuery.toLowerCase();
-        matches = matches.filter(q => 
-          q.question.toLowerCase().includes(sQuery) || 
-          q.subject.toLowerCase().includes(sQuery) || 
-          q.topic.toLowerCase().includes(sQuery)
-        );
-      }
-
-      const startIndex = (page - 1) * limit;
-      const paginatedMatches = matches.slice(startIndex, startIndex + limit);
-
-      const mappedFallback: PyqRecord[] = paginatedMatches.map((q, idx) => ({
-        id: `diag_pyq_${q.id || idx}`,
-        exam: q.exam || selectedExam,
-        year: 2024 - (idx % 8),
-        stage: 'Prelims',
-        paper: 'Paper 1',
-        subject: q.subject,
-        topic: q.topic,
-        questionText: q.question,
-        options: q.options,
-        correctOption: q.correctAnswer,
-        explanation: q.explanation || 'Verified historical answer key explanation.',
-        difficulty: 'Medium',
-        language: 'English',
-      }));
-
-      if (mappedFallback.length > 0) {
-        setPyqs(mappedFallback);
-        setTotal(matches.length);
-        setTotalPages(Math.max(1, Math.ceil(matches.length / limit)));
-      }
+      setPyqs([]);
+      setTotal(0);
+      setTotalPages(1);
     }
 
     if (!signal || !signal.aborted) {

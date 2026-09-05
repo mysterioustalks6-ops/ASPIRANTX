@@ -195,7 +195,7 @@ function AppContent() {
     if (hash.startsWith('blog')) return 'blog';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
-      'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit'];
+      'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper'];
     return (validTabs.includes(hash) ? hash : 'syllabus') as ActiveTab;
   });
 
