@@ -244,6 +244,204 @@ public class AspirantXWallpaperPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void getWallpaperStatus(PluginCall call) {
+        try {
+            Context context = getContext();
+            WallpaperManager wm = WallpaperManager.getInstance(context);
+            boolean isSupported = true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                isSupported = wm.isWallpaperSupported();
+            }
+
+            if (!isSupported) {
+                JSObject res = new JSObject();
+                res.put("status", "NOT_SUPPORTED");
+                res.put("isSupported", false);
+                res.put("isActive", false);
+                res.put("activePackage", null);
+                res.put("activeComponent", null);
+                res.put("oem", getOemBrand());
+                res.put("manufacturer", Build.MANUFACTURER);
+                res.put("model", Build.MODEL);
+                res.put("androidVersion", Build.VERSION.RELEASE);
+                res.put("sdkInt", Build.VERSION.SDK_INT);
+                call.resolve(res);
+                return;
+            }
+
+            WallpaperInfo info = wm.getWallpaperInfo();
+            boolean isActive = false;
+            String activePkg = null;
+            String activeComponent = null;
+
+            if (info != null) {
+                activePkg = info.getPackageName();
+                ComponentName targetComponent = new ComponentName(context, AspirantXWallpaperService.class);
+                ComponentName currentComponent = info.getComponent();
+                if (currentComponent != null) {
+                    activeComponent = currentComponent.flattenToString();
+                    if (targetComponent.equals(currentComponent)) {
+                        isActive = true;
+                    } else if (context.getPackageName().equals(activePkg) && 
+                               info.getServiceName() != null && 
+                               info.getServiceName().contains("AspirantXWallpaperService")) {
+                        isActive = true;
+                    }
+                }
+            }
+
+            String status = isActive ? "ACTIVE" : "AVAILABLE_NOT_SET";
+
+            JSObject res = new JSObject();
+            res.put("status", status);
+            res.put("isSupported", true);
+            res.put("isActive", isActive);
+            res.put("activePackage", activePkg);
+            res.put("activeComponent", activeComponent);
+            res.put("oem", getOemBrand());
+            res.put("manufacturer", Build.MANUFACTURER);
+            res.put("model", Build.MODEL);
+            res.put("androidVersion", Build.VERSION.RELEASE);
+            res.put("sdkInt", Build.VERSION.SDK_INT);
+            call.resolve(res);
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking wallpaper status", e);
+            JSObject res = new JSObject();
+            res.put("status", "ERROR");
+            res.put("isSupported", true);
+            res.put("isActive", false);
+            res.put("error", e.getMessage());
+            res.put("oem", getOemBrand());
+            res.put("manufacturer", Build.MANUFACTURER);
+            res.put("model", Build.MODEL);
+            res.put("androidVersion", Build.VERSION.RELEASE);
+            res.put("sdkInt", Build.VERSION.SDK_INT);
+            call.resolve(res);
+        }
+    }
+
+    @PluginMethod
+    public void getDeviceCapabilities(PluginCall call) {
+        try {
+            Context context = getContext();
+            String packageName = context.getPackageName();
+            String oem = getOemBrand();
+
+            boolean notificationsGranted = true;
+            if (Build.VERSION.SDK_INT >= 33) {
+                notificationsGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+                    context, 
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            }
+
+            boolean isIgnoringBattery = true;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                android.os.PowerManager pm = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                if (pm != null) {
+                    isIgnoringBattery = pm.isIgnoringBatteryOptimizations(packageName);
+                }
+            }
+
+            JSObject res = new JSObject();
+            res.put("notificationsGranted", notificationsGranted);
+            res.put("isIgnoringBatteryOptimizations", isIgnoringBattery);
+            res.put("oem", oem);
+            res.put("manufacturer", Build.MANUFACTURER);
+            res.put("model", Build.MODEL);
+            res.put("androidVersion", Build.VERSION.RELEASE);
+            res.put("sdkInt", Build.VERSION.SDK_INT);
+            call.resolve(res);
+        } catch (Exception e) {
+            JSObject res = new JSObject();
+            res.put("notificationsGranted", true);
+            res.put("isIgnoringBatteryOptimizations", false);
+            res.put("error", e.getMessage());
+            call.resolve(res);
+        }
+    }
+
+    @PluginMethod
+    public void requestBatteryOptimizationExemption(PluginCall call) {
+        try {
+            Context context = getContext();
+            android.app.Activity activity = getActivity();
+            String packageName = context.getPackageName();
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                android.os.PowerManager pm = (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                if (pm != null && !pm.isIgnoringBatteryOptimizations(packageName)) {
+                    Intent intent = new Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                    intent.setData(android.net.Uri.parse("package:" + packageName));
+                    boolean started = tryStartActivity(activity, context, intent);
+                    if (!started) {
+                        Intent fallbackIntent = new Intent(android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                        started = tryStartActivity(activity, context, fallbackIntent);
+                    }
+                    JSObject res = new JSObject();
+                    res.put("success", started);
+                    call.resolve(res);
+                    return;
+                }
+            }
+
+            JSObject res = new JSObject();
+            res.put("success", true);
+            res.put("alreadyExempt", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            JSObject res = new JSObject();
+            res.put("success", false);
+            res.put("error", e.getMessage());
+            call.resolve(res);
+        }
+    }
+
+    @PluginMethod
+    public void openOemBatterySettings(PluginCall call) {
+        try {
+            Context context = getContext();
+            android.app.Activity activity = getActivity();
+            String oem = getOemBrand();
+            boolean started = false;
+
+            if (oem.contains("xiaomi") || oem.contains("redmi") || oem.contains("poco")) {
+                Intent intent = new Intent();
+                intent.setComponent(new ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"));
+                started = tryStartActivity(activity, context, intent);
+            } else if (oem.contains("vivo") || oem.contains("iqoo")) {
+                Intent intent = new Intent();
+                intent.setComponent(new ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager"));
+                started = tryStartActivity(activity, context, intent);
+            } else if (oem.contains("oppo") || oem.contains("realme") || oem.contains("oneplus")) {
+                Intent intent = new Intent();
+                intent.setComponent(new ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"));
+                started = tryStartActivity(activity, context, intent);
+            } else if (oem.contains("samsung")) {
+                Intent intent = new Intent();
+                intent.setComponent(new ComponentName("com.samsung.android.lool", "com.samsung.android.sm.ui.battery.BatteryActivity"));
+                started = tryStartActivity(activity, context, intent);
+            }
+
+            if (!started) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                intent.setData(android.net.Uri.parse("package:" + context.getPackageName()));
+                started = tryStartActivity(activity, context, intent);
+            }
+
+            JSObject res = new JSObject();
+            res.put("success", started);
+            res.put("oem", oem);
+            call.resolve(res);
+        } catch (Exception e) {
+            JSObject res = new JSObject();
+            res.put("success", false);
+            res.put("error", e.getMessage());
+            call.resolve(res);
+        }
+    }
+
+    @PluginMethod
     public void isLiveWallpaperActive(PluginCall call) {
         try {
             WallpaperManager wm = WallpaperManager.getInstance(getContext());

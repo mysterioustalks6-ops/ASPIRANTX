@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getStandardSubject, getExamSubjects } from './PyqEngine';
 import { dedupFetch } from '../lib/apiDeduplicator';
+import { getApiUrl } from '../lib/apiConfig';
 import { QuestionBankRecord } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { normalizeExamId } from '../lib/examRegistry';
@@ -127,7 +128,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
       if (token) headers['Authorization'] = `Bearer ${token}`;
       if (userEmail) headers['x-user-email'] = userEmail;
 
-      const res = await fetch('/api/ai/trend-prediction', {
+      const res = await fetch(getApiUrl('/api/ai/trend-prediction'), {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -182,9 +183,9 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
         const statusParam = statusFilter !== 'All' ? `&status=${statusFilter}` : '';
         const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
 
-        const url = `/api/academic/questions?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
+        const url = getApiUrl(`/api/academic/questions?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
           searchQuery
-        )}${subjParam}${typeParam}${statusParam}${langParam}`;
+        )}${subjParam}${typeParam}${statusParam}${langParam}`);
 
         const res = await dedupFetch(url);
         if (res.ok) {
@@ -305,7 +306,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/academic/questions', {
+      const res = await fetch(getApiUrl('/api/academic/questions'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newQuestion),

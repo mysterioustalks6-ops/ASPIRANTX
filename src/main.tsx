@@ -14,7 +14,7 @@ import { initTactileTouchListener } from './lib/haptics.ts';
 const BACKEND_API_ROOT = (
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_API_URL) ||
-  'https://aspirantx.vercel.app'
+  (Capacitor.isNativePlatform() ? 'http://127.0.0.1:3000' : 'https://aspirantx.vercel.app')
 ).replace(/\/$/, '');
 
 if (Capacitor.isNativePlatform()) {

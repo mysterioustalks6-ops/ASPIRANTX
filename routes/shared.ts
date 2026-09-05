@@ -2328,7 +2328,21 @@ export function setCachedAcademicResult(cacheMap: Map<string, { data: any; times
   cacheMap.set(key, { data, timestamp: Date.now() });
 }
 
-export function normalizeQuestionItem(row: any): any { return normalizePyqItem(row); }
+export function normalizeQuestionItem(row: any): any {
+  const item = normalizePyqItem(row);
+  if (item) {
+    if (!item.solutionText && item.explanation) {
+      item.solutionText = item.explanation;
+    }
+    if (!item.type) {
+      item.type = 'mcq';
+    }
+    if (!item.status) {
+      item.status = 'published';
+    }
+  }
+  return item;
+}
 
 export function normalizePyqItem(row: any): any {
   if (!row) return null;

@@ -7,6 +7,7 @@ import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { AdSenseBanner } from './AdSenseBanner';
 import { contentPackageManager } from '../lib/contentPackageManager';
+import { getApiUrl } from '../lib/apiConfig';
 import { 
   BookOpen, 
   Search, 
@@ -227,9 +228,9 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         const diffParam = difficultyFilter !== 'All' ? `&difficulty=${difficultyFilter}` : '';
         const repeatParam = repeatFilter !== 'All' ? `&repeatFilter=${repeatFilter}&minRepeats=${minRepeats}&minYears=${minYears}` : '';
 
-        const url = `/api/academic/pyqs?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
+        const url = getApiUrl(`/api/academic/pyqs?exam=${selectedExam}&page=${page}&limit=${limit}&search=${encodeURIComponent(
           searchQuery
-        )}${langParam}${subjParam}${topicParam}${yearParam}${diffParam}${repeatParam}`;
+        )}${langParam}${subjParam}${topicParam}${yearParam}${diffParam}${repeatParam}`);
 
         const res = await dedupFetch(url, signal ? { signal } : undefined);
         if (res.ok) {
@@ -354,7 +355,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
     const fetchAnalytics = async () => {
       try {
-        const res = await fetch(`/api/academic/pyqs/analytics?exam=${selectedExam}`, { signal: controller.signal });
+        const res = await fetch(getApiUrl(`/api/academic/pyqs/analytics?exam=${selectedExam}`), { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
           if (!controller.signal.aborted && data.success) setAnalyticsData(data.analytics || data);
@@ -366,7 +367,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
     const fetchPdfPapers = async () => {
       try {
-        const url = `/api/academic/pyqs/pdfs?exam=${selectedExam}&search=${encodeURIComponent(searchQuery)}`;
+        const url = getApiUrl(`/api/academic/pyqs/pdfs?exam=${selectedExam}&search=${encodeURIComponent(searchQuery)}`);
         const res = await fetch(url, { signal: controller.signal });
         if (res.ok) {
           const data = await res.json();
@@ -402,7 +403,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
     }
 
     try {
-      const res = await fetch('/api/academic/pyqs', {
+      const res = await fetch(getApiUrl('/api/academic/pyqs'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPyq),

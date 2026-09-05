@@ -46,6 +46,7 @@ import { PomodoroHistoryView } from './PomodoroHistoryView';
 import { ForestGardenView } from './ForestGardenView';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
+import { getApiUrl } from '../lib/apiConfig';
 
 // --- FOREST MILESTONE TIERS (FEATURE C) ---
 interface ForestTier {
@@ -501,6 +502,46 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
   const [showPyqPickerModal, setShowPyqPickerModal] = useState<boolean>(false);
   const [showQbPickerModal, setShowQbPickerModal] = useState<boolean>(false);
   const [showManualQuestionModal, setShowManualQuestionModal] = useState<boolean>(false);
+
+  // Dynamic Picker Data State (real backend datasets)
+  const [pickerPyqs, setPickerPyqs] = useState<any[]>([]);
+  const [pickerPyqsLoading, setPickerPyqsLoading] = useState<boolean>(false);
+  const [pickerQbQuestions, setPickerQbQuestions] = useState<any[]>([]);
+  const [pickerQbLoading, setPickerQbLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (showPyqPickerModal && pickerPyqs.length === 0) {
+      setPickerPyqsLoading(true);
+      fetch(getApiUrl(`/api/academic/pyqs?exam=${encodeURIComponent(selectedExam)}&limit=25`))
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && Array.isArray(d.pyqs)) {
+            setPickerPyqs(d.pyqs);
+          } else {
+            setPickerPyqs(INITIAL_PYQS_DATABASE.slice(0, 10));
+          }
+        })
+        .catch(() => setPickerPyqs(INITIAL_PYQS_DATABASE.slice(0, 10)))
+        .finally(() => setPickerPyqsLoading(false));
+    }
+  }, [showPyqPickerModal, selectedExam, pickerPyqs.length]);
+
+  useEffect(() => {
+    if (showQbPickerModal && pickerQbQuestions.length === 0) {
+      setPickerQbLoading(true);
+      fetch(getApiUrl(`/api/academic/questions?exam=${encodeURIComponent(selectedExam)}&limit=25`))
+        .then(r => r.json())
+        .then(d => {
+          if (d.success && Array.isArray(d.questions)) {
+            setPickerQbQuestions(d.questions);
+          } else {
+            setPickerQbQuestions(INITIAL_QUESTION_BANK.slice(0, 10));
+          }
+        })
+        .catch(() => setPickerQbQuestions(INITIAL_QUESTION_BANK.slice(0, 10)))
+        .finally(() => setPickerQbLoading(false));
+    }
+  }, [showQbPickerModal, selectedExam, pickerQbQuestions.length]);
 
   // Manual Question Form State
   const [mqText, setMqText] = useState<string>('');
@@ -2024,22 +2065,28 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
               </button>
             </div>
 
-            <div className="space-y-2">
-              {INITIAL_PYQS_DATABASE.slice(0, 10).map((pyq) => (
-                <div key={pyq.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold text-purple-400">{pyq.exam} • {pyq.year}</span>
-                    <p className="text-slate-200 font-medium line-clamp-2 mt-0.5">{pyq.questionText}</p>
+            {pickerPyqsLoading ? (
+              <div className="p-8 text-center text-xs text-slate-400 animate-pulse">
+                Loading real previous year questions...
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(pickerPyqs.length > 0 ? pickerPyqs : INITIAL_PYQS_DATABASE.slice(0, 10)).map((pyq) => (
+                  <div key={pyq.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-purple-400">{pyq.exam} • {pyq.year}</span>
+                      <p className="text-slate-200 font-medium line-clamp-2 mt-0.5">{pyq.questionText}</p>
+                    </div>
+                    <button
+                      onClick={() => { handleAttachPyq(pyq); setShowPyqPickerModal(false); }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-500 text-white font-bold text-xs shrink-0"
+                    >
+                      Attach
+                    </button>
                   </div>
-                  <button
-                    onClick={() => { handleAttachPyq(pyq); setShowPyqPickerModal(false); }}
-                    className="px-3 py-1.5 rounded-xl bg-purple-500 text-white font-bold text-xs shrink-0"
-                  >
-                    Attach
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2057,22 +2104,28 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
               </button>
             </div>
 
-            <div className="space-y-2">
-              {INITIAL_QUESTION_BANK.slice(0, 10).map((qb) => (
-                <div key={qb.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold text-cyan-400">{qb.subject} • {qb.topic}</span>
-                    <p className="text-slate-200 font-medium line-clamp-2 mt-0.5">{qb.questionText}</p>
+            {pickerQbLoading ? (
+              <div className="p-8 text-center text-xs text-slate-400 animate-pulse">
+                Loading real Question Bank items...
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(pickerQbQuestions.length > 0 ? pickerQbQuestions : INITIAL_QUESTION_BANK.slice(0, 10)).map((qb) => (
+                  <div key={qb.id} className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-cyan-400">{qb.subject} • {qb.topic}</span>
+                      <p className="text-slate-200 font-medium line-clamp-2 mt-0.5">{qb.questionText}</p>
+                    </div>
+                    <button
+                      onClick={() => { handleAttachQb(qb); setShowQbPickerModal(false); }}
+                      className="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs shrink-0"
+                    >
+                      Attach
+                    </button>
                   </div>
-                  <button
-                    onClick={() => { handleAttachQb(qb); setShowQbPickerModal(false); }}
-                    className="px-3 py-1.5 rounded-xl bg-cyan-500 text-slate-950 font-bold text-xs shrink-0"
-                  >
-                    Attach
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

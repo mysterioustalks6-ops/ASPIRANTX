@@ -17,7 +17,8 @@ import {
   Maximize2, 
   Minimize2, 
   X,
-  AlertCircle
+  AlertCircle,
+  Settings
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { useExam } from '../context/ExamContext';
@@ -33,10 +34,12 @@ import { WALLPAPER_PERSONAS, WallpaperPersona } from '../lib/wallpaperPersonas';
 import { 
   requestSetLiveWallpaper, 
   checkIsLiveWallpaperActive, 
+  fetchWallpaperStatus,
   syncAuthoritativeWallpaperToNative,
   addWallpaperResumeListener,
   isAndroidPlatform
 } from '../lib/nativeWallpaperBridge';
+import { LiveWallpaperSetupModal } from './LiveWallpaperSetupModal';
 import { Capacitor } from '@capacitor/core';
 
 interface ExamWallpaperWidgetProps {
@@ -73,6 +76,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
   const [downloadSuccess, setDownloadSuccess] = useState<boolean>(false);
   const [showPersonaSelector, setShowPersonaSelector] = useState<boolean>(false);
   const [showLiveCompanionModal, setShowLiveCompanionModal] = useState<boolean>(false);
+  const [showSetupModal, setShowSetupModal] = useState<boolean>(false);
 
   // Authoritative State Machine derived strictly from Android OS / WallpaperManager
   const [wallpaperStatus, setWallpaperStatus] = useState<
@@ -102,7 +106,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
       return;
     }
     try {
-      const res = await checkIsLiveWallpaperActive();
+      const res = await fetchWallpaperStatus();
       if (res.isActive) {
         setWallpaperStatus('ACTIVE');
       } else {
@@ -625,16 +629,16 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
             <div className="flex items-center gap-1.5 bg-emerald-950/70 p-1 rounded-xl border border-emerald-500/50">
               <span className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-300">
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Wallpaper Active</span>
+                <span>Live Wallpaper Active</span>
               </span>
               <button
-                onClick={handleSetLiveWallpaper}
-                disabled={isSettingLive}
+                onClick={() => setShowSetupModal(true)}
                 id="btn-manage-live-wallpaper"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
-                title="Change theme or reconfigure live wallpaper"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+                title="Change theme, view permissions, or reconfigure live wallpaper"
               >
-                <span>Manage Wallpaper</span>
+                <Settings className="w-3.5 h-3.5" />
+                <span>Settings</span>
               </button>
             </div>
           ) : wallpaperStatus === 'PREVIEW_OPENED' ? (
@@ -647,34 +651,54 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
               <span>Confirm in Android Preview...</span>
             </button>
           ) : wallpaperStatus === 'REPLACED' || wallpaperStatus === 'INACTIVE' ? (
-            <button
-              onClick={handleSetLiveWallpaper}
-              disabled={isSettingLive}
-              id="btn-set-live-wallpaper"
-              className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-600/30 transition-all cursor-pointer"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Re-activate Live Wallpaper</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleSetLiveWallpaper}
+                disabled={isSettingLive}
+                id="btn-set-live-wallpaper"
+                className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-600/30 transition-all cursor-pointer"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>Re-activate Live Wallpaper</span>
+              </button>
+              <button
+                onClick={() => setShowSetupModal(true)}
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all cursor-pointer"
+                title="Device Compatibility & Setup Options"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+            </div>
           ) : (
-            <button
-              onClick={handleSetLiveWallpaper}
-              disabled={isSettingLive || wallpaperStatus === 'NOT_SUPPORTED'}
-              id="btn-set-live-wallpaper"
-              className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-bold text-xs shadow-lg transition-all cursor-pointer ${
-                wallpaperStatus === 'NOT_SUPPORTED'
-                  ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-cyan-600 via-indigo-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white shadow-cyan-600/30'
-              }`}
-              title={wallpaperStatus === 'NOT_SUPPORTED' ? 'Live wallpaper is a native Android feature. Export HD PNG below.' : 'Set real auto-updating Android home/lockscreen live wallpaper'}
-            >
-              {isSettingLive ? (
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Smartphone className="w-3.5 h-3.5 text-cyan-200" />
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleSetLiveWallpaper}
+                disabled={isSettingLive || wallpaperStatus === 'NOT_SUPPORTED'}
+                id="btn-set-live-wallpaper"
+                className={`flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl font-bold text-xs shadow-lg transition-all cursor-pointer ${
+                  wallpaperStatus === 'NOT_SUPPORTED'
+                    ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-cyan-600 via-indigo-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white shadow-cyan-600/30'
+                }`}
+                title={wallpaperStatus === 'NOT_SUPPORTED' ? 'Live wallpaper is a native Android feature. Export HD PNG below.' : 'Set real auto-updating Android home/lockscreen live wallpaper'}
+              >
+                {isSettingLive ? (
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Smartphone className="w-3.5 h-3.5 text-cyan-200" />
+                )}
+                <span>{wallpaperStatus === 'NOT_SUPPORTED' ? 'Android Live Feature' : 'Set as Live Wallpaper'}</span>
+              </button>
+              {isAndroidPlatform() && (
+                <button
+                  onClick={() => setShowSetupModal(true)}
+                  className="p-2 sm:py-2 sm:px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-all cursor-pointer"
+                  title="Device Settings & Compatibility"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
               )}
-              <span>{wallpaperStatus === 'NOT_SUPPORTED' ? 'Android Live Feature' : 'Set as Live Wallpaper'}</span>
-            </button>
+            </div>
           )}
 
           {/* Generate HD Static Wallpaper */}
@@ -1071,6 +1095,18 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ── Live Wallpaper Setup & OEM Guidance Modal ── */}
+      <LiveWallpaperSetupModal
+        isOpen={showSetupModal}
+        onClose={() => {
+          setShowSetupModal(false);
+          verifyActiveStatus();
+        }}
+        user={user}
+        selectedExam={activeExam}
+        persona={selectedPersona}
+      />
     </div>
   );
 };

@@ -18,9 +18,9 @@ export function getApiUrl(path: string): string {
   if (API_BASE_URL) {
     return `${API_BASE_URL}${cleanPath}`;
   }
-  // If running in native Capacitor (origin is https://localhost without port), point to default local dev host on Android emulator
+  // If running in native Capacitor, point to http://127.0.0.1:3000 (accessible via adb reverse tcp:3000 tcp:3000 on physical devices and emulators)
   if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.()) {
-    return `http://10.0.2.2:3000${cleanPath}`;
+    return `http://127.0.0.1:3000${cleanPath}`;
   }
   return cleanPath;
 }

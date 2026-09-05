@@ -47,10 +47,41 @@ export interface WallpaperPickerResult {
   error?: string;
 }
 
+export type WallpaperStatusCode = 'NOT_SUPPORTED' | 'AVAILABLE_NOT_SET' | 'ACTIVE' | 'ERROR';
+
+export interface WallpaperStatusResult {
+  status: WallpaperStatusCode;
+  isSupported: boolean;
+  isActive: boolean;
+  activePackage?: string | null;
+  activeComponent?: string | null;
+  oem?: string;
+  manufacturer?: string;
+  model?: string;
+  androidVersion?: string;
+  sdkInt?: number;
+  error?: string;
+}
+
+export interface DeviceCapabilitiesResult {
+  notificationsGranted: boolean;
+  isIgnoringBatteryOptimizations: boolean;
+  oem: string;
+  manufacturer?: string;
+  model?: string;
+  androidVersion?: string;
+  sdkInt?: number;
+  error?: string;
+}
+
 export interface AspirantXWallpaperPluginInterface {
   updateWallpaperData(data: CanonicalWallpaperState): Promise<{ success: boolean }>;
   openLiveWallpaperPicker(): Promise<WallpaperPickerResult>;
   isLiveWallpaperActive(): Promise<LiveWallpaperStatusResult>;
+  getWallpaperStatus(): Promise<WallpaperStatusResult>;
+  getDeviceCapabilities(): Promise<DeviceCapabilitiesResult>;
+  requestBatteryOptimizationExemption(): Promise<{ success: boolean; alreadyExempt?: boolean; error?: string }>;
+  openOemBatterySettings(): Promise<{ success: boolean; oem?: string; error?: string }>;
 }
 
 export const AspirantXWallpaper = registerPlugin<AspirantXWallpaperPluginInterface>('AspirantXWallpaper');
@@ -228,6 +259,105 @@ export async function checkIsLiveWallpaperActive(): Promise<LiveWallpaperStatusR
   }
 }
 
+export async function fetchWallpaperStatus(): Promise<WallpaperStatusResult> {
+  try {
+    if (isAndroidPlatform()) {
+      if (typeof AspirantXWallpaper.getWallpaperStatus === 'function') {
+        const res = await AspirantXWallpaper.getWallpaperStatus();
+        return res;
+      }
+      // Fallback to legacy check
+      const legacy = await checkIsLiveWallpaperActive();
+      return {
+        status: legacy.isActive ? 'ACTIVE' : 'AVAILABLE_NOT_SET',
+        isSupported: true,
+        isActive: legacy.isActive,
+        activePackage: legacy.activePackage,
+        activeComponent: legacy.activeService
+      };
+    }
+    return {
+      status: 'NOT_SUPPORTED',
+      isSupported: false,
+      isActive: false
+    };
+  } catch (err) {
+    return {
+      status: 'ERROR',
+      isSupported: false,
+      isActive: false,
+      error: String(err)
+    };
+  }
+}
+
+export async function fetchDeviceCapabilities(): Promise<DeviceCapabilitiesResult> {
+  try {
+    if (isAndroidPlatform() && typeof AspirantXWallpaper.getDeviceCapabilities === 'function') {
+      return await AspirantXWallpaper.getDeviceCapabilities();
+    }
+    return {
+      notificationsGranted: true,
+      isIgnoringBatteryOptimizations: true,
+      oem: 'web'
+    };
+  } catch (err) {
+    return {
+      notificationsGranted: false,
+      isIgnoringBatteryOptimizations: false,
+      oem: 'unknown',
+      error: String(err)
+    };
+  }
+}
+
+export async function requestBatteryExemption(): Promise<{ success: boolean; alreadyExempt?: boolean; error?: string }> {
+  try {
+    if (isAndroidPlatform() && typeof AspirantXWallpaper.requestBatteryOptimizationExemption === 'function') {
+      return await AspirantXWallpaper.requestBatteryOptimizationExemption();
+    }
+    return { success: false, error: 'not_supported' };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+export async function openOemSettings(): Promise<{ success: boolean; oem?: string; error?: string }> {
+  try {
+    if (isAndroidPlatform() && typeof AspirantXWallpaper.openOemBatterySettings === 'function') {
+      return await AspirantXWallpaper.openOemBatterySettings();
+    }
+    return { success: false, error: 'not_supported' };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+}
+
+const WALLPAPER_PROMPT_KEY = 'aspirantx_live_wallpaper_prompt_dismissed_until';
+
+export function shouldPromptWallpaperSetup(): boolean {
+  if (!isAndroidPlatform()) return false;
+  try {
+    const dismissedUntil = localStorage.getItem(WALLPAPER_PROMPT_KEY);
+    if (dismissedUntil) {
+      const time = parseInt(dismissedUntil, 10);
+      if (!isNaN(time) && Date.now() < time) {
+        return false;
+      }
+    }
+    return true;
+  } catch {
+    return true;
+  }
+}
+
+export function markWallpaperSetupDismissed(hours: number = 72): void {
+  try {
+    const until = Date.now() + hours * 60 * 60 * 1000;
+    localStorage.setItem(WALLPAPER_PROMPT_KEY, until.toString());
+  } catch {}
+}
+
 /**
  * Registers a robust app resume listener (Capacitor appStateChange + window focus)
  * so that when the user returns from Android's wallpaper preview or settings,
@@ -255,3 +385,4 @@ export function addWallpaperResumeListener(callback: () => void): () => void {
     if (removeListener) removeListener();
   };
 }
+

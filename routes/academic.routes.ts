@@ -1093,87 +1093,48 @@ router.get('/api/academic/pyqs', async (req, res) => {
 
     if (supabaseServer) {
       try {
-        // 1. Primary: Query pyq_bank with flat columns
-        let query = supabaseServer
-          .from('pyq_bank')
-          .select('*', { count: 'exact' });
+        let jsonbQuery = supabaseServer
+          .from('pyqs')
+          .select('id, data', { count: 'exact' });
 
         if (exam) {
           const cleanExam = exam.replace(/_/g, '%');
-          query = query.or(`exam.ilike.%${exam}%,exam.ilike.%${cleanExam}%`);
+          jsonbQuery = jsonbQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
         }
         if (subject && subject !== 'All') {
-          query = query.ilike('subject', `%${subject}%`);
+          jsonbQuery = jsonbQuery.ilike('data->>subject', `%${subject}%`);
         }
         if (topic && topic !== 'All') {
-          query = query.ilike('topic', `%${topic}%`);
+          jsonbQuery = jsonbQuery.ilike('data->>topic', `%${topic}%`);
+        }
+        if (stage && stage !== 'All') {
+          jsonbQuery = jsonbQuery.eq('data->>stage', stage);
         }
         if (difficulty && difficulty !== 'All') {
-          query = query.eq('difficulty', difficulty);
+          jsonbQuery = jsonbQuery.eq('data->>difficulty', difficulty);
+        }
+        if (language && language !== 'All') {
+          jsonbQuery = jsonbQuery.ilike('data->>language', language);
         }
         if (minYear) {
-          query = query.gte('year', minYear);
+          jsonbQuery = jsonbQuery.gte('data->>year', minYear);
         }
         if (maxYear) {
-          query = query.lte('year', maxYear);
+          jsonbQuery = jsonbQuery.lte('data->>year', maxYear);
         }
         if (search) {
-          query = query.or(`questionText.ilike.%${search}%,topic.ilike.%${search}%`);
+          jsonbQuery = jsonbQuery.or(`data->>questionText.ilike.%${search}%,data->>topic.ilike.%${search}%`);
         }
-
         const offset = (pageNum - 1) * pageLimit;
-        query = query.range(offset, offset + pageLimit - 1);
+        jsonbQuery = jsonbQuery.range(offset, offset + pageLimit - 1);
 
-        const { data: dbData, count: dbCount, error: dbErr } = await query;
-        if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
+        const { data: jData, count: jCount, error: jErr } = await jsonbQuery;
+        if (!jErr && Array.isArray(jData)) {
           fetchedFromDb = true;
-          total = dbCount || dbData.length;
-          items = dbData.map(normalizePyqItem).filter(Boolean);
-        } else {
-          // 2. Secondary fallback: Query pyqs table with JSONB data column
-          let jsonbQuery = supabaseServer
-            .from('pyqs')
-            .select('id, data', { count: 'exact' });
-
-          if (exam) {
-            const cleanExam = exam.replace(/_/g, '%');
-            jsonbQuery = jsonbQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
-          }
-          if (subject && subject !== 'All') {
-            jsonbQuery = jsonbQuery.ilike('data->>subject', `%${subject}%`);
-          }
-          if (topic && topic !== 'All') {
-            jsonbQuery = jsonbQuery.ilike('data->>topic', `%${topic}%`);
-          }
-          if (stage) {
-            jsonbQuery = jsonbQuery.eq('data->>stage', stage);
-          }
-          if (difficulty && difficulty !== 'All') {
-            jsonbQuery = jsonbQuery.eq('data->>difficulty', difficulty);
-          }
-          if (language && language !== 'All') {
-            jsonbQuery = jsonbQuery.ilike('data->>language', language);
-          }
-          if (minYear) {
-            jsonbQuery = jsonbQuery.gte('data->>year', minYear);
-          }
-          if (maxYear) {
-            jsonbQuery = jsonbQuery.lte('data->>year', maxYear);
-          }
-          if (search) {
-            jsonbQuery = jsonbQuery.or(`data->>questionText.ilike.%${search}%,data->>topic.ilike.%${search}%`);
-          }
-          jsonbQuery = jsonbQuery.range(offset, offset + pageLimit - 1);
-
-          const { data: jData, count: jCount, error: jErr } = await jsonbQuery;
-          if (!jErr && Array.isArray(jData) && jData.length > 0) {
-            fetchedFromDb = true;
-            total = jCount || jData.length;
-            items = jData.map(normalizePyqItem).filter(Boolean);
-          }
-        }
-        if (dbErr) {
-          console.warn('[ACADEMIC DB NOTICE] pyq_bank query returned notice:', dbErr.message);
+          total = jCount !== null && jCount !== undefined ? jCount : jData.length;
+          items = jData.map(normalizePyqItem).filter(Boolean);
+        } else if (jErr) {
+          console.warn('[ACADEMIC DB NOTICE] pyqs query notice:', jErr.message);
         }
       } catch (e: any) {
         console.error('[ACADEMIC DB ERROR] /api/academic/pyqs:', e?.message || e);
@@ -1254,6 +1215,7 @@ router.get('/api/academic/pyqs', async (req, res) => {
       page: safePage,
       limit: pageLimit,
       totalPages,
+      hasNextPage: safePage < totalPages,
       pyqs: paginated,
     };
 
@@ -1271,9 +1233,15 @@ router.get('/api/academic/pyqs/:id', async (req, res) => {
       return res.json({ success: true, pyq: pyqStore.get(id) });
     }
     if (supabaseServer) {
-      const { data, error } = await supabaseServer.from('pyqs').select('id, data').eq('id', id).single();
+      const { data, error } = await supabaseServer.from('pyqs').select('id, data').eq('id', id).maybeSingle();
       if (!error && data) {
         const item = normalizePyqItem(data);
+        return res.json({ success: true, pyq: item });
+      }
+      // Fallback check question_bank
+      const { data: qbData } = await supabaseServer.from('question_bank').select('*').eq('id', id).maybeSingle();
+      if (qbData) {
+        const item = normalizePyqItem(qbData);
         return res.json({ success: true, pyq: item });
       }
     }
@@ -1721,69 +1689,77 @@ router.get('/api/academic/questions', async (req, res) => {
 
     if (supabaseServer) {
       try {
-        // 1. Primary: Query question_bank with flat columns
-        let query = supabaseServer
-          .from('question_bank')
-          .select('*', { count: 'exact' });
+        let pyqQuery = supabaseServer
+          .from('pyqs')
+          .select('id, data', { count: 'exact' });
 
         if (exam) {
           const cleanExam = exam.replace(/_/g, '%');
-          query = query.or(`exam.ilike.%${exam}%,exam.ilike.%${cleanExam}%`);
+          pyqQuery = pyqQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
         }
         if (subject && subject !== 'All') {
-          query = query.ilike('subject', `%${subject}%`);
+          pyqQuery = pyqQuery.ilike('data->>subject', `%${subject}%`);
         }
         if (topic && topic !== 'All') {
-          query = query.ilike('topic', `%${topic}%`);
-        }
-        if (type && type !== 'All') {
-          query = query.eq('type', type);
-        }
-        if (status && status !== 'All') {
-          query = query.eq('status', status);
+          pyqQuery = pyqQuery.ilike('data->>topic', `%${topic}%`);
         }
         if (difficulty && difficulty !== 'All') {
-          query = query.eq('difficulty', difficulty);
+          pyqQuery = pyqQuery.eq('data->>difficulty', difficulty);
+        }
+        if (language && language !== 'All') {
+          pyqQuery = pyqQuery.ilike('data->>language', language);
         }
         if (search) {
-          query = query.or(`questionText.ilike.%${search}%,topic.ilike.%${search}%`);
+          pyqQuery = pyqQuery.or(`data->>questionText.ilike.%${search}%,data->>topic.ilike.%${search}%`);
         }
 
         const offset = (pageNum - 1) * pageLimit;
-        query = query.range(offset, offset + pageLimit - 1);
+        pyqQuery = pyqQuery.range(offset, offset + pageLimit - 1);
 
-        const { data: dbData, count: dbCount, error: dbErr } = await query;
-        if (!dbErr && Array.isArray(dbData) && dbData.length > 0) {
+        const { data: pData, count: pCount, error: pErr } = await pyqQuery;
+        if (!pErr && Array.isArray(pData) && (pCount ? pCount > 0 : pData.length > 0)) {
           fetchedFromDb = true;
-          total = dbCount || dbData.length;
-          items = dbData.map(normalizeQuestionItem).filter(Boolean);
+          total = pCount !== null && pCount !== undefined ? pCount : pData.length;
+          items = pData.map(normalizeQuestionItem).filter(Boolean);
         } else {
-          // 2. Secondary fallback: Query pyqs table with JSONB data column
-          let pyqQuery = supabaseServer
-            .from('pyqs')
-            .select('id, data', { count: 'exact' });
+          // Fallback: Check question_bank table if pyqs had no matches
+          let qbQuery = supabaseServer
+            .from('question_bank')
+            .select('*', { count: 'exact' });
 
           if (exam) {
             const cleanExam = exam.replace(/_/g, '%');
-            pyqQuery = pyqQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
+            qbQuery = qbQuery.or(`exam.ilike.%${exam}%,exam.ilike.%${cleanExam}%`);
+          }
+          if (subject && subject !== 'All') {
+            qbQuery = qbQuery.ilike('subject', `%${subject}%`);
+          }
+          if (topic && topic !== 'All') {
+            qbQuery = qbQuery.ilike('topic', `%${topic}%`);
+          }
+          if (type && type !== 'All') {
+            qbQuery = qbQuery.eq('type', type);
+          }
+          if (status && status !== 'All') {
+            qbQuery = qbQuery.eq('status', status);
           }
           if (difficulty && difficulty !== 'All') {
-            pyqQuery = pyqQuery.eq('data->>difficulty', difficulty);
+            qbQuery = qbQuery.eq('difficulty', difficulty);
           }
-          if (language && language !== 'All') {
-            pyqQuery = pyqQuery.ilike('data->>language', language);
+          if (search) {
+            qbQuery = qbQuery.or(`questionText.ilike.%${search}%,topic.ilike.%${search}%`);
           }
-          pyqQuery = pyqQuery.range(offset, offset + pageLimit - 1);
+          qbQuery = qbQuery.range(offset, offset + pageLimit - 1);
 
-          const { data: pData, count: pCount, error: pErr } = await pyqQuery;
-          if (!pErr && Array.isArray(pData) && pData.length > 0) {
+          const { data: qbData, count: qbCount, error: qbErr } = await qbQuery;
+          if (!qbErr && Array.isArray(qbData) && qbData.length > 0) {
             fetchedFromDb = true;
-            total = pCount || pData.length;
-            items = pData.map(normalizeQuestionItem).filter(Boolean);
+            total = qbCount || qbData.length;
+            items = qbData.map(normalizeQuestionItem).filter(Boolean);
           }
         }
-        if (dbErr) {
-          console.warn('[ACADEMIC DB NOTICE] question_bank query notice:', dbErr.message);
+        if (pErr) {
+          console.warn('[ACADEMIC DB NOTICE] pyqs query notice in /questions:', pErr.message);
         }
       } catch (e: any) {
         console.error('[ACADEMIC DB ERROR] /api/academic/questions:', e?.message || e);
@@ -1842,6 +1818,7 @@ router.get('/api/academic/questions', async (req, res) => {
       page: safePage,
       limit: pageLimit,
       totalPages,
+      hasNextPage: safePage < totalPages,
       questions: paginated,
     };
 
@@ -1859,15 +1836,16 @@ router.get('/api/academic/questions/:id', async (req, res) => {
       return res.json({ success: true, question: questionBankStore.get(id) });
     }
     if (supabaseServer) {
-      const { data, error } = await supabaseServer.from('question_bank').select('*').eq('id', id).maybeSingle();
-      if (!error && data) {
-        const item = normalizeQuestionItem(data);
-        return res.json({ success: true, question: item });
-      }
-      // Fallback check pyqs table
+      // 1. Primary: check pyqs table (where 26k questions live)
       const { data: pyqData, error: pyqErr } = await supabaseServer.from('pyqs').select('id, data').eq('id', id).maybeSingle();
       if (!pyqErr && pyqData) {
         const item = normalizeQuestionItem(pyqData);
+        return res.json({ success: true, question: item });
+      }
+      // 2. Secondary: check question_bank table (for custom qb_ questions)
+      const { data, error } = await supabaseServer.from('question_bank').select('*').eq('id', id).maybeSingle();
+      if (!error && data) {
+        const item = normalizeQuestionItem(data);
         return res.json({ success: true, question: item });
       }
     }
@@ -2235,27 +2213,52 @@ router.get('/api/academic/search', async (req, res) => {
         s.topic.toLowerCase().includes(q)
     );
 
-    const pyqMatches = Array.from(pyqStore.values()).filter(
-      (p) =>
-        p.questionText.toLowerCase().includes(q) ||
-        p.subject.toLowerCase().includes(q) ||
-        p.topic.toLowerCase().includes(q)
-    );
+    let pyqMatches: any[] = [];
+    let pyqTotal = 0;
+    let questionMatches: any[] = [];
+    let questionTotal = 0;
 
-    const questionMatches = Array.from(questionBankStore.values()).filter(
-      (qb) =>
-        qb.questionText.toLowerCase().includes(q) ||
-        qb.subject.toLowerCase().includes(q) ||
-        qb.topic.toLowerCase().includes(q)
-    );
+    if (supabaseServer) {
+      try {
+        const { data: pData, count: pCount } = await supabaseServer
+          .from('pyqs')
+          .select('id, data', { count: 'exact' })
+          .or(`data->>questionText.ilike.%${q}%,data->>topic.ilike.%${q}%,data->>subject.ilike.%${q}%`)
+          .limit(10);
+        if (pData) {
+          pyqMatches = pData.map(normalizePyqItem).filter(Boolean);
+          pyqTotal = pCount !== null && pCount !== undefined ? pCount : pyqMatches.length;
+          questionMatches = pData.map(normalizeQuestionItem).filter(Boolean);
+          questionTotal = pyqTotal;
+        }
+      } catch (e) {}
+    }
+
+    if (pyqMatches.length === 0) {
+      pyqMatches = Array.from(pyqStore.values()).filter(
+        (p) =>
+          p.questionText.toLowerCase().includes(q) ||
+          p.subject.toLowerCase().includes(q) ||
+          p.topic.toLowerCase().includes(q)
+      );
+      pyqTotal = pyqMatches.length;
+
+      questionMatches = Array.from(questionBankStore.values()).filter(
+        (qb) =>
+          qb.questionText.toLowerCase().includes(q) ||
+          qb.subject.toLowerCase().includes(q) ||
+          qb.topic.toLowerCase().includes(q)
+      );
+      questionTotal = questionMatches.length;
+    }
 
     res.json({
       success: true,
       query: q,
       counts: {
         syllabus: syllabusMatches.length,
-        pyqs: pyqMatches.length,
-        questions: questionMatches.length,
+        pyqs: pyqTotal,
+        questions: questionTotal,
       },
       syllabus: syllabusMatches.slice(0, 10),
       pyqs: pyqMatches.slice(0, 10),

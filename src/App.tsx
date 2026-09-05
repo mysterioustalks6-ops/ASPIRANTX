@@ -41,6 +41,8 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileDrawer } from './components/MobileDrawer';
 import { ReminderSettingsModal } from './components/ReminderSettingsModal';
 import { ExamWallpaperWidget } from './components/ExamWallpaperWidget';
+import { LiveWallpaperSetupModal } from './components/LiveWallpaperSetupModal';
+import { shouldPromptWallpaperSetup, fetchWallpaperStatus, isAndroidPlatform } from './lib/nativeWallpaperBridge';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
 import { contentPackageManager } from './lib/contentPackageManager';
@@ -237,7 +239,30 @@ function AppContent() {
   const [showCompanionWidget, setShowCompanionWidget] = useState<boolean>(true);
   const [isCompanionMinimized, setIsCompanionMinimized] = useState<boolean>(false);
   const [showReminderSettingsModal, setShowReminderSettingsModal] = useState<boolean>(false);
+  const [showWallpaperSetupModal, setShowWallpaperSetupModal] = useState<boolean>(false);
   const [customizer, setCustomizer] = useState<AppCustomizerSettings>(loadCustomizerSettings());
+
+  // Proactive non-intrusive setup prompt for Android live wallpaper
+  useEffect(() => {
+    if (user && isAndroidPlatform() && shouldPromptWallpaperSetup()) {
+      const timer = setTimeout(async () => {
+        try {
+          const wp = await fetchWallpaperStatus();
+          if (wp.isSupported && !wp.isActive) {
+            setShowWallpaperSetupModal(true);
+          }
+        } catch {}
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
+  // Global listener for opening wallpaper setup modal
+  useEffect(() => {
+    const handleOpenWallpaperSetup = () => setShowWallpaperSetupModal(true);
+    window.addEventListener('aspirantx_open_wallpaper_setup', handleOpenWallpaperSetup);
+    return () => window.removeEventListener('aspirantx_open_wallpaper_setup', handleOpenWallpaperSetup);
+  }, []);
 
   // Background check for daily study reminder trigger (1 per day, non-intrusive)
   useEffect(() => {
@@ -1793,6 +1818,16 @@ function AppContent() {
         setActiveTab={handleSelectTab}
         onOpenMore={() => setIsMobileDrawerOpen(true)}
       />
+
+      {/* Universal Android Live Wallpaper Setup Modal */}
+      {user && (
+        <LiveWallpaperSetupModal
+          isOpen={showWallpaperSetupModal}
+          onClose={() => setShowWallpaperSetupModal(false)}
+          user={user}
+          selectedExam={selectedExam}
+        />
+      )}
     </div>
       </SecurityWrapper>
     </ErrorBoundary>
