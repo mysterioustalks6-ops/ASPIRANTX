@@ -13,8 +13,8 @@ Prior to this audit, AspirantX exhibited fragmented and inconsistent download/in
 In accordance with product requirements:
 1. **Inside the authenticated application**: Zero Download sections, zero APK cards, zero redundant install prompts, and zero duplicate three-dot download actions remain.
 2. **On the public landing page**: Exactly ONE canonical, version-backed Download CTA has been established for desktop and mobile visitors.
-3. **Single Source of Truth**: All app release and download parameters are consolidated in [src/config/appRelease.ts](file:///c:/Users/AMBUJ%20YADAV/Documents/Aspirantx/src/config/appRelease.ts) (`version: 2.4.0`, `apkDownloadUrl: '/aspirantx.apk'`).
-4. **Android Native Alignment**: `android/app/build.gradle` has been synchronized to `versionName "2.4.0"` (from stale `"1.0"`).
+3. **Single Source of Truth**: All app release and download parameters are consolidated in [src/config/appRelease.ts](file:///c:/Users/AMBUJ%20YADAV/Documents/Aspirantx/src/config/appRelease.ts) (`version: 2.4.1`, `apkDownloadUrl: '/aspirantx.apk'`).
+4. **Android Native Alignment**: `android/app/build.gradle` has been synchronized to `versionName "2.4.1"` and `versionCode 2`.
 
 ---
 
@@ -59,12 +59,12 @@ In accordance with product requirements:
 
 | Component / Layer | Version Before Audit | Version After Audit | Source of Truth Alignment |
 |---|---|---|---|
-| `package.json` | `2.4.0` | `2.4.0` | Canonical web application version |
-| `server.ts` / `routes/shared.ts` | `2.4.0` | `2.4.0` | Canonical backend API version |
-| `android/app/build.gradle` (`versionName`) | `1.0` (Stale default) | `2.4.0` | Synchronized with release specification |
-| `android/app/build.gradle` (`versionCode`) | `1` | `1` | Native build sequence identifier |
-| `src/config/appRelease.ts` | *Did not exist* | `2.4.0` | **NEW Single Source of Truth** for frontend distribution |
-| `VersionUpdateNotifier.tsx` | `v1.0.0+` (Hardcoded) | `v2.4.0+` | Dynamically consumed from `CANONICAL_APP_RELEASE` |
+| `package.json` | `2.4.0` | `2.4.1` | Canonical web application version |
+| `server.ts` / `routes/shared.ts` | `2.4.0` | `2.4.1` | Canonical backend API version |
+| `android/app/build.gradle` (`versionName`) | `1.0` (Stale default) | `2.4.1` | Synchronized with release specification |
+| `android/app/build.gradle` (`versionCode`) | `1` | `2` | Native build sequence identifier |
+| `src/config/appRelease.ts` | *Did not exist* | `2.4.1` | **NEW Single Source of Truth** for frontend distribution |
+| `VersionUpdateNotifier.tsx` | `v1.0.0+` (Hardcoded) | `v2.4.1+` | Dynamically consumed from `CANONICAL_APP_RELEASE` |
 | Public Static File | `public/aspirantx.apk` | `public/aspirantx.apk` | Canonical download binary served statically via Vercel / server |
 
 ---
@@ -86,14 +86,14 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.4.0',
-  versionCode: 1,
+  version: '2.4.1',
+  versionCode: 2,
   apkDownloadUrl: '/aspirantx.apk',
   apkFileName: 'AspirantX.apk',
-  releaseDate: 'September 2026',
+  releaseDate: 'September 5, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'Offline Habit Wallpaper Engine, 35-Yr PYQ archive, CBT Mock Simulator, and AI Study Mentor.',
+  releaseNotes: '26k+ PYQ & Question Bank live connection, Native Dynamic Streak Wallpaper, CBT Mock Simulator, and AI Study Mentor.',
 };
 ```
 
@@ -105,7 +105,7 @@ The public landing page ([src/components/LandingPage.tsx](file:///c:/Users/AMBUJ
 
 - **Exact Location**: Top Navigation Bar Header (`<header>`) of `LandingPage.tsx`.
 - **Element ID**: `#landing-download-app-btn`
-- **Label**: `Download App v2.4.0` (responsive: `App v2.4.0` on ultra-compact mobile viewports).
+- **Label**: `Download App v2.4.1` (responsive: `App v2.4.1` on ultra-compact mobile viewports).
 - **Target Destination**: `CANONICAL_APP_RELEASE.apkDownloadUrl` (`/aspirantx.apk`), named `AspirantX.apk`.
 - **Duplicate Removed**: The secondary hero download link (`#hero-download-app-link`) was removed to enforce a strictly singular, non-competing public CTA.
 
@@ -155,7 +155,7 @@ The following non-download subsystems were audited and preserved without alterat
 ## 9. Final Acceptance Checklist
 
 - [x] One canonical public Download/Get App location exists (`LandingPage.tsx` header)
-- [x] One canonical current version source exists (`src/config/appRelease.ts` -> `2.4.0`)
+- [x] One canonical current version source exists (`src/config/appRelease.ts` -> `2.4.1`)
 - [x] One canonical download destination exists (`/aspirantx.apk`)
 - [x] Authenticated app has NO Download section
 - [x] Student sidebar has NO Download
@@ -177,7 +177,7 @@ All remaining references across the repository have been inspected and classifie
 | Term / Match | Location | Classification | Description |
 |---|---|---|---|
 | `#landing-download-app-btn` | `src/components/LandingPage.tsx` | **A) Canonical public download** | The ONE primary public Download CTA in the landing page navbar |
-| `CANONICAL_APP_RELEASE` | `src/config/appRelease.ts` | **A) Canonical public download** | Single source of truth defining version `2.4.0` and `/aspirantx.apk` |
+| `CANONICAL_APP_RELEASE` | `src/config/appRelease.ts` | **A) Canonical public download** | Single source of truth defining version `2.4.1` and `/aspirantx.apk` |
 | `/aspirantx.apk` static file | `public/aspirantx.apk` | **A) Canonical public download** | The static release APK binary served to users clicking the canonical CTA |
 | `public/manifest.json` | `public/manifest.json` | **B) PWA/browser install** | Standard browser PWA web application manifest |
 | `public/sw.js` | `public/sw.js` | **B) PWA/browser install** | Service Worker for offline asset caching and PWA performance |
@@ -188,7 +188,7 @@ All remaining references across the repository have been inspected and classifie
 | `Export Wallpaper` | `src/components/ExamWallpaperWidget.tsx` | **C) Educational/content download** | High-res custom study countdown lockscreen wallpaper PNG export |
 | `Download Attachment` | `src/components/CommunityChat.tsx` | **C) Educational/content download** | Student study group document attachment download |
 | `DownloadCloud` | `src/components/GoogleSheetImportModal.tsx`| **D) Admin/release tooling** | Educator/Admin Google Sheets syllabus curriculum fetch |
-| `defaultConfig.versionName` | `android/app/build.gradle` | **D) Admin/release tooling** | Native Android application release configuration (`2.4.0`) |
+| `defaultConfig.versionName` | `android/app/build.gradle` | **D) Admin/release tooling** | Native Android application release configuration (`2.4.1`) |
 | `Native APK Fallback` comments | `PyqEngine.tsx`, `QuestionBankEngine.tsx`, `main.tsx` | **D) Admin/release tooling** | Architectural runtime environment comments for Capacitor WebView |
 | `AppDownloadModal.tsx` | `src/components/AppDownloadModal.tsx` | **E) Decommissioned / Unrendered** | Unmounted legacy modal file; removed from App.tsx rendering tree |
 

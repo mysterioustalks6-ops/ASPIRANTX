@@ -11,11 +11,8 @@ import {
   Maximize, 
   Minimize, 
   LayoutGrid, 
-  Menu,
-  Download
+  Menu
 } from 'lucide-react';
-import { Capacitor } from '@capacitor/core';
-import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { NotificationCenter } from './NotificationCenter';
 
 interface HeaderProps {
@@ -327,20 +324,6 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {isFullscreen ? <Minimize className="w-4 h-4 text-sky-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
         </button>
-
-        {/* Download App direct button for Web Users */}
-        {!Capacitor.isNativePlatform() && (
-          <a
-            href={CANONICAL_APP_RELEASE.apkDownloadUrl}
-            download={CANONICAL_APP_RELEASE.apkFileName}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600/30 to-teal-600/30 hover:from-emerald-600/50 hover:to-teal-600/50 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all shadow-sm cursor-pointer"
-            title={`Download AspirantX Android App (.APK v${CANONICAL_APP_RELEASE.version})`}
-          >
-            <Download className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">Get App</span>
-            <span className="sm:hidden text-[11px]">App</span>
-          </a>
-        )}
 
         {/* Notification Bell */}
         <NotificationCenter 

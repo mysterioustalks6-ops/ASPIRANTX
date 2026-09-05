@@ -89,6 +89,24 @@ async function startServer() {
     });
   });
 
+  // Canonical Release APK Endpoints with strict anti-stale cache headers
+  const apkDownloadHandler = (_req: express.Request, res: express.Response) => {
+    const apkPath = path.join(__dirname, 'public', 'aspirantx.apk');
+    if (fs.existsSync(apkPath)) {
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      res.setHeader('Content-Disposition', 'attachment; filename="AspirantX.apk"');
+      res.sendFile(apkPath);
+    } else {
+      res.status(404).send('Release APK Not Found');
+    }
+  };
+
+  app.get('/aspirantx.apk', apkDownloadHandler);
+  app.get('/AspirantX.apk', apkDownloadHandler);
+  app.get('/AspirantX-v2.4.1.apk', apkDownloadHandler);
+  app.get('/api/download/apk', apkDownloadHandler);
+
   // Mount Feature Routers
   app.use(academicRoutes);
   app.use(communityRoutes);
