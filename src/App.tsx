@@ -377,34 +377,34 @@ function AppContent() {
     if (!user) return;
     
     const examLabel = user.exam || 'Competitive Exams';
-    let title = `AspirantX - Prep Suite for ${examLabel}`;
-    let description = `Prepare for ${examLabel} on AspirantX. Practice custom CBT test series, mock exams, previous year question papers (PYQs), track syllabus, and study with an interactive AI Mentor.`;
+    let title = `ProTrack - Prep Suite for ${examLabel}`;
+    let description = `Prepare for ${examLabel} on ProTrack. Practice custom CBT test series, mock exams, previous year question papers (PYQs), track syllabus, and study with an interactive AI Mentor.`;
     
     switch (activeTab) {
       case 'syllabus':
-        title = `Syllabus Tracker & Progress Chart for ${examLabel} - AspirantX`;
+        title = `Syllabus Tracker & Progress Chart for ${examLabel} - ProTrack`;
         description = `Track your ${examLabel} syllabus topics, subtopics, and preparation logs in real-time. Optimize your speed and accuracy.`;
         break;
       case 'pyq':
-        title = `${examLabel} Previous Year Questions (PYQs) Engine - AspirantX`;
+        title = `${examLabel} Previous Year Questions (PYQs) Engine - ProTrack`;
         description = `Browse, filter, and practice past year questions (PYQ papers) for ${examLabel} with deep explanation solutions.`;
         break;
       case 'cbt':
       case 'cbt_exam':
-        title = `CBT Mock Exams & Practice Tests for ${examLabel} - AspirantX`;
+        title = `CBT Mock Exams & Practice Tests for ${examLabel} - ProTrack`;
         description = `Attempt online computer-based test series, full mocks, and section-wise papers for ${examLabel} in a simulated CBT interface.`;
         break;
       case 'leaderboard':
-        title = `${examLabel} Student Leaderboard & Ranks - AspirantX`;
+        title = `${examLabel} Student Leaderboard & Ranks - ProTrack`;
         description = `See where you stand in the state and national rankings for ${examLabel} preparation. Earn badges, coins, and levels.`;
         break;
       case 'chat':
       case 'study_buddy':
-        title = `AI Study Buddy & Mentor for ${examLabel} - AspirantX`;
+        title = `AI Study Buddy & Mentor for ${examLabel} - ProTrack`;
         description = `Resolve doubts instantly, generate tailored quizzes, and analyze difficult syllabus topics for ${examLabel} with our AI study buddy.`;
         break;
       default:
-        title = `${examLabel} Prep Dashboard & Curriculum - AspirantX`;
+        title = `${examLabel} Prep Dashboard & Curriculum - ProTrack`;
         break;
     }
     
@@ -1066,9 +1066,9 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-slate-100">
         <div className="w-12 h-12 rounded-2xl bg-[#00FF94]/10 border border-[#00FF94]/30 flex items-center justify-center font-black text-[#00FF94] animate-pulse text-lg mb-4 shadow-[0_0_20px_rgba(0,255,148,0.3)]">
-          AX
+          PT
         </div>
-        <p className="text-xs text-slate-400 font-medium">Initializing AspirantX Platform...</p>
+        <p className="text-xs text-slate-400 font-medium">Initializing ProTrack Platform...</p>
       </div>
     );
   }
@@ -1474,7 +1474,7 @@ function AppContent() {
               {(activeTab === 'cbt' || activeTab === 'cbt_exam') && (
                 <PremiumGate
                   featureName="cbt"
-                  featureTitle="AspirantX All-India Mock Test & CBT Simulator"
+                  featureTitle="ProTrack All-India Mock Test & CBT Simulator"
                   isUserPremium={user.isPremium || isAdmin}
                   isAdmin={isAdmin}
                   isGuest={user.isGuest}

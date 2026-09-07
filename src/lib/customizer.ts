@@ -26,10 +26,10 @@ export interface AppCustomizerSettings {
 }
 
 export const DEFAULT_CUSTOMIZER_SETTINGS: AppCustomizerSettings = {
-  brandName: 'ASPIRANTX',
-  brandTagline: 'Gen-Z Prep Suite (Class 1 - Ph.D.)',
+  brandName: 'PROTRACK',
+  brandTagline: 'Precision Exam Prep & Progress Suite',
   brandBadge: 'PRO',
-  logoIconText: 'AX',
+  logoIconText: 'PT',
   logoUrl: '',
   
   themePalette: 'CYBER_EMERALD',

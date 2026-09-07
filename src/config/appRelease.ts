@@ -17,10 +17,10 @@ export interface AppReleaseConfig {
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
   version: '2.4.2',
   versionCode: 3,
-  apkDownloadUrl: '/aspirantx.apk',
-  apkFileName: 'AspirantX.apk',
+  apkDownloadUrl: '/protrack.apk',
+  apkFileName: 'ProTrack.apk',
   releaseDate: 'September 7, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'Streamlined secure login flow, 26k+ PYQ & Question Bank live connection, Native Dynamic Streak Wallpaper, CBT Mock Simulator, and AI Study Mentor.',
+  releaseNotes: 'Rebranded to ProTrack: Streamlined secure login flow, 26k+ PYQ & Question Bank live connection, Native Dynamic Streak Wallpaper, CBT Mock Simulator, and AI Study Mentor.',
 };

@@ -421,7 +421,7 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
   const handleResetToDefault = () => {
     const def = resetWorkspaceToDefault(userId);
     setConfig(def);
-    setSaveSuccessMsg('Restored default AspirantX workspace!');
+    setSaveSuccessMsg('Restored default ProTrack workspace!');
     setTimeout(() => setSaveSuccessMsg(null), 1500);
   };
 
@@ -606,7 +606,7 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                   <button
                     onClick={handleResetToDefault}
                     className="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center gap-1 font-semibold transition-colors"
-                    title="Reset to default AspirantX layout"
+                    title="Reset to default ProTrack layout"
                   >
                     <RotateCcw className="w-3 h-3" /> Reset
                   </button>
@@ -908,10 +908,10 @@ export const WorkspaceCustomizer: React.FC<WorkspaceCustomizerProps> = ({
                 <div className="p-4 rounded-3xl bg-slate-950 border border-slate-800/80 shadow-inner space-y-4">
                   <div className="flex items-center gap-2.5 pb-3 border-b border-slate-800/80">
                     <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-white text-xs shadow-md shadow-indigo-600/30">
-                      AX
+                      PT
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-white">ASPIRANTX</h4>
+                      <h4 className="text-xs font-bold text-white">PROTRACK</h4>
                       <p className="text-[10px] text-slate-400 font-medium">My Custom Workspace</p>
                     </div>
                   </div>

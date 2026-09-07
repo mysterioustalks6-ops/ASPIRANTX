@@ -116,7 +116,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     {
       title: 'Account & Perks',
       items: [
-        { id: 'premium' as ActiveTab, label: 'AspirantX PRO Access', icon: Crown, badge: 'PRO' },
+        { id: 'premium' as ActiveTab, label: 'ProTrack PRO Access', icon: Crown, badge: 'PRO' },
         { id: 'reward_milestones' as ActiveTab, label: 'Study Milestones', icon: Gift },
         { id: 'wallpaper' as ActiveTab, label: 'Habit Wallpaper', icon: Smartphone, badge: 'HD' },
       ]
@@ -148,10 +148,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             <div className="p-4 border-b border-slate-800/80 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-xs shadow-md shadow-sky-600/25">
-                  {customizer?.logoIconText || 'AX'}
+                  {customizer?.logoIconText || 'PT'}
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-100">{customizer?.brandName || 'ASPIRANTX'}</h2>
+                  <h2 className="text-sm font-bold text-slate-100">{customizer?.brandName || 'PROTRACK'}</h2>
                   <p className="text-[11px] text-slate-400">Complete Mobile Navigation</p>
                 </div>
               </div>

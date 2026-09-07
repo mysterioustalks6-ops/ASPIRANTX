@@ -520,7 +520,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
       ctx.fill();
 
       const dataUrl = canvas.toDataURL('image/png');
-      const filename = `AspirantX_${activeExam}_${selectedPersona.id}_Wallpaper.png`;
+      const filename = `ProTrack_${activeExam}_${selectedPersona.id}_Wallpaper.png`;
 
       // Check if running inside native Android Capacitor APK
       const { Capacitor } = await import('@capacitor/core');
@@ -539,7 +539,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
           // Open Android native Share dialog (allows user to select 'Use as wallpaper' / 'Photos' / 'Gallery')
           await Share.share({
             title: `Set ${cleanExamTitle} Wallpaper`,
-            text: `AspirantX ${cleanExamTitle} countdown and progress wallpaper`,
+            text: `ProTrack ${cleanExamTitle} countdown and progress wallpaper`,
             url: savedFile.uri,
             dialogTitle: 'Set as Lockscreen / Homescreen Wallpaper'
           });
@@ -1041,18 +1041,18 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
                   { step: 2, icon: '👆', title: 'Long Press Karen', desc: 'Home screen pe empty jagah pe 2 sec hold karein' },
                   { step: 3, icon: '🖼️', title: '"Wallpaper" Option Select Karein', desc: 'Menu mein "Wallpapers" ya "Wallpaper & Style" pe tap karein' },
                   { step: 4, icon: '🎬', title: '"Live Wallpapers" Tab Open Karein', desc: 'Static wallpapers wali screen mein "Live" ya "Animated" tab pe tap karein' },
-                  { step: 5, icon: '⚡', title: 'AspirantX Select Karein', desc: 'List mein "AspirantX" dhundhein aur select karein, phir "Set Wallpaper" tap karein' },
+                  { step: 5, icon: '⚡', title: 'ProTrack Select Karein', desc: 'List mein "ProTrack" dhundhein aur select karein, phir "Set Wallpaper" tap karein' },
                 ] : oemInfo?.isXiaomiDevice ? [
                   { step: 1, icon: '🏠', title: 'Home Screen pe jayen', desc: 'App close karein' },
                   { step: 2, icon: '👆', title: 'Home Screen Long Press', desc: 'Empty area pe 2 second hold karein' },
                   { step: 3, icon: '🖼️', title: '"Wallpaper" Pe Tap Karein', desc: 'Bottom menu se "Wallpaper" select karein' },
                   { step: 4, icon: '🎬', title: '"Live Wallpapers" Category Chunein', desc: '"Live Wallpapers" section dhundhein' },
-                  { step: 5, icon: '⚡', title: 'AspirantX Select Karein', desc: 'AspirantX wallpaper pe tap karein aur "Apply" karein' },
+                  { step: 5, icon: '⚡', title: 'ProTrack Select Karein', desc: 'ProTrack wallpaper pe tap karein aur "Apply" karein' },
                 ] : [
                   { step: 1, icon: '⚙️', title: 'Settings Open Karein', desc: 'Phone Settings app open karein' },
                   { step: 2, icon: '🖼️', title: 'Wallpaper Setting Dhundhein', desc: '"Wallpaper" ya "Display > Wallpaper" option dhundhein' },
                   { step: 3, icon: '🎬', title: 'Live Wallpapers Select Karein', desc: '"Live Wallpapers" ya "Animated Wallpapers" pe tap karein' },
-                  { step: 4, icon: '⚡', title: 'AspirantX Chunein', desc: 'List mein AspirantX dhundhein aur "Set Wallpaper" karein' },
+                  { step: 4, icon: '⚡', title: 'ProTrack Chunein', desc: 'List mein ProTrack dhundhein aur "Set Wallpaper" karein' },
                 ]).map(({ step, icon, title, desc }) => (
                   <div key={step} className="flex items-start gap-3">
                     <div className="w-7 h-7 rounded-full bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center flex-shrink-0 text-xs font-black text-indigo-300">
@@ -1069,7 +1069,7 @@ export const ExamWallpaperWidget: React.FC<ExamWallpaperWidgetProps> = ({
               {/* Tip */}
               <div className="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-2.5 mb-4">
                 <p className="text-[11px] text-indigo-300 font-medium">
-                  💡 <strong>Tip:</strong> AspirantX live wallpaper already install hai aur ready hai — sirf system picker se select karna hai.
+                  💡 <strong>Tip:</strong> ProTrack live wallpaper already install hai aur ready hai — sirf system picker se select karna hai.
                 </p>
               </div>
 

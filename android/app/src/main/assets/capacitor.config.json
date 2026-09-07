@@ -1,6 +1,6 @@
 {
 	"appId": "com.aspirantx.app",
-	"appName": "AspirantX",
+	"appName": "ProTrack",
 	"webDir": "dist",
 	"bundledWebRuntime": false,
 	"server": {

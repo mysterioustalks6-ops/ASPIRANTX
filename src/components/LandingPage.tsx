@@ -217,12 +217,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-violet-500 p-0.5 shadow-lg shadow-sky-500/20">
             <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center font-black text-white text-lg">
-              AX
+              PT
             </div>
           </div>
           <div>
             <h1 className="font-black text-lg tracking-widest text-white">
-              ASPIRANT<span className="text-sky-400">X</span>
+              PRO<span className="text-sky-400">TRACK</span>
             </h1>
             <p className="text-[10px] text-slate-500 font-semibold tracking-widest uppercase">Precision Exam Prep</p>
           </div>
@@ -236,7 +236,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             href={CANONICAL_APP_RELEASE.apkDownloadUrl}
             download={CANONICAL_APP_RELEASE.apkFileName}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold text-xs transition-all duration-200 shadow-sm"
-            title={`Download AspirantX Android App (.APK v${CANONICAL_APP_RELEASE.version})`}
+            title={`Download ProTrack Android App (.APK v${CANONICAL_APP_RELEASE.version})`}
           >
             <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span className="hidden sm:inline">Download App</span>
@@ -350,7 +350,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
             </div>
             <span className="text-[11px] font-mono text-slate-400 truncate">
-              aspirantx.in/workspace • NEET / UPSC / JEE Prep
+              protrack.in/workspace • NEET / UPSC / JEE Prep
             </span>
             <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
               Live Demo
@@ -535,7 +535,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/60 py-8 text-center text-xs text-slate-500 relative z-10">
-        <p>© 2026 AspirantX — Precision Exam Preparation Platform. UPSC · NEET · JEE · SSC · GATE · Defence Exams.</p>
+        <p>© 2026 ProTrack — Precision Exam Preparation Platform. UPSC · NEET · JEE · SSC · GATE · Defence Exams.</p>
       </footer>
 
       {/* Email / Password Sign In & Sign Up Modal */}
@@ -555,7 +555,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                   </div>
                   <div>
                     <h3 className="font-bold text-slate-100 text-sm">
-                      {authMode === 'signin' ? 'Sign In to AspirantX' : 'Create Student Account'}
+                      {authMode === 'signin' ? 'Sign In to ProTrack' : 'Create Student Account'}
                     </h3>
                     <p className="text-[11px] text-slate-400">Secure access to your study workspace</p>
                   </div>

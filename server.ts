@@ -91,17 +91,22 @@ app.get('/api/version', (_req, res) => {
 
 // Canonical Release APK Endpoints with strict anti-stale cache headers
 const apkDownloadHandler = (_req: express.Request, res: express.Response) => {
-  const apkPath = path.join(__dirname, 'public', 'aspirantx.apk');
+  const protrackPath = path.join(__dirname, 'public', 'protrack.apk');
+  const aspirantxPath = path.join(__dirname, 'public', 'aspirantx.apk');
+  const apkPath = fs.existsSync(protrackPath) ? protrackPath : aspirantxPath;
   if (fs.existsSync(apkPath)) {
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-    res.setHeader('Content-Disposition', 'attachment; filename="AspirantX.apk"');
+    res.setHeader('Content-Disposition', 'attachment; filename="ProTrack.apk"');
     res.sendFile(apkPath);
   } else {
     res.status(404).send('Release APK Not Found');
   }
 };
 
+app.get('/protrack.apk', apkDownloadHandler);
+app.get('/ProTrack.apk', apkDownloadHandler);
+app.get('/ProTrack-v2.4.2.apk', apkDownloadHandler);
 app.get('/aspirantx.apk', apkDownloadHandler);
 app.get('/AspirantX.apk', apkDownloadHandler);
 app.get('/AspirantX-v2.4.2.apk', apkDownloadHandler);

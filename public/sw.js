@@ -1,6 +1,6 @@
 const CACHE_VERSION = 'v2.4.2';
-const CACHE_NAME = `aspirantx-static-${CACHE_VERSION}`;
-const API_CACHE_NAME = `aspirantx-api-${CACHE_VERSION}`;
+const CACHE_NAME = `protrack-static-${CACHE_VERSION}`;
+const API_CACHE_NAME = `protrack-api-${CACHE_VERSION}`;
 
 const STATIC_ASSETS = [
   '/',

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.aspirantx.app',
-  appName: 'AspirantX',
+  appName: 'ProTrack',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {

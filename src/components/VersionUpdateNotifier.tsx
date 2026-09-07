@@ -57,7 +57,7 @@ export const VersionUpdateNotifier: React.FC = () => {
           </div>
           <div className="min-w-0">
             <h4 className="text-xs font-black text-white tracking-tight flex items-center gap-1.5">
-              <span>New AspirantX Update Live!</span>
+              <span>New ProTrack Update Live!</span>
               <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-[#00FF94]/20 text-[#00FF94] border border-[#00FF94]/40">v{CANONICAL_APP_RELEASE.version}+</span>
             </h4>
             <p className="text-[11px] text-slate-300 font-medium truncate">

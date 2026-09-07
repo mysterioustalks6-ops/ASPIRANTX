@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">AspirantX</string>
-    <string name="title_activity_main">AspirantX</string>
+    <string name="app_name">ProTrack</string>
+    <string name="title_activity_main">ProTrack</string>
     <string name="package_name">com.aspirantx.app</string>
     <string name="custom_url_scheme">com.aspirantx.app</string>
-    <string name="wallpaper_name">AspirantX Exam Progress Wallpaper</string>
-    <string name="wallpaper_description">Dynamic habit countdown and exam preparation tracker powered by AspirantX.</string>
+    <string name="wallpaper_name">ProTrack Exam Progress Wallpaper</string>
+    <string name="wallpaper_description">Dynamic habit countdown and exam preparation tracker powered by ProTrack.</string>
 </resources>

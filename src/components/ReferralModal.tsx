@@ -44,10 +44,10 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({
   const referralCode = user.referralCode || generateReferralCode(user.id);
   const shareUrl = `${window.location.origin}?ref=${referralCode}`;
   const whatsappShareText = encodeURIComponent(
-    `🚀 Hey! Join me on AspirantX - the ultimate study platform for Class 1 to Ph.D. & Competitive Exams!\n\nUse my Referral Code: *${referralCode}* to get 150 FREE Bonus Coins + 1 Day PRO Pass!\n\nJoin here: ${shareUrl}`
+    `🚀 Hey! Join me on ProTrack - the ultimate study platform for Class 1 to Ph.D. & Competitive Exams!\n\nUse my Referral Code: *${referralCode}* to get 150 FREE Bonus Coins + 1 Day PRO Pass!\n\nJoin here: ${shareUrl}`
   );
   const telegramShareText = encodeURIComponent(
-    `🚀 Join me on AspirantX! Use my Referral Code ${referralCode} to claim 150 Free Coins & PRO Pass.`
+    `🚀 Join me on ProTrack! Use my Referral Code ${referralCode} to claim 150 Free Coins & PRO Pass.`
   );
 
   const handleCopyCode = () => {

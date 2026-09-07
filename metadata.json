@@ -1,5 +1,5 @@
 {
-  "name": "AspirantX - UPSC/SSC Prep",
+  "name": "ProTrack - Exam Prep & Progress Suite",
   "description": "Gen-Z aesthetic SaaS platform for UPSC & SSC aspirants with smart syllabus tracking, pomodoro study timers, AI study chat mentor, task manager, and motivational daily quotes.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
