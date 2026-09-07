@@ -49,7 +49,7 @@ const INITIAL_MESSAGES: Record<RoomName, RoomMessage[]> = {
       id: 'm1',
       room: 'UPSC Room',
       senderId: 'bot',
-      senderName: 'AspirantX Bot',
+      senderName: 'ProTrack Bot',
       isBot: true,
       text: 'Welcome to the UPSC CSE Room! I am your AI Room Moderator. Ask me anything about GS syllabus, Laxmikanth, or PYQs by tagging @bot in your message!',
       timestamp: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -87,7 +87,7 @@ const INITIAL_MESSAGES: Record<RoomName, RoomMessage[]> = {
       id: 'm4',
       room: 'SSC Room',
       senderId: 'bot',
-      senderName: 'AspirantX Bot',
+      senderName: 'ProTrack Bot',
       isBot: true,
       text: 'Welcome to SSC CGL/CHSL Preparation Zone! Share speed-math tricks, English idioms, or general awareness notes here.',
       timestamp: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -109,7 +109,7 @@ const INITIAL_MESSAGES: Record<RoomName, RoomMessage[]> = {
       id: 'm6',
       room: 'Current Affairs Hub',
       senderId: 'bot',
-      senderName: 'AspirantX Bot',
+      senderName: 'ProTrack Bot',
       isBot: true,
       text: 'Daily Editorial Summary: Today Highlights include COP29 Climate Summit updates & RBI Monetary Policy Review.',
       timestamp: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -121,7 +121,7 @@ const INITIAL_MESSAGES: Record<RoomName, RoomMessage[]> = {
       id: 'm7',
       room: 'Optional Subjects',
       senderId: 'bot',
-      senderName: 'AspirantX Bot',
+      senderName: 'ProTrack Bot',
       isBot: true,
       text: 'Optional Peer Discussion Group. Post answer outlines for peer-review & quote philosophers/scholars!',
       timestamp: new Date(Date.now() - 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -326,7 +326,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
             id: `bot_msg_${Date.now()}`,
             room: activeRoom,
             senderId: 'bot',
-            senderName: 'AspirantX Bot',
+            senderName: 'ProTrack Bot',
             isBot: true,
             text: botData.reply,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -418,7 +418,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
               </p>
 
               <p className="text-xs text-slate-300 mt-4 leading-relaxed">
-                AspirantX maintains zero-tolerance for NSFW content, explicit language, or abusive behavior in study rooms. Your message was withheld and flagged in the Security Audit Log.
+                ProTrack maintains zero-tolerance for NSFW content, explicit language, or abusive behavior in study rooms. Your message was withheld and flagged in the Security Audit Log.
               </p>
 
               <button
@@ -514,7 +514,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
           {/* AI Moderator Room Badge Card */}
           <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-950/40 via-slate-900 to-cyan-950/40 border border-emerald-500/30 text-xs space-y-2">
             <div className="flex items-center gap-2 font-bold text-emerald-400">
-              <Bot className="w-4 h-4" /> @AspirantX Bot Guide
+              <Bot className="w-4 h-4" /> @ProTrack Bot Guide
             </div>
             <p className="text-[11px] text-slate-300 leading-relaxed">
               Tag <code className="bg-emerald-950 px-1 py-0.5 rounded border border-emerald-500/40 text-emerald-300">@bot</code> in your message to summon the AI moderator for instant explanations, mnemonics, or PYQ analysis.
@@ -703,7 +703,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
                 </div>
                 <div className="p-3 rounded-2xl bg-slate-900 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 animate-spin text-emerald-400" />
-                  <span>@AspirantX Bot is formulating study insights...</span>
+                  <span>@ProTrack Bot is formulating study insights...</span>
                 </div>
               </motion.div>
             )}

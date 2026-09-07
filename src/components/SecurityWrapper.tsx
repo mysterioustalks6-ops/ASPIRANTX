@@ -156,7 +156,7 @@ export const SecurityWrapper: React.FC<SecurityWrapperProps> = ({
           </span>
           <h2 className="text-xl font-black text-white">Access Denied (Copy Protection)</h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            AspirantX has detected an action violating the copyright protection terms ({violationType}). 
+            ProTrack has detected an action violating the copyright protection terms ({violationType}). 
             To resume your preparation, please close all Developer Tools / Print windows and refresh this tab.
           </p>
         </div>
@@ -172,7 +172,7 @@ export const SecurityWrapper: React.FC<SecurityWrapperProps> = ({
   }
 
   // Draw semi-transparent screenshot protection watermarks
-  const watermarkText = `${user.email || 'guest@aspirantx.com'} • IP: 192.168.1.107 • SECURE PORTAL`;
+  const watermarkText = `${user.email || 'guest@protrack.app'} • IP: 192.168.1.107 • SECURE PORTAL`;
 
   return (
     <div className="relative w-full h-full">

@@ -473,10 +473,10 @@ export let globalAdminSettings = {
     ]
   },
   customizer: {
-    brandName: 'ASPIRANTX',
-    brandTagline: 'Gen-Z Prep Suite (Class 1 - Ph.D.)',
+    brandName: 'PROTRACK',
+    brandTagline: 'Precision Exam Prep & Progress Suite',
     brandBadge: 'PRO',
-    logoIconText: 'AX',
+    logoIconText: 'PT',
     logoUrl: '',
     themePalette: 'CYBER_EMERALD',
     fontFamily: 'PLUS_JAKARTA',
@@ -990,7 +990,7 @@ if (rewardMilestonesStore.size === 0) {
     {
       id: 'ms_kit_01',
       title: 'UPSC/SSC Elite Aspirant Study Kit & T-Shirt',
-      description: 'Receive an official AspirantX premium cotton hoodie, highlighters, notebook set, and success planner delivered to your home.',
+      description: 'Receive an official ProTrack premium cotton hoodie, highlighters, notebook set, and success planner delivered to your home.',
       rewardType: 'merch',
       rewardLabel: 'Deluxe Study Kit & T-Shirt',
       requiredVerifiedMinutes: 3000,
@@ -1070,7 +1070,7 @@ export const DEFAULT_EDUCATORS_LIST: EducatorRecord[] = [
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
     isVerified: true,
     status: 'APPROVED',
-    email: 'siddharth.arora@aspirantx.in',
+    email: 'siddharth.arora@protrack.app',
     bio: 'Senior UPSC Polity faculty & advocate supreme court',
     availability: ['Today, 6:00 PM', 'Tomorrow, 9:00 AM', 'Tomorrow, 5:00 PM', '12 Aug, 11:00 AM', '13 Aug, 4:00 PM'],
     rating: 4.8,
@@ -1088,7 +1088,7 @@ export const DEFAULT_EDUCATORS_LIST: EducatorRecord[] = [
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
     isVerified: true,
     status: 'APPROVED',
-    email: 'mrunal.patel@aspirantx.in',
+    email: 'mrunal.patel@protrack.app',
     bio: 'Pioneer of UPSC Economy simplified lectures & handouts',
     availability: ['Today, 7:00 PM', 'Tomorrow, 2:00 PM', '13 Aug, 10:00 AM', '14 Aug, 6:00 PM'],
     rating: 4.9,
@@ -1138,7 +1138,7 @@ export const DEFAULT_PODCASTS_LIST: TopperPodcastRecord[] = [
     audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     duration: '18:45',
     description: 'Priya shares tips on drawing hand-made maps, highlighting map locations in paper 2, and scoring 290+ in Geography optional.',
-    booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by DR Khullar', 'AspirantX Reference Library Map Notes']
+    booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by DR Khullar', 'ProTrack Reference Library Map Notes']
   }
 ];
 
@@ -1244,7 +1244,7 @@ export let adminUsersDb: any[] = [
   {
     id: 'usr-rahul-02',
     name: 'Rahul Sharma (Aspirant)',
-    email: 'rahul.upsc2026@aspirantx.in',
+    email: 'rahul.upsc2026@protrack.app',
     avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
     exam: 'UPSC CSE 2026',
     stateName: 'Delhi NCR',
@@ -1351,7 +1351,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-2',
     name: 'Priya Sharma',
-    email: 'priya.content@aspirantx.in',
+    email: 'priya.content@protrack.app',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
     title: 'Academic Director & Chief Content Officer',
     role: 'ACADEMIC_LEAD',
@@ -1371,7 +1371,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-3',
     name: 'Vikram Malhotra',
-    email: 'vikram.finance@aspirantx.in',
+    email: 'vikram.finance@protrack.app',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
     title: 'Head of Billing & Payment Operations',
     role: 'FINANCE_MANAGER',
@@ -1391,7 +1391,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-4',
     name: 'Sneha Verma',
-    email: 'sneha.community@aspirantx.in',
+    email: 'sneha.community@protrack.app',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80',
     title: 'Community Lead & Student Support Specialist',
     role: 'COMMUNITY_LEAD',
@@ -1411,7 +1411,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-5',
     name: 'Rohan Mehta',
-    email: 'rohan.tech@aspirantx.in',
+    email: 'rohan.tech@protrack.app',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80',
     title: 'Lead Systems Architect & DevOps',
     role: 'TECH_LEAD',
@@ -1435,7 +1435,7 @@ export let adminTasksStore: any[] = [
     id: 'task-1',
     title: 'Review 12 Pending UTR Bank Transfers',
     description: 'Verify screenshot attachments and approve manual PRO Pass upgrades for pending UPI transactions.',
-    assignedTo: 'vikram.finance@aspirantx.in',
+    assignedTo: 'vikram.finance@protrack.app',
     assignedToName: 'Vikram Malhotra',
     module: 'FINANCE',
     priority: 'HIGH',
@@ -1447,7 +1447,7 @@ export let adminTasksStore: any[] = [
     id: 'task-2',
     title: 'Moderate Reported Answer Key Discussion #101',
     description: 'Check flagged polity comment regarding Article 226 vs Article 32 writ jurisdiction in Community Forum.',
-    assignedTo: 'sneha.community@aspirantx.in',
+    assignedTo: 'sneha.community@protrack.app',
     assignedToName: 'Sneha Verma',
     module: 'COMMUNITY',
     priority: 'MEDIUM',
@@ -1459,7 +1459,7 @@ export let adminTasksStore: any[] = [
     id: 'task-3',
     title: 'Upload UPSC Prelims 2026 Mock Test #5 Question Paper',
     description: 'Format and review 100 GS-1 questions with detailed explanations and syllabus mappings.',
-    assignedTo: 'priya.content@aspirantx.in',
+    assignedTo: 'priya.content@protrack.app',
     assignedToName: 'Priya Sharma',
     module: 'CONTENT',
     priority: 'HIGH',
@@ -1471,7 +1471,7 @@ export let adminTasksStore: any[] = [
     id: 'task-4',
     title: 'Audit System Health Logs & Rate Limiting Thresholds',
     description: 'Run full Watchdog vulnerability scan and check Razorpay webhook SSL certificate validation.',
-    assignedTo: 'rohan.tech@aspirantx.in',
+    assignedTo: 'rohan.tech@protrack.app',
     assignedToName: 'Rohan Mehta',
     module: 'TECH',
     priority: 'LOW',
@@ -1873,6 +1873,14 @@ export function loadAdminStoreFromDisk() {
         const store = JSON.parse(raw);
         if (store.globalAdminSettings) {
           globalAdminSettings = mergeAdminSettings(globalAdminSettings, store.globalAdminSettings);
+          if (globalAdminSettings?.customizer) {
+            if (!globalAdminSettings.customizer.brandName || globalAdminSettings.customizer.brandName.toUpperCase() === 'ASPIRANTX') {
+              globalAdminSettings.customizer.brandName = 'PROTRACK';
+            }
+            if (!globalAdminSettings.customizer.logoIconText || globalAdminSettings.customizer.logoIconText.toUpperCase() === 'AX') {
+              globalAdminSettings.customizer.logoIconText = 'PT';
+            }
+          }
         }
         if (Array.isArray(store.featureFlagsStore)) featureFlagsStore = store.featureFlagsStore;
         if (Array.isArray(store.orders)) {
@@ -2044,7 +2052,7 @@ export function seedDefaultSponsorshipTiers() {
         id: 'tier_title',
         name: 'Title Sponsor',
         priceRange: 'INR 75,000 / month',
-        benefits: ['Exclusive Title Branding across AspirantX', 'Custom Sponsored CBT Mock Test Series', 'Direct Internship & Hiring Channel for Aspirants', 'Primary Logo on All Exam Engine Banners'],
+        benefits: ['Exclusive Title Branding across ProTrack', 'Custom Sponsored CBT Mock Test Series', 'Direct Internship & Hiring Channel for Aspirants', 'Primary Logo on All Exam Engine Banners'],
         sortOrder: 3,
         isActive: true,
         createdAt: new Date().toISOString()
@@ -2063,7 +2071,7 @@ export function seedDefaultSponsorshipTiers() {
         logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80',
         websiteUrl: 'https://example.com/edutech',
         tierName: 'Education Champion',
-        testimonial: 'Partnering with AspirantX empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.',
+        testimonial: 'Partnering with ProTrack empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.',
         createdAt: new Date().toISOString()
       }
     ];
@@ -2292,7 +2300,7 @@ export function getSystemInstructionForMode(mode: string, exam: string, summary?
       modeSpecificPrompt = `You are a former Civil Service Board Member for UPSC Personality Test. Ask realistic, probing DAF (Detailed Application Form) and current affairs questions. Guide the candidate on balanced stance, articulate tone, administrative diplomacy, and body language presentation.`;
       break;
     default:
-      modeSpecificPrompt = `You are AspirantX AI Mentor, an elite, encouraging, high-precision study assistant for ${exam}. Provide ultra-structured, concise, exam-focused answers using bullet points, markdown formatting, LaTeX formulas, and key constitutional articles where applicable.`;
+      modeSpecificPrompt = `You are ProTrack AI Mentor, an elite, encouraging, high-precision study assistant for ${exam}. Provide ultra-structured, concise, exam-focused answers using bullet points, markdown formatting, LaTeX formulas, and key constitutional articles where applicable.`;
   }
 
   let fullPrompt = `${modeSpecificPrompt}\n\nMaintain a disciplined, encouraging, clear, and highly structured tone. Format answers using clean Markdown with headers, lists, code blocks, or KaTeX math expressions (e.g. \\alpha, \\frac{a}{b}) where appropriate.`;

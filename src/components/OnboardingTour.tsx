@@ -115,7 +115,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             <Sparkles className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <h3 className="text-base font-black text-white">🚀 AspirantX Quickstart Checklist ({completedCount}/{steps.length} Completed)</h3>
+            <h3 className="text-base font-black text-white">🚀 ProTrack Quickstart Checklist ({completedCount}/{steps.length} Completed)</h3>
             <p className="text-xs text-slate-400">Discover essential ranker tools & setup your optimal study workflow</p>
           </div>
         </div>

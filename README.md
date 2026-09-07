@@ -1,8 +1,8 @@
-# 🎯 AspirantX — Complete UPSC & Competitive Exam Preparation Platform
+# 🎯 ProTrack — Precision Exam Prep & Progress Suite
 
 <div align="center">
 
-![AspirantX](https://img.shields.io/badge/AspirantX-v1.0-brightgreen?style=for-the-badge)
+![ProTrack](https://img.shields.io/badge/ProTrack-v2.4.2-brightgreen?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase)

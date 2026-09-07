@@ -71,7 +71,7 @@ export const AppCustomizerModal: React.FC<AppCustomizerModalProps> = ({
     setSettings(DEFAULT_CUSTOMIZER_SETTINGS);
     saveCustomizerSettings(DEFAULT_CUSTOMIZER_SETTINGS);
     if (onSettingsSaved) onSettingsSaved(DEFAULT_CUSTOMIZER_SETTINGS);
-    setSaveSuccessMsg('Restored default AspirantX theme!');
+    setSaveSuccessMsg('Restored default ProTrack theme!');
     setTimeout(() => setSaveSuccessMsg(null), 1500);
   };
 

@@ -370,7 +370,7 @@ router.post('/api/admin/watchdog/diagnose-fix', adminMutationLimiter, verifyAdmi
     };
 
     if (ai) {
-      const prompt = `You are AspirantX AI Watchdog, an elite site-reliability engineering AI.
+      const prompt = `You are ProTrack AI Watchdog, an elite site-reliability engineering AI.
 An error incident was logged in the application.
 Service: ${service}
 Error Message: "${message}"

@@ -13,7 +13,7 @@ export async function sendTransactionalEmail(
 
   try {
     const resend = new Resend(apiKey);
-    const from = process.env.RESEND_FROM_EMAIL || 'AspirantX Support <onboarding@resend.dev>';
+    const from = process.env.RESEND_FROM_EMAIL || 'ProTrack Support <onboarding@resend.dev>';
     
     const result = await resend.emails.send({
       from,

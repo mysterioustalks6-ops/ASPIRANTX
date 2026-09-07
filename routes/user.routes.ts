@@ -1334,7 +1334,7 @@ router.post('/api/payments/razorpay-order', paymentRateLimiter, async (req, res)
     enabled: validKey,
     realOrderCreated,
     environment: razorpayConfig.environment || 'test',
-    name: 'AspirantX Pro Membership',
+    name: 'ProTrack Pro Membership',
     description: `Upgrade for ${userEmail || userName || 'Aspirant'}`,
     message: validKey
       ? 'Razorpay active'
@@ -2525,7 +2525,7 @@ router.post('/api/auth/token', async (req, res) => {
       email: verifiedEmail,
       role: assignedRole,
       isPremium: userIsPremium,
-      iss: 'aspirantx-auth-server',
+      iss: 'protrack-auth-server',
     },
     JWT_SECRET,
     { expiresIn: '7d' }

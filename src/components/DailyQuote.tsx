@@ -43,7 +43,7 @@ export const DailyQuoteCard: React.FC = () => {
 
   const handleShare = () => {
     if (quote) {
-      const textToCopy = `"${quote.text}" — ${quote.author} (via AspirantX)`;
+      const textToCopy = `"${quote.text}" — ${quote.author} (via ProTrack)`;
       navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

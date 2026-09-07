@@ -246,7 +246,7 @@ router.post('/api/gemini/moderate', async (req, res) => {
     } else {
       const ai = getGeminiClient();
       if (ai) {
-        const systemInstruction = `You are AspirantX AI Security Guard, an automated content moderation engine for a student UPSC/SSC study application.
+        const systemInstruction = `You are ProTrack AI Security Guard, an automated content moderation engine for a student UPSC/SSC study application.
 Analyze the input string (message text or attachment filename).
 Detect any NSFW content, sexual explicitness, hate speech, severe profanity, harassment, or dangerous material.
 You MUST reply ONLY with a valid JSON object matching this schema:
@@ -354,7 +354,7 @@ router.post('/api/gemini/bot-moderator', async (req, res) => {
       return res.json({ reply: demoReply });
     }
 
-    const systemInstruction = `You are @AspirantX Bot, the official AI Room Moderator and Study Assistant in the ${room} community chat room for UPSC Civil Services & SSC aspirants.
+    const systemInstruction = `You are @ProTrack Bot, the official AI Room Moderator and Study Assistant in the ${room} community chat room for UPSC Civil Services & SSC aspirants.
 - Address the user (@${user}) directly.
 - Provide crisp, authoritative, exam-relevant study insights, PYQ tips, or concept explanations.
 - Use bullet points, mnemonic tricks, and an encouraging tone.
@@ -401,11 +401,11 @@ router.post('/api/gemini/chat', async (req, res) => {
 
     if (!ai) {
       // Return smart simulated response if API key is not yet set
-      const demoReply = `[AspirantX AI Mentor (${exam})]: Great query regarding ${exam}! I see you asked: "${message}". Remember to correlate static concepts (like Laxmikanth or NCERTs) with current affairs from The Hindu / PIB. For detailed answer evaluation or custom notes generation, attach your outline!`;
+      const demoReply = `[ProTrack AI Mentor (${exam})]: Great query regarding ${exam}! I see you asked: "${message}". Remember to correlate static concepts (like Laxmikanth or NCERTs) with current affairs from The Hindu / PIB. For detailed answer evaluation or custom notes generation, attach your outline!`;
       return res.json({ reply: demoReply });
     }
 
-    const systemInstruction = `You are AspirantX AI Mentor, an elite, encouraging, high-precision study assistant for ${exam} (UPSC Civil Services & SSC Exams).
+    const systemInstruction = `You are ProTrack AI Mentor, an elite, encouraging, high-precision study assistant for ${exam} (UPSC Civil Services & SSC Exams).
 - Provide ultra-structured, concise, exam-focused answers.
 - Use bullet points, mnemonic devices, key constitutional articles, and PYQ trends where applicable.
 - Adopt a Gen-Z motivational, disciplined yet empathetic tone. Use modern formatting with markdown headers and code blocks if appropriate.`;
@@ -439,7 +439,7 @@ router.get('/api/ai/conversations', async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const emailQuery = (req.query.email as string) || '';
-    const targetEmail = (verifiedUser?.email || emailQuery || 'guest@aspirantx.in').trim().toLowerCase();
+    const targetEmail = (verifiedUser?.email || emailQuery || 'guest@protrack.app').trim().toLowerCase();
 
     const conversations: AiConversationRecord[] = [];
     for (const [_, conv] of aiConversationsDb.entries()) {
@@ -465,7 +465,7 @@ router.post('/api/ai/conversations', async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const { title = 'New AI Study Session', exam = 'UPSC_CSE', mode = 'general', userEmail: bodyEmail } = req.body;
-    const targetEmail = (verifiedUser?.email || bodyEmail || 'guest@aspirantx.in').trim().toLowerCase();
+    const targetEmail = (verifiedUser?.email || bodyEmail || 'guest@protrack.app').trim().toLowerCase();
 
     const id = `conv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const now = new Date().toISOString();
@@ -590,7 +590,7 @@ router.post('/api/ai/stream', async (req, res) => {
     userEmail: bodyEmail,
   } = req.body;
 
-  const targetEmail = (verifiedUser?.email || bodyEmail || 'guest@aspirantx.in').trim().toLowerCase();
+  const targetEmail = (verifiedUser?.email || bodyEmail || 'guest@protrack.app').trim().toLowerCase();
 
   // Premium Feature Flag Enforcement
   const chatFlag = featureFlagsStore.find((f) => f.feature_name === 'chat');
@@ -655,7 +655,7 @@ router.post('/api/ai/stream', async (req, res) => {
 
   if (!ai) {
     // Simulated SSE Stream when API key is not active
-    const simulatedResponse = `[AspirantX AI Mentor (${mode.toUpperCase()} - ${exam})]\n\n` +
+    const simulatedResponse = `[ProTrack AI Mentor (${mode.toUpperCase()} - ${exam})]\n\n` +
       `**Analysis & Guidance for Query:**\n\n"${cleanInput}"\n\n` +
       `1. **Core Concept Overview**: In ${exam} preparation, analyzing this query requires combining static fundamentals (NCERT / standard textbooks) with current policy updates.\n` +
       `2. **Key Keywords**: Make sure to incorporate key terminology, relevant Constitutional Articles (or equations/data), and Supreme Court judgments.\n` +

@@ -82,7 +82,7 @@ export const PodcastSeries: React.FC = () => {
           audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
           duration: '18:45',
           description: 'Priya shares tips on drawing hand-made maps, highlighting map locations in paper 2, and scoring 290+ in Geography optional.',
-          booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by DR Khullar', 'AspirantX Reference Library Map Notes']
+          booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by DR Khullar', 'ProTrack Reference Library Map Notes']
         },
         {
           id: 'p3',

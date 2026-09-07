@@ -166,7 +166,7 @@ export const LiveWallpaperSetupModal: React.FC<LiveWallpaperSetupModalProps> = (
                   <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold">Universal Flow</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                  Make AspirantX Your Live Wallpaper
+                  Make ProTrack Your Live Wallpaper
                 </h2>
                 <p className="text-xs text-slate-300 leading-relaxed">
                   Display your live exam countdown, daily study matrix, and habit streak directly on your Android Home &amp; Lock Screen.
@@ -219,7 +219,7 @@ export const LiveWallpaperSetupModal: React.FC<LiveWallpaperSetupModalProps> = (
                   <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 flex items-center gap-3">
                     <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     <div className="text-xs text-emerald-200">
-                      <p className="font-bold">AspirantX is your active Live Wallpaper!</p>
+                      <p className="font-bold">ProTrack is your active Live Wallpaper!</p>
                       <p className="text-[11px] text-emerald-300/80 mt-0.5">
                         Your home screen wallpaper updates automatically when you complete habits or switch personas.
                       </p>
@@ -332,23 +332,23 @@ export const LiveWallpaperSetupModal: React.FC<LiveWallpaperSetupModalProps> = (
                   <div className="mt-1.5 p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-300 space-y-2">
                     {oemBrand.includes('vivo') ? (
                       <p>
-                        <strong>Vivo (Funtouch OS / OriginOS):</strong> If the live wallpaper picker does not show directly, long press your home screen &rarr; select <em>Wallpapers</em> &rarr; <em>Live Wallpapers</em> &rarr; choose <em>AspirantX</em>.
+                        <strong>Vivo (Funtouch OS / OriginOS):</strong> If the live wallpaper picker does not show directly, long press your home screen &rarr; select <em>Wallpapers</em> &rarr; <em>Live Wallpapers</em> &rarr; choose <em>ProTrack</em>.
                       </p>
                     ) : oemBrand.includes('xiaomi') || oemBrand.includes('redmi') || oemBrand.includes('poco') ? (
                       <p>
-                        <strong>Xiaomi (MIUI / HyperOS):</strong> Long press home screen &rarr; tap Wallpaper &rarr; Live Wallpapers &rarr; select AspirantX. Enable Autostart in Security app if you wish notifications to fire reliably.
+                        <strong>Xiaomi (MIUI / HyperOS):</strong> Long press home screen &rarr; tap Wallpaper &rarr; Live Wallpapers &rarr; select ProTrack. Enable Autostart in Security app if you wish notifications to fire reliably.
                       </p>
                     ) : oemBrand.includes('samsung') ? (
                       <p>
-                        <strong>Samsung (One UI):</strong> Long press home screen &rarr; <em>Wallpaper and style</em> &rarr; <em>Change wallpapers</em> &rarr; <em>Live Wallpapers</em> &rarr; choose <em>AspirantX</em>.
+                        <strong>Samsung (One UI):</strong> Long press home screen &rarr; <em>Wallpaper and style</em> &rarr; <em>Change wallpapers</em> &rarr; <em>Live Wallpapers</em> &rarr; choose <em>ProTrack</em>.
                       </p>
                     ) : oemBrand.includes('oppo') || oemBrand.includes('realme') || oemBrand.includes('oneplus') ? (
                       <p>
-                        <strong>Oppo / Realme / OnePlus (ColorOS / OxygenOS):</strong> Long press home screen &rarr; Wallpapers &rarr; Live &rarr; select AspirantX.
+                        <strong>Oppo / Realme / OnePlus (ColorOS / OxygenOS):</strong> Long press home screen &rarr; Wallpapers &rarr; Live &rarr; select ProTrack.
                       </p>
                     ) : (
                       <p>
-                        <strong>Stock Android / Pixel / Motorola:</strong> Long press home screen &rarr; Wallpaper &amp; style &rarr; Live Wallpapers &rarr; select AspirantX.
+                        <strong>Stock Android / Pixel / Motorola:</strong> Long press home screen &rarr; Wallpaper &amp; style &rarr; Live Wallpapers &rarr; select ProTrack.
                       </p>
                     )}
                     <button

@@ -131,13 +131,13 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
       }).then((vite) => {
         app.use(vite.middlewares);
         app.listen(PORT, '0.0.0.0', () => {
-          console.log(`[SERVER] AspirantX Enterprise Backend listening at http://0.0.0.0:${PORT}`);
+          console.log(`[SERVER] ProTrack Enterprise Backend listening at http://0.0.0.0:${PORT}`);
         });
       });
     }).catch(err => {
       console.error('[SERVER] Vite dev server error:', err);
       app.listen(PORT, '0.0.0.0', () => {
-        console.log(`[SERVER] AspirantX Enterprise Backend fallback listening at http://0.0.0.0:${PORT}`);
+        console.log(`[SERVER] ProTrack Enterprise Backend fallback listening at http://0.0.0.0:${PORT}`);
       });
     });
   } else {
@@ -147,7 +147,7 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
       res.sendFile(path.join(distPath, 'index.html'));
     });
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`[SERVER] AspirantX Enterprise Backend listening at http://0.0.0.0:${PORT}`);
+      console.log(`[SERVER] ProTrack Enterprise Backend listening at http://0.0.0.0:${PORT}`);
     });
   }
 }

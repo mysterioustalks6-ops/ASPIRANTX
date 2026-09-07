@@ -48,13 +48,28 @@ export const DEFAULT_CUSTOMIZER_SETTINGS: AppCustomizerSettings = {
   announcementText: '🔥 New Syllabus Templates added for UPPSC, Bihar Board, Class 10/12 PCM & Ph.D. Entrance! Customize your goal in Profile.',
 };
 
-const STORAGE_KEY = 'aspirantx_customizer_settings_v1';
+const STORAGE_KEY = 'protrack_customizer_settings_v2';
+const LEGACY_STORAGE_KEY = 'aspirantx_customizer_settings_v1';
+
+function normalizeSettings(data: any): AppCustomizerSettings {
+  const merged: AppCustomizerSettings = { ...DEFAULT_CUSTOMIZER_SETTINGS, ...data };
+  if (!merged.brandName || merged.brandName.toUpperCase() === 'ASPIRANTX') {
+    merged.brandName = 'PROTRACK';
+  }
+  if (!merged.logoIconText || merged.logoIconText.toUpperCase() === 'AX') {
+    merged.logoIconText = 'PT';
+  }
+  return merged;
+}
 
 export function loadCustomizerSettings(): AppCustomizerSettings {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (raw) {
-      return { ...DEFAULT_CUSTOMIZER_SETTINGS, ...JSON.parse(raw) };
+      const parsed = JSON.parse(raw);
+      const normalized = normalizeSettings(parsed);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+      return normalized;
     }
   } catch (e) {
     console.warn('Failed to load customizer settings', e);
@@ -68,7 +83,7 @@ export async function fetchServerCustomizerSettings(): Promise<AppCustomizerSett
     if (res.ok) {
       const data = await res.json();
       if (data?.customizer) {
-        const merged = { ...DEFAULT_CUSTOMIZER_SETTINGS, ...data.customizer };
+        const merged = normalizeSettings(data.customizer);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
         return merged;
       }

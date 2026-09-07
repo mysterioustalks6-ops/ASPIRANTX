@@ -183,7 +183,7 @@ export const DailyStudySummaryCard: React.FC<DailyStudySummaryCardProps> = ({
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 bg-slate-950/80 px-2.5 py-1 rounded-lg border border-slate-800/80">
-              AspirantX
+              ProTrack
             </span>
             <span className="text-[11px] font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
               {summary.examLabel}

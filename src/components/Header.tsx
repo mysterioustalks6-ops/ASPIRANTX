@@ -153,7 +153,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'premium':
       case 'earn_premium':
         return {
-          title: 'AspirantX PRO Access',
+          title: 'ProTrack PRO Access',
           subtitle: 'Unlock unlimited AI evaluation & mock test series',
         };
       case 'reward_milestones':
@@ -184,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'feedback':
         return {
           title: 'Candidate Feedback',
-          subtitle: 'Help shape and improve the AspirantX study platform',
+          subtitle: 'Help shape and improve the ProTrack study platform',
         };
       case 'podcasts':
         return {

@@ -279,7 +279,7 @@ Return ONLY valid JSON format like:
           const parsedSyllabus = JSON.parse(jsonMatch[0]);
           localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(parsedSyllabus));
           setSaveSuccessMessage(`Custom AI Syllabus generated for "${examName}"!`);
-        } else if (data.reply.includes('[AspirantX AI Mentor') || data.reply.includes('GEMINI_API_KEY')) {
+        } else if (data.reply.includes('[ProTrack AI Mentor') || data.reply.includes('[AspirantX AI Mentor') || data.reply.includes('GEMINI_API_KEY')) {
           if (SYLLABUS_PRESETS[category]) {
             localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
           }

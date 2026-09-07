@@ -10,5 +10,5 @@ Disallow: /settings/
 Disallow: /private/
 
 # Host and Sitemap
-Host: https://aspirantx.vercel.app
-Sitemap: https://aspirantx.vercel.app/sitemap.xml
+Host: https://protrack.vercel.app
+Sitemap: https://protrack.vercel.app/sitemap.xml

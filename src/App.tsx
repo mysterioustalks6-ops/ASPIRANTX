@@ -322,7 +322,7 @@ function AppContent() {
         signal: abortController.signal,
         body: JSON.stringify({
           userId: user?.id || 'guest_' + Math.random().toString(36).substring(2, 8),
-          email: user?.email || 'guest@aspirantx.app',
+          email: user?.email || 'guest@protrack.app',
           name: user?.name || 'Guest User',
           exam: user?.exam || 'UPSC CSE'
         })

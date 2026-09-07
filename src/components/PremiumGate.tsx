@@ -112,7 +112,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
           </div>
 
           <div className="text-[10px] font-black uppercase text-amber-400 tracking-widest bg-amber-500/10 border border-amber-500/20 px-3 py-0.5 rounded-full inline-block">
-            AspirantX Enterprise Platform
+            ProTrack Enterprise Platform
           </div>
 
           <div>
@@ -123,7 +123,7 @@ export const PremiumGate: React.FC<PremiumGateProps> = ({
               {featureTitle || `${featureName.toUpperCase()} Access Restricted`}
             </h3>
             <p className="text-xs text-slate-300 mt-1 max-w-xs mx-auto">
-              This feature has been designated as a <strong className="text-amber-300">PRO Pass</strong> feature by the AspirantX Administrator.
+              This feature has been designated as a <strong className="text-amber-300">PRO Pass</strong> feature by the ProTrack Administrator.
             </p>
           </div>
 

@@ -5,7 +5,7 @@
                             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
   <!-- Core Home Page -->
   <url>
-    <loc>https://aspirantx.vercel.app/</loc>
+    <loc>https://protrack.vercel.app/</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
@@ -13,7 +13,7 @@
 
   <!-- Syllabus Tracker Feature Page -->
   <url>
-    <loc>https://aspirantx.vercel.app/syllabus-tracker</loc>
+    <loc>https://protrack.vercel.app/syllabus-tracker</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -21,7 +21,7 @@
 
   <!-- Previous Year Papers (PYQs) -->
   <url>
-    <loc>https://aspirantx.vercel.app/previous-year-papers</loc>
+    <loc>https://protrack.vercel.app/previous-year-papers</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -29,7 +29,7 @@
 
   <!-- CBT Mock Exams Engine -->
   <url>
-    <loc>https://aspirantx.vercel.app/cbt-mocks</loc>
+    <loc>https://protrack.vercel.app/cbt-mocks</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
@@ -37,7 +37,7 @@
 
   <!-- AI Mentor / Study Buddy -->
   <url>
-    <loc>https://aspirantx.vercel.app/ai-mentor</loc>
+    <loc>https://protrack.vercel.app/ai-mentor</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
@@ -45,7 +45,7 @@
 
   <!-- Academic Leaderboard -->
   <url>
-    <loc>https://aspirantx.vercel.app/leaderboard</loc>
+    <loc>https://protrack.vercel.app/leaderboard</loc>
     <lastmod>2026-08-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>

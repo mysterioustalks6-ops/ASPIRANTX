@@ -130,7 +130,7 @@ export const BlogView: React.FC = () => {
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-bold uppercase tracking-wider mb-4">
             <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-            <span>AspirantX Daily Insights</span>
+            <span>ProTrack Daily Insights</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">
             Current Affairs & Editorial Desk
@@ -183,7 +183,7 @@ export const BlogView: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex items-center gap-1.5 font-bold text-white text-sm">
-                    <span>{selectedPost.authorName || 'AspirantX Educator'}</span>
+                    <span>{selectedPost.authorName || 'ProTrack Educator'}</span>
                     <CheckCircle2 className="w-4 h-4 text-sky-400 fill-sky-400/20" />
                   </div>
                   <p className="text-xs text-slate-400">Verified UPSC Faculty & Subject Expert</p>

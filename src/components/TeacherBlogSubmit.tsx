@@ -151,7 +151,7 @@ export const TeacherBlogSubmit: React.FC<TeacherBlogSubmitProps> = ({
               onClick={onNavigateHome}
               className="px-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-all"
             >
-              Return to AspirantX Home
+              Return to ProTrack Home
             </button>
           )}
         </div>
@@ -171,7 +171,7 @@ export const TeacherBlogSubmit: React.FC<TeacherBlogSubmitProps> = ({
           </span>
           <h2 className="text-2xl font-black text-white mb-3">Content Submitted Successfully!</h2>
           <p className="text-slate-300 text-sm mb-6 leading-relaxed">
-            Thank you <strong>{request.teacherName}</strong>. Your article <span className="text-sky-300 font-bold">"{submittedPost.title}"</span> has been submitted to the AspirantX editorial desk. Once approved, it will be published live on the public Blog.
+            Thank you <strong>{request.teacherName}</strong>. Your article <span className="text-sky-300 font-bold">"{submittedPost.title}"</span> has been submitted to the ProTrack editorial desk. Once approved, it will be published live on the public Blog.
           </p>
 
           <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-left mb-6 text-xs text-slate-400 space-y-1">
@@ -329,7 +329,7 @@ Write paragraph details here...`}
         <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-xs text-slate-400 flex items-center gap-2">
             <HelpCircle className="w-4 h-4 text-sky-400" />
-            <span>Submitted posts will be reviewed by AspirantX admin before publishing.</span>
+            <span>Submitted posts will be reviewed by ProTrack admin before publishing.</span>
           </div>
 
           <button

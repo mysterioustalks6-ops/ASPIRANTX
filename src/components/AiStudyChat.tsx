@@ -165,7 +165,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
       {
         id: `welcome_${Date.now()}`,
         sender: 'assistant',
-        text: `Hello Aspirant! I am your AspirantX Enterprise AI Mentor calibrated for ${exam}.\n\nHow can I help you today? Select a specialized mentor mode above (NCERT, Mains Evaluator, PYQ Elimination, Ethics Case Study) or ask your question directly!`,
+        text: `Hello Aspirant! I am your ProTrack Enterprise AI Mentor calibrated for ${exam}.\n\nHow can I help you today? Select a specialized mentor mode above (NCERT, Mains Evaluator, PYQ Elimination, Ethics Case Study) or ask your question directly!`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       },
     ]);
@@ -425,7 +425,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
         console.warn('AI Mentor stream error, generating local diagnostic response fallback:', err);
         // Smart Academic Diagnostic Offline Fallback
         const qLower = messageText.toLowerCase();
-        let fallbackText = `**AspirantX AI Study Mentor (${exam} Guidance):**\n\n`;
+        let fallbackText = `**ProTrack AI Study Mentor (${exam} Guidance):**\n\n`;
         if (qLower.includes('syllabus') || qLower.includes('pattern')) {
           fallbackText += `For **${exam}**, focus on high-weightage core subjects first. Complete your NCERT/standard fundamentals, practice at least 50 MCQs daily, and revise previous year questions (PYQs) from the dedicated PYQ tab.`;
         } else if (qLower.includes('revision') || qLower.includes('plan') || qLower.includes('strategy')) {
@@ -479,7 +479,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
 
   // Export Markdown
   const handleExportMarkdown = () => {
-    const mdContent = `# AspirantX AI Mentor Session: ${
+    const mdContent = `# ProTrack AI Mentor Session: ${
       conversations.find((c) => c.id === activeConvId)?.title || 'Study Session'
     }\n\nDate: ${new Date().toLocaleDateString()}\nExam Target: ${exam}\nMentor Mode: ${activeMode}\n\n---\n\n` +
       messages.map((m) => `### **${m.sender.toUpperCase()}** (${m.timestamp}):\n\n${m.text}\n\n`).join('---\n\n');
@@ -488,7 +488,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `AspirantX_AI_Session_${Date.now()}.md`;
+    a.download = `ProTrack_AI_Session_${Date.now()}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -679,7 +679,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
 
             <div className="min-w-0">
               <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-2 truncate">
-                <span>AspirantX Enterprise AI Mentor</span>
+                <span>ProTrack Enterprise AI Mentor</span>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-widest hidden sm:inline-block">
                   Gemini 3.6 SSE
                 </span>

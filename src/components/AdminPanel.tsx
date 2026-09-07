@@ -1017,7 +1017,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
     const lowerUrl = bulkUrl.toLowerCase();
     // Copyright and access audit check
     if (lowerUrl.includes('login') || lowerUrl.includes('paywall') || lowerUrl.includes('captcha') || lowerUrl.includes('robots') || lowerUrl.includes('restrict')) {
-      setBulkUrlError('🚨 Access Blocked: This URL is audited to have Login/CAPTCHA controls or Paywall blocks. AspirantX policy strictly prohibits crawling protected repositories.');
+      setBulkUrlError('🚨 Access Blocked: This URL is audited to have Login/CAPTCHA controls or Paywall blocks. ProTrack policy strictly prohibits crawling protected repositories.');
       return;
     }
 

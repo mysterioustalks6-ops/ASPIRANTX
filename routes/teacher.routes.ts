@@ -723,7 +723,7 @@ router.post('/api/teachers/:id/book', async (req, res) => {
     const educator = educatorsStore.get(educatorId) || DEFAULT_EDUCATORS_LIST.find(e => e.id === educatorId);
     const price = educator?.sessionPrice ?? 0;
 
-    const cleanEmail = (studentEmail || verifiedUser?.email || 'student@aspirantx.in').trim().toLowerCase();
+    const cleanEmail = (studentEmail || verifiedUser?.email || 'student@protrack.app').trim().toLowerCase();
     const bookingId = `bk_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
     // If price > 0, set status to PENDING_PAYMENT unless verified; if price is 0, set to CONFIRMED
@@ -1069,7 +1069,7 @@ router.post('/api/teacher/classes', verifyTeacherOrAdmin, async (req, res) => {
       scheduledAt: scheduledAt || new Date(Date.now() + 3600000).toISOString(),
       durationMins: Number(durationMins) || 60,
       maxStudents: Number(maxStudents) || 100,
-      meetingLink: meetingLink || `https://meet.jit.si/aspirantx-class-${Date.now()}`,
+      meetingLink: meetingLink || `https://meet.jit.si/protrack-class-${Date.now()}`,
       status: 'SCHEDULED',
       recordingUrl: '',
       createdAt: new Date().toISOString()
@@ -1217,7 +1217,7 @@ router.post('/api/teacher/classes/:id/join', async (req, res) => {
     const classInfo = teacherClassesStore.get(classId);
     res.json({
       success: true,
-      meetingLink: classInfo?.meetingLink || `https://meet.jit.si/aspirantx-class-${classId}`,
+      meetingLink: classInfo?.meetingLink || `https://meet.jit.si/protrack-class-${classId}`,
       attendance: attendanceRecord
     });
   } catch (err: any) {
@@ -1821,7 +1821,7 @@ router.post('/api/sponsorship/applications/:id/action', verifyAdminAuth, async (
         logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80',
         websiteUrl: '',
         tierName: app.tierInterest,
-        testimonial: `Proud partner of AspirantX.`,
+        testimonial: `Proud partner of ProTrack.`,
         createdAt: new Date().toISOString()
       };
       activeSponsorsStore.set(newSponsor.id, newSponsor);
@@ -1916,12 +1916,12 @@ router.post('/api/blog/requests', adminMutationLimiter, verifyAdminAuth, async (
     const emailHtml = `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #ffffff; color: #1e293b; border-radius: 12px; border: 1px solid #e2e8f0;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #0f172a; font-size: 24px; font-weight: 800; margin: 0;">AspirantX Faculty Hub</h1>
+          <h1 style="color: #0f172a; font-size: 24px; font-weight: 800; margin: 0;">ProTrack Faculty Hub</h1>
           <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Daily Current Affairs & Editorial Content Request</p>
         </div>
         
         <p style="font-size: 15px; line-height: 1.6;">Hello <strong>${teacherName || 'Educator'}</strong>,</p>
-        <p style="font-size: 15px; line-height: 1.6;">AspirantX team is requesting today's daily current affairs analysis, newspaper summary, or editorial article for our student community.</p>
+        <p style="font-size: 15px; line-height: 1.6;">ProTrack team is requesting today's daily current affairs analysis, newspaper summary, or editorial article for our student community.</p>
         
         ${customMessage ? `<div style="background-color: #f8fafc; border-left: 4px solid #0284c7; padding: 12px 16px; margin: 16px 0; border-radius: 4px; font-size: 14px; color: #334155;"><strong>Admin Note:</strong> ${customMessage}</div>` : ''}
 

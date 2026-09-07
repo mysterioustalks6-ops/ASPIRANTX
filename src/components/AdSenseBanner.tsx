@@ -272,7 +272,7 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
               </div>
               <div className="text-left space-y-0.5">
                 <h4 className="font-extrabold text-white text-xs sm:text-sm flex items-center gap-2">
-                  Upgrade to AspirantX Premium Pass
+                  Upgrade to ProTrack Premium Pass
                   <span className="text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded font-black tracking-wide">20% OFF</span>
                 </h4>
                 <p className="text-[10px] sm:text-xs text-slate-400">

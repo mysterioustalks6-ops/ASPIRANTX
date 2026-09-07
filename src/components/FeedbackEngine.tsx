@@ -195,7 +195,7 @@ export const FeedbackEngine: React.FC<FeedbackEngineProps> = ({ userEmail = 'gue
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                AspirantX portal me aane waali kisi bhi dikkat ko direct report karein.
+                ProTrack portal me aane waali kisi bhi dikkat ko direct report karein.
               </p>
             </div>
           </div>

@@ -181,7 +181,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ user, onComp
             <div className="space-y-5">
               <div className="space-y-1.5">
                 <h1 className="text-2xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
-                  <User className="w-6 h-6 text-sky-400" /> Welcome to AspirantX
+                  <User className="w-6 h-6 text-sky-400" /> Welcome to ProTrack
                 </h1>
                 <p className="text-xs text-slate-400 leading-relaxed font-normal">
                   Let's personalize your prep engine. Please enter your name to unlock your personalized curriculum tracker.

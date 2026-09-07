@@ -171,7 +171,7 @@ export const SponsorshipCollaboration: React.FC<SponsorshipProps> = ({ user }) =
               Corporate & CSR Partnerships
             </div>
             <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              AspirantX Sponsorship & Grant Network
+              ProTrack Sponsorship & Grant Network
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
               Empowering underprivileged civil service & competitive exam aspirants across India. Partner with us through CSR grants, equipment sponsorships, and merit scholarships.

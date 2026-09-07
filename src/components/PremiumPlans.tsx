@@ -185,8 +185,8 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
             key: orderData.keyId,
             amount: Math.round(amount * 100), // in paise
             currency: orderData.currency || 'INR',
-            name: 'AspirantX Pro Membership',
-            description: `AspirantX PRO ${selectedPlan.toUpperCase()} Pass`,
+            name: 'ProTrack Pro Membership',
+            description: `ProTrack PRO ${selectedPlan.toUpperCase()} Pass`,
             prefill: {
               name: user?.name || 'Aspirant Student',
               email: user?.email || 'student@aspirantx.com',
@@ -350,7 +350,7 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
                   </div>
                   <h3 className="text-xl font-black text-white">Payment Verified & PRO Unlocked!</h3>
                   <p className="text-xs text-slate-300">
-                    Your AspirantX PRO Pass is now active. Enjoy full access to AI Chatbots, PYQ Predictors, and Answer Evaluation!
+                    Your ProTrack PRO Pass is now active. Enjoy full access to AI Chatbots, PYQ Predictors, and Answer Evaluation!
                   </p>
                   <button
                     onClick={() => {
@@ -366,7 +366,7 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
                 <form onSubmit={handleExecutePayment} className="space-y-4">
                   <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
                     <div>
-                      <span className="font-bold text-amber-300">AspirantX PRO {selectedPlan.toUpperCase()} Pass</span>
+                      <span className="font-bold text-amber-300">ProTrack PRO {selectedPlan.toUpperCase()} Pass</span>
                       <p className="text-[10px] text-slate-400">Full UPSC & SSC AI Suite</p>
                     </div>
                     <span className="text-lg font-black text-white">₹{getActiveAmount()}</span>
@@ -478,7 +478,7 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
       <div className="p-8 rounded-3xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 border border-amber-500/30 text-center relative overflow-hidden space-y-3">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-widest">
-          <Crown className="w-4 h-4 text-amber-400" /> Official AspirantX PRO Subscription
+          <Crown className="w-4 h-4 text-amber-400" /> Official ProTrack PRO Subscription
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
           Level Up Your UPSC & SSC Preparation
@@ -572,7 +572,7 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
 
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4" /> AspirantX PRO {selectedPlan.toUpperCase()} Pass
+              <Sparkles className="w-4 h-4" /> ProTrack PRO {selectedPlan.toUpperCase()} Pass
             </span>
             <div className="text-3xl font-black text-white mt-2">
               ₹{getActiveAmount()}{' '}

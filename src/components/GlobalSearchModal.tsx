@@ -116,7 +116,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           {!query.trim() ? (
             <div className="p-8 text-center text-slate-500 text-xs space-y-1">
               <Sparkles className="w-6 h-6 text-indigo-400 mx-auto mb-2 opacity-60" />
-              <p className="font-semibold text-slate-400">Global AspirantX Search Engine</p>
+              <p className="font-semibold text-slate-400">Global ProTrack Search Engine</p>
               <p>Type features like "flashcards", "karma", "pomodoro", or topics like "Polity", "UPSC 2024"</p>
             </div>
           ) : !hasFeatureResults && !hasContentResults && !loading ? (

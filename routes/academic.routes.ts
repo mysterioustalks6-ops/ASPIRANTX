@@ -2514,7 +2514,7 @@ router.get('/api/academic/export', async (req, res) => {
 
     const exportBundle: Record<string, any> = {
       exportedAt: new Date().toISOString(),
-      platform: 'AspirantX Enterprise Academic Platform',
+      platform: 'ProTrack Enterprise Academic Platform',
     };
 
     if (moduleType === 'all' || moduleType === 'syllabus') {
@@ -2532,7 +2532,7 @@ router.get('/api/academic/export', async (req, res) => {
 
     if (format === 'csv') {
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename="aspirantx_${moduleType}_export.csv"`);
+      res.setHeader('Content-Disposition', `attachment; filename="protrack_${moduleType}_export.csv"`);
       let csvContent = 'Module,ID,Title/Question,Subject,Exam\n';
       if (exportBundle.syllabus) {
         exportBundle.syllabus.forEach((s: any) => {
@@ -2548,7 +2548,7 @@ router.get('/api/academic/export', async (req, res) => {
     }
 
     res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Content-Disposition', `attachment; filename="aspirantx_${moduleType}_export.json"`);
+    res.setHeader('Content-Disposition', `attachment; filename="protrack_${moduleType}_export.json"`);
     res.json(exportBundle);
   } catch (err: any) {
     res.status(500).json({ error: 'Export failed', details: err.message });

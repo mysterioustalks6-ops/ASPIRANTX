@@ -275,7 +275,7 @@ export const CommunityWallet: React.FC<CommunityWalletProps> = ({ userProfile, o
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-orange-400 font-bold text-xs uppercase tracking-wider">
                   <Flame className="w-4 h-4 fill-orange-400" />
-                  <span>AspirantX Community Karma</span>
+                  <span>ProTrack Community Karma</span>
                 </div>
                 <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-orange-500/20 text-orange-300 border border-orange-500/30">
                   {currentTier.badge} • {currentTier.title}
@@ -441,7 +441,7 @@ export const CommunityWallet: React.FC<CommunityWalletProps> = ({ userProfile, o
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-sm">
             <h3 className="text-sm font-extrabold text-slate-100 flex items-center gap-2 mb-4">
               <HelpCircle className="w-4 h-4 text-orange-400" />
-              <span>How Reddit-Style Karma Works on AspirantX</span>
+              <span>How Reddit-Style Karma Works on ProTrack</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -933,7 +933,7 @@ export const CommunityWallet: React.FC<CommunityWalletProps> = ({ userProfile, o
                 </div>
                 <div>
                   <h3 className="text-sm font-extrabold text-white">Convert Tokens to PRO Days</h3>
-                  <p className="text-[11px] text-slate-400">100 Coins = 1 Full Day of AspirantX PRO</p>
+                  <p className="text-[11px] text-slate-400">100 Coins = 1 Full Day of ProTrack PRO</p>
                 </div>
               </div>
 

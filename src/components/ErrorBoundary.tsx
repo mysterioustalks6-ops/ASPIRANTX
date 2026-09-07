@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('AspirantX ErrorBoundary caught runtime exception:', error, errorInfo);
+    console.error('ProTrack ErrorBoundary caught runtime exception:', error, errorInfo);
     this.setState({ errorInfo });
     reportFrontendError({
       message: error?.message || String(error || 'ErrorBoundary exception'),
