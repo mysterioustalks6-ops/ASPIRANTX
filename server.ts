@@ -104,6 +104,7 @@ const apkDownloadHandler = (_req: express.Request, res: express.Response) => {
 
 app.get('/aspirantx.apk', apkDownloadHandler);
 app.get('/AspirantX.apk', apkDownloadHandler);
+app.get('/AspirantX-v2.4.2.apk', apkDownloadHandler);
 app.get('/AspirantX-v2.4.1.apk', apkDownloadHandler);
 app.get('/api/download/apk', apkDownloadHandler);
 

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2.4.1';
+const CACHE_VERSION = 'v2.4.2';
 const CACHE_NAME = `aspirantx-static-${CACHE_VERSION}`;
 const API_CACHE_NAME = `aspirantx-api-${CACHE_VERSION}`;
 

@@ -1,7 +1,7 @@
 # Create complete clean final AspirantX zip archive
 $ErrorActionPreference = "Stop"
 
-$zipName = "AspirantX_Final_v2.4.1.zip"
+$zipName = "AspirantX_Final_v2.4.2.zip"
 $zipPath = Join-Path (Get-Location) $zipName
 
 Write-Host "Creating base git archive..."

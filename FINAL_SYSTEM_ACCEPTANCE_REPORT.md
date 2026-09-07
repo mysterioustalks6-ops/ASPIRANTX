@@ -1,6 +1,6 @@
-# FINAL SYSTEM ACCEPTANCE REPORT — ASPIRANTX v2.4.1
+# FINAL SYSTEM ACCEPTANCE REPORT — ASPIRANTX v2.4.2
 
-**Generated**: 2026-09-05T06:01:00+05:30  
+**Generated**: 2026-09-07T20:05:00+05:30  
 **Overall System Status**: **`VERIFIED`**  
 **Lead Evaluator**: Principal Engineer + Release Engineer + QA Owner
 
@@ -8,16 +8,16 @@
 
 ## 1. VERSION SINGLE SOURCE OF TRUTH (GATE 1: VERIFIED)
 
-All version configurations across client, native Android, service worker, backend server, and runtime endpoints are reconciled to single source of truth **`2.4.1`** (versionCode `2`).
+All version configurations across client, native Android, service worker, backend server, and runtime endpoints are reconciled to single source of truth **`2.4.2`** (versionCode `3`).
 
 | Layer / Target | File Reference | Value | Verification Status |
 | :--- | :--- | :--- | :--- |
-| **Node / Package** | `package.json` | `2.4.1` | MATCH |
-| **Frontend Config** | `src/config/appRelease.ts` | `version: "2.4.1"`, `versionCode: 2` | MATCH |
-| **Android Build** | `android/app/build.gradle` | `versionCode 2`, `versionName "2.4.1"` | MATCH |
-| **Backend Fallback** | `routes/shared.ts` | `APP_VERSION = "2.4.1"` | MATCH |
-| **PWA Service Worker** | `public/sw.js` | `CACHE_VERSION = "v2.4.1"` | MATCH |
-| **Live API Endpoint** | `GET /api/version` | `{"version": "2.4.1"}` | MATCH (HTTP 200) |
+| **Node / Package** | `package.json` | `2.4.2` | MATCH |
+| **Frontend Config** | `src/config/appRelease.ts` | `version: "2.4.2"`, `versionCode: 3` | MATCH |
+| **Android Build** | `android/app/build.gradle` | `versionCode 3`, `versionName "2.4.2"` | MATCH |
+| **Backend Fallback** | `routes/shared.ts` | `APP_VERSION = "2.4.2"` | MATCH |
+| **PWA Service Worker** | `public/sw.js` | `CACHE_VERSION = "v2.4.2"` | MATCH |
+| **Live API Endpoint** | `GET /api/version` | `{"version": "2.4.2"}` | MATCH (HTTP 200) |
 
 ---
 
@@ -26,18 +26,19 @@ All version configurations across client, native Android, service worker, backen
 The release APK was compiled directly from the current production source tree using Android Gradle tooling (`assembleRelease`). All public distribution copies have been synchronized and cryptographic hashes verified.
 
 - **Package Name**: `com.aspirantx.app`
-- **Version Name**: `2.4.1`
-- **Version Code**: `2`
+- **Version Name**: `2.4.2`
+- **Version Code**: `3`
 - **Canonical SHA-256**:
-  `BCAEEE95D176269F5FFC0CD64599AC56107522C2190EC271C26C2A10BE039937`
+  `E8FAAFDCC254635FA8E9A5E8FF1EE9477999E830873DABDD34E0176855DE8EED`
 
 ### Binary Hash Comparison Matrix:
 | Artifact Location | SHA-256 Hash | Status |
 | :--- | :--- | :--- |
-| `android/app/build/outputs/apk/release/app-release.apk` | `BCAEEE95D176269F5FFC0CD64599AC56107522C2190EC271C26C2A10BE039937` | Source Build |
-| `public/aspirantx.apk` | `BCAEEE95D176269F5FFC0CD64599AC56107522C2190EC271C26C2A10BE039937` | MATCH |
-| `public/AspirantX-v2.4.1.apk` | `BCAEEE95D176269F5FFC0CD64599AC56107522C2190EC271C26C2A10BE039937` | MATCH |
-| `dist/aspirantx.apk` | `BCAEEE95D176269F5FFC0CD64599AC56107522C2190EC271C26C2A10BE039937` | MATCH |
+| `android/app/build/outputs/apk/release/app-release.apk` | `E8FAAFDCC254635FA8E9A5E8FF1EE9477999E830873DABDD34E0176855DE8EED` | Source Build |
+| `public/aspirantx.apk` | `E8FAAFDCC254635FA8E9A5E8FF1EE9477999E830873DABDD34E0176855DE8EED` | MATCH |
+| `public/AspirantX-v2.4.2.apk` | `E8FAAFDCC254635FA8E9A5E8FF1EE9477999E830873DABDD34E0176855DE8EED` | MATCH |
+| `dist/aspirantx.apk` | `E8FAAFDCC254635FA8E9A5E8FF1EE9477999E830873DABDD34E0176855DE8EED` | MATCH |
+| `dist/AspirantX-v2.4.2.apk` | `E8FAAFDCC254635FA8E9A5E8FF1EE9477999E830873DABDD34E0176855DE8EED` | MATCH |
 
 ---
 
