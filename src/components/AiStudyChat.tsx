@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SlideUp, PressFeedback, ErrorShake, Stagger, StaggerItem, FadeIn } from '../lib/animations';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -834,9 +835,13 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
           {/* Streaming & Stop Generation Bar */}
           {loading && (
             <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-950/80 border border-cyan-500/30 text-xs text-cyan-300">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-cyan-400 animate-spin" />
-                <span>AI Mentor streaming real-time response...</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 py-1">
+                  <motion.span animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <motion.span animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                  <motion.span animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+                </div>
+                <span>AI Mentor streaming response...</span>
               </div>
               <button
                 onClick={handleStopStream}
@@ -848,10 +853,12 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
           )}
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{error}</span>
-            </div>
+            <ErrorShake>
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+            </ErrorShake>
           )}
 
           <div ref={messagesEndRef} />
@@ -875,13 +882,15 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
               className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-100 text-xs sm:text-sm placeholder:text-slate-500 focus:outline-none focus:border-cyan-500 transition-colors disabled:opacity-50"
             />
 
-            <button
-              type="submit"
-              disabled={!input.trim() || loading}
-              className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-slate-950 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
-            >
-              <Send className="w-4 h-4 stroke-[2.5]" />
-            </button>
+            <PressFeedback disabled={!input.trim() || loading}>
+              <button
+                type="submit"
+                disabled={!input.trim() || loading}
+                className="p-3 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-slate-950 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+              >
+                <Send className="w-4 h-4 stroke-[2.5]" />
+              </button>
+            </PressFeedback>
           </form>
         </div>
       </div>

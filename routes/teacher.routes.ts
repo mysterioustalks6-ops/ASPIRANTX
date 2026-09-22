@@ -150,6 +150,7 @@ import {
   pyqStore,
   qbQueryCache,
   qbRepeatIndexMap,
+  toCanonicalUuid,
   questionBankStore,
   rawServiceKey,
   recalculateUserKarma,
@@ -204,6 +205,7 @@ import {
   watchdogSystemLogs
 } from './shared.js';
 import * as Shared from './shared.js';
+import { queryPostgres, pgPool } from '../src/lib/postgres.js';
 
 const router = Router();
 const __dirname = path.resolve();
@@ -642,7 +644,19 @@ router.post('/api/teachers/register', async (req, res) => {
 
 router.get('/api/teachers', async (_req, res) => {
   try {
-    if (supabaseServer) {
+    if (pgPool) {
+      try {
+        const { rows } = await queryPostgres<any>('SELECT * FROM public.educators ORDER BY created_at DESC;');
+        if (Array.isArray(rows) && rows.length > 0) {
+          for (const item of rows) {
+            const ed = item.data ? { ...item.data, id: item.id } : item;
+            if (ed.id) educatorsStore.set(ed.id, ed);
+          }
+        }
+      } catch (neonErr: any) {
+        console.warn('Neon fetch educators warning:', neonErr?.message || neonErr);
+      }
+    } else if (supabaseServer) {
       try {
         const { data } = await supabaseServer.from('educators').select('id, name, title, bio, avatar, rating, hourly_rate, subjects, data');
         if (data && data.length > 0) {
@@ -654,10 +668,6 @@ router.get('/api/teachers', async (_req, res) => {
       } catch (err) {
         console.warn('Supabase fetch educators warning:', err);
       }
-    }
-
-    if (educatorsStore.size === 0) {
-      DEFAULT_EDUCATORS_LIST.forEach(ed => educatorsStore.set(ed.id, ed));
     }
 
     const list = Array.from(educatorsStore.values());
@@ -1001,49 +1011,57 @@ router.get('/api/teacher/classes', async (req, res) => {
     const teacherId = req.query.teacherId as string;
     const status = req.query.status as string;
 
-    if (supabaseServer) {
-      try {
-        let q = supabaseServer.from('teacher_classes').select('*').order('scheduled_at', { ascending: true });
-        if (teacherId) q = q.eq('teacher_id', teacherId);
-        if (status) q = q.in('status', status.split(','));
-        const { data } = await q;
-        if (data) {
-          for (const c of data) {
-            const mapped = {
-              id: c.id,
-              teacherId: c.teacher_id,
-              teacherName: c.teacher_name,
-              title: c.title,
-              subject: c.subject,
-              description: c.description,
-              scheduledAt: c.scheduled_at,
-              durationMins: c.duration_mins,
-              maxStudents: c.max_students,
-              meetingLink: c.meeting_link,
-              status: c.status,
-              recordingUrl: c.recording_url,
-              createdAt: c.created_at
-            };
-            teacherClassesStore.set(c.id, mapped);
-          }
-        }
-      } catch (_err) {}
-    }
+    // Direct authoritative Neon query
+    const dbRes = await queryPostgres(
+      `SELECT id, user_id, email, data, created_at, updated_at FROM public.teacher_classes ORDER BY created_at DESC`
+    );
 
-    let classes = Array.from(teacherClassesStore.values());
-    if (teacherId) classes = classes.filter(c => c.teacherId === teacherId);
+    const rows = dbRes?.rows || [];
+    let classes = rows.map((r: any) => {
+      const d = r.data || {};
+      return {
+        id: r.id,
+        teacherId: d.teacherId || r.user_id,
+        teacherName: d.teacherName || 'Faculty Member',
+        title: d.title || 'Live Session',
+        subject: d.subject || 'General',
+        description: d.description || '',
+        scheduledAt: d.scheduledAt || r.created_at,
+        durationMins: d.durationMins || 60,
+        maxStudents: d.maxStudents || 100,
+        meetingLink: d.meetingLink || `https://meet.jit.si/protrack-class-${r.id}`,
+        status: d.status || 'SCHEDULED',
+        recordingUrl: d.recordingUrl || '',
+        createdAt: r.created_at
+      };
+    });
+
+    if (teacherId) {
+      classes = classes.filter(c => c.teacherId === teacherId);
+    }
     if (status) {
       const allowed = status.split(',');
       classes = classes.filter(c => allowed.includes(c.status));
     }
 
-    const enriched = classes.map(c => {
-      const enrollments = classEnrollmentsStore.get(c.id) || [];
-      return { ...c, enrolledCount: enrollments.length };
-    });
+    // Get enrollment counts from Neon
+    const enrRes = await queryPostgres(`SELECT data FROM public.class_enrollments`);
+    const enrMap = new Map<string, number>();
+    for (const er of (enrRes?.rows || [])) {
+      const cid = er.data?.classId;
+      if (cid) {
+        enrMap.set(cid, (enrMap.get(cid) || 0) + 1);
+      }
+    }
+
+    const enriched = classes.map(c => ({
+      ...c,
+      enrolledCount: enrMap.get(c.id) || 0
+    }));
 
     res.json({ success: true, classes: enriched });
   } catch (err: any) {
+    console.error('[Teacher Classes] Fetch error:', err?.message || err);
     res.status(500).json({ error: 'Failed to fetch teacher classes' });
   }
 });
@@ -1051,17 +1069,23 @@ router.get('/api/teacher/classes', async (req, res) => {
 router.post('/api/teacher/classes', verifyTeacherOrAdmin, async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const teacherId = verifiedUser?.sub || req.body.teacherId || 'teacher_dev';
-    const teacherName = req.body.teacherName || verifiedUser?.email?.split('@')[0] || 'Faculty Member';
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    const teacherId = verifiedUser.sub;
+    const teacherEmail = verifiedUser.email.toLowerCase();
+    const teacherName = req.body.teacherName || verifiedUser.email.split('@')[0] || 'Faculty Member';
     const { title, subject, description, scheduledAt, durationMins, maxStudents, meetingLink } = req.body;
 
     if (!title || !subject) {
       return res.status(400).json({ error: 'Title and subject are required.' });
     }
 
+    const classId = `cls_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const newClass = {
-      id: `cls_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: classId,
       teacherId,
+      teacherEmail,
       teacherName,
       title,
       subject,
@@ -1075,32 +1099,18 @@ router.post('/api/teacher/classes', verifyTeacherOrAdmin, async (req, res) => {
       createdAt: new Date().toISOString()
     };
 
-    teacherClassesStore.set(newClass.id, newClass);
+    // Authoritative Neon insert
+    await queryPostgres(
+      `INSERT INTO public.teacher_classes (id, user_id, email, data, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, now(), now())`,
+      [classId, teacherId, teacherEmail, JSON.stringify(newClass)]
+    );
 
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('teacher_classes').upsert([{
-          id: newClass.id,
-          teacher_id: teacherId,
-          teacher_name: teacherName,
-          title: newClass.title,
-          subject: newClass.subject,
-          description: newClass.description,
-          scheduled_at: newClass.scheduledAt,
-          duration_mins: newClass.durationMins,
-          max_students: newClass.maxStudents,
-          meeting_link: newClass.meetingLink,
-          status: newClass.status,
-          recording_url: newClass.recordingUrl,
-          created_at: newClass.createdAt
-        }], { onConflict: 'id' });
-      } catch (err) {
-        console.warn('Supabase save class warning:', err);
-      }
-    }
+    teacherClassesStore.set(newClass.id, newClass);
 
     res.json({ success: true, class: newClass });
   } catch (err: any) {
+    console.error('[Teacher Classes] Insert error:', err?.message || err);
     res.status(500).json({ error: 'Failed to schedule class' });
   }
 });
@@ -1108,31 +1118,52 @@ router.post('/api/teacher/classes', verifyTeacherOrAdmin, async (req, res) => {
 router.patch('/api/teacher/classes/:id', verifyTeacherOrAdmin, async (req, res) => {
   try {
     const classId = req.params.id;
-    const { status, recordingUrl } = req.body;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
-    const existing = teacherClassesStore.get(classId) || {};
+    // Check class existence and ownership from Neon
+    const existingRes = await queryPostgres(
+      `SELECT id, user_id, email, data FROM public.teacher_classes WHERE id = $1`,
+      [classId]
+    );
+
+    if (!existingRes?.rows?.length) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const row = existingRes.rows[0];
+    const isOwner = row.user_id === verifiedUser.sub || row.email === verifiedUser.email.toLowerCase();
+    const isAdmin = verifiedUser.role === 'ADMIN' || verifiedUser.email.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this class.' });
+    }
+
+    const existingData = row.data || {};
+    const { status, recordingUrl, title, description, scheduledAt } = req.body;
     const updated = {
-      ...existing,
+      ...existingData,
       id: classId,
       ...(status ? { status } : {}),
-      ...(recordingUrl !== undefined ? { recordingUrl } : {})
+      ...(recordingUrl !== undefined ? { recordingUrl } : {}),
+      ...(title ? { title } : {}),
+      ...(description !== undefined ? { description } : {}),
+      ...(scheduledAt ? { scheduledAt } : {}),
+      updatedAt: new Date().toISOString()
     };
+
+    await queryPostgres(
+      `UPDATE public.teacher_classes SET data = $2, updated_at = now() WHERE id = $1`,
+      [classId, JSON.stringify(updated)]
+    );
 
     teacherClassesStore.set(classId, updated);
 
-    if (supabaseServer) {
-      try {
-        const payload: any = {};
-        if (status) payload.status = status;
-        if (recordingUrl !== undefined) payload.recording_url = recordingUrl;
-        await supabaseServer.from('teacher_classes').update(payload).eq('id', classId);
-      } catch (err) {
-        console.warn('Supabase update class status warning:', err);
-      }
-    }
-
     res.json({ success: true, class: updated });
   } catch (err: any) {
+    console.error('[Teacher Classes] Update error:', err?.message || err);
     res.status(500).json({ error: 'Failed to update class' });
   }
 });
@@ -1141,12 +1172,27 @@ router.post('/api/teacher/classes/:id/enroll', async (req, res) => {
   try {
     const classId = req.params.id;
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const studentId = verifiedUser ? verifiedUser.sub : `guest_${Date.now()}`;
-    const studentEmail = verifiedUser ? verifiedUser.email : (req.body.studentEmail || 'guest@example.com');
-    const studentName = req.body.studentName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Guest Aspirant');
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to enroll in a class.' });
+    }
+
+    // Check class existence in Neon
+    const classRes = await queryPostgres(
+      `SELECT id, data FROM public.teacher_classes WHERE id = $1`,
+      [classId]
+    );
+    if (!classRes?.rows?.length) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const studentId = verifiedUser.sub;
+    const studentEmail = verifiedUser.email.toLowerCase();
+    const studentName = req.body.studentName || verifiedUser.email.split('@')[0] || 'Aspirant';
+
+    const enrollmentId = `enr_${classId}_${studentId.replace(/[^a-zA-Z0-9]/g, '')}`;
 
     const enrollment = {
-      id: `enr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: enrollmentId,
       classId,
       studentId,
       studentName,
@@ -1154,27 +1200,23 @@ router.post('/api/teacher/classes/:id/enroll', async (req, res) => {
       enrolledAt: new Date().toISOString()
     };
 
+    // Upsert into Neon public.class_enrollments
+    await queryPostgres(
+      `INSERT INTO public.class_enrollments (id, user_id, email, data, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, now(), now())
+       ON CONFLICT (id) DO UPDATE SET data = $4, updated_at = now()`,
+      [enrollmentId, studentId, studentEmail, JSON.stringify(enrollment)]
+    );
+
     const current = classEnrollmentsStore.get(classId) || [];
     if (!current.some(e => e.studentId === studentId || e.studentEmail === studentEmail)) {
       current.push(enrollment);
       classEnrollmentsStore.set(classId, current);
     }
 
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('class_enrollments').upsert([{
-          id: enrollment.id,
-          class_id: classId,
-          student_id: studentId,
-          student_name: studentName,
-          student_email: studentEmail,
-          enrolled_at: enrollment.enrolledAt
-        }], { onConflict: 'id' });
-      } catch (_e) {}
-    }
-
     res.json({ success: true, enrollment });
   } catch (err: any) {
+    console.error('[Class Enroll] Error:', err?.message || err);
     res.status(500).json({ error: 'Failed to enroll in class' });
   }
 });
@@ -1201,23 +1243,13 @@ router.post('/api/teacher/classes/:id/join', async (req, res) => {
     currentAtt.push(attendanceRecord);
     classAttendanceStore.set(classId, currentAtt);
 
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('class_attendance').upsert([{
-          id: attendanceRecord.id,
-          class_id: classId,
-          student_id: studentId,
-          student_name: studentName,
-          student_email: studentEmail,
-          joined_at: attendanceRecord.joinedAt
-        }], { onConflict: 'id' });
-      } catch (_e) {}
-    }
+    // Fetch class info from Neon
+    const classRes = await queryPostgres(`SELECT data FROM public.teacher_classes WHERE id = $1`, [classId]);
+    const classData = classRes?.rows?.[0]?.data || teacherClassesStore.get(classId) || {};
 
-    const classInfo = teacherClassesStore.get(classId);
     res.json({
       success: true,
-      meetingLink: classInfo?.meetingLink || `https://meet.jit.si/protrack-class-${classId}`,
+      meetingLink: classData.meetingLink || `https://meet.jit.si/protrack-class-${classId}`,
       attendance: attendanceRecord
     });
   } catch (err: any) {
@@ -1228,22 +1260,40 @@ router.post('/api/teacher/classes/:id/join', async (req, res) => {
 router.get('/api/teacher/classes/:id/students', verifyTeacherOrAdmin, async (req, res) => {
   try {
     const classId = req.params.id;
-    let enrollments = classEnrollmentsStore.get(classId) || [];
-    let attendance = classAttendanceStore.get(classId) || [];
-
-    if (supabaseServer) {
-      try {
-        const [enrRes, attRes] = await Promise.all([
-          supabaseServer.from('class_enrollments').select('*').eq('class_id', classId),
-          supabaseServer.from('class_attendance').select('*').eq('class_id', classId)
-        ]);
-        if (enrRes.data) enrollments = enrRes.data.map((e: any) => ({ id: e.id, classId: e.class_id, studentId: e.student_id, studentName: e.student_name, studentEmail: e.student_email, enrolledAt: e.enrolled_at }));
-        if (attRes.data) attendance = attRes.data.map((a: any) => ({ id: a.id, classId: a.class_id, studentId: a.student_id, studentName: a.student_name, studentEmail: a.student_email, joinedAt: a.joined_at }));
-      } catch (_e) {}
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required' });
     }
+
+    // Check class existence and ownership from Neon
+    const classRes = await queryPostgres(
+      `SELECT id, user_id, email FROM public.teacher_classes WHERE id = $1`,
+      [classId]
+    );
+    if (!classRes?.rows?.length) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const classRow = classRes.rows[0];
+    const isOwner = classRow.user_id === verifiedUser.sub || classRow.email === verifiedUser.email.toLowerCase();
+    const isAdmin = verifiedUser.role === 'ADMIN' || verifiedUser.email.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Forbidden: You do not own this class.' });
+    }
+
+    // Fetch enrollments from Neon
+    const enrRes = await queryPostgres(
+      `SELECT data FROM public.class_enrollments WHERE (data->>'classId') = $1`,
+      [classId]
+    );
+
+    const enrollments = (enrRes?.rows || []).map((r: any) => r.data);
+    const attendance: any[] = classAttendanceStore.get(classId) || [];
 
     res.json({ success: true, enrollments, attendance });
   } catch (err: any) {
+    console.error('[Class Students] Error:', err?.message || err);
     res.status(500).json({ error: 'Failed to fetch class students' });
   }
 });
@@ -1253,40 +1303,32 @@ router.get('/api/teacher/my-students', verifyTeacherOrAdmin, async (req, res) =>
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const teacherId = verifiedUser?.sub || (req.query.teacherId as string);
 
-    let classes = Array.from(teacherClassesStore.values());
-    if (teacherId) classes = classes.filter(c => c.teacherId === teacherId);
-    const classIds = classes.map(c => c.id);
+    // Query teacher classes from Neon
+    const classesRes = await queryPostgres(
+      `SELECT id, user_id, email, data FROM public.teacher_classes`
+    );
+    const classes = (classesRes?.rows || []).filter((c: any) => {
+      const d = c.data || {};
+      return !teacherId || c.user_id === teacherId || d.teacherId === teacherId;
+    });
+    const classIds = new Set(classes.map((c: any) => c.id));
 
+    // Query enrollments from Neon
+    const enrRes = await queryPostgres(`SELECT data FROM public.class_enrollments`);
     const studentMap = new Map<string, any>();
 
-    for (const cid of classIds) {
-      const enrollments = classEnrollmentsStore.get(cid) || [];
-      const attendance = classAttendanceStore.get(cid) || [];
-
-      for (const enr of enrollments) {
-        const sid = enr.studentId || enr.studentEmail;
-        if (!studentMap.has(sid)) {
-          studentMap.set(sid, {
-            studentId: enr.studentId,
-            studentName: enr.studentName,
-            studentEmail: enr.studentEmail,
-            classesAttendedCount: 0,
-            assignmentsSubmittedCount: 0
-          });
-        }
-      }
-
-      for (const att of attendance) {
-        const sid = att.studentId || att.studentEmail;
-        const entry = studentMap.get(sid) || {
-          studentId: att.studentId,
-          studentName: att.studentName,
-          studentEmail: att.studentEmail,
+    for (const er of (enrRes?.rows || [])) {
+      const enr = er.data || {};
+      if (!classIds.has(enr.classId)) continue;
+      const sid = enr.studentId || enr.studentEmail;
+      if (!studentMap.has(sid)) {
+        studentMap.set(sid, {
+          studentId: enr.studentId,
+          studentName: enr.studentName,
+          studentEmail: enr.studentEmail,
           classesAttendedCount: 0,
           assignmentsSubmittedCount: 0
-        };
-        entry.classesAttendedCount += 1;
-        studentMap.set(sid, entry);
+        });
       }
     }
 
@@ -1300,17 +1342,41 @@ router.post('/api/teacher/classes/:classId/assignments', verifyTeacherOrAdmin, a
   try {
     const classId = req.params.classId;
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const teacherId = verifiedUser?.sub || req.body.teacherId || 'teacher_dev';
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Check class existence and teacher ownership in Neon
+    const classRes = await queryPostgres(
+      `SELECT id, user_id, email FROM public.teacher_classes WHERE id = $1`,
+      [classId]
+    );
+    if (!classRes?.rows?.length) {
+      return res.status(404).json({ error: 'Class not found' });
+    }
+
+    const classRow = classRes.rows[0];
+    const isOwner = classRow.user_id === verifiedUser.sub || classRow.email === verifiedUser.email.toLowerCase();
+    const isAdmin = verifiedUser.role === 'ADMIN' || verifiedUser.email.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Forbidden: You cannot create assignments for a class you do not own.' });
+    }
+
+    const teacherId = verifiedUser.sub;
+    const teacherEmail = verifiedUser.email.toLowerCase();
     const { title, description, dueDate, attachmentUrl } = req.body;
 
     if (!title) {
       return res.status(400).json({ error: 'Assignment title is required.' });
     }
 
+    const assignmentId = `asg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const assignment = {
-      id: `asg_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: assignmentId,
       classId,
       teacherId,
+      teacherEmail,
       title,
       description: description || '',
       dueDate: dueDate || new Date(Date.now() + 86400000 * 7).toISOString(),
@@ -1318,27 +1384,20 @@ router.post('/api/teacher/classes/:classId/assignments', verifyTeacherOrAdmin, a
       createdAt: new Date().toISOString()
     };
 
+    // Authoritative Neon insert
+    await queryPostgres(
+      `INSERT INTO public.class_assignments (id, user_id, email, data, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, now(), now())`,
+      [assignmentId, teacherId, teacherEmail, JSON.stringify(assignment)]
+    );
+
     const current = classAssignmentsStore.get(classId) || [];
     current.push(assignment);
     classAssignmentsStore.set(classId, current);
 
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('class_assignments').upsert([{
-          id: assignment.id,
-          class_id: classId,
-          teacher_id: teacherId,
-          title,
-          description: assignment.description,
-          due_date: assignment.dueDate,
-          attachment_url: assignment.attachmentUrl,
-          created_at: assignment.createdAt
-        }], { onConflict: 'id' });
-      } catch (_e) {}
-    }
-
     res.json({ success: true, assignment });
   } catch (err: any) {
+    console.error('[Assignment Create] Error:', err?.message || err);
     res.status(500).json({ error: 'Failed to create assignment' });
   }
 });
@@ -1346,34 +1405,37 @@ router.post('/api/teacher/classes/:classId/assignments', verifyTeacherOrAdmin, a
 router.get('/api/teacher/classes/:classId/assignments', async (req, res) => {
   try {
     const classId = req.params.classId;
-    let assignments = classAssignmentsStore.get(classId) || [];
 
-    if (supabaseServer) {
-      try {
-        const { data } = await supabaseServer.from('class_assignments').select('*').eq('class_id', classId);
-        if (data) {
-          assignments = data.map((a: any) => ({
-            id: a.id,
-            classId: a.class_id,
-            teacherId: a.teacher_id,
-            title: a.title,
-            description: a.description,
-            dueDate: a.due_date,
-            attachmentUrl: a.attachment_url,
-            createdAt: a.created_at
-          }));
-          classAssignmentsStore.set(classId, assignments);
-        }
-      } catch (_e) {}
+    // Fetch assignments from Neon
+    const asgRes = await queryPostgres(
+      `SELECT id, user_id, email, data, created_at FROM public.class_assignments
+       WHERE (data->>'classId') = $1
+       ORDER BY created_at DESC`,
+      [classId]
+    );
+
+    const assignments = (asgRes?.rows || []).map((r: any) => r.data || {});
+
+    // Count submissions per assignment from Neon
+    const subRes = await queryPostgres(
+      `SELECT data->>'assignmentId' as asg_id, count(*) as count
+       FROM public.assignment_submissions
+       GROUP BY data->>'assignmentId'`
+    );
+
+    const subMap = new Map<string, number>();
+    for (const sr of (subRes?.rows || [])) {
+      if (sr.asg_id) subMap.set(sr.asg_id, parseInt(sr.count, 10) || 0);
     }
 
-    const enriched = assignments.map(a => {
-      const subs = assignmentSubmissionsStore.get(a.id) || [];
-      return { ...a, submissionCount: subs.length };
-    });
+    const enriched = assignments.map((a: any) => ({
+      ...a,
+      submissionCount: subMap.get(a.id) || 0
+    }));
 
     res.json({ success: true, assignments: enriched });
   } catch (err: any) {
+    console.error('[Assignment Fetch] Error:', err?.message || err);
     res.status(500).json({ error: 'Failed to fetch assignments' });
   }
 });
@@ -1382,14 +1444,43 @@ router.post('/api/teacher/assignments/:assignmentId/submit', async (req, res) =>
   try {
     const assignmentId = req.params.assignmentId;
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const studentId = verifiedUser ? verifiedUser.sub : `guest_${Date.now()}`;
-    const studentEmail = verifiedUser ? verifiedUser.email : (req.body.studentEmail || 'guest@example.com');
-    const studentName = req.body.studentName || (verifiedUser ? verifiedUser.email.split('@')[0] : 'Guest Aspirant');
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required to submit an assignment.' });
+    }
+
+    // Check assignment existence from Neon
+    const asgRes = await queryPostgres(
+      `SELECT id, user_id, email, data FROM public.class_assignments WHERE id = $1`,
+      [assignmentId]
+    );
+    if (!asgRes?.rows?.length) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    const asgData = asgRes.rows[0].data || {};
+    const classId = asgData.classId;
+    const studentId = verifiedUser.sub;
+    const studentEmail = verifiedUser.email.toLowerCase();
+
+    // Verify student is enrolled in the class ("A student cannot submit to an assignment belonging to an unrelated class")
+    const enrRes = await queryPostgres(
+      `SELECT id FROM public.class_enrollments 
+       WHERE (data->>'classId') = $1 AND (user_id = $2 OR email = $3 OR (data->>'studentId') = $2)`,
+      [classId, studentId, studentEmail]
+    );
+
+    if (!enrRes?.rows?.length) {
+      return res.status(403).json({ error: 'Forbidden: You must be enrolled in the class to submit this assignment.' });
+    }
+
+    const studentName = req.body.studentName || verifiedUser.email.split('@')[0] || 'Aspirant';
     const { submissionText, attachmentUrl } = req.body;
 
+    const submissionId = `sub_${assignmentId}_${studentId.replace(/[^a-zA-Z0-9]/g, '')}`;
     const submission = {
-      id: `sub_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      id: submissionId,
       assignmentId,
+      classId,
       studentId,
       studentName,
       studentEmail,
@@ -1398,60 +1489,71 @@ router.post('/api/teacher/assignments/:assignmentId/submit', async (req, res) =>
       submittedAt: new Date().toISOString()
     };
 
-    const current = assignmentSubmissionsStore.get(assignmentId) || [];
-    current.push(submission);
-    assignmentSubmissionsStore.set(assignmentId, current);
+    // Authoritative Neon upsert
+    await queryPostgres(
+      `INSERT INTO public.assignment_submissions (id, user_id, email, data, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, now(), now())
+       ON CONFLICT (id) DO UPDATE SET data = $4, updated_at = now()`,
+      [submissionId, studentId, studentEmail, JSON.stringify(submission)]
+    );
 
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('assignment_submissions').upsert([{
-          id: submission.id,
-          assignment_id: assignmentId,
-          student_id: studentId,
-          student_name: studentName,
-          student_email: studentEmail,
-          submission_text: submission.submissionText,
-          attachment_url: submission.attachmentUrl,
-          submitted_at: submission.submittedAt
-        }], { onConflict: 'id' });
-      } catch (_e) {}
+    const current = assignmentSubmissionsStore.get(assignmentId) || [];
+    const existingIdx = current.findIndex(s => s.id === submissionId);
+    if (existingIdx !== -1) {
+      current[existingIdx] = submission;
+    } else {
+      current.push(submission);
     }
+    assignmentSubmissionsStore.set(assignmentId, current);
 
     res.json({ success: true, submission });
   } catch (err: any) {
+    console.error('[Assignment Submit] Error:', err?.message || err);
     res.status(500).json({ error: 'Failed to submit assignment' });
   }
 });
 
-router.get('/api/teacher/assignments/:assignmentId/submissions', verifyTeacherOrAdmin, async (req, res) => {
+router.get('/api/teacher/assignments/:assignmentId/submissions', async (req, res) => {
   try {
     const assignmentId = req.params.assignmentId;
-    let submissions = assignmentSubmissionsStore.get(assignmentId) || [];
-
-    if (supabaseServer) {
-      try {
-        const { data } = await supabaseServer.from('assignment_submissions').select('*').eq('assignment_id', assignmentId);
-        if (data) {
-          submissions = data.map((s: any) => ({
-            id: s.id,
-            assignmentId: s.assignment_id,
-            studentId: s.student_id,
-            studentName: s.student_name,
-            studentEmail: s.student_email,
-            submissionText: s.submission_text,
-            attachmentUrl: s.attachment_url,
-            grade: s.grade,
-            feedback: s.feedback,
-            submittedAt: s.submitted_at,
-            gradedAt: s.graded_at
-          }));
-          assignmentSubmissionsStore.set(assignmentId, submissions);
-        }
-      } catch (_e) {}
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required.' });
     }
 
-    res.json({ success: true, submissions });
+    // Check assignment existence and owner in Neon
+    const asgRes = await queryPostgres(
+      `SELECT id, user_id, email, data FROM public.class_assignments WHERE id = $1`,
+      [assignmentId]
+    );
+    if (!asgRes?.rows?.length) {
+      return res.status(404).json({ error: 'Assignment not found' });
+    }
+
+    const asgRow = asgRes.rows[0];
+    const isTeacherOwner = asgRow.user_id === verifiedUser.sub || asgRow.email === verifiedUser.email.toLowerCase();
+    const isAdmin = verifiedUser.role === 'ADMIN' || verifiedUser.email.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (isTeacherOwner || isAdmin) {
+      // Teacher/Admin can view all submissions for this assignment
+      const subRes = await queryPostgres(
+        `SELECT data FROM public.assignment_submissions WHERE (data->>'assignmentId') = $1 ORDER BY created_at DESC`,
+        [assignmentId]
+      );
+      const submissions = (subRes?.rows || []).map((r: any) => r.data || {});
+      return res.json({ success: true, submissions });
+    }
+
+    // Student A cannot read Student B's private submission
+    const studentSubRes = await queryPostgres(
+      `SELECT data FROM public.assignment_submissions 
+       WHERE (data->>'assignmentId') = $1 AND (user_id = $2 OR email = $3 OR (data->>'studentId') = $2)`,
+      [assignmentId, verifiedUser.sub, verifiedUser.email.toLowerCase()]
+    );
+    const submissions = (studentSubRes?.rows || []).map((r: any) => r.data || {});
+    return res.json({ success: true, submissions });
   } catch (err: any) {
+    console.error('[Fetch Submissions] Error:', err?.message || err);
     res.status(500).json({ error: 'Failed to fetch submissions' });
   }
 });
@@ -1459,31 +1561,59 @@ router.get('/api/teacher/assignments/:assignmentId/submissions', verifyTeacherOr
 router.post('/api/teacher/submissions/:submissionId/grade', verifyTeacherOrAdmin, async (req, res) => {
   try {
     const submissionId = req.params.submissionId;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Check submission existence in Neon
+    const subRes = await queryPostgres(
+      `SELECT id, user_id, email, data FROM public.assignment_submissions WHERE id = $1`,
+      [submissionId]
+    );
+    if (!subRes?.rows?.length) {
+      return res.status(404).json({ error: 'Submission not found' });
+    }
+
+    const subRow = subRes.rows[0];
+    const subData = subRow.data || {};
+    const assignmentId = subData.assignmentId;
+
+    // Check assignment ownership in Neon
+    const asgRes = await queryPostgres(
+      `SELECT id, user_id, email FROM public.class_assignments WHERE id = $1`,
+      [assignmentId]
+    );
+    if (!asgRes?.rows?.length) {
+      return res.status(404).json({ error: 'Parent assignment not found' });
+    }
+
+    const asgRow = asgRes.rows[0];
+    const isOwner = asgRow.user_id === verifiedUser.sub || asgRow.email === verifiedUser.email.toLowerCase();
+    const isAdmin = verifiedUser.role === 'ADMIN' || verifiedUser.email.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: 'Forbidden: You cannot grade an assignment for a class you do not teach.' });
+    }
+
     const { grade, feedback } = req.body;
+    const updatedSub = {
+      ...subData,
+      id: submissionId,
+      grade: grade !== undefined ? grade : subData.grade,
+      feedback: feedback !== undefined ? feedback : subData.feedback,
+      gradedAt: new Date().toISOString()
+    };
 
-    let targetSub: any = null;
-    for (const [asgId, list] of assignmentSubmissionsStore.entries()) {
-      const idx = list.findIndex(s => s.id === submissionId);
-      if (idx !== -1) {
-        list[idx] = { ...list[idx], grade, feedback, gradedAt: new Date().toISOString() };
-        targetSub = list[idx];
-        assignmentSubmissionsStore.set(asgId, list);
-        break;
-      }
-    }
+    // Update in Neon
+    await queryPostgres(
+      `UPDATE public.assignment_submissions SET data = $2, updated_at = now() WHERE id = $1`,
+      [submissionId, JSON.stringify(updatedSub)]
+    );
 
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from('assignment_submissions').update({
-          grade,
-          feedback,
-          graded_at: new Date().toISOString()
-        }).eq('id', submissionId);
-      } catch (_e) {}
-    }
-
-    res.json({ success: true, submission: targetSub });
+    res.json({ success: true, submission: updatedSub });
   } catch (err: any) {
+    console.error('[Grade Submission] Error:', err?.message || err);
     res.status(500).json({ error: 'Failed to grade submission' });
   }
 });

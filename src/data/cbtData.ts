@@ -526,135 +526,51 @@ export const INITIAL_CBT_TESTS: CbtTest[] = [
 export const INITIAL_COMMUNITY_GROUPS: CommunityGroup[] = [
   {
     id: 'grp_upsc_general',
-    name: 'UPSC CSE 2026 Rankers Hub',
-    description: 'Official community for UPSC Prelims & Mains strategy, PYQ discussions, and answer writing evaluation.',
+    name: 'UPSC CSE 2026 Aspirants Circle',
+    description: 'Community for UPSC Prelims & Mains strategy, syllabus doubts, and peer evaluation.',
     category: 'public',
     exam: 'UPSC_CSE',
-    memberCount: 14820,
-    isJoined: true,
+    memberCount: 0,
+    isJoined: false,
     isPinned: true,
     icon: 'ShieldCheck'
   },
   {
     id: 'grp_polity_masters',
-    name: 'Polity & Governance Special Circle',
-    description: 'Focused discussions on Laxmikanth, Supreme Court landmark judgements, and Article breakdowns.',
+    name: 'Polity & Governance Discussion Circle',
+    description: 'Focused discussions on Constitution, landmark Supreme Court judgments, and Article breakdowns.',
     category: 'subject',
     exam: 'UPSC_CSE',
-    memberCount: 8930,
-    isJoined: true,
+    memberCount: 0,
+    isJoined: false,
     isPinned: false,
     icon: 'BookOpen'
   },
   {
     id: 'grp_ssc_tier1',
-    name: 'SSC CGL 2026 Speed & Accuracy Warriors',
-    description: 'Daily Quant shortcuts, Reasoning puzzles, and English grammar quiz challenges.',
+    name: 'SSC CGL Practice Circle',
+    description: 'Quant shortcuts, Reasoning puzzles, and English comprehension discussions.',
     category: 'public',
     exam: 'SSC_CGL',
-    memberCount: 12450,
+    memberCount: 0,
     isJoined: false,
     isPinned: false,
     icon: 'Zap'
   },
   {
     id: 'grp_mains_answer_peer',
-    name: 'Mains GS Answer Writing Peer Review Group',
-    description: 'Daily 2 GS questions posted at 9 AM. Submit handwritten answers & peer review fellow aspirants.',
+    name: 'Mains GS Answer Writing Review',
+    description: 'Daily GS answer review with fellow aspirants and structured framework analysis.',
     category: 'mentor',
     exam: 'UPSC_CSE',
-    memberCount: 4210,
-    isJoined: true,
+    memberCount: 0,
+    isJoined: false,
     isPinned: true,
     icon: 'FileText'
   }
 ];
 
-export const INITIAL_COMMUNITY_POSTS: CommunityPost[] = [
-  {
-    id: 'post_101',
-    groupId: 'grp_upsc_general',
-    groupName: 'UPSC CSE 2026 Rankers Hub',
-    authorId: 'usr_mentor_01',
-    authorName: 'Dr. Vivek Sharma (Ex-IAS Mentor)',
-    authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-    authorRole: 'Chief Mentor',
-    title: 'How to master Article 32 vs Article 226 Writs for Prelims & Mains 2026',
-    content: 'Aspirants often confuse Habeas Corpus and Quo-Warranto scope under Article 226 vs Article 32.\n\nKey Takeaways:\n1. Supreme Court can issue writs ONLY for Fundamental Rights (Art 32).\n2. High Courts can issue writs for FRs AND "any other purpose" (Art 226) - making HC writ jurisdiction broader in scope!\n3. Article 32 itself is a Fundamental Right, while Article 226 is discretionary.\n\nReview the attached summary notes PDF below for complete tabular comparison.',
-    tags: ['Polity', 'Prelims2026', 'Writs', 'Article32'],
-    createdAt: '2 hours ago',
-    likesCount: 342,
-    repliesCount: 48,
-    isLiked: true,
-    isBookmarked: true,
-    isPinned: true,
-    attachments: [
-      {
-        name: 'Article_32_vs_226_Writ_Jurisdiction_Notes.pdf',
-        type: 'pdf',
-        url: '#',
-        size: '1.2 MB'
-      }
-    ],
-    poll: {
-      question: 'Under which Article can a writ be issued for non-fundamental legal rights?',
-      options: [
-        { id: 'opt_1', text: 'Article 32 only', votes: 12 },
-        { id: 'opt_2', text: 'Article 226 only', votes: 184 },
-        { id: 'opt_3', text: 'Both Article 32 & 226', votes: 45 },
-        { id: 'opt_4', text: 'Article 142 only', votes: 8 }
-      ],
-      totalVotes: 249,
-      userVotedOptionId: 'opt_2'
-    }
-  },
-  {
-    id: 'post_102',
-    groupId: 'grp_mains_answer_peer',
-    groupName: 'Mains GS Answer Writing Peer Review Group',
-    authorId: 'usr_topper_23',
-    authorName: 'Priya Verma (AIR 48 Aspirant)',
-    authorAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150',
-    authorRole: 'Top Contributor',
-    title: 'Daily Mains Challenge: "Cooperative Federalism vs Competitive Federalism in India"',
-    content: 'Question: "Examine how fiscal devolution via the Finance Commission has shifted the Indian federal dynamic from cooperative federalism towards competitive federalism." (15 Marks, 250 Words)\n\nPlease review my intro & structure diagram below! Open to critical feedback on keywords & way forward.',
-    tags: ['GS2', 'Federalism', 'FinanceCommission', 'MainsAnswer'],
-    createdAt: '5 hours ago',
-    likesCount: 128,
-    repliesCount: 19,
-    isLiked: false,
-    isBookmarked: false,
-    isPinned: false
-  }
-];
+export const INITIAL_COMMUNITY_POSTS: CommunityPost[] = [];
 
-export const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'notif_1',
-    userId: 'user_default',
-    title: 'Daily Study Target Alert 🎯',
-    message: 'You have completed 6.5 hours out of your 10.0 hours study target today! 3.5 hours remaining.',
-    type: 'study_reminder',
-    read: false,
-    createdAt: '10 minutes ago'
-  },
-  {
-    id: 'notif_2',
-    userId: 'user_default',
-    title: 'New CBT All India Mock Test Released!',
-    message: 'UPSC CSE All India Grand Mock Test 2026 (GS Paper 1) is live now. Attempt now to benchmark your national rank.',
-    type: 'mock_test',
-    read: false,
-    createdAt: '1 hour ago',
-    actionUrl: 'cbt'
-  },
-  {
-    id: 'notif_3',
-    userId: 'user_default',
-    title: 'AI Predictor Revision Milestone',
-    message: 'Based on your recent study pace, you are 2 days ahead of your syllabus schedule for UPSC 2026!',
-    type: 'ai_suggestion',
-    read: true,
-    createdAt: '1 day ago'
-  }
-];
+export const INITIAL_NOTIFICATIONS: AppNotification[] = [];
+

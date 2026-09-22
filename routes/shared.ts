@@ -181,6 +181,27 @@ export function addAdminAuditLogRecord(options: {
   });
 }
 
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function isValidUuid(id?: string | null): boolean {
+  if (!id || typeof id !== 'string') return false;
+  return UUID_REGEX.test(id.trim());
+}
+
+export function toCanonicalUuid(input?: string | null): string {
+  if (!input || typeof input !== 'string') return '00000000-0000-4000-8000-000000000000';
+  const trimmed = input.trim();
+  if (isValidUuid(trimmed)) return trimmed.toLowerCase();
+  const hash = crypto.createHash('sha256').update(`aspirantx_user:${trimmed.toLowerCase()}`).digest('hex');
+  return [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    '4' + hash.substring(13, 16),
+    ((parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0') + hash.substring(18, 20),
+    hash.substring(20, 32)
+  ].join('-').toLowerCase();
+}
+
 export async function extractVerifiedUserFromReq(req: any): Promise<{ email: string; role: string; sub?: string } | null> {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -189,16 +210,16 @@ export async function extractVerifiedUserFromReq(req: any): Promise<{ email: str
 
   let verifiedEmail = '';
   let role = 'USER';
-  let userId = 'user_dev';
+  let userId = '';
   let tokenVerified = false;
 
   // 1. Try decoding as internal application JWT
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    if (decoded && decoded.email) {
-      verifiedEmail = String(decoded.email).trim().toLowerCase();
+    if (decoded && (decoded.email || decoded.sub)) {
+      verifiedEmail = String(decoded.email || '').trim().toLowerCase();
       role = decoded.role || 'USER';
-      userId = decoded.sub || 'user_dev';
+      userId = decoded.sub ? String(decoded.sub).trim() : '';
       tokenVerified = true;
     }
   } catch (_err) {}
@@ -218,11 +239,12 @@ export async function extractVerifiedUserFromReq(req: any): Promise<{ email: str
     } catch (_supaErr) {}
   }
 
-  if (!tokenVerified || !verifiedEmail) {
+  if (!tokenVerified || (!verifiedEmail && !userId)) {
     return null;
   }
 
-  return { email: verifiedEmail, role, sub: userId };
+  const canonicalSub = toCanonicalUuid(userId || verifiedEmail);
+  return { email: verifiedEmail, role, sub: canonicalSub };
 }
 
 export function requireEnterprisePermission(permissionKey: string) {
@@ -1062,44 +1084,7 @@ export interface EducatorChatMessage {
   timestamp: string;
 }
 
-export const DEFAULT_EDUCATORS_LIST: EducatorRecord[] = [
-  {
-    id: 'ed_1',
-    name: 'Dr. Siddharth Arora',
-    subject: 'Indian Polity & Governance',
-    experience: '12+ Years',
-    qualification: 'Advocate Supreme Court, PhD',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    isVerified: true,
-    status: 'APPROVED',
-    email: 'siddharth.arora@protrack.app',
-    bio: 'Senior UPSC Polity faculty & advocate supreme court',
-    availability: ['Today, 6:00 PM', 'Tomorrow, 9:00 AM', 'Tomorrow, 5:00 PM', '12 Aug, 11:00 AM', '13 Aug, 4:00 PM'],
-    rating: 4.8,
-    studentsCount: 15400,
-    reviewsCount: 1280,
-    sessionPrice: 499,
-    isOnline: true
-  },
-  {
-    id: 'ed_2',
-    name: 'Mrunal Patel',
-    subject: 'Indian Economy & Budgetary Reforms',
-    experience: '10+ Years',
-    qualification: 'Senior Educator, MBA Finance',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    isVerified: true,
-    status: 'APPROVED',
-    email: 'mrunal.patel@protrack.app',
-    bio: 'Pioneer of UPSC Economy simplified lectures & handouts',
-    availability: ['Today, 7:00 PM', 'Tomorrow, 2:00 PM', '13 Aug, 10:00 AM', '14 Aug, 6:00 PM'],
-    rating: 4.9,
-    studentsCount: 28900,
-    reviewsCount: 3100,
-    sessionPrice: 0, // Free Session
-    isOnline: false
-  }
-];
+export const DEFAULT_EDUCATORS_LIST: EducatorRecord[] = [];
 
 export const educatorsStore = new Map<string, EducatorRecord>();
 
@@ -1251,24 +1236,6 @@ export let adminUsersDb: any[] = [
     level: 10,
     completedTopicsCount: 28,
     joinedAt: '2026-01-01',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'usr-rahul-02',
-    name: 'Rahul Sharma (Aspirant)',
-    email: 'rahul.upsc2026@protrack.app',
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
-    exam: 'UPSC CSE 2026',
-    stateName: 'Delhi NCR',
-    role: 'USER',
-    isPremium: true,
-    planName: 'PRO PASS',
-    streakDays: 14,
-    xp: 1250,
-    coins: 240,
-    level: 4,
-    completedTopicsCount: 12,
-    joinedAt: '2026-02-10',
     status: 'ACTIVE',
   }
 ];
@@ -1777,23 +1744,22 @@ export async function getCbtHistoryForUser(userId: string, exam?: string): Promi
   if (!userId) return [];
   
   let history = cbtResultsStore.get(userId);
-  if (!history && supabaseServer) {
-    try {
-      const { data, error } = await supabaseServer
-        .from('cbt_results')
-        .select('data')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (!error && data && Array.isArray(data.data)) {
-        history = data.data;
-        if (cbtResultsStore.size > 500) {
-          const firstKey = cbtResultsStore.keys().next().value;
-          if (firstKey) cbtResultsStore.delete(firstKey);
-        }
-        cbtResultsStore.set(userId, history);
+  try {
+    const res = await queryPostgres(
+      'SELECT data FROM public.cbt_results WHERE user_id = $1 LIMIT 1',
+      [userId]
+    );
+    if (res && res.rows && res.rows.length > 0 && res.rows[0].data) {
+      const rawData = res.rows[0].data;
+      history = Array.isArray(rawData) ? rawData : (rawData.results || []);
+      if (cbtResultsStore.size > 500) {
+        const firstKey = cbtResultsStore.keys().next().value;
+        if (firstKey) cbtResultsStore.delete(firstKey);
       }
-    } catch (e) {}
+      cbtResultsStore.set(userId, history);
+    }
+  } catch (dbErr: any) {
+    console.warn('[Neon CBT Fetch Warning]:', dbErr?.message || dbErr);
   }
 
   const list = history || [];
@@ -1804,24 +1770,28 @@ export async function getCbtHistoryForUser(userId: string, exam?: string): Promi
 }
 
 /**
- * Atomic CBT result persister - appends to user's history and writes only that row
+ * Atomic CBT result persister - writes directly to authoritative Neon PostgreSQL public.cbt_results
  */
 export async function persistCbtResultAtomic(userId: string, result: any): Promise<void> {
   if (!userId || !result) return;
   const userHistory = await getCbtHistoryForUser(userId);
   userHistory.unshift(result);
+  if (userHistory.length > 100) {
+    userHistory.length = 100;
+  }
   cbtResultsStore.set(userId, userHistory);
 
-  if (supabaseServer) {
-    try {
-      await supabaseServer.from('cbt_results').upsert([{
-        user_id: userId,
-        data: userHistory,
-        updated_at: new Date().toISOString()
-      }], { onConflict: 'user_id' });
-    } catch (e: any) {
-      console.warn('[CBT RESULT PERSIST ERROR]', e?.message || e);
-    }
+  try {
+    await queryPostgres(
+      `INSERT INTO public.cbt_results (user_id, data, updated_at)
+       VALUES ($1, $2, now())
+       ON CONFLICT (user_id)
+       DO UPDATE SET data = $2, updated_at = now()`,
+      [userId, JSON.stringify(userHistory)]
+    );
+  } catch (dbErr: any) {
+    console.error('[Neon CBT Result Persist Error]:', dbErr?.message || dbErr);
+    throw dbErr;
   }
 }
 
@@ -3437,69 +3407,17 @@ export const DEFAULT_COMMUNITY_GROUPS = [
   }
 ];
 
-export const DEFAULT_COMMUNITY_POSTS = [
-  {
-    id: 'post_upsc_1',
-    groupId: 'grp_upsc_general',
-    groupName: 'UPSC CSE 2026 Strategy & Mentorship',
-    title: 'High-Yield Modern Indian History (1857-1947) Timeline & Spectrum Micro-Notes',
-    content: 'Fellow Aspirants! Here is a concise 5-page revision matrix covering all Governor-Generals, Congress sessions, Peasant movements, and Constitutional milestones. Perfect for quick Prelims revision before CBT tests!\n\nKey Highlights:\n- Charter Acts 1773-1853 summary\n- Revolutionary Phase I & II comparisons\n- Round Table Conferences key attendees',
-    authorName: 'Aarav Sharma (AIR 48 Aspirant)',
-    authorAvatar: '',
-    authorBadge: 'Topper Contributor',
-    authorId: 'usr_topper_aarav',
-    exam: 'UPSC_CSE',
-    category: 'notes',
-    tags: ['History', 'ModernIndia', 'Prelims2026', 'HighYield'],
-    score: 142,
-    upvotesCount: 142,
-    downvotesCount: 0,
-    likesCount: 142,
-    isLiked: false,
-    isBookmarked: false,
-    isPinned: true,
-    tippedCoins: 65,
-    repliesCount: 18,
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
-  },
-  {
-    id: 'post_neet_1',
-    groupId: 'grp_neet_aiims',
-    groupName: 'NEET UG 2026 AIIMS Mission 700+',
-    title: 'Complete Genetics & Molecular Biology Formula & Pedigree Analysis Cheat Sheet',
-    content: 'Consolidated all Hardy-Weinberg equilibrium problem variations, dihybrid cross phenotypic & genotypic ratios, and pedigree chart decision trees into one place. Hope this saves you 15+ marks in Botany/Zoology!',
-    authorName: 'Dr. Tanya Verma (AIIMS New Delhi Aspirant)',
-    authorAvatar: '',
-    authorBadge: 'Biology Mentor',
-    authorId: 'usr_mentor_tanya',
-    exam: 'NEET_UG',
-    category: 'notes',
-    tags: ['Genetics', 'NEETBiology', 'NCERT', 'Mnemonics'],
-    score: 218,
-    upvotesCount: 218,
-    downvotesCount: 0,
-    likesCount: 218,
-    isLiked: false,
-    isBookmarked: false,
-    isPinned: true,
-    tippedCoins: 120,
-    repliesCount: 34,
-    createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-  }
-];
+export const DEFAULT_COMMUNITY_POSTS: any[] = [];
 
 DEFAULT_COMMUNITY_GROUPS.forEach((g) => communityGroupsStore.set(g.id, g));
 
 DEFAULT_COMMUNITY_POSTS.forEach((p) => communityPostsStore.set(p.id, p));
 
 export async function hydrateCommunityPostsFromSupabase() {
-  if (!supabaseServer) return;
   try {
-    const { data: postsData, error: postsErr } = await supabaseServer.from('community_posts').select('*');
-    if (postsErr) {
-      console.warn('[HYDRATION COMMUNITY POSTS NOTICE]', postsErr.message);
-    } else if (Array.isArray(postsData) && postsData.length > 0) {
-      postsData.forEach((row: any) => {
+    const { rows: postsRows } = await queryPostgres<any>('SELECT * FROM public.community_posts ORDER BY created_at DESC;');
+    if (Array.isArray(postsRows) && postsRows.length > 0) {
+      postsRows.forEach((row: any) => {
         const item = row.data || row;
         if (item && item.id) {
           communityPostsStore.set(item.id, item);
@@ -3507,24 +3425,9 @@ export async function hydrateCommunityPostsFromSupabase() {
       });
     }
 
-    const { data: votesData, error: votesErr } = await supabaseServer.from('community_votes').select('*');
-    if (votesErr) {
-      console.warn('[HYDRATION COMMUNITY VOTES NOTICE]', votesErr.message);
-    } else if (Array.isArray(votesData) && votesData.length > 0) {
-      votesData.forEach((row: any) => {
-        const item = row.data || row;
-        const key = row.key || (item.postId && item.userId ? `${item.postId}:${item.userId}` : item.id);
-        if (key && item) {
-          communityVotesStore.set(key, item);
-        }
-      });
-    }
-
-    const { data: groupsData, error: groupsErr } = await supabaseServer.from('community_groups').select('*');
-    if (groupsErr) {
-      console.warn('[HYDRATION COMMUNITY GROUPS NOTICE]', groupsErr.message);
-    } else if (Array.isArray(groupsData) && groupsData.length > 0) {
-      groupsData.forEach((row: any) => {
+    const { rows: groupsRows } = await queryPostgres<any>('SELECT * FROM public.community_groups;');
+    if (Array.isArray(groupsRows) && groupsRows.length > 0) {
+      groupsRows.forEach((row: any) => {
         const item = row.data || row;
         if (item && item.id) {
           communityGroupsStore.set(item.id, item);
@@ -3532,7 +3435,17 @@ export async function hydrateCommunityPostsFromSupabase() {
       });
     }
   } catch (e: any) {
-    console.warn('[HYDRATION COMMUNITY NOTICE]', e?.message || e);
+    if (supabaseServer) {
+      try {
+        const { data: postsData } = await supabaseServer.from('community_posts').select('*');
+        if (Array.isArray(postsData)) {
+          postsData.forEach((row: any) => {
+            const item = row.data || row;
+            if (item && item.id) communityPostsStore.set(item.id, item);
+          });
+        }
+      } catch (_err) {}
+    }
   }
 }
 

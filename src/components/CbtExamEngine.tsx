@@ -19,6 +19,9 @@ import { getApiUrl } from '../lib/apiConfig';
 
 import { normalizeCbtQuestion, normalizeCbtTest } from '../lib/cbtNormalizer.js';
 export { normalizeCbtQuestion, normalizeCbtTest };
+import { 
+  FadeIn, SlideUp, ScaleIn, PressFeedback, CountUp, triggerConfetti, ModalTransition 
+} from '../lib/animations';
 
 
 interface CbtExamEngineProps {
@@ -99,6 +102,12 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   }, [activeTab, activeExamKey]);
 
   useEffect(() => { fetchLiveExams(); }, []);
+
+  useEffect(() => {
+    if (examResult) {
+      triggerConfetti();
+    }
+  }, [examResult]);
 
   // Live exam countdown ticker
   useEffect(() => {
@@ -1309,8 +1318,8 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   // 2. RENDER EXAM RESULT VIEW (IF SUBMITTED)
   if (examResult) {
     return (
-      <div id="cbt-result-scorecard" className="w-full space-y-4 sm:space-y-6">
-        <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 rounded-2xl p-4 sm:p-6 text-white shadow-xl">
+      <SlideUp id="cbt-result-scorecard" className="w-full space-y-4 sm:space-y-6">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-slate-800">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4 mb-4 sm:mb-6">
             <div>
               <span className="px-3 py-1 bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold rounded-md">
@@ -1319,36 +1328,44 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               <h2 className="text-xl sm:text-2xl font-bold mt-2">{examResult.testTitle}</h2>
               <p className="text-sky-200 text-xs sm:text-sm">Server-authoritative evaluation & AI Diagnostic report</p>
             </div>
-            <button
-              onClick={() => {
-                setSelectedTest(null);
-                setSessionState(null);
-                setExamResult(null);
-              }}
-              className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md w-full sm:w-auto"
-            >
-              Back to Exam Portal
-            </button>
+            <PressFeedback>
+              <button
+                onClick={() => {
+                  setSelectedTest(null);
+                  setSessionState(null);
+                  setExamResult(null);
+                }}
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-md w-full sm:w-auto cursor-pointer"
+              >
+                Back to Exam Portal
+              </button>
+            </PressFeedback>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 text-center">
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
               <div className="text-[11px] sm:text-xs text-sky-300 font-medium">Final Score</div>
               <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 mt-1">
-                {examResult.score} / {examResult.totalPossibleScore}
+                <CountUp value={examResult.score} /> / {examResult.totalPossibleScore}
               </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
               <div className="text-[11px] sm:text-xs text-sky-300 font-medium">National Rank</div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-1">#{examResult.globalRank}</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-1">
+                #<CountUp value={examResult.globalRank} />
+              </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
               <div className="text-[11px] sm:text-xs text-sky-300 font-medium">Percentile</div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-cyan-300 mt-1">{examResult.percentile}%</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-cyan-300 mt-1">
+                <CountUp value={examResult.percentile} suffix="%" />
+              </div>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-xl p-3 sm:p-4">
               <div className="text-[11px] sm:text-xs text-sky-300 font-medium">Accuracy</div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-purple-300 mt-1">{examResult.accuracy}%</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-purple-300 mt-1">
+                <CountUp value={examResult.accuracy} suffix="%" />
+              </div>
             </div>
           </div>
         </div>
@@ -1403,7 +1420,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             </div>
           </div>
         </div>
-      </div>
+      </SlideUp>
     );
   }
 

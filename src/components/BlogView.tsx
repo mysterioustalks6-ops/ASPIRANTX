@@ -5,6 +5,7 @@ import {
   BookOpen, Search, Calendar, User, Clock, Share2, ArrowLeft, 
   Sparkles, CheckCircle2, ChevronRight, Filter, AlertCircle, RefreshCw
 } from 'lucide-react';
+import { FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, SkeletonShimmer, EmptyState } from '../lib/animations';
 
 export const BlogView: React.FC = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -146,98 +147,108 @@ export const BlogView: React.FC = () => {
 
       {/* Detail Post View Modal */}
       {selectedPost ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl mb-8 animate-fadeIn">
-          <button
-            onClick={() => setSelectedPost(null)}
-            className="mb-6 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-2 transition-all border border-slate-700/50"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to All Articles</span>
-          </button>
-
-          <div className="max-w-4xl mx-auto">
-            {/* Category & Metadata Header */}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold uppercase tracking-wider">
-                {selectedPost.category}
-              </span>
-              <span className="text-xs text-slate-400 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                {calculateReadTime(selectedPost.body)}
-              </span>
-              <span className="text-xs text-slate-400 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
-                {formatDate(selectedPost.publishedAt || selectedPost.createdAt)}
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-4xl font-black text-white mb-6 leading-tight">
-              {selectedPost.title}
-            </h1>
-
-            {/* Author bar */}
-            <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 mb-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white text-base shadow-md">
-                  {selectedPost.authorName ? selectedPost.authorName.charAt(0) : 'E'}
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 font-bold text-white text-sm">
-                    <span>{selectedPost.authorName || 'ProTrack Educator'}</span>
-                    <CheckCircle2 className="w-4 h-4 text-sky-400 fill-sky-400/20" />
-                  </div>
-                  <p className="text-xs text-slate-400">Verified UPSC Faculty & Subject Expert</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => handleShare(selectedPost)}
-                className="px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold text-xs flex items-center gap-1.5 transition-all"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>{copied ? 'Link Copied!' : 'Share Article'}</span>
-              </button>
-            </div>
-
-            {/* Cover Image */}
-            {selectedPost.coverImageUrl && (
-              <div className="mb-8 rounded-2xl overflow-hidden border border-slate-800 shadow-xl max-h-96">
-                <img
-                  src={selectedPost.coverImageUrl}
-                  alt={selectedPost.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            {/* Article Content */}
-            <div className="prose prose-invert max-w-none bg-slate-950/40 p-6 sm:p-8 rounded-2xl border border-slate-800/60">
-              {renderFormattedBody(selectedPost.body)}
-            </div>
-
-            <div className="mt-10 pt-6 border-t border-slate-800 flex justify-between items-center">
+        <SlideUp>
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl mb-8">
+            <PressFeedback>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm flex items-center gap-2 transition-all"
+                className="mb-6 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-2 transition-all border border-slate-700/50"
               >
                 <ArrowLeft className="w-4 h-4" />
-                <span>Return to Blog Feed</span>
+                <span>Back to All Articles</span>
               </button>
-              <button
-                onClick={() => handleShare(selectedPost)}
-                className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-slate-950 font-black text-sm flex items-center gap-2 transition-all shadow-lg shadow-sky-500/20"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>{copied ? 'Copied to Clipboard!' : 'Share Insight'}</span>
-              </button>
+            </PressFeedback>
+
+            <div className="max-w-4xl mx-auto">
+              {/* Category & Metadata Header */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30 text-xs font-bold uppercase tracking-wider">
+                  {selectedPost.category}
+                </span>
+                <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" />
+                  {calculateReadTime(selectedPost.body)}
+                </span>
+                <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {formatDate(selectedPost.publishedAt || selectedPost.createdAt)}
+                </span>
+              </div>
+
+              <h1 className="text-2xl sm:text-4xl font-black text-white mb-6 leading-tight">
+                {selectedPost.title}
+              </h1>
+
+              {/* Author bar */}
+              <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white text-base shadow-md">
+                    {selectedPost.authorName ? selectedPost.authorName.charAt(0) : 'E'}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5 font-bold text-white text-sm">
+                      <span>{selectedPost.authorName || 'ProTrack Educator'}</span>
+                      <CheckCircle2 className="w-4 h-4 text-sky-400 fill-sky-400/20" />
+                    </div>
+                    <p className="text-xs text-slate-400">Verified UPSC Faculty & Subject Expert</p>
+                  </div>
+                </div>
+
+                <PressFeedback>
+                  <button
+                    onClick={() => handleShare(selectedPost)}
+                    className="px-4 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold text-xs flex items-center gap-1.5 transition-all"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>{copied ? 'Link Copied!' : 'Share Article'}</span>
+                  </button>
+                </PressFeedback>
+              </div>
+
+              {/* Cover Image */}
+              {selectedPost.coverImageUrl && (
+                <div className="mb-8 rounded-2xl overflow-hidden border border-slate-800 shadow-xl max-h-96">
+                  <img
+                    src={selectedPost.coverImageUrl}
+                    alt={selectedPost.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
+              {/* Article Content */}
+              <div className="prose prose-invert max-w-none bg-slate-950/40 p-6 sm:p-8 rounded-2xl border border-slate-800/60">
+                {renderFormattedBody(selectedPost.body)}
+              </div>
+
+              <div className="mt-10 pt-6 border-t border-slate-800 flex justify-between items-center">
+                <PressFeedback>
+                  <button
+                    onClick={() => setSelectedPost(null)}
+                    className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm flex items-center gap-2 transition-all"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Return to Blog Feed</span>
+                  </button>
+                </PressFeedback>
+                <PressFeedback>
+                  <button
+                    onClick={() => handleShare(selectedPost)}
+                    className="px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-slate-950 font-black text-sm flex items-center gap-2 transition-all shadow-lg shadow-sky-500/20"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>{copied ? 'Copied to Clipboard!' : 'Share Insight'}</span>
+                  </button>
+                </PressFeedback>
+              </div>
             </div>
           </div>
-        </div>
+        </SlideUp>
       ) : null}
 
       {/* Main List Section */}
       {!selectedPost && (
-        <>
+        <SlideUp>
           {/* Controls Bar: Search & Category Pills */}
           <div className="space-y-4 mb-8">
             <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
@@ -254,13 +265,15 @@ export const BlogView: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2 self-end sm:self-auto">
-                <button
-                  onClick={fetchPosts}
-                  className="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all"
-                  title="Refresh Posts"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </button>
+                <PressFeedback>
+                  <button
+                    onClick={fetchPosts}
+                    className="p-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-2xl text-slate-400 hover:text-white transition-all"
+                    title="Refresh Posts"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  </button>
+                </PressFeedback>
               </div>
             </div>
 
@@ -268,104 +281,112 @@ export const BlogView: React.FC = () => {
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
               <Filter className="w-4 h-4 text-slate-500 shrink-0 mr-1" />
               {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20'
-                      : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
-                  }`}
-                >
-                  {cat}
-                </button>
+                <PressFeedback key={cat}>
+                  <button
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                      selectedCategory === cat
+                        ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20'
+                        : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                </PressFeedback>
               ))}
             </div>
           </div>
 
           {/* Posts Grid */}
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
-              <RefreshCw className="w-8 h-8 animate-spin text-sky-400" />
-              <p className="text-sm font-medium">Loading published articles...</p>
-            </div>
-          ) : filteredPosts.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center my-8">
-              <AlertCircle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <h3 className="text-lg font-bold text-slate-200 mb-1">No Published Posts Found</h3>
-              <p className="text-slate-400 text-sm max-w-md mx-auto">
-                {searchQuery || selectedCategory !== 'All' 
-                  ? 'No articles match your active filter. Try clearing your search or switching categories.' 
-                  : 'Faculty members are currently preparing new daily current affairs content.'}
-              </p>
-            </div>
-          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
-                <div
-                  key={post.id}
-                  onClick={() => setSelectedPost(post)}
-                  className="group bg-slate-900 hover:bg-slate-900/80 border border-slate-800 hover:border-sky-500/40 rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 flex flex-col hover:-translate-y-1 hover:shadow-xl hover:shadow-sky-500/5"
-                >
-                  {/* Card Cover Image */}
-                  <div className="relative h-48 bg-slate-950 overflow-hidden">
-                    <img
-                      src={post.coverImageUrl || 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80'}
-                      alt={post.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 left-3">
-                      <span className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-sky-300 border border-sky-500/30 text-[11px] font-bold uppercase tracking-wider">
-                        {post.category}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-6 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-3 text-xs text-slate-400 mb-3">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3.5 h-3.5" />
-                          {formatDate(post.publishedAt || post.createdAt)}
-                        </span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {calculateReadTime(post.body)}
-                        </span>
-                      </div>
-
-                      <h3 className="text-lg font-bold text-white group-hover:text-sky-300 transition-colors line-clamp-2 mb-2 leading-snug">
-                        {post.title}
-                      </h3>
-
-                      <p className="text-slate-400 text-xs line-clamp-3 leading-relaxed mb-4">
-                        {post.body.replace(/[#*`-]/g, '')}
-                      </p>
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between mt-auto">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-300 text-xs font-bold">
-                          {post.authorName ? post.authorName.charAt(0) : 'E'}
-                        </div>
-                        <span className="text-xs font-medium text-slate-300 truncate max-w-[140px]">
-                          {post.authorName || 'Faculty'}
-                        </span>
-                      </div>
-
-                      <span className="text-xs font-bold text-sky-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                        <span>Read</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                  </div>
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <div key={i} className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4">
+                  <SkeletonShimmer className="h-44 w-full rounded-2xl" />
+                  <SkeletonShimmer className="h-6 w-3/4 rounded-lg" />
+                  <SkeletonShimmer className="h-4 w-full rounded-lg" />
+                  <SkeletonShimmer className="h-4 w-1/2 rounded-lg" />
                 </div>
               ))}
             </div>
+          ) : filteredPosts.length === 0 ? (
+            <EmptyState
+              icon={<AlertCircle className="w-12 h-12 text-slate-600" />}
+              title="No Published Posts Found"
+              description={searchQuery || selectedCategory !== 'All' 
+                ? 'No articles match your active filter. Try clearing your search or switching categories.' 
+                : 'Faculty members are currently preparing new daily current affairs content.'}
+            />
+          ) : (
+            <Stagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPosts.map((post) => (
+                <StaggerItem key={post.id}>
+                  <PressFeedback className="h-full">
+                    <div
+                      onClick={() => setSelectedPost(post)}
+                      className="group bg-slate-900 hover:bg-slate-900/80 border border-slate-800 hover:border-sky-500/40 rounded-3xl overflow-hidden cursor-pointer transition-all duration-300 flex flex-col h-full hover:shadow-xl hover:shadow-sky-500/5"
+                    >
+                      {/* Card Cover Image */}
+                      <div className="relative h-48 bg-slate-950 overflow-hidden">
+                        <img
+                          src={post.coverImageUrl || 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80'}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-3 left-3">
+                          <span className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-sky-300 border border-sky-500/30 text-[11px] font-bold uppercase tracking-wider">
+                            {post.category}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="p-6 flex-1 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center gap-3 text-xs text-slate-400 mb-3">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              {formatDate(post.publishedAt || post.createdAt)}
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              {calculateReadTime(post.body)}
+                            </span>
+                          </div>
+
+                          <h3 className="text-lg font-bold text-white group-hover:text-sky-300 transition-colors line-clamp-2 mb-2 leading-snug">
+                            {post.title}
+                          </h3>
+
+                          <p className="text-slate-400 text-xs line-clamp-3 leading-relaxed mb-4">
+                            {post.body.replace(/[#*`-]/g, '')}
+                          </p>
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between mt-auto">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-300 text-xs font-bold">
+                              {post.authorName ? post.authorName.charAt(0) : 'E'}
+                            </div>
+                            <span className="text-xs font-medium text-slate-300 truncate max-w-[140px]">
+                              {post.authorName || 'Faculty'}
+                            </span>
+                          </div>
+
+                          <span className="text-xs font-bold text-sky-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                            <span>Read</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </PressFeedback>
+                </StaggerItem>
+              ))}
+            </Stagger>
           )}
-        </>
+        </SlideUp>
       )}
     </div>
   );

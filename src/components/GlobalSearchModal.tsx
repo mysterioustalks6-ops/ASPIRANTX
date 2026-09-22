@@ -5,6 +5,7 @@ import {
   Mic, ShieldCheck, Crown, Gift, Compass
 } from 'lucide-react';
 import { APP_FEATURES } from '../data/appFeatureIndex';
+import { ModalTransition, PressFeedback, Stagger, StaggerItem } from '../lib/animations';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
@@ -87,8 +88,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
     }
   };
 
-  if (!isOpen) return null;
-
   const postsList = results?.posts || [];
   const topicsList = results?.topics || [];
   const questionsList = results?.questions || [];
@@ -96,8 +95,8 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
   const hasFeatureResults = matchedFeatures.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-start justify-center pt-20 p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden space-y-0">
+    <ModalTransition isOpen={isOpen} onClose={onClose}>
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden space-y-0 text-left">
         {/* SEARCH BAR INPUT */}
         <div className="p-4 border-b border-slate-800 flex items-center space-x-3 bg-slate-950/50">
           <Search className="w-5 h-5 text-indigo-400 shrink-0" />
@@ -275,6 +274,6 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
           )}
         </div>
       </div>
-    </div>
+    </ModalTransition>
   );
 };

@@ -17,6 +17,7 @@ import {
   MapPin, BookOpen, FileText, Upload, MessageSquare, Loader2, Mic,
   Megaphone, Edit2, Tag
 } from 'lucide-react';
+import { SlideUp, PressFeedback } from '../lib/animations';
 
 interface AdminPanelProps {
   user: UserProfile | null;
@@ -69,44 +70,7 @@ export interface UtrRequestRecord {
   processedAt?: string;
 }
 
-const INITIAL_ADMIN_USERS: AdminUserRecord[] = [
-  {
-    id: 'usr-admin-01',
-    name: 'Ambuj Yadav (Super Admin)',
-    email: 'ambujyadav0010@gmail.com',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-    exam: 'UPSC CSE 2026',
-    stateName: 'Uttar Pradesh',
-    role: 'ADMIN',
-    isPremium: true,
-    planName: 'PRO PASS',
-    streakDays: 45,
-    xp: 3500,
-    coins: 999,
-    level: 10,
-    completedTopicsCount: 28,
-    joinedAt: '2026-01-01',
-    status: 'ACTIVE',
-  },
-  {
-    id: 'usr-demo-02',
-    name: 'Priya Sharma (Aspirant)',
-    email: 'priya.sharma@gmail.com',
-    avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
-    exam: 'UPSC CSE 2026',
-    stateName: 'Delhi NCR',
-    role: 'USER',
-    isPremium: false,
-    planName: 'FREE',
-    streakDays: 12,
-    xp: 1200,
-    coins: 150,
-    level: 4,
-    completedTopicsCount: 14,
-    joinedAt: '2026-02-10',
-    status: 'ACTIVE',
-  }
-];
+const INITIAL_ADMIN_USERS: AdminUserRecord[] = [];
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFlagsUpdated, onOpenCustomizerModal }) => {
   const isAdmin = user?.role === 'ADMIN' || user?.email === 'ambujyadav0010@gmail.com';
@@ -1926,7 +1890,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 bg-slate-900/90 rounded-3xl border border-slate-800 backdrop-blur-xl shadow-2xl">
+    <SlideUp>
+      <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 bg-slate-900/90 rounded-3xl border border-slate-800 backdrop-blur-xl shadow-2xl">
       {/* Console Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
         <div className="flex items-center gap-3">
@@ -6585,7 +6550,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
         )}
       </AnimatePresence>
 
-    </div>
+      </div>
+    </SlideUp>
   );
 };
 

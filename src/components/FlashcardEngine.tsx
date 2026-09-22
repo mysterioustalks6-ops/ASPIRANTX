@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { EXAM_LIST } from '../lib/examList';
 import { normalizeExamId } from '../lib/examRegistry';
+import { motion, AnimatePresence } from 'motion/react';
+import { PressFeedback, triggerConfetti, FadeIn, ScaleIn } from '../lib/animations';
 
 export interface Flashcard {
   id: string;
@@ -357,6 +359,10 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
       }
     }));
 
+    if (status === 'easy') {
+      triggerConfetti();
+    }
+
     handleNext();
 
     // Authoritative server Leitner update
@@ -560,120 +566,133 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
             )}
           </div>
 
-          <div
+          <motion.div
             onClick={handleFlip}
-            className={`min-h-[260px] p-8 rounded-2xl border transition-all duration-300 cursor-pointer select-none flex flex-col justify-between relative shadow-sm ${
+            animate={{ rotateY: isFlipped ? 180 : 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+            className={`min-h-[260px] p-6 sm:p-8 rounded-2xl border transition-colors cursor-pointer select-none flex flex-col justify-between relative shadow-lg ${
               isFlipped
                 ? 'bg-slate-900 border-sky-500/40 text-slate-100'
                 : 'bg-slate-900 border-slate-800 hover:border-sky-500/30 text-slate-100'
             }`}
           >
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[10px] font-semibold uppercase">
-                  {currentCard.category}
-                </span>
-                {currentCard.isCustom && (
-                  <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px] font-bold">
-                    Custom Card
+            <div style={{ transform: isFlipped ? 'rotateY(180deg)' : 'none' }} className="flex flex-col justify-between h-full space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[10px] font-semibold uppercase">
+                    {currentCard.category}
                   </span>
+                  {currentCard.isCustom && (
+                    <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px] font-bold">
+                      Custom Card
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {currentCard.isCustom && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Delete this custom flashcard?')) {
+                          handleDeleteCard(currentCard.id);
+                        }
+                      }}
+                      aria-label="Delete this custom flashcard"
+                      className="text-rose-400 hover:text-rose-300 p-1"
+                      title="Delete card"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                    <RotateCw className="w-3 h-3 text-sky-400" /> Click anywhere to flip
+                  </span>
+                </div>
+              </div>
+
+              <div className="my-6 text-center text-base sm:text-lg font-bold leading-relaxed whitespace-pre-line px-4">
+                {isFlipped ? (
+                  <div className="space-y-2 text-left">
+                    <span className="text-xs text-emerald-400 font-bold block">✓ Model Answer & Explanation:</span>
+                    <div className="text-slate-200 text-sm font-normal leading-relaxed">{currentCard.answer}</div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 text-left">
+                    <span className="text-xs text-sky-400 font-bold block">❓ Active Recall Question:</span>
+                    <div className="text-white text-base font-semibold leading-relaxed">{currentCard.question}</div>
+                  </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-3">
-                {currentCard.isCustom && (
+              {/* Hint Drawer */}
+              <div className="flex items-center justify-between border-t border-slate-800 pt-3">
+                {currentCard.hint ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (confirm('Delete this custom flashcard?')) {
-                        handleDeleteCard(currentCard.id);
-                      }
+                      setShowHint(!showHint);
                     }}
-                    aria-label="Delete this custom flashcard"
-                    className="text-rose-400 hover:text-rose-300 p-1"
-                    title="Delete card"
+                    aria-label="Toggle memory hint"
+                    className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {showHint ? `Hint: ${currentCard.hint}` : 'Show Memory Hint'}
                   </button>
-                )}
-                <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
-                  <RotateCw className="w-3 h-3 text-sky-400" /> Click anywhere to flip
+                ) : <div />}
+
+                <span className="text-[10px] text-slate-500">
+                  {isFlipped ? 'Answer View' : 'Question View'}
                 </span>
               </div>
             </div>
-
-            <div className="my-6 text-center text-base sm:text-lg font-bold leading-relaxed whitespace-pre-line px-4">
-              {isFlipped ? (
-                <div className="space-y-2 text-left">
-                  <span className="text-xs text-emerald-400 font-bold block">✓ Model Answer & Explanation:</span>
-                  <div className="text-slate-200 text-sm font-normal leading-relaxed">{currentCard.answer}</div>
-                </div>
-              ) : (
-                <div className="space-y-2 text-left">
-                  <span className="text-xs text-sky-400 font-bold block">❓ Active Recall Question:</span>
-                  <div className="text-white text-base font-semibold leading-relaxed">{currentCard.question}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Hint Drawer */}
-            <div className="flex items-center justify-between border-t border-slate-800 pt-3">
-              {currentCard.hint ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowHint(!showHint);
-                  }}
-                  aria-label="Toggle memory hint"
-                  className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {showHint ? `Hint: ${currentCard.hint}` : 'Show Memory Hint'}
-                </button>
-              ) : <div />}
-
-              <span className="text-[10px] text-slate-500">
-                {isFlipped ? 'Answer View' : 'Question View'}
-              </span>
-            </div>
-          </div>
+          </motion.div>
 
           {/* Controls Bar */}
           <div className="flex items-center justify-between gap-4 pt-2">
-            <button
-              onClick={handlePrev}
-              aria-label="Navigate to previous flashcard"
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" /> Previous Card
-            </button>
+            <PressFeedback>
+              <button
+                onClick={handlePrev}
+                aria-label="Navigate to previous flashcard"
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" /> Previous Card
+              </button>
+            </PressFeedback>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => markReview('hard')}
-                aria-label="Mark card as hard: reset to Leitner Box 1"
-                className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1 transition-colors"
-                title="Mark Hard (Box 1 • Review in 4 Hours)"
-              >
-                <Frown className="w-4 h-4" /> Hard
-              </button>
-              <button
-                onClick={() => markReview('easy')}
-                aria-label="Mark card as easy: advance to next Leitner Box"
-                className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-colors"
-                title="Mark Easy (Advance Leitner Box)"
-              >
-                <Smile className="w-4 h-4" /> Easy
-              </button>
+              <PressFeedback>
+                <button
+                  onClick={() => markReview('hard')}
+                  aria-label="Mark card as hard: reset to Leitner Box 1"
+                  className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Mark Hard (Box 1 • Review in 4 Hours)"
+                >
+                  <Frown className="w-4 h-4" /> Hard
+                </button>
+              </PressFeedback>
+              <PressFeedback>
+                <button
+                  onClick={() => markReview('easy')}
+                  aria-label="Mark card as easy: advance to next Leitner Box"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Mark Easy (Advance Leitner Box)"
+                >
+                  <Smile className="w-4 h-4" /> Easy
+                </button>
+              </PressFeedback>
             </div>
 
-            <button
-              onClick={handleNext}
-              aria-label="Navigate to next flashcard"
-              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
-            >
-              Next Card <ChevronRight className="w-4 h-4" />
-            </button>
+            <PressFeedback>
+              <button
+                onClick={handleNext}
+                aria-label="Navigate to next flashcard"
+                className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              >
+                Next Card <ChevronRight className="w-4 h-4" />
+              </button>
+            </PressFeedback>
           </div>
         </div>
       )}

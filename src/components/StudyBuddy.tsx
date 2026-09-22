@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SlideUp, ScaleIn, PressFeedback, ErrorShake, triggerConfetti } from '../lib/animations';
 import { UserProfile, RoomMessage, RoomMessageAttachment } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { 
@@ -193,8 +194,10 @@ export const StudyBuddy: React.FC<StudyBuddyProps> = ({ user, onNavigate }) => {
         if (data.matched) {
           setStatus('matched');
           setRoomId(data.roomId);
-          setBuddyEmail(data.buddyEmail || 'Aspirant Peer');
-        } else if (data.waiting) {
+          setBuddyEmail(data.buddyEmail);
+          fetchRoomMessages(data.roomId);
+          triggerConfetti({ particleCount: 50, spread: 70 });
+        } else {
           setStatus('waiting');
         }
       } else {
@@ -330,9 +333,11 @@ export const StudyBuddy: React.FC<StudyBuddyProps> = ({ user, onNavigate }) => {
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-900/80 rounded-3xl p-8 border border-white/10 shadow-xl backdrop-blur-xl max-w-xl mx-auto">
           <h2 className="text-xl font-bold text-white mb-4">Find Your Dedicated Study Partner</h2>
           {errorMessage && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
-              {errorMessage}
-            </div>
+            <ErrorShake>
+              <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                {errorMessage}
+              </div>
+            </ErrorShake>
           )}
           <form onSubmit={handleJoinQueue} className="space-y-5">
             <div>
@@ -356,20 +361,22 @@ export const StudyBuddy: React.FC<StudyBuddyProps> = ({ user, onNavigate }) => {
               </select>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 hover:from-indigo-500 hover:to-purple-500 transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>Searching Queue...</>
-              ) : (
-                <>
-                  <Users className="w-4 h-4" />
-                  Find a Study Buddy Now
-                </>
-              )}
-            </button>
+            <PressFeedback disabled={loading}>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 hover:from-indigo-500 hover:to-purple-500 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {loading ? (
+                  <>Searching Queue...</>
+                ) : (
+                  <>
+                    <Users className="w-4 h-4" />
+                    Find a Study Buddy Now
+                  </>
+                )}
+              </button>
+            </PressFeedback>
           </form>
         </motion.div>
       )}

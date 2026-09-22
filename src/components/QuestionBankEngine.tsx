@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SlideUp, Stagger, StaggerItem, PressFeedback, EmptyState, SkeletonShimmer, ModalTransition } from '../lib/animations';
 import { getStandardSubject, getExamSubjects } from './PyqEngine';
 import { dedupFetch } from '../lib/apiDeduplicator';
 import { getApiUrl } from '../lib/apiConfig';
@@ -571,18 +572,34 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
           {/* Questions Grid */}
           <div className="space-y-4 max-h-[82vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-emerald-500/40 scrollbar-track-transparent">
             {(() => {
-              if (questions.length === 0) {
+              if (loading) {
                 return (
-                  <div className="p-8 text-center rounded-2xl bg-black/30 border border-white/5 text-slate-400 text-xs">
-                    No questions found in Question Bank for subject ({selectedSubject}). Try selecting "All Subjects".
+                  <div className="space-y-3">
+                    <SkeletonShimmer height="h-28" className="bg-slate-900/60 rounded-2xl border border-white/5" />
+                    <SkeletonShimmer height="h-28" className="bg-slate-900/60 rounded-2xl border border-white/5" />
+                    <SkeletonShimmer height="h-28" className="bg-slate-900/60 rounded-2xl border border-white/5" />
                   </div>
                 );
               }
 
+              if (questions.length === 0) {
+                return (
+                  <EmptyState
+                    icon="📖"
+                    title="No Questions Found"
+                    description={`No questions found in Question Bank for subject (${selectedSubject}). Try selecting "All Subjects" or clearing filters.`}
+                    action={{
+                      label: 'Reset to All Subjects',
+                      onClick: () => setSelectedSubject('All'),
+                    }}
+                  />
+                );
+              }
+
               return (
-                <div className="space-y-4">
+                <Stagger className="space-y-4">
                   {questions.map((q, index) => (
-                    <div
+                    <StaggerItem
                       key={q.id}
                       className="p-5 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 transition-all hover:border-emerald-500/20 text-left"
                     >
@@ -601,6 +618,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                             </span>
                           )}
                         </div>
+
 
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-slate-400 font-bold">
@@ -669,7 +687,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                           )}
                         </div>
                       )}
-                    </div>
+                    </StaggerItem>
                   ))}
 
                   {/* Bottom Pagination Controls Bar */}
@@ -678,23 +696,27 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                       Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} Questions Total)
                     </div>
                     <div className="flex items-center gap-2">
-                      <button
-                        disabled={page <= 1 || loading}
-                        onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
-                      >
-                        ← Previous Page
-                      </button>
-                      <button
-                        disabled={page >= totalPages || loading}
-                        onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
-                      >
-                        Next Page →
-                      </button>
+                      <PressFeedback>
+                        <button
+                          disabled={page <= 1 || loading}
+                          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                        >
+                          ← Previous Page
+                        </button>
+                      </PressFeedback>
+                      <PressFeedback>
+                        <button
+                          disabled={page >= totalPages || loading}
+                          onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                        >
+                          Next Page →
+                        </button>
+                      </PressFeedback>
                     </div>
                   </div>
-                </div>
+                </Stagger>
               );
             })()}
           </div>
@@ -703,7 +725,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
 
       {/* ── TAB: INTERACTIVE QUIZ MODE ── */}
       {activeEngineTab === 'quiz' && (
-        <div className="space-y-6 max-w-3xl mx-auto">
+        <SlideUp className="space-y-6 max-w-3xl mx-auto">
           {!quizActive ? (
             <div className="bg-slate-900/60 border border-white/10 rounded-3xl p-8 text-center space-y-5">
               <QuestionIcon className="w-16 h-16 text-emerald-500/80 mx-auto" />
@@ -824,12 +846,12 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
               </div>
             </div>
           )}
-        </div>
+        </SlideUp>
       )}
 
       {/* ── TAB: PYQ REPEAT & TREND ANALYZER ── */}
       {activeEngineTab === 'patterns' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <SlideUp className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Trend Heatmap & Analytics */}
           <div className="lg:col-span-2 bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-4">
@@ -904,71 +926,61 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
             </button>
           </div>
 
-        </div>
+        </SlideUp>
       )}
 
       {/* Manual Question Creator Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-xl rounded-3xl bg-[#0d0d12] border border-white/10 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-black text-white">Create Question Bank Entry</h3>
+      <ModalTransition isOpen={showAddModal} onClose={() => setShowAddModal(false)}>
+        <div className="w-full max-w-xl mx-auto rounded-3xl bg-[#0d0d12] border border-white/10 p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <h3 className="text-lg font-black text-white">Create Question Bank Entry</h3>
 
-            <form onSubmit={handleSaveQuestion} className="space-y-3 text-xs">
+          <form onSubmit={handleSaveQuestion} className="space-y-3 text-xs">
+            <div>
+              <label className="text-slate-400 block mb-1">Target Exam</label>
+              <select
+                value={newQuestion.exam}
+                onChange={(e) => setNewQuestion({ ...newQuestion, exam: e.target.value })}
+                className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white font-bold"
+              >
+                {EXAM_LIST.map((ex) => (
+                  <option key={ex.id} value={ex.id}>{ex.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-slate-400 block mb-1">Target Exam</label>
+                <label className="text-slate-400 block mb-1">Type</label>
                 <select
-                  value={newQuestion.exam}
-                  onChange={(e) => setNewQuestion({ ...newQuestion, exam: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white font-bold"
+                  value={newQuestion.type}
+                  onChange={(e) => setNewQuestion({ ...newQuestion, type: e.target.value as any })}
+                  className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
                 >
-                  {EXAM_LIST.map((ex) => (
-                    <option key={ex.id} value={ex.id}>{ex.label}</option>
-                  ))}
+                  <option value="mcq">MCQ (Prelims)</option>
+                  <option value="mains_descriptive">Mains Descriptive</option>
+                  <option value="essay">Essay Paper</option>
+                  <option value="case_study">Ethics Case Study</option>
                 </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-400 block mb-1">Type</label>
-                  <select
-                    value={newQuestion.type}
-                    onChange={(e) => setNewQuestion({ ...newQuestion, type: e.target.value as any })}
-                    className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
-                  >
-                    <option value="mcq">MCQ (Prelims)</option>
-                    <option value="mains_descriptive">Mains Descriptive</option>
-                    <option value="essay">Essay</option>
-                    <option value="case_study">Ethics Case Study</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-400 block mb-1">Status</label>
-                  <select
-                    value={newQuestion.status}
-                    onChange={(e) => setNewQuestion({ ...newQuestion, status: e.target.value as any })}
-                    className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
-                  >
-                    <option value="published">Publish Mode</option>
-                    <option value="draft">Draft Mode</option>
-                  </select>
-                </div>
               </div>
 
               <div>
                 <label className="text-slate-400 block mb-1">Subject</label>
                 <input
                   type="text"
+                  placeholder="e.g. Modern History"
                   value={newQuestion.subject}
                   onChange={(e) => setNewQuestion({ ...newQuestion, subject: e.target.value })}
                   className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
                 />
               </div>
+            </div>
 
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-slate-400 block mb-1">Topic</label>
                 <input
                   type="text"
+                  placeholder="e.g. Revolt of 1857"
                   value={newQuestion.topic}
                   onChange={(e) => setNewQuestion({ ...newQuestion, topic: e.target.value })}
                   className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
@@ -976,92 +988,104 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
               </div>
 
               <div>
-                <label className="text-slate-400 block mb-1">Question Text</label>
-                <textarea
-                  rows={3}
-                  value={newQuestion.questionText}
-                  onChange={(e) => setNewQuestion({ ...newQuestion, questionText: e.target.value })}
+                <label className="text-slate-400 block mb-1">Difficulty</label>
+                <select
+                  value={newQuestion.difficulty}
+                  onChange={(e) => setNewQuestion({ ...newQuestion, difficulty: e.target.value as any })}
                   className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-400 block mb-1">Solution Blueprint</label>
-                <textarea
-                  rows={3}
-                  value={newQuestion.solutionText}
-                  onChange={(e) => setNewQuestion({ ...newQuestion, solutionText: e.target.value })}
-                  className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 font-bold"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-extrabold text-white"
-                >
-                  Save Question
-                </button>
+                  <option value="Easy">Easy</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Hard">Hard</option>
+                </select>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* AI Trend Prediction Modal */}
-      {showTrendModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl rounded-3xl bg-[#0d0d12] border border-white/10 p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-sm uppercase tracking-wider">
-                <Sparkles className="w-5 h-5 text-emerald-400" />
-                <span>AI Exam Trend & Weak-Area Predictor</span>
-              </div>
-              <button
-                onClick={() => setShowTrendModal(false)}
-                className="px-3 py-1 rounded-xl bg-white/10 text-slate-300 text-xs font-bold hover:bg-white/20 transition-all"
-              >
-                Close
-              </button>
             </div>
 
-            {trendPredictionResult ? (
-              <div className="space-y-4 text-xs text-slate-200">
-                <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/20 leading-relaxed space-y-3 font-sans whitespace-pre-line text-slate-200">
-                  {trendPredictionResult}
-                </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(trendPredictionResult);
-                      alert('Prediction report copied to clipboard!');
-                    }}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-slate-950 text-xs flex items-center gap-1.5 transition-all"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Copy Report
-                  </button>
-                </div>
-              </div>
-            ) : trendPredictionMessage ? (
-              <div className="p-5 rounded-2xl bg-amber-950/30 border border-amber-500/30 space-y-2 text-xs text-amber-200 leading-relaxed font-sans">
-                <div className="font-extrabold text-amber-400 flex items-center gap-1.5">
-                  <HelpCircle className="w-4 h-4 text-amber-400" />
-                  <span>Notice / Diagnostic</span>
-                </div>
-                <p>{trendPredictionMessage}</p>
-              </div>
-            ) : null}
-          </div>
+            <div>
+              <label className="text-slate-400 block mb-1">Question Text</label>
+              <textarea
+                rows={3}
+                required
+                value={newQuestion.questionText}
+                onChange={(e) => setNewQuestion({ ...newQuestion, questionText: e.target.value })}
+                className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-400 block mb-1">Solution Blueprint</label>
+              <textarea
+                rows={3}
+                value={newQuestion.solutionText}
+                onChange={(e) => setNewQuestion({ ...newQuestion, solutionText: e.target.value })}
+                className="w-full p-2.5 rounded-xl bg-black/60 border border-white/10 text-white"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 rounded-xl bg-white/5 text-slate-300 font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-extrabold text-white"
+              >
+                Save Question
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </ModalTransition>
+
+      {/* AI Trend Prediction Modal */}
+      <ModalTransition isOpen={showTrendModal} onClose={() => setShowTrendModal(false)}>
+        <div className="w-full max-w-2xl mx-auto rounded-3xl bg-[#0d0d12] border border-white/10 p-6 space-y-4 max-h-[85vh] overflow-y-auto shadow-2xl">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-sm uppercase tracking-wider">
+              <Sparkles className="w-5 h-5 text-emerald-400" />
+              <span>AI Exam Trend & Weak-Area Predictor</span>
+            </div>
+            <button
+              onClick={() => setShowTrendModal(false)}
+              className="px-3 py-1 rounded-xl bg-white/10 text-slate-300 text-xs font-bold hover:bg-white/20 transition-all"
+            >
+              Close
+            </button>
+          </div>
+
+          {trendPredictionResult ? (
+            <div className="space-y-4 text-xs text-slate-200">
+              <div className="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/20 leading-relaxed space-y-3 font-sans whitespace-pre-line text-slate-200">
+                {trendPredictionResult}
+              </div>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(trendPredictionResult);
+                    alert('Prediction report copied to clipboard!');
+                  }}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 font-bold text-slate-950 text-xs flex items-center gap-1.5 transition-all"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  Copy Report
+                </button>
+              </div>
+            </div>
+          ) : trendPredictionMessage ? (
+            <div className="p-5 rounded-2xl bg-amber-950/30 border border-amber-500/30 space-y-2 text-xs text-amber-200 leading-relaxed font-sans">
+              <div className="font-extrabold text-amber-400 flex items-center gap-1.5">
+                <HelpCircle className="w-4 h-4 text-amber-400" />
+                <span>Notice / Diagnostic</span>
+              </div>
+              <p>{trendPredictionMessage}</p>
+            </div>
+          ) : null}
+        </div>
+      </ModalTransition>
     </div>
   );
 };

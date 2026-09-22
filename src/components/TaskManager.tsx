@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TaskItem, TaskStatus } from '../types';
-import { INITIAL_TASKS } from '../data/tasks';
 import { 
   Plus, 
   CheckSquare, 
@@ -18,6 +17,7 @@ import {
   Award
 } from 'lucide-react';
 import { awardXPAndCoins } from '../lib/gamification';
+import { triggerConfetti, ModalTransition, EmptyState, PressFeedback } from '../lib/animations';
 
 interface TaskManagerProps {
   userId?: string;
@@ -31,12 +31,13 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
     const raw = localStorage.getItem(getTaskKey(userId, selectedExam));
     if (raw) {
       try {
-        return JSON.parse(raw);
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
       } catch (e) {
         console.error(e);
       }
     }
-    return INITIAL_TASKS;
+    return [];
   });
 
   // Reload tasks from Server (with LocalStorage optimistic cache)
@@ -51,7 +52,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
         const res = await fetch(`/api/user/tasks?userId=${encodeURIComponent(userId || 'guest')}&exam=${encodeURIComponent(selectedExam || 'NEET_UG')}`, { headers });
         if (res.ok) {
           const data = await res.json();
-          if (data.success && Array.isArray(data.tasks) && data.tasks.length > 0 && !unmounted) {
+          if (data.success && Array.isArray(data.tasks) && !unmounted) {
             setTasks(data.tasks);
             localStorage.setItem(getTaskKey(userId, selectedExam), JSON.stringify(data.tasks));
             return;
@@ -63,11 +64,14 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
       const raw = localStorage.getItem(getTaskKey(userId, selectedExam));
       if (raw && !unmounted) {
         try {
-          setTasks(JSON.parse(raw));
-          return;
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            setTasks(parsed);
+            return;
+          }
         } catch (e) {}
       }
-      if (!unmounted) setTasks(INITIAL_TASKS);
+      if (!unmounted) setTasks([]);
     };
 
     fetchTasks();
@@ -123,6 +127,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
     } catch (_e) {}
 
     if (earnedReward) {
+      triggerConfetti();
       await awardXPAndCoins(20, 5, 'Completed Daily Task', userId);
       try {
         const res = await fetch('/api/user/streak/trigger', {
@@ -350,118 +355,114 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
       </div>
 
       {/* Add Task Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4"
-          >
-            <h4 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400" /> Add New Study Task
-            </h4>
+      <ModalTransition isOpen={showAddModal} onClose={() => setShowAddModal(false)}>
+        <div className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4">
+          <h4 className="text-base font-bold text-white flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-400" /> Add New Study Task
+          </h4>
 
-            <form onSubmit={handleAddTask} className="space-y-4">
+          <form onSubmit={handleAddTask} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                Task Title
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. Read Chapter 12 on Fundamental Rights & solve 20 PYQs"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Task Title
+                  Subject
+                </label>
+                <select
+                  value={newSubject}
+                  onChange={(e) => setNewSubject(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="Polity">Polity</option>
+                  <option value="History">History</option>
+                  <option value="Economy">Economy</option>
+                  <option value="Environment">Environment</option>
+                  <option value="Quant">Quant</option>
+                  <option value="CSAT">CSAT</option>
+                  <option value="Current Affairs">Current Affairs</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Priority
+                </label>
+                <select
+                  value={newPriority}
+                  onChange={(e) => setNewPriority(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="High">High</option>
+                  <option value="Medium">Medium</option>
+                  <option value="Low">Low</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Initial Status
+                </label>
+                <select
+                  value={newStatus}
+                  onChange={(e) => setNewStatus(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                >
+                  <option value="todo">To Do</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Estimated Mins
                 </label>
                 <input
-                  type="text"
-                  placeholder="e.g. Read Chapter 12 on Fundamental Rights & solve 20 PYQs"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
-                  required
+                  type="number"
+                  value={newMinutes}
+                  onChange={(e) => setNewMinutes(Number(e.target.value))}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
+                  min={5}
+                  max={240}
                 />
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Subject
-                  </label>
-                  <select
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Polity">Polity</option>
-                    <option value="History">History</option>
-                    <option value="Economy">Economy</option>
-                    <option value="Environment">Environment</option>
-                    <option value="Quant">Quant</option>
-                    <option value="CSAT">CSAT</option>
-                    <option value="Current Affairs">Current Affairs</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Priority
-                  </label>
-                  <select
-                    value={newPriority}
-                    onChange={(e) => setNewPriority(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Initial Status
-                  </label>
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="todo">To Do</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Estimated Mins
-                  </label>
-                  <input
-                    type="number"
-                    value={newMinutes}
-                    onChange={(e) => setNewMinutes(Number(e.target.value))}
-                    className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 text-xs focus:outline-none focus:border-emerald-500"
-                    min={5}
-                    max={240}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white"
-                >
-                  Cancel
-                </button>
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-white cursor-pointer"
+              >
+                Cancel
+              </button>
+              <PressFeedback>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20"
+                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
                   Save Task
                 </button>
-              </div>
-            </form>
-          </motion.div>
+              </PressFeedback>
+            </div>
+          </form>
         </div>
-      )}
+      </ModalTransition>
     </div>
   );
 };

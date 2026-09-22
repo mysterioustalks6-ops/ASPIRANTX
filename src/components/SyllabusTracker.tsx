@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SlideUp, Stagger, StaggerItem, PressFeedback, ProgressAnimation, CountUp, triggerConfetti, AccordionTransition, ModalTransition } from '../lib/animations';
 import { SyllabusTopic, SubTopic, ExamType, PredictorSettings } from '../types';
 import { INITIAL_SYLLABUS_HIERARCHY } from '../data/academicData';
 import { EXAM_LIST } from '../lib/examList';
@@ -362,7 +363,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     const res = await saveCompletedSubtopicIds(nextSet, userId, selectedExam);
     setSyncState(res);
 
-    if (isNowChecking) {
+    if (isNowChecking && res.status === 'synced') {
+      triggerConfetti({ particleCount: 35, spread: 60 });
       await awardXPAndCoins(30, 10, 'Checked off Syllabus Sub-topic', userId);
     }
   };
@@ -801,23 +803,23 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         </div>
 
         {/* Tab Progress Bar Indicator */}
-        <div className="w-full sm:w-72 px-4 py-2 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col justify-center">
-          <div className="flex items-center justify-between text-[11px] font-bold mb-1">
+        <div className="w-full sm:w-72 px-4 py-2.5 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col justify-center">
+          <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
             <span className="text-slate-400">
               {activeTab === 'official' ? 'Official Coverage' : 'My Syllabus Coverage'}
             </span>
             <span className="text-sky-400 font-extrabold">
-              {activeTab === 'official' ? `${officialStats.percent}%` : `${personalStats.percent}%`}
+              <CountUp
+                value={activeTab === 'official' ? officialStats.percent : personalStats.percent}
+                suffix="%"
+              />
             </span>
           </div>
-          <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-            <div
-              className="h-full rounded-full transition-all duration-500 bg-sky-500"
-              style={{
-                width: `${activeTab === 'official' ? officialStats.percent : personalStats.percent}%`
-              }}
-            />
-          </div>
+          <ProgressAnimation
+            percent={activeTab === 'official' ? officialStats.percent : personalStats.percent}
+            barClassName="bg-gradient-to-r from-sky-500 to-indigo-500"
+            className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800"
+          />
         </div>
       </div>
 

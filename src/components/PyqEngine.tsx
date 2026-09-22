@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SlideUp, Stagger, StaggerItem, PressFeedback, EmptyState, SkeletonShimmer, SuccessFeedback, ErrorShake, AccordionTransition, ModalTransition } from '../lib/animations';
 import { dedupFetch } from '../lib/apiDeduplicator';
 import { PyqRecord } from '../types';
 import { EXAM_LIST } from '../lib/examList';
@@ -673,16 +674,22 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
       {/* Content Rendering based on Tab */}
       {subTab === 'practice' ? (
         <div className="space-y-4 max-h-[82vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-sky-500/40 scrollbar-track-transparent">
-          {pyqs.length === 0 ? (
-            <div className="p-12 text-center rounded-2xl bg-black/40 border border-white/10 space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                <AlertTriangle className="w-6 h-6 animate-pulse" />
-              </div>
-              <h3 className="text-base font-bold text-white">No past year questions yet for {selectedExam} — ask admin to bulk import or add PYQs</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                There are no PYQs currently available in the archive for {selectedExam}. Use the Bulk PYQ Import modal or add questions manually to populate this exam's archives.
-              </p>
+          {loading ? (
+            <div className="space-y-3">
+              <SkeletonShimmer height="h-32" className="bg-slate-900/60 rounded-2xl border border-white/5" />
+              <SkeletonShimmer height="h-32" className="bg-slate-900/60 rounded-2xl border border-white/5" />
+              <SkeletonShimmer height="h-32" className="bg-slate-900/60 rounded-2xl border border-white/5" />
             </div>
+          ) : pyqs.length === 0 ? (
+            <EmptyState
+              icon="📚"
+              title={`No past year questions yet for ${selectedExam}`}
+              description="There are no PYQs currently available in the archive for this exam. Use the Bulk PYQ Import modal or add questions manually to populate this exam's archives."
+              action={isAdmin && onOpenBulkImport ? {
+                label: 'Open Bulk Import',
+                onClick: onOpenBulkImport,
+              } : undefined}
+            />
           ) : viewGroupBy === 'year' ? (
             /* ── YEAR-WISE GROUPED FOLDERS VIEW ── */
             (() => {
@@ -691,9 +698,11 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
               if (years.length === 0) {
                 return (
-                  <div className="p-8 text-center rounded-2xl bg-black/40 border border-white/10 text-slate-400 text-xs">
-                    No questions found for the selected subject ({selectedSubject}) / year ({selectedSpecificYear}). Try selecting "All Subjects" or "All Exam Years".
-                  </div>
+                  <EmptyState
+                    icon="🔍"
+                    title="No questions found for filters"
+                    description={`No questions found for the selected subject (${selectedSubject}) / year (${selectedSpecificYear}). Try selecting "All Subjects" or "All Exam Years".`}
+                  />
                 );
               }
 
@@ -860,14 +869,14 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               }
 
               return (
-                <div className="space-y-4">
+                <Stagger className="space-y-4">
                   {pyqs.map((pyq, index) => {
                     const selectedOpt = userAnswers[pyq.id];
                     const isAnswered = selectedOpt !== undefined;
                     const isCorrect = selectedOpt === pyq.correctOption;
 
                     return (
-                      <div
+                      <StaggerItem
                         key={pyq.id}
                         className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-4 transition-all hover:border-white/20 text-left"
                       >
@@ -917,7 +926,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
                         {/* Options */}
                         {pyq.options && pyq.options.length > 0 && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
                             {pyq.options.map((opt, optIdx) => {
                               const isSelected = selectedOpt === optIdx;
                               const isOptionCorrect = pyq.correctOption === optIdx;
@@ -936,7 +945,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                                 <button
                                   key={optIdx}
                                   onClick={() => handleSelectOption(pyq.id, optIdx)}
-                                  className={`p-3 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${btnStyle}`}
+                                  className={`p-3 rounded-xl border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${btnStyle}`}
                                 >
                                   <span>
                                     <strong className="mr-2 text-slate-400">{String.fromCharCode(65 + optIdx)}.</strong>
@@ -954,37 +963,33 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                           </div>
                         )}
 
-                        {/* Explanation Drawer */}
+                        {/* Explanation Toggle */}
                         {pyq.explanation && (
-                          <div className="pt-2">
+                          <div className="pt-1">
                             <button
                               onClick={() =>
                                 setShowExplanations((prev) => ({ ...prev, [pyq.id]: !prev[pyq.id] }))
                               }
-                              className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
+                              className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1 cursor-pointer"
                             >
                               <Sparkles className="w-3.5 h-3.5" />
-                              {showExplanations[pyq.id] ? 'Hide Solution Explanation' : 'View Model Solution & Explanation'}
+                              {showExplanations[pyq.id] ? 'Hide Explanation' : 'View Model Solution & Explanation'}
                             </button>
 
-                            {showExplanations[pyq.id] && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="mt-2 p-3.5 rounded-xl bg-slate-900/30 border border-sky-500/20 text-xs text-sky-200 leading-relaxed"
-                              >
+                            <AccordionTransition isOpen={!!showExplanations[pyq.id]}>
+                              <div className="mt-2.5 p-4 rounded-xl bg-slate-900/40 border border-sky-500/20 text-xs text-sky-200 leading-relaxed">
                                 <strong className="block font-black text-sky-300 mb-1">
                                   Official Key & Detailed Explanation:
                                 </strong>
                                 {pyq.explanation}
-                              </motion.div>
-                            )}
+                              </div>
+                            </AccordionTransition>
                           </div>
                         )}
-                      </div>
+                      </StaggerItem>
                     );
                   })}
-                </div>
+                </Stagger>
               );
             })()
           )}
@@ -996,20 +1001,24 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                 Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} Questions Total)
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  disabled={page <= 1 || loading}
-                  onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
-                >
-                  ← Previous Page
-                </button>
-                <button
-                  disabled={page >= totalPages || loading}
-                  onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
-                >
-                  Next Page →
-                </button>
+                <PressFeedback>
+                  <button
+                    disabled={page <= 1 || loading}
+                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                    className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                  >
+                    ← Previous Page
+                  </button>
+                </PressFeedback>
+                <PressFeedback>
+                  <button
+                    disabled={page >= totalPages || loading}
+                    onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+                    className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                  >
+                    Next Page →
+                  </button>
+                </PressFeedback>
               </div>
             </div>
           )}

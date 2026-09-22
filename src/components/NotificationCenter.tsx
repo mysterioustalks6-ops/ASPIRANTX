@@ -16,6 +16,7 @@ import {
   Plus,
   Compass
 } from 'lucide-react';
+import { FadeIn, SlideDown, PressFeedback, EmptyState } from '../lib/animations';
 import { AppNotification, ActiveTab } from '../types';
 import { 
   loadWorkspaceConfig, 
@@ -113,7 +114,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
       // Parallel fetch: regular notifications and announcements
       const [notifsRes, annsRes] = await Promise.allSettled([
-        fetch('/api/notifications', { cache: 'no-store' }).then((r) => r.json()),
+        fetch(`/api/notifications?userId=${encodeURIComponent(userId)}`, { cache: 'no-store' }).then((r) => r.json()),
         fetch(`/api/announcements?exam=${encodeURIComponent(activeExam)}`, { cache: 'no-store' }).then((r) => r.json()),
       ]);
 
@@ -343,34 +344,37 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Trigger Bell Button */}
-      <button
-        id="notification-bell-btn"
-        onClick={() => setIsOpen(!isOpen)}
-        className={`relative p-2.5 rounded-xl transition-all ${
-          isOpen
-            ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40'
-            : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800'
-        }`}
-        title="Notifications & Announcements"
-        aria-label="Notifications"
-      >
-        <Bell className={`w-4 h-4 ${hasUrgentUnread ? 'text-rose-400 animate-bounce' : ''}`} />
-        {unreadCount > 0 && (
-          <span
-            className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center shadow-lg ${
-              hasUrgentUnread
-                ? 'bg-rose-600 ring-2 ring-rose-950 animate-pulse'
-                : 'bg-indigo-600 ring-2 ring-slate-950'
-            }`}
-          >
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
-        )}
-      </button>
+      <PressFeedback>
+        <button
+          id="notification-bell-btn"
+          onClick={() => setIsOpen(!isOpen)}
+          className={`relative p-2.5 rounded-xl transition-all ${
+            isOpen
+              ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40'
+              : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800'
+          }`}
+          title="Notifications & Announcements"
+          aria-label="Notifications"
+        >
+          <Bell className={`w-4 h-4 ${hasUrgentUnread ? 'text-rose-400 animate-bounce' : ''}`} />
+          {unreadCount > 0 && (
+            <span
+              className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 text-white font-extrabold text-[10px] rounded-full flex items-center justify-center shadow-lg ${
+                hasUrgentUnread
+                  ? 'bg-rose-600 ring-2 ring-rose-950 animate-pulse'
+                  : 'bg-indigo-600 ring-2 ring-slate-950'
+              }`}
+            >
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </button>
+      </PressFeedback>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 sm:w-[420px] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl z-50 overflow-hidden flex flex-col max-h-[520px] animate-in fade-in slide-in-from-top-2 duration-150">
-          {/* Header */}
+        <SlideDown className="absolute right-0 mt-2 w-80 sm:w-[420px] z-50">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[520px]">
+            {/* Header */}
           <div className="p-3.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <div className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
@@ -601,6 +605,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             )}
           </div>
         </div>
+        </SlideDown>
       )}
     </div>
   );

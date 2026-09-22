@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SlideUp, Stagger, StaggerItem, PressFeedback, SkeletonShimmer, EmptyState, ModalTransition } from '../lib/animations';
 import { 
   BookOpen, 
   Search, 
@@ -339,26 +340,31 @@ export const LibraryEngine: React.FC<LibraryEngineProps> = ({ user, onNavigate }
 
       {/* Main Books Grid View */}
       {loading ? (
-        <div className="py-20 text-center space-y-3">
-          <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs text-slate-400">Loading library references...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <SkeletonShimmer height="h-64" className="bg-slate-900 rounded-3xl border border-slate-800" />
+          <SkeletonShimmer height="h-64" className="bg-slate-900 rounded-3xl border border-slate-800" />
+          <SkeletonShimmer height="h-64" className="bg-slate-900 rounded-3xl border border-slate-800" />
         </div>
       ) : filteredBooks.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-16 text-center space-y-4">
-          <BookMarked className="w-12 h-12 text-slate-600 mx-auto opacity-40" />
-          <div className="space-y-1">
-            <h3 className="text-white font-bold text-sm">No books found</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              No records match your search filter parameters. Try clearing the filter or selecting All Categories.
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon="📚"
+          title="No books found"
+          description="No records match your search filter parameters. Try clearing the filter or selecting All Categories."
+          action={{
+            label: 'Reset Filters',
+            onClick: () => {
+              setSelectedCategory('ALL');
+              setSelectedSubject('ALL');
+              setSearchQuery('');
+            },
+          }}
+        />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Stagger className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBooks.map(book => {
             const isBookmarked = bookmarks.includes(book.id);
             return (
-              <div 
+              <StaggerItem 
                 key={book.id} 
                 className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 rounded-3xl p-5 sm:p-6 flex flex-col justify-between transition-all group relative overflow-hidden shadow-sm"
               >
@@ -490,28 +496,27 @@ export const LibraryEngine: React.FC<LibraryEngineProps> = ({ user, onNavigate }
                     </button>
                   </div>
                 </div>
-              </div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </Stagger>
       )}
 
       {/* ── ADMIN CRUD MODAL ── */}
-      {showCrudModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 relative">
-            <button
-              onClick={() => setShowCrudModal(false)}
-              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
-            >
-              <X className="w-4 h-4" />
-            </button>
+      <ModalTransition isOpen={showCrudModal} onClose={() => setShowCrudModal(false)}>
+        <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 relative mx-auto">
+          <button
+            onClick={() => setShowCrudModal(false)}
+            className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+          >
+            <X className="w-4 h-4" />
+          </button>
 
-            <div className="flex items-center gap-2.5 pb-3 border-b border-slate-800">
-              <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <div>
+          <div className="flex items-center gap-2.5 pb-3 border-b border-slate-800">
+            <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <div>
                 <h3 className="font-bold text-slate-100 text-sm">
                   {editingBook ? 'Edit Book Reference' : 'Add New Book Reference'}
                 </h3>
@@ -657,8 +662,7 @@ export const LibraryEngine: React.FC<LibraryEngineProps> = ({ user, onNavigate }
               </button>
             </form>
           </div>
-        </div>
-      )}
+        </ModalTransition>
     </div>
   );
 };

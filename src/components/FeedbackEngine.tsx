@@ -12,6 +12,7 @@ import {
   Loader2,
   RefreshCw
 } from 'lucide-react';
+import { FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, ErrorShake, triggerConfetti } from '../lib/animations';
 
 interface FeedbackEngineProps {
   userEmail?: string;
@@ -136,6 +137,7 @@ export const FeedbackEngine: React.FC<FeedbackEngineProps> = ({ userEmail = 'gue
       if (data.success) {
         setDescription('');
         setSubmissionSuccess(true);
+        triggerConfetti();
         setTimeout(() => setSubmissionSuccess(false), 4000);
         fetchUserReports();
       } else {
@@ -295,25 +297,27 @@ export const FeedbackEngine: React.FC<FeedbackEngineProps> = ({ userEmail = 'gue
                 Violation Tracker: {violationCount}/3 warnings
               </div>
 
-              <button
-                type="submit"
-                disabled={hasProfanity || isSubmitting}
-                className={`px-5 py-3 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 ${
-                  hasProfanity || isSubmitting
-                    ? 'bg-rose-500/10 border border-rose-500/20 text-rose-300 cursor-not-allowed' 
-                    : 'bg-rose-600 hover:bg-rose-500 text-white hover:scale-105'
-                }`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" /> Submit Report
-                  </>
-                )}
-              </button>
+              <PressFeedback>
+                <button
+                  type="submit"
+                  disabled={hasProfanity || isSubmitting}
+                  className={`px-5 py-3 rounded-xl font-black text-xs transition-all shadow-lg flex items-center gap-1.5 ${
+                    hasProfanity || isSubmitting
+                      ? 'bg-rose-500/10 border border-rose-500/20 text-rose-300 cursor-not-allowed' 
+                      : 'bg-rose-600 hover:bg-rose-500 text-white'
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" /> Submit Report
+                    </>
+                  )}
+                </button>
+              </PressFeedback>
             </div>
 
           </form>
@@ -347,13 +351,15 @@ export const FeedbackEngine: React.FC<FeedbackEngineProps> = ({ userEmail = 'gue
             <h3 className="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2">
               <FileText className="w-4 h-4 text-rose-400" /> My Submitted Feedback
             </h3>
-            <button
-              onClick={fetchUserReports}
-              disabled={isLoadingLogs}
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all text-[10px] flex items-center gap-1"
-            >
-              <RefreshCw className={`w-3 h-3 ${isLoadingLogs ? 'animate-spin' : ''}`} /> Refresh
-            </button>
+            <PressFeedback>
+              <button
+                onClick={fetchUserReports}
+                disabled={isLoadingLogs}
+                className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all text-[10px] flex items-center gap-1"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoadingLogs ? 'animate-spin' : ''}`} /> Refresh
+              </button>
+            </PressFeedback>
           </div>
 
           <div className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
@@ -366,46 +372,50 @@ export const FeedbackEngine: React.FC<FeedbackEngineProps> = ({ userEmail = 'gue
                 No feedback reports found for your account.
               </div>
             ) : (
-              logs.map(log => (
-                <div key={log.id} className="p-3.5 rounded-xl bg-black/60 border border-white/5 space-y-2.5">
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <span className="text-[9px] bg-slate-900 border border-white/5 px-2 py-0.5 rounded text-rose-400 font-extrabold font-mono">
-                        {log.section}
-                      </span>
-                      <h4 className="font-black text-white text-[11px] mt-1">{log.type}</h4>
+              <Stagger className="space-y-3">
+                {logs.map(log => (
+                  <StaggerItem key={log.id}>
+                    <div className="p-3.5 rounded-xl bg-black/60 border border-white/5 space-y-2.5">
+                      <div className="flex justify-between items-start gap-2">
+                        <div>
+                          <span className="text-[9px] bg-slate-900 border border-white/5 px-2 py-0.5 rounded text-rose-400 font-extrabold font-mono">
+                            {log.section}
+                          </span>
+                          <h4 className="font-black text-white text-[11px] mt-1">{log.type}</h4>
+                        </div>
+                        
+                        <span className={`text-[9px] font-black px-2 py-0.5 rounded shrink-0 ${
+                          log.status === 'Resolved' 
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : log.status === 'Under Review'
+                            ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                            : log.status === 'Rejected'
+                            ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                            : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                        }`}>
+                          {log.status}
+                        </span>
+                      </div>
+
+                      <p className="text-[10px] text-slate-300 font-medium leading-relaxed bg-slate-950 p-2 rounded-lg font-serif">
+                        "{log.description}"
+                      </p>
+
+                      {log.adminNote && (
+                        <div className="p-2 rounded-lg bg-emerald-950/30 border border-emerald-500/20 text-[10px] text-emerald-300">
+                          <span className="font-extrabold text-emerald-400 block text-[9px] uppercase tracking-wider mb-0.5">Admin Note / Resolution:</span>
+                          {log.adminNote}
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-[9px] text-slate-500 font-bold">
+                        <span className="font-mono">{log.email}</span>
+                        <span>{log.createdAt}</span>
+                      </div>
                     </div>
-                    
-                    <span className={`text-[9px] font-black px-2 py-0.5 rounded shrink-0 ${
-                      log.status === 'Resolved' 
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        : log.status === 'Under Review'
-                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : log.status === 'Rejected'
-                        ? 'bg-red-500/10 text-red-400 border border-red-500/20'
-                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                    }`}>
-                      {log.status}
-                    </span>
-                  </div>
-
-                  <p className="text-[10px] text-slate-300 font-medium leading-relaxed bg-slate-950 p-2 rounded-lg font-serif">
-                    "{log.description}"
-                  </p>
-
-                  {log.adminNote && (
-                    <div className="p-2 rounded-lg bg-emerald-950/30 border border-emerald-500/20 text-[10px] text-emerald-300">
-                      <span className="font-extrabold text-emerald-400 block text-[9px] uppercase tracking-wider mb-0.5">Admin Note / Resolution:</span>
-                      {log.adminNote}
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center text-[9px] text-slate-500 font-bold">
-                    <span className="font-mono">{log.email}</span>
-                    <span>{log.createdAt}</span>
-                  </div>
-                </div>
-              ))
+                  </StaggerItem>
+                ))}
+              </Stagger>
             )}
           </div>
         </div>

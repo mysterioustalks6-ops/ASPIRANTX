@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SlideUp, Stagger, StaggerItem, PressFeedback, CountUp, ModalTransition, triggerConfetti } from '../lib/animations';
 import { 
   Coins, 
   ArrowUpRight, 
@@ -133,6 +134,7 @@ export const CommunityWallet: React.FC<CommunityWalletProps> = ({ userProfile, o
       });
       const data = await res.json();
       if (data.success) {
+        triggerConfetti({ particleCount: 50, spread: 60 });
         setConvertMsg({ success: true, text: data.message });
         setWallet(data.updatedWallet);
       } else {
@@ -177,6 +179,7 @@ export const CommunityWallet: React.FC<CommunityWalletProps> = ({ userProfile, o
       });
       const data = await res.json();
       if (data.success) {
+        triggerConfetti({ particleCount: 60, spread: 70 });
         setPayoutSuccess(data.payout);
         setPayouts((prev) => [data.payout, ...prev]);
         if (wallet) {
@@ -286,7 +289,7 @@ export const CommunityWallet: React.FC<CommunityWalletProps> = ({ userProfile, o
                 <div>
                   <p className="text-4xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-200 flex items-center gap-3">
                     <Flame className="w-10 h-10 text-orange-500 fill-orange-500 shrink-0" />
-                    {totalKarma}
+                    <CountUp value={totalKarma} />
                     <span className="text-lg text-slate-300 font-medium tracking-normal">Karma Points</span>
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
@@ -504,7 +507,7 @@ export const CommunityWallet: React.FC<CommunityWalletProps> = ({ userProfile, o
                 <div>
                   <p className="text-3xl sm:text-4xl font-black text-amber-400 flex items-center gap-2">
                     <Coins className="w-8 h-8 fill-amber-400" />
-                    {wallet?.balance ?? 250}
+                    <CountUp value={wallet?.balance ?? 250} />
                     <span className="text-lg text-slate-300 font-medium">Coins</span>
                   </p>
                   <p className="text-xs text-slate-400 mt-1">

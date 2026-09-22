@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HelpCircle, CheckCircle, XCircle, Search, Sparkles, BookOpen } from 'lucide-react';
+import { FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, triggerConfetti } from '../lib/animations';
 
 interface ExamRule {
   name: string;
@@ -112,21 +113,26 @@ export const EligibilityChecker: React.FC = () => {
 
     setResults({ eligible: newEligible, ineligible: newIneligible });
     setChecked(true);
+    if (newEligible.length > 0) {
+      triggerConfetti();
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3 bg-slate-900/40 border border-white/10 rounded-2xl p-5 backdrop-blur-md">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
-          <HelpCircle className="w-5 h-5" />
+      <SlideUp>
+        <div className="flex items-center gap-3 bg-slate-900/40 border border-white/10 rounded-2xl p-5 backdrop-blur-md">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-500 flex items-center justify-center text-white shadow-lg">
+            <HelpCircle className="w-5 h-5" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-white">Exam Eligibility Calculator</h1>
+            <p className="text-xs text-slate-400">
+              Apni age, degree aur reservation status daal kar check karein ki aap kaun-kaun se central & state exams de sakte hain.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-white">Exam Eligibility Calculator</h1>
-          <p className="text-xs text-slate-400">
-            Apni age, degree aur reservation status daal kar check karein ki aap kaun-kaun se central & state exams de sakte hain.
-          </p>
-        </div>
-      </div>
+      </SlideUp>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calculator Form */}
@@ -172,8 +178,8 @@ export const EligibilityChecker: React.FC = () => {
               >
                 <option value="10th Pass">10th Pass</option>
                 <option value="12th Pass">12th Pass / Intermediate</option>
-                <option value="Graduate">Graduation / Bachelor\'s Degree</option>
-                <option value="Post Graduate">Post Graduation / Master\'s Degree</option>
+                <option value="Graduate">Graduation / Bachelor's Degree</option>
+                <option value="Post Graduate">Post Graduation / Master's Degree</option>
               </select>
             </div>
 
@@ -204,29 +210,33 @@ export const EligibilityChecker: React.FC = () => {
               />
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
-            >
-              Analyze Eligibility Now
-            </button>
+            <PressFeedback>
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
+              >
+                Analyze Eligibility Now
+              </button>
+            </PressFeedback>
           </form>
         </div>
 
         {/* Results Pane */}
         <div className="lg:col-span-2 space-y-6">
           {!checked ? (
-            <div className="bg-slate-900/40 border border-white/5 rounded-3xl p-16 text-center space-y-4">
-              <BookOpen className="w-12 h-12 text-slate-600 mx-auto opacity-40 animate-pulse" />
-              <div className="space-y-1">
-                <h3 className="text-white font-bold text-sm">Waiting for Parameters</h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                  Apna study structure aur age select karke analysis start karein.
-                </p>
+            <FadeIn>
+              <div className="bg-slate-900/40 border border-white/5 rounded-3xl p-16 text-center space-y-4">
+                <BookOpen className="w-12 h-12 text-slate-600 mx-auto opacity-40 animate-pulse" />
+                <div className="space-y-1">
+                  <h3 className="text-white font-bold text-sm">Waiting for Parameters</h3>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                    Apna study structure aur age select karke analysis start karein.
+                  </p>
+                </div>
               </div>
-            </div>
+            </FadeIn>
           ) : (
-            <>
+            <SlideUp className="space-y-6">
               {/* Eligible list */}
               <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-5 space-y-4">
                 <h3 className="font-extrabold text-white text-xs uppercase tracking-wider flex items-center gap-2 pb-3 border-b border-white/5">
@@ -236,36 +246,39 @@ export const EligibilityChecker: React.FC = () => {
                 {results.eligible.length === 0 ? (
                   <p className="text-xs text-slate-400">Aap is profile ke saath abhi kisi exam ke liye eligible nahi hain.</p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Stagger className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {results.eligible.map(({ exam, remainingYears }) => (
-                      <div 
-                        key={exam.name}
-                        className="bg-slate-950/60 border border-white/5 hover:border-emerald-500/30 rounded-xl p-4 space-y-2 transition-all group"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <span className="text-[10px] text-emerald-400 font-extrabold uppercase bg-emerald-500/10 px-2 py-0.5 rounded">
-                              Eligible ✅
-                            </span>
-                            <h4 className="font-black text-white text-sm mt-1">{exam.name}</h4>
-                          </div>
-                          <a 
-                            href={exam.portalLink} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-[10px] text-cyan-400 hover:underline flex items-center gap-0.5 font-bold"
+                      <StaggerItem key={exam.name}>
+                        <PressFeedback className="h-full">
+                          <div 
+                            className="bg-slate-950/60 border border-white/5 hover:border-emerald-500/30 rounded-xl p-4 space-y-2 transition-all group h-full"
                           >
-                            Official Website
-                          </a>
-                        </div>
-                        <p className="text-[11px] text-slate-400 line-clamp-2">{exam.description}</p>
-                        <div className="pt-2 border-t border-white/5 flex justify-between text-[9px] text-slate-400">
-                          <span>Max Attempts limit: {category === 'General' ? '6 Attempts' : '9/Unlimited'}</span>
-                          <span className="text-amber-400 font-bold">{remainingYears} years left to attempt</span>
-                        </div>
-                      </div>
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <span className="text-[10px] text-emerald-400 font-extrabold uppercase bg-emerald-500/10 px-2 py-0.5 rounded">
+                                  Eligible ✅
+                                </span>
+                                <h4 className="font-black text-white text-sm mt-1">{exam.name}</h4>
+                              </div>
+                              <a 
+                                href={exam.portalLink} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="text-[10px] text-cyan-400 hover:underline flex items-center gap-0.5 font-bold"
+                              >
+                                Official Website
+                              </a>
+                            </div>
+                            <p className="text-[11px] text-slate-400 line-clamp-2">{exam.description}</p>
+                            <div className="pt-2 border-t border-white/5 flex justify-between text-[9px] text-slate-400">
+                              <span>Max Attempts limit: {category === 'General' ? '6 Attempts' : '9/Unlimited'}</span>
+                              <span className="text-amber-400 font-bold">{remainingYears} years left to attempt</span>
+                            </div>
+                          </div>
+                        </PressFeedback>
+                      </StaggerItem>
                     ))}
-                  </div>
+                  </Stagger>
                 )}
               </div>
 
@@ -298,7 +311,7 @@ export const EligibilityChecker: React.FC = () => {
                   ))}
                 </div>
               </div>
-            </>
+            </SlideUp>
           )}
         </div>
       </div>

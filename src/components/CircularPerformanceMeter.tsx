@@ -152,8 +152,9 @@ export const CircularPerformanceHub: React.FC<CircularPerformanceHubProps> = ({
           gradientId="grad-accuracy"
           gradientColors={['#f59e0b', '#ec4899']}
           title="Mock Accuracy"
-          subtitle="Negative mark safety"
+          subtitle={testAccuracyPercent > 0 ? "Negative mark safety" : "No CBT tests yet"}
           icon={<Award className="w-3.5 h-3.5 text-amber-400" />}
+          valueLabel={testAccuracyPercent > 0 ? `${testAccuracyPercent}%` : 'No Tests'}
         />
 
         <CircularRingMeter

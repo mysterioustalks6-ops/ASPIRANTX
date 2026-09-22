@@ -1172,51 +1172,75 @@ router.get('/api/admin/users', verifyAdminAuth, async (req, res) => {
     const role = (req.query.role as string || '').toUpperCase().trim();
     const status = (req.query.status as string || '').toUpperCase().trim();
 
-    // 1. Try Supabase query with range pagination
-    if (supabaseServer) {
+    // 1. Authoritative Neon PostgreSQL query
+    if (pgPool) {
       try {
-        let query = supabaseServer.from('admin_users').select('*', { count: 'exact' });
+        const offset = (page - 1) * limit;
+        const whereClauses: string[] = [];
+        const params: any[] = [];
+        let paramIdx = 1;
+
         if (search) {
-          query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%`);
+          whereClauses.push(`(name ILIKE $${paramIdx} OR email ILIKE $${paramIdx})`);
+          params.push(`%${search}%`);
+          paramIdx++;
         }
         if (role && role !== 'ALL') {
-          query = query.eq('role', role);
+          whereClauses.push(`role = $${paramIdx}`);
+          params.push(role);
+          paramIdx++;
         }
         if (status && status !== 'ALL') {
-          query = query.eq('status', status);
+          whereClauses.push(`status = $${paramIdx}`);
+          params.push(status);
+          paramIdx++;
         }
-        const from = (page - 1) * limit;
-        const to = from + limit - 1;
-        const { data, count, error } = await query.range(from, to).order('updated_at', { ascending: false });
 
-        if (!error && Array.isArray(data) && data.length > 0) {
-          const total = count ?? data.length;
-          const totalPages = Math.ceil(total / limit) || 1;
-          const mappedUsers = data.map((row: any) => ({
-            id: row.id,
-            name: row.name,
-            email: row.email,
-            role: row.role,
-            isPremium: row.is_premium,
-            planName: row.plan_name,
-            streakDays: row.streak_days,
-            xp: row.xp,
-            coins: row.coins,
-            level: row.level,
-            completedTopicsCount: 0,
-            joinedAt: row.updated_at || new Date().toISOString(),
-            status: row.status
-          }));
-          return res.json({
-            success: true,
-            users: mappedUsers,
-            total,
-            page,
-            totalPages
-          });
-        }
-      } catch (dbErr) {
-        // Fall back to memory cache
+        const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+        const countRes = await queryPostgres<any>(
+          `SELECT COUNT(*) as total FROM public.user_profiles ${whereSql};`,
+          params
+        );
+        const total = parseInt(countRes.rows[0]?.total || '0', 10);
+
+        const usersRes = await queryPostgres<any>(
+          `SELECT id, name, email, role, is_premium, plan_name, streak_days, xp, coins, level, state_name, exam, status, created_at, updated_at, data
+           FROM public.user_profiles
+           ${whereSql}
+           ORDER BY updated_at DESC
+           LIMIT $${paramIdx} OFFSET $${paramIdx + 1};`,
+          [...params, limit, offset]
+        );
+
+        const mappedUsers = usersRes.rows.map((row: any) => ({
+          id: row.id,
+          name: row.name || 'Aspirant',
+          email: row.email,
+          role: row.role || 'USER',
+          isPremium: Boolean(row.is_premium),
+          planName: row.plan_name || 'FREE',
+          streakDays: Number(row.streak_days) || 0,
+          xp: Number(row.xp) || 0,
+          coins: Number(row.coins) || 0,
+          level: Number(row.level) || 1,
+          stateName: row.state_name || '',
+          exam: row.exam || '',
+          completedTopicsCount: 0,
+          joinedAt: row.created_at || row.updated_at || new Date().toISOString(),
+          status: row.status || 'ACTIVE'
+        }));
+
+        const totalPages = Math.ceil(total / limit) || 1;
+        return res.json({
+          success: true,
+          users: mappedUsers,
+          total,
+          page,
+          totalPages
+        });
+      } catch (dbErr: any) {
+        console.warn('[Admin Users] Neon query error:', dbErr?.message || dbErr);
       }
     }
 

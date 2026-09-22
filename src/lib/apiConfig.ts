@@ -7,7 +7,7 @@ export const API_BASE_URL = (
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_API_URL) ||
   (typeof process !== 'undefined' && process.env?.VITE_API_BASE_URL) ||
   (typeof process !== 'undefined' && process.env?.VITE_PUBLIC_API_URL) ||
-  ''
+  (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.() ? 'https://aspirantx.vercel.app' : '')
 ).trim().replace(/\/+$/, '');
 
 /**

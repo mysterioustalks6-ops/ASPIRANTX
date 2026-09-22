@@ -4,6 +4,9 @@ import {
   Sparkles, BookOpen, Zap,
   LayoutGrid, Sliders, ChevronRight
 } from 'lucide-react';
+import { 
+  FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, CountUp, ProgressAnimation, FlameGlow 
+} from '../lib/animations';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
@@ -43,34 +46,26 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   }, [userProfile.id]);
 
   const defaultDashboardData: StudentDashboardData = {
-    todayStudyMinutes: 180,
-    weeklyStudyHours: 24,
-    monthlyStudyHours: 96,
-    currentStreak: userProfile.streakDays || 1,
-    longestStreak: 12,
-    topicsCompleted: 128,
-    totalTopics: 310,
-    overallProgressPercent: 42,
+    todayStudyMinutes: 0,
+    weeklyStudyHours: 0,
+    monthlyStudyHours: 0,
+    currentStreak: userProfile.streakDays || 0,
+    longestStreak: userProfile.streakDays || 0,
+    topicsCompleted: 0,
+    totalTopics: 240,
+    overallProgressPercent: 0,
     daysLeftForExam: 110,
     estimatedCompletionDate: '2026-11-20',
     dailyTargetHours: 8,
     weeklyTargetTopics: 15,
     monthlyTargetTopics: 60,
-    revisionProgressPercent: 35,
-    testAccuracyPercent: 78,
-    rankTrend: [
-      { date: 'Mon', rank: 1420 },
-      { date: 'Wed', rank: 1180 },
-      { date: 'Fri', rank: 940 },
-      { date: 'Today', rank: 720 },
-    ],
-    studyHeatmap: [
-      { date: '2026-08-01', hours: 6 },
-      { date: '2026-08-02', hours: 8 },
-    ],
+    revisionProgressPercent: 0,
+    testAccuracyPercent: 0,
+    rankTrend: [],
+    studyHeatmap: [],
     aiSuggestions: [
-      'Focus on high-yield Organic Chemistry mechanisms today.',
-      'Practice 20 MCQs on Modern Physics to maintain your accuracy momentum.',
+      'Begin your daily study by completing your targeted syllabus topic.',
+      'Attempt a CBT mock test or PYQ section to establish your accuracy benchmark.',
     ]
   };
 
@@ -108,7 +103,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     } catch {}
 
     const totalTopicsEstimate = 240;
-    const syllabusProgressPercent = Math.min(100, Math.max(5, Math.round((completedTopicsCount / totalTopicsEstimate) * 100)));
+    const syllabusProgressPercent = totalTopicsEstimate > 0 
+      ? Math.min(100, Math.round((completedTopicsCount / totalTopicsEstimate) * 100)) 
+      : 0;
 
     // 3. Calculate Real Study Minutes Logged Today
     let todayMinutes = 0;
@@ -118,18 +115,17 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       if (rawStore) {
         const parsedStore = JSON.parse(rawStore);
         if (typeof parsedStore.todayStudyMinutes === 'number') {
-          todayMinutes = parsedStore.todayStudyMinutes;
+          todayMinutes = Math.max(0, parsedStore.todayStudyMinutes);
         }
       }
     } catch {}
 
     if (todayMinutes === 0 && userProfile.studyHoursToday) {
-      todayMinutes = Math.round(userProfile.studyHoursToday * 60);
+      todayMinutes = Math.max(0, Math.round(userProfile.studyHoursToday * 60));
     }
-    if (todayMinutes === 0) todayMinutes = 45; // baseline active time
 
     // 4. Calculate Real Accuracy from CBT tests (Scoped by User + Exam)
-    let testAccuracy = 78;
+    let testAccuracy = 0;
     try {
       const scopedKey = `aspirantx_cbt_results_cache_${userId || 'guest'}_${examTag}`;
       const cbtResults = localStorage.getItem(scopedKey) || localStorage.getItem('aspirantx_cbt_results_cache');
@@ -138,8 +134,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         if (Array.isArray(parsedResults) && parsedResults.length > 0) {
           const matchingTests = parsedResults.filter((r: any) => !r.exam || normalizeExamId(r.exam) === examTag);
           const testsToEvaluate = matchingTests.length > 0 ? matchingTests : parsedResults;
-          const totalAcc = testsToEvaluate.reduce((acc: number, r: any) => acc + (r.accuracy || r.accuracyPercentage || 75), 0);
-          testAccuracy = Math.round(totalAcc / testsToEvaluate.length);
+          if (testsToEvaluate.length > 0) {
+            const totalAcc = testsToEvaluate.reduce((acc: number, r: any) => acc + (r.accuracy || r.accuracyPercentage || 0), 0);
+            testAccuracy = Math.round(totalAcc / testsToEvaluate.length);
+          }
         }
       }
     } catch {}
@@ -151,11 +149,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
     return {
       todayStudyMinutes: todayMinutes,
-      weeklyStudyHours: Math.round((todayMinutes * 6.5) / 60),
-      monthlyStudyHours: Math.round((todayMinutes * 26) / 60),
-      currentStreak: userProfile.streakDays || 1,
-      longestStreak: Math.max(userProfile.streakDays || 1, 14),
-      topicsCompleted: completedTopicsCount || 12,
+      weeklyStudyHours: Math.round(todayMinutes / 60),
+      monthlyStudyHours: Math.round(todayMinutes / 60),
+      currentStreak: userProfile.streakDays || 0,
+      longestStreak: userProfile.streakDays || 0,
+      topicsCompleted: completedTopicsCount,
       totalTopics: totalTopicsEstimate,
       overallProgressPercent: syllabusProgressPercent,
       daysLeftForExam: daysLeft,
@@ -165,17 +163,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       monthlyTargetTopics: 60,
       revisionProgressPercent: Math.min(100, Math.round(syllabusProgressPercent * 0.8)),
       testAccuracyPercent: testAccuracy,
-      rankTrend: [
-        { date: 'Mon', rank: 1420 },
-        { date: 'Wed', rank: 1180 },
-        { date: 'Fri', rank: 940 },
-        { date: 'Today', rank: Math.max(120, 1500 - (userProfile.xp || 100)) },
-      ],
-      studyHeatmap: [
-        { date: '2026-08-01', hours: 6 },
-        { date: '2026-08-02', hours: 8 },
-      ],
-      aiSuggestions: [
+      rankTrend: [],
+      studyHeatmap: todayMinutes > 0 ? [{ date: today.toISOString().split('T')[0], hours: Math.round(todayMinutes / 60) }] : [],
+      aiSuggestions: completedTopicsCount === 0 && testAccuracy === 0 ? [
+        `Start your ${examCfg.displayName} preparation with ${primarySubject} foundational topics.`,
+        `Complete your first study session or 10 PYQs in ${secondarySubject} to see live accuracy metrics.`
+      ] : [
         `Focus on high-yield ${primarySubject} topics today for ${examCfg.displayName}.`,
         `Practice 20 ${secondarySubject} PYQ MCQs to maintain your speed and accuracy momentum.`,
       ]
@@ -283,7 +276,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     <div id="student-dashboard" className="w-full space-y-5 pb-24 md:pb-8 font-sans">
 
       {/* ── 1. HEADER & GREETING (Above the Fold) ─────────────────────────── */}
-      <div className="ax-card p-4 sm:p-6 border-slate-800 bg-slate-900/90">
+      <SlideUp className="ax-card p-4 sm:p-6 border-slate-800 bg-slate-900/90">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           {/* Left: User Identity & Target Exam */}
           <div>
@@ -306,7 +299,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                     onExamChange(val);
                   }
                 }}
-                className="bg-slate-950 border border-slate-700 text-sky-300 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-sky-500 cursor-pointer shadow-sm"
+                className="bg-slate-950 border border-slate-700 text-sky-300 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-sky-500 cursor-pointer shadow-sm transition-colors hover:border-sky-500/50"
               >
                 <optgroup label="Standard Exams">
                   {EXAM_LIST.map((ex) => (
@@ -325,10 +318,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           {/* Right: Key Exam Timeline Telemetry (Streak + Countdown) */}
           <div className="flex items-center gap-3">
             <div className="px-4 py-2.5 rounded-2xl bg-slate-950 border border-amber-500/30 flex items-center gap-2.5 shadow-sm">
-              <Flame className="w-5 h-5 text-amber-400 fill-amber-400/20" />
+              <FlameGlow active={(userProfile.streakDays || data.currentStreak || 0) > 0}>
+                <Flame className="w-5 h-5 text-amber-400 fill-amber-400/20" />
+              </FlameGlow>
               <div>
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Daily Streak</div>
-                <div className="text-sm font-black text-white">{userProfile.streakDays || data.currentStreak || 1} Days 🔥</div>
+                <div className="text-sm font-black text-white">
+                  <CountUp value={userProfile.streakDays || data.currentStreak || 1} suffix=" Days 🔥" />
+                </div>
               </div>
             </div>
 
@@ -336,22 +333,26 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <Target className="w-5 h-5 text-rose-400" />
               <div>
                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Countdown</div>
-                <div className="text-sm font-black text-white">{data.daysLeftForExam} Days Left</div>
+                <div className="text-sm font-black text-white">
+                  <CountUp value={data.daysLeftForExam} suffix=" Days Left" />
+                </div>
               </div>
             </div>
 
             {onOpenWorkspaceCustomizer && (
-              <button
-                onClick={onOpenWorkspaceCustomizer}
-                title="Personalize Workspace"
-                className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/50 text-slate-400 hover:text-sky-400 transition-all cursor-pointer shadow-sm"
-              >
-                <Sliders className="w-4 h-4" />
-              </button>
+              <PressFeedback>
+                <button
+                  onClick={onOpenWorkspaceCustomizer}
+                  title="Personalize Workspace"
+                  className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/50 text-slate-400 hover:text-sky-400 transition-all cursor-pointer shadow-sm"
+                >
+                  <Sliders className="w-4 h-4" />
+                </button>
+              </PressFeedback>
             )}
           </div>
         </div>
-      </div>
+      </SlideUp>
 
       {/* ── 2. ABOVE THE FOLD: PRIMARY ACTION & INTEL COMMAND ────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -367,7 +368,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Continue Learning</span>
               </div>
               <span className="text-xs font-extrabold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20">
-                {data.overallProgressPercent}% Complete
+                <CountUp value={data.overallProgressPercent} suffix="% Complete" />
               </span>
             </div>
 
@@ -383,22 +384,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 <span>Syllabus Milestone</span>
                 <span className="text-slate-300">{data.topicsCompleted} of {data.totalTopics} Topics Finished</span>
               </div>
-              <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                <div
-                  className="h-full bg-sky-500 rounded-full transition-all duration-700 shadow-sm"
-                  style={{ width: `${Math.max(5, data.overallProgressPercent)}%` }}
-                />
-              </div>
+              <ProgressAnimation
+                value={Math.max(5, data.overallProgressPercent)}
+                className="h-2 bg-slate-950 rounded-full border border-slate-800"
+                barClassName="bg-sky-500"
+              />
             </div>
           </div>
 
-          <button
-            onClick={() => { if (onNavigate) onNavigate(lastTopic.tab || 'syllabus'); }}
-            className="w-full py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all cursor-pointer"
-          >
-            <span>Continue</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          <PressFeedback>
+            <button
+              onClick={() => { if (onNavigate) onNavigate(lastTopic.tab || 'syllabus'); }}
+              className="w-full py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-sky-600/25 transition-all cursor-pointer"
+            >
+              <span>Continue</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </PressFeedback>
         </div>
 
         {/* NEXT BEST ACTION & SMALL SUMMARY (5 of 12 cols) */}
@@ -428,13 +430,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               )}
             </div>
 
-            <button
-              onClick={() => { if (onNavigate) onNavigate(recAction.tab); }}
-              className="mt-4 w-full py-3 rounded-xl bg-slate-800 hover:bg-sky-600 border border-slate-700 hover:border-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-[0.98]"
-            >
-              <span>{recAction.label}</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            <PressFeedback>
+              <button
+                onClick={() => { if (onNavigate) onNavigate(recAction.tab); }}
+                className="mt-4 w-full py-3 rounded-xl bg-slate-800 hover:bg-sky-600 border border-slate-700 hover:border-sky-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+              >
+                <span>{recAction.label}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </PressFeedback>
           </div>
 
           {/* SMALL PROGRESS SUMMARY: Compact metric strip */}
@@ -457,7 +461,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Test Accuracy</p>
-                <p className="text-xs font-extrabold text-slate-200">{data.testAccuracyPercent}% <span className="text-[10px] text-emerald-400 font-bold">Accuracy</span></p>
+                <p className="text-xs font-extrabold text-slate-200">
+                  <CountUp value={data.testAccuracyPercent} suffix="%" /> <span className="text-[10px] text-emerald-400 font-bold">Accuracy</span>
+                </p>
               </div>
             </div>
           </div>
@@ -518,33 +524,36 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         </div>
 
-        {/* Grid of Compact Shortcuts */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+        {/* Grid of Compact Shortcuts with Stagger */}
+        <Stagger staggerDelay={0.04} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
           {displayedShortcuts.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => {
-                recordFeatureUsage(item.id, userProfile.id);
-                if (onNavigate) onNavigate(item.id as ActiveTab);
-              }}
-              className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-sky-500/40 transition-all text-center group flex flex-col items-center gap-2 cursor-pointer shadow-sm"
-            >
-              <div className="w-9 h-9 rounded-xl bg-slate-900 group-hover:bg-sky-500/15 border border-slate-800 group-hover:border-sky-500/30 flex items-center justify-center text-sm font-black text-slate-400 group-hover:text-sky-400 transition-all">
-                {item.label.charAt(0)}
-              </div>
-              <div className="min-w-0 w-full text-center">
-                <span className="text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors block truncate">
-                  {item.label}
-                </span>
-                {item.meta.badge && (
-                  <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[8px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase">
-                    {item.meta.badge}
-                  </span>
-                )}
-              </div>
-            </button>
+            <StaggerItem key={item.id}>
+              <PressFeedback className="w-full h-full">
+                <button
+                  onClick={() => {
+                    recordFeatureUsage(item.id, userProfile.id);
+                    if (onNavigate) onNavigate(item.id as ActiveTab);
+                  }}
+                  className="w-full h-full p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-sky-500/40 transition-all text-center group flex flex-col items-center gap-2 cursor-pointer shadow-sm"
+                >
+                  <div className="w-9 h-9 rounded-xl bg-slate-900 group-hover:bg-sky-500/15 border border-slate-800 group-hover:border-sky-500/30 flex items-center justify-center text-sm font-black text-slate-400 group-hover:text-sky-400 transition-all">
+                    {item.label.charAt(0)}
+                  </div>
+                  <div className="min-w-0 w-full text-center">
+                    <span className="text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors block truncate">
+                      {item.label}
+                    </span>
+                    {item.meta.badge && (
+                      <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[8px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase">
+                        {item.meta.badge}
+                      </span>
+                    )}
+                  </div>
+                </button>
+              </PressFeedback>
+            </StaggerItem>
           ))}
-        </div>
+        </Stagger>
       </div>
 
       {/* ── 5. LOWER REGIONS (Secondary Information) ─────────────────────── */}

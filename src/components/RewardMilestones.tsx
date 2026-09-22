@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile } from '../types';
 import { PremiumGate, FeatureFlagsMap } from './PremiumGate';
 import { Gift, Award, Clock, CheckCircle2, AlertCircle, Sparkles, Package, ShieldCheck, Check, ChevronRight, Trophy, BookOpen, Lock } from 'lucide-react';
+import { triggerConfetti, ProgressAnimation, PressFeedback, SlideUp } from '../lib/animations';
 
 interface RewardMilestonesProps {
   user: UserProfile | null;
@@ -74,6 +75,7 @@ export const RewardMilestones: React.FC<RewardMilestonesProps> = ({ user, featur
       });
       const data = await res.json();
       if (res.ok && data.success) {
+        triggerConfetti();
         setActionMsg({ type: 'success', text: data.message || 'Reward claim submitted successfully — pending admin review!' });
         fetchMilestonesAndProgress();
       } else {

@@ -2580,7 +2580,12 @@ router.get('/api/academic/cbt/tests/:id', (req, res) => {
 
 router.post('/api/academic/cbt/submit', async (req, res) => {
   try {
-    const { testId, sessionState, userId = 'default_user', test: clientTest, testPayload } = req.body;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication Required: Bearer token is missing or invalid.' });
+    }
+    const userId = verifiedUser.sub!;
+    const { testId, sessionState, test: clientTest, testPayload } = req.body;
     let test = cbtTestsStore.get(testId) || clientTest || testPayload;
 
     // Resilient fallback: If test was evicted from in-memory store due to server restart, reconstruct from payload
@@ -3442,43 +3447,64 @@ router.post('/api/academic/cbt/submit-admin-exam', (req, res) => {
   }
 });
 
-router.get('/api/academic/leaderboard', (req, res) => {
+router.get('/api/academic/leaderboard', async (req, res) => {
   try {
     const scope = (req.query.scope as string) || 'global';
     const exam = (req.query.exam as string) || '';
 
+    // Authoritative Neon query for persisted CBT results
+    const dbRes = await queryPostgres(
+      `SELECT user_id, data, updated_at FROM public.cbt_results ORDER BY updated_at DESC`
+    );
+
+    const rows = dbRes?.rows || [];
     const leaderboardEntries: any[] = [];
 
-    for (const user of adminUsersDb) {
-      const results = cbtResultsStore.get(user.id) || [];
-      if (results.length === 0) continue;
+    const userMap = new Map<string, any>();
+    for (const u of adminUsersDb) {
+      if (u.id) userMap.set(u.id, u);
+      if (u.email) userMap.set(u.email.toLowerCase(), u);
+    }
 
-      if (exam) {
-        const uExam = String(user.exam || '').toLowerCase().trim();
-        const qExam = exam.toLowerCase().trim();
-        if (uExam && qExam && !uExam.includes(qExam) && !qExam.includes(uExam)) {
-          continue;
-        }
-      }
+    for (const row of rows) {
+      const userId = row.user_id;
+      const rawData = row.data;
+      const results: any[] = Array.isArray(rawData) ? rawData : (rawData ? [rawData] : []);
+      if (results.length === 0) continue;
 
       let bestScore = -1;
       let bestPercentile = 0;
+      let userExam = '';
+
       for (const r of results) {
-        if (r.score !== undefined && r.score > bestScore) {
-          bestScore = r.score;
-          bestPercentile = r.percentile || 0;
+        if (!r) continue;
+        const rExam = String(r.exam || '').toLowerCase().trim();
+        const qExam = exam.toLowerCase().trim();
+        if (exam && rExam && !rExam.includes(qExam) && !qExam.includes(rExam)) {
+          continue;
+        }
+
+        const score = typeof r.score === 'number' ? r.score : (parseFloat(r.score) || 0);
+        if (score > bestScore) {
+          bestScore = score;
+          bestPercentile = typeof r.percentile === 'number' ? r.percentile : (parseFloat(r.percentile) || 0);
+          userExam = r.exam || userExam;
         }
       }
 
       if (bestScore < 0) continue;
 
+      const profile = userMap.get(userId);
+      const displayName = profile?.name || `Aspirant ${userId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6)}`;
+      const xp = profile?.xp || Math.round(bestScore * 10);
+
       leaderboardEntries.push({
-        userId: user.id,
-        userName: user.name || 'Aspirant',
+        userId,
+        userName: displayName,
         score: Number(bestScore.toFixed(2)),
         percentile: Number(bestPercentile.toFixed(2)),
-        xp: user.xp || 0,
-        exam: user.exam || exam || 'UPSC_CSE'
+        xp,
+        exam: userExam || exam || 'UPSC_CSE'
       });
     }
 
@@ -3491,6 +3517,7 @@ router.get('/api/academic/leaderboard', (req, res) => {
 
     res.json({ success: true, scope, exam: exam || 'UPSC_CSE', leaderboard });
   } catch (err: any) {
+    console.error('[Leaderboard] Neon query error:', err?.message || err);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });

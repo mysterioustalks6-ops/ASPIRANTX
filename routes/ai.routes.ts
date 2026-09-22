@@ -208,6 +208,13 @@ import * as Shared from './shared.js';
 const router = Router();
 const __dirname = path.resolve();
 
+router.get('/api/ai/status', (_req, res) => {
+  res.json({
+    success: true,
+    geminiConfigured: Boolean(process.env.GEMINI_API_KEY)
+  });
+});
+
 router.post('/api/gemini/moderate', async (req, res) => {
   try {
     const { text = '', fileName = '', user = 'Guest Aspirant', room = 'Community', userId, userEmail } = req.body;
@@ -350,8 +357,10 @@ router.post('/api/gemini/bot-moderator', async (req, res) => {
     const ai = getGeminiClient();
 
     if (!ai) {
-      const demoReply = `@${user}, regarding your query in ${room}: "${query}" - Here is a quick study takeaway: Ensure you cross-reference this with the official syllabus roadmap and current affairs! Keep grinding! [LAUNCH]`;
-      return res.json({ reply: demoReply });
+      return res.status(503).json({
+        error: 'AI service unavailable: GEMINI_API_KEY is not configured on the server.',
+        geminiConfigured: false
+      });
     }
 
     const systemInstruction = `You are @ProTrack Bot, the official AI Room Moderator and Study Assistant in the ${room} community chat room for UPSC Civil Services & SSC aspirants.
@@ -400,9 +409,10 @@ router.post('/api/gemini/chat', async (req, res) => {
     const ai = getGeminiClient();
 
     if (!ai) {
-      // Return smart simulated response if API key is not yet set
-      const demoReply = `[ProTrack AI Mentor (${exam})]: Great query regarding ${exam}! I see you asked: "${message}". Remember to correlate static concepts (like Laxmikanth or NCERTs) with current affairs from The Hindu / PIB. For detailed answer evaluation or custom notes generation, attach your outline!`;
-      return res.json({ reply: demoReply });
+      return res.status(503).json({
+        error: 'AI mentor unavailable: GEMINI_API_KEY is not configured on the server.',
+        geminiConfigured: false
+      });
     }
 
     const systemInstruction = `You are ProTrack AI Mentor, an elite, encouraging, high-precision study assistant for ${exam} (UPSC Civil Services & SSC Exams).
@@ -654,69 +664,8 @@ router.post('/api/ai/stream', async (req, res) => {
   const ai = getGeminiClient();
 
   if (!ai) {
-    // Simulated SSE Stream when API key is not active
-    const simulatedResponse = `[ProTrack AI Mentor (${mode.toUpperCase()} - ${exam})]\n\n` +
-      `**Analysis & Guidance for Query:**\n\n"${cleanInput}"\n\n` +
-      `1. **Core Concept Overview**: In ${exam} preparation, analyzing this query requires combining static fundamentals (NCERT / standard textbooks) with current policy updates.\n` +
-      `2. **Key Keywords**: Make sure to incorporate key terminology, relevant Constitutional Articles (or equations/data), and Supreme Court judgments.\n` +
-      `3. **Way Forward**: Structure your answer with clear intro, subheadings, and a forward-looking conclusion.\n\n` +
-      `*Note: Set your GEMINI_API_KEY in environment or AI Studio settings for real-time Live Gemini streaming.*`;
-
-    const chunks = simulatedResponse.split(' ');
-    let i = 0;
-    const interval = setInterval(async () => {
-      if (i < chunks.length) {
-        const word = chunks[i] + ' ';
-        fullAssistantText += word;
-        res.write(`data: ${JSON.stringify({ text: word })}\n\n`);
-        i++;
-      } else {
-        clearInterval(interval);
-
-        const assistantMsgRecord: AiMessageRecord = {
-          id: assistantMsgId,
-          conversationId: convId,
-          sender: 'assistant',
-          text: fullAssistantText,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          modeTag: mode,
-        };
-        existingMsgs.push(assistantMsgRecord);
-        aiMessagesDb.set(convId, existingMsgs);
-
-        if (supabaseServer) {
-          try {
-            await supabaseServer.from('ai_messages').upsert([
-              {
-                id: userMsgRecord.id,
-                conversationId: convId,
-                sender: userMsgRecord.sender,
-                text: userMsgRecord.text,
-                timestamp: userMsgRecord.timestamp,
-                mode_tag: userMsgRecord.modeTag,
-                updated_at: new Date().toISOString()
-              },
-              {
-                id: assistantMsgRecord.id,
-                conversationId: convId,
-                sender: assistantMsgRecord.sender,
-                text: assistantMsgRecord.text,
-                timestamp: assistantMsgRecord.timestamp,
-                mode_tag: assistantMsgRecord.modeTag,
-                updated_at: new Date().toISOString()
-              }
-            ], { onConflict: 'id' });
-          } catch (e) {}
-        }
-
-        res.write(`data: ${JSON.stringify({ done: true, messageId: assistantMsgId, conversationId: convId })}\n\n`);
-        res.end();
-      }
-    }, 30);
-
-    req.on('close', () => {
-      clearInterval(interval);
-    });
+    res.write(`data: ${JSON.stringify({ error: 'AI mentor unavailable: GEMINI_API_KEY is not configured on the server.', geminiConfigured: false, done: true })}\n\n`);
+    res.end();
     return;
   }
 
@@ -817,28 +766,10 @@ router.post('/api/ai/evaluate', async (req, res) => {
     const ai = getGeminiClient();
 
     if (!ai) {
-      return res.json({
-        success: true,
-        evaluation: {
-          totalScore: 6.5,
-          structureScore: 7,
-          contentScore: 6,
-          keywordsScore: 6.5,
-          wayForwardScore: 7,
-          strengths: [
-            'Good structural intro linking topic to current context',
-            'Subheadings used effectively to divide arguments',
-            'Neutral, balanced administrative tone preserved',
-          ],
-          weaknesses: [
-            'Missing explicit Constitutional Articles (e.g., Art. 38, Art. 39)',
-            'Budgetary data / Economic Survey figures could be cited',
-            'Way forward needs specific committee recommendations (e.g., NITI Aayog/ARC)',
-          ],
-          missedKeywords: ['Article 39(b)', 'Fiscal Consolidation', 'SDG 8', 'Inclusive Growth'],
-          suggestedAdditions: ['Include a schematic flowchart showing institutional mechanisms.'],
-          modelAnswerBlueprint: `**Introduction**: Define core concept and link to recent government policy.\n\n**Body**: Split into 3 dimensions (Administrative, Economic, Social).\n\n**Conclusion**: Conclude with a vision towards Amrit Kaal 2047.`,
-        },
+      return res.status(503).json({
+        success: false,
+        error: 'AI answer evaluation unavailable: GEMINI_API_KEY is not configured on the server.',
+        geminiConfigured: false
       });
     }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SlideUp, Stagger, StaggerItem, PressFeedback, SkeletonShimmer, EmptyState, ModalTransition } from '../lib/animations';
 import { 
   Users, 
   Calendar, 
@@ -469,46 +470,52 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
 
       {/* Sub-Navigation Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/80 scrollbar-none">
-        <button
-          onClick={() => setActiveSubTab('classes')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-            activeSubTab === 'classes'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
-              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
-          }`}
-        >
-          <Video className="w-4 h-4" />
-          My Classes ({classes.length})
-        </button>
+        <PressFeedback>
+          <button
+            onClick={() => setActiveSubTab('classes')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+              activeSubTab === 'classes'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
+                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
+            }`}
+          >
+            <Video className="w-4 h-4" />
+            My Classes ({classes.length})
+          </button>
+        </PressFeedback>
 
-        <button
-          onClick={() => setActiveSubTab('assignments')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-            activeSubTab === 'assignments'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
-              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          Assignments & Submissions ({assignments.length})
-        </button>
+        <PressFeedback>
+          <button
+            onClick={() => setActiveSubTab('assignments')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+              activeSubTab === 'assignments'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
+                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Assignments & Submissions ({assignments.length})
+          </button>
+        </PressFeedback>
 
-        <button
-          onClick={() => setActiveSubTab('students')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
-            activeSubTab === 'students'
-              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
-              : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          My Enrolled Students
-        </button>
+        <PressFeedback>
+          <button
+            onClick={() => setActiveSubTab('students')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+              activeSubTab === 'students'
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20 font-extrabold'
+                : 'bg-slate-900/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            My Enrolled Students
+          </button>
+        </PressFeedback>
       </div>
 
       {/* TAB 1: CLASSES DASHBOARD & DETAILS */}
       {activeSubTab === 'classes' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <SlideUp className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column: Classes List */}
           <div className="lg:col-span-1 space-y-4">
             <div className="flex items-center justify-between">
@@ -749,12 +756,12 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
               </div>
             )}
           </div>
-        </div>
+        </SlideUp>
       )}
 
       {/* TAB 2: ASSIGNMENTS MANAGER */}
       {activeSubTab === 'assignments' && (
-        <div className="space-y-6">
+        <SlideUp className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -883,12 +890,12 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
               )}
             </div>
           </div>
-        </div>
+        </SlideUp>
       )}
 
       {/* TAB 3: MY ENROLLED STUDENTS */}
       {activeSubTab === 'students' && (
-        <div className="p-6 bg-slate-900/80 border border-slate-800 rounded-3xl space-y-6">
+        <SlideUp className="p-6 bg-slate-900/80 border border-slate-800 rounded-3xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -951,18 +958,17 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
               </table>
             </div>
           )}
-        </div>
+        </SlideUp>
       )}
 
       {/* SCHEDULE CLASS MODAL */}
-      {showScheduleModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-scale-up">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-indigo-400" />
-                Schedule New Live Class
-              </h3>
+      <ModalTransition isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)}>
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl mx-auto">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-indigo-400" />
+              Schedule New Live Class
+            </h3>
               <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -1055,22 +1061,20 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
               </div>
             </form>
           </div>
-        </div>
-      )}
+        </ModalTransition>
 
       {/* CREATE ASSIGNMENT MODAL */}
-      {showCreateAssignmentModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-400" />
-                Create New Class Assignment
-              </h3>
-              <button onClick={() => setShowCreateAssignmentModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <ModalTransition isOpen={showCreateAssignmentModal} onClose={() => setShowCreateAssignmentModal(false)}>
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl mx-auto">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <FileText className="w-5 h-5 text-indigo-400" />
+              Create New Class Assignment
+            </h3>
+            <button onClick={() => setShowCreateAssignmentModal(false)} className="text-slate-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
             <form onSubmit={handleCreateAssignment} className="space-y-4">
               <div>
@@ -1124,13 +1128,12 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </ModalTransition>
 
       {/* GRADE SUBMISSION MODAL */}
-      {gradingModalSub && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <ModalTransition isOpen={!!gradingModalSub} onClose={() => setGradingModalSub(null)}>
+        {gradingModalSub && (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl mx-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <FileCheck className="w-5 h-5 text-indigo-400" />
@@ -1164,7 +1167,7 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
                   rows={3}
                   value={feedbackInput}
                   onChange={(e) => setFeedbackInput(e.target.value)}
-                  placeholder="Constructive feedback for the student..."
+                  placeholder="Constructive evaluation notes..."
                   className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
               </div>
@@ -1186,119 +1189,119 @@ export const TeacherPortal: React.FC<TeacherPortalProps> = ({ user, onNavigate }
               </div>
             </form>
           </div>
-        </div>
-      )}
+        )}
+      </ModalTransition>
 
       {/* EDIT TEACHER PROFILE MODAL */}
-      {showProfileModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-indigo-400" />
-                Setup / Edit Faculty Profile
-              </h3>
-              <button onClick={() => setShowProfileModal(false)} className="text-slate-400 hover:text-white">
-                <X className="w-5 h-5" />
-              </button>
+      <ModalTransition isOpen={showProfileModal} onClose={() => setShowProfileModal(false)}>
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 space-y-4 shadow-2xl mx-auto">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <GraduationCap className="w-5 h-5 text-indigo-400" />
+              Setup / Edit Faculty Profile
+            </h3>
+            <button onClick={() => setShowProfileModal(false)} className="text-slate-400 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveProfile} className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-slate-300">Educator Full Name *</label>
+              <input
+                type="text"
+                required
+                value={profileForm.name}
+                onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-300">Full Name *</label>
+            <div>
+              <label className="text-xs font-bold text-slate-300">Qualification / Degree</label>
+              <input
+                type="text"
+                value={profileForm.qualification}
+                onChange={(e) => setProfileForm({ ...profileForm, qualification: e.target.value })}
+                placeholder="e.g. M.A. History, Ex-Civil Servant"
+                className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-300">Teaching Experience (Years)</label>
+              <input
+                type="number"
+                min={0}
+                max={50}
+                value={profileForm.experienceYears}
+                onChange={(e) => setProfileForm({ ...profileForm, experienceYears: Number(e.target.value) })}
+                className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-300">Subjects / Specializations</label>
+              <div className="flex gap-2 mt-1">
                 <input
                   type="text"
-                  required
-                  value={profileForm.name}
-                  onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+                  value={profileForm.subjectInput}
+                  onChange={(e) => setProfileForm({ ...profileForm, subjectInput: e.target.value })}
+                  placeholder="e.g. Indian Polity"
+                  className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
                 />
+                <button
+                  type="button"
+                  onClick={handleAddSubjectTag}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl"
+                >
+                  Add
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-300">Qualification</label>
-                  <input
-                    type="text"
-                    value={profileForm.qualification}
-                    onChange={(e) => setProfileForm({ ...profileForm, qualification: e.target.value })}
-                    placeholder="e.g. M.Sc, Ph.D, Ex-IAS"
-                    className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-slate-300">Experience (Years)</label>
-                  <input
-                    type="number"
-                    value={profileForm.experienceYears}
-                    onChange={(e) => setProfileForm({ ...profileForm, experienceYears: Number(e.target.value) })}
-                    className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-300">Subjects Taught</label>
-                <div className="flex gap-2 mt-1">
-                  <input
-                    type="text"
-                    value={profileForm.subjectInput}
-                    onChange={(e) => setProfileForm({ ...profileForm, subjectInput: e.target.value })}
-                    placeholder="Add subject (e.g. Physics, History)..."
-                    className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddSubjectTag}
-                    className="px-3 py-2 bg-slate-800 text-slate-200 text-xs font-bold rounded-xl"
-                  >
-                    Add
-                  </button>
-                </div>
-
+              {profileForm.subjects.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mt-2">
-                  {profileForm.subjects.map((sub, idx) => (
-                    <span key={idx} className="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+                  {profileForm.subjects.map((sub, i) => (
+                    <span key={i} className="px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-lg text-xs flex items-center gap-1">
                       {sub}
-                      <button type="button" onClick={() => handleRemoveSubjectTag(sub)} className="hover:text-rose-400">
+                      <button type="button" onClick={() => handleRemoveSubjectTag(sub)} className="hover:text-white">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
                   ))}
                 </div>
-              </div>
+              )}
+            </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-300">Bio / Summary</label>
-                <textarea
-                  rows={3}
-                  value={profileForm.bio}
-                  onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                  placeholder="Share your teaching experience & background..."
-                  className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
+            <div>
+              <label className="text-xs font-bold text-slate-300">Faculty Bio</label>
+              <textarea
+                rows={3}
+                value={profileForm.bio}
+                onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
+                placeholder="Share your teaching experience & background..."
+                className="w-full px-3 py-2 mt-1 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
 
-              <div className="pt-2 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowProfileModal(false)}
-                  className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-600/30"
-                >
-                  Save Profile
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(false)}
+                className="px-4 py-2 bg-slate-800 text-slate-300 text-xs font-bold rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-600/30"
+              >
+                Save Profile
+              </button>
+            </div>
+          </form>
         </div>
-      )}
+      </ModalTransition>
     </div>
   );
 };

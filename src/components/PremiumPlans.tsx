@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { UserProfile } from '../types';
 import { saveUserProfile } from '../lib/gamification';
+import { ErrorShake, PressFeedback, SlideUp } from '../lib/animations';
 import { 
   Crown, 
   Check, 
@@ -644,9 +645,11 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
             )}
 
             {utrErrorMsg && (
-              <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium">
-                {utrErrorMsg}
-              </div>
+              <ErrorShake>
+                <div className="mt-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-medium">
+                  {utrErrorMsg}
+                </div>
+              </ErrorShake>
             )}
 
             <form onSubmit={handleSubmitUtrVerification} className="mt-4 space-y-3">
@@ -664,19 +667,21 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmittingUtr}
-                className="w-full py-3 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition-all flex items-center justify-center gap-2"
-              >
-                {isSubmittingUtr ? (
-                  <span className="w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
-                ) : (
-                  <>
-                    <Send className="w-3.5 h-3.5" /> Submit UTR for Admin Approval
-                  </>
-                )}
-              </button>
+              <PressFeedback>
+                <button
+                  type="submit"
+                  disabled={isSubmittingUtr}
+                  className="w-full py-3 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {isSubmittingUtr ? (
+                    <span className="w-4 h-4 rounded-full border-2 border-amber-400 border-t-transparent animate-spin" />
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" /> Submit UTR for Admin Approval
+                    </>
+                  )}
+                </button>
+              </PressFeedback>
             </form>
 
             <div className="mt-5 p-3 rounded-xl bg-slate-950 border border-slate-800 text-[11px] text-slate-400 space-y-1">

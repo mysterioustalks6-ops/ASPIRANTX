@@ -47,6 +47,7 @@ import { ForestGardenView } from './ForestGardenView';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { getApiUrl } from '../lib/apiConfig';
+import { triggerConfetti, PressFeedback, SlideUp } from '../lib/animations';
 
 // --- FOREST MILESTONE TIERS (FEATURE C) ---
 interface ForestTier {
@@ -1123,6 +1124,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
   // Pomodoro Completion Handler with Server XP Deduplication, Offline Sync Queue, and Inline Syllabus Time Logging
   const handlePomodoroFinish = async () => {
     if (pomoMode === 'focus') {
+      triggerConfetti();
       const durationSeconds = selectedPomoDuration * 60;
       setIsSaving(true);
 
@@ -1779,34 +1781,38 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
 
             {/* Timer Controls */}
             <div className="flex items-center justify-center gap-4 relative z-10">
-              <button
-                onClick={() => {
-                  if (!isPomoActive && pomoMode === 'focus') {
-                    sessionIdRef.current = 'session_' + Date.now();
-                  }
-                  setIsPomoActive(!isPomoActive);
-                }}
-                className={`px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2.5 transition-all shadow-lg ${
-                  isPomoActive
-                    ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
-                    : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white shadow-purple-500/20'
-                }`}
-              >
-                {isPomoActive ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-                {isPomoActive ? 'PAUSE SPRINT' : 'START POMODORO SPRINT'}
-              </button>
+              <PressFeedback>
+                <button
+                  onClick={() => {
+                    if (!isPomoActive && pomoMode === 'focus') {
+                      sessionIdRef.current = 'session_' + Date.now();
+                    }
+                    setIsPomoActive(!isPomoActive);
+                  }}
+                  className={`px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2.5 transition-all shadow-lg cursor-pointer ${
+                    isPomoActive
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
+                      : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white shadow-purple-500/20'
+                  }`}
+                >
+                  {isPomoActive ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
+                  {isPomoActive ? 'PAUSE SPRINT' : 'START POMODORO SPRINT'}
+                </button>
+              </PressFeedback>
 
-              <button
-                onClick={() => {
-                  setIsPomoActive(false);
-                  setPomoMinutes(selectedPomoDuration);
-                  setPomoSeconds(0);
-                }}
-                className="p-4 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800"
-                title="Reset Timer"
-              >
-                <RotateCcw className="w-5 h-5" />
-              </button>
+              <PressFeedback>
+                <button
+                  onClick={() => {
+                    setIsPomoActive(false);
+                    setPomoMinutes(selectedPomoDuration);
+                    setPomoSeconds(0);
+                  }}
+                  className="p-4 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 cursor-pointer"
+                  title="Reset Timer"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </button>
+              </PressFeedback>
             </div>
           </div>
         </div>

@@ -107,6 +107,7 @@ import {
   feedbackReportsStore,
   generateRealisticSyllabus,
   getCachedAcademicResult,
+  getCbtHistoryForUser,
   getErrorLogEncryptionKeyBuffer,
   getGeminiClient,
   getISTDateString,
@@ -191,6 +192,8 @@ import {
   teamApplicationsDb,
   updateGlobalAdminSettings,
   updateStreak,
+  persistCbtResultAtomic,
+  toCanonicalUuid,
   userCustomSubjectsDb,
   userErrorLogsStore,
   userKarmaStore,
@@ -214,38 +217,41 @@ const __dirname = path.resolve();
 // ─── Durable Offline Batch Sync Endpoint ──────────────────────────────────────
 router.post('/api/sync/batch', async (req, res) => {
   try {
-    const { userId, items } = req.body;
-    if (!Array.isArray(items) || items.length === 0) {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ error: 'Authentication Required: Bearer token is missing or invalid.' });
+    }
+
+    const rawList = req.body.items || req.body.events;
+    if (!Array.isArray(rawList) || rawList.length === 0) {
       return res.json({ success: true, acknowledgedIds: [] });
     }
 
+    const effectiveUserId = verifiedUser.sub!;
     const acknowledgedIds: string[] = [];
 
-    for (const item of items) {
+    for (const item of rawList) {
       try {
         if (item.type === 'SYLLABUS_PROGRESS') {
-          const { completedSubtopicIds } = item.payload || {};
-          if (Array.isArray(completedSubtopicIds) && supabaseServer) {
-            try {
-              await supabaseServer.from('user_syllabus_progress').upsert({
-                user_id: item.userId || userId || 'guest',
-                exam_id: item.examId,
-                completed_subtopic_ids: completedSubtopicIds,
-                updated_at: new Date().toISOString()
-              }, { onConflict: 'user_id,exam_id' });
-            } catch (ignored) {}
-          }
+          const targetExam = String(item.examId || item.exam || 'ALL').toUpperCase();
+          const rowId = `${effectiveUserId}_${targetExam}`;
+          const progressPayload = item.payload || {};
+
+          await queryPostgres(
+            `INSERT INTO public.user_syllabus_progress (id, user_id, exam, progress, updated_at)
+             VALUES ($1, $2, $3, $4, now())
+             ON CONFLICT (id)
+             DO UPDATE SET progress = $4, updated_at = now()`,
+            [rowId, effectiveUserId, targetExam, JSON.stringify(progressPayload)]
+          );
         } else if (item.type === 'TELEMETRY') {
           const { studyMinutesIncrement } = item.payload || {};
           if (typeof studyMinutesIncrement === 'number') {
-            await updateStreak(item.userId || userId || 'guest').catch(() => null);
+            await updateStreak(effectiveUserId).catch(() => null);
           }
         } else if (item.type === 'CBT_RESULT') {
-          if (cbtResultsStore) {
-            const targetId = item.userId || userId || 'guest';
-            const history = cbtResultsStore.get(targetId) || [];
-            history.push(item.payload);
-            cbtResultsStore.set(targetId, history);
+          if (item.payload) {
+            await persistCbtResultAtomic(effectiveUserId, item.payload);
           }
         }
         acknowledgedIds.push(item.id);
@@ -264,12 +270,80 @@ router.post('/api/sync/batch', async (req, res) => {
   }
 });
 
+// ─── Direct Syllabus Progress Endpoints (Neon Authoritative) ─────────────────
+router.get('/api/user/syllabus-progress', async (req, res) => {
+  const verifiedUser = await extractVerifiedUserFromReq(req);
+  if (!verifiedUser) {
+    return res.status(401).json({ error: 'Authentication Required' });
+  }
+  const userId = verifiedUser.sub!;
+  const targetExam = String(req.query.exam || 'ALL').toUpperCase();
+  const rowId = `${userId}_${targetExam}`;
+
+  try {
+    const dbRes = await queryPostgres(
+      `SELECT progress, updated_at FROM public.user_syllabus_progress WHERE id = $1 LIMIT 1`,
+      [rowId]
+    );
+
+    if (dbRes.rows.length > 0) {
+      return res.json({
+        success: true,
+        exam: targetExam,
+        progress: dbRes.rows[0].progress || {},
+        updatedAt: dbRes.rows[0].updated_at
+      });
+    }
+
+    return res.json({
+      success: true,
+      exam: targetExam,
+      progress: {},
+      updatedAt: null
+    });
+  } catch (err: any) {
+    console.error('[GET /api/user/syllabus-progress] Neon error:', err.message);
+    return res.status(500).json({ error: 'Failed to fetch syllabus progress', message: err.message });
+  }
+});
+
+router.post('/api/user/syllabus-progress', async (req, res) => {
+  const verifiedUser = await extractVerifiedUserFromReq(req);
+  if (!verifiedUser) {
+    return res.status(401).json({ error: 'Authentication Required' });
+  }
+  const userId = verifiedUser.sub!;
+  const targetExam = String(req.body.exam || req.body.examId || 'ALL').toUpperCase();
+  const rowId = `${userId}_${targetExam}`;
+  const progress = req.body.progress || {};
+
+  try {
+    await queryPostgres(
+      `INSERT INTO public.user_syllabus_progress (id, user_id, exam, progress, updated_at)
+       VALUES ($1, $2, $3, $4, now())
+       ON CONFLICT (id)
+       DO UPDATE SET progress = $4, updated_at = now()`,
+      [rowId, userId, targetExam, JSON.stringify(progress)]
+    );
+
+    return res.json({
+      success: true,
+      exam: targetExam,
+      progress,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err: any) {
+    console.error('[POST /api/user/syllabus-progress] Neon error:', err.message);
+    return res.status(500).json({ error: 'Failed to save syllabus progress', message: err.message });
+  }
+});
+
 router.get('/api/user/subjects', async (req, res) => {
   const verifiedUser = await extractVerifiedUserFromReq(req);
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   
   if (supabaseServer) {
     try {
@@ -292,7 +366,7 @@ router.post('/api/user/subjects', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { name } = req.body;
   if (!name || typeof name !== 'string' || !name.trim()) {
     return res.status(400).json({ error: 'Subject name is required' });
@@ -328,7 +402,7 @@ router.patch('/api/user/subjects/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
   const { name } = req.body;
   
@@ -367,7 +441,7 @@ router.put('/api/user/subjects/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
   const { name } = req.body;
 
@@ -393,7 +467,7 @@ router.delete('/api/user/subjects/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
 
   const index = userCustomSubjectsDb.findIndex(s => s.id === id);
@@ -494,7 +568,7 @@ router.get('/api/user/questions', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
 
   if (supabaseServer) {
     try {
@@ -533,7 +607,7 @@ router.post('/api/user/questions', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { questionText, options, correctOption, explanation, subject, topic, difficulty } = req.body;
 
   if (!questionText || typeof questionText !== 'string' || !questionText.trim()) {
@@ -588,7 +662,7 @@ router.patch('/api/user/questions/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
 
   const existing = userManualQuestionsDb.find(q => q.id === id);
@@ -615,7 +689,7 @@ router.put('/api/user/questions/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
 
   const existing = userManualQuestionsDb.find(q => q.id === id);
@@ -642,7 +716,7 @@ router.delete('/api/user/questions/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
 
   const index = userManualQuestionsDb.findIndex(q => q.id === id);
@@ -662,45 +736,34 @@ router.get('/api/user/study-sessions', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
 
-  if (supabaseServer) {
-    try {
-      const { data, error } = await supabaseServer
-        .from('user_pomodoro_sessions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-      if (!error && data) {
-        const mapped = data.map((s: any) => ({
-          id: s.id,
-          userId: s.user_id,
-          subject: s.subject || 'General Study',
-          topic: s.topic || 'General Topic',
-          duration: Number(s.duration) || 25,
-          startTime: s.start_time,
-          endTime: s.end_time,
-          completedDuration: Number(s.completed_duration) || 0,
-          status: s.status || 'ACTIVE',
-          questionsAttempted: Number(s.questions_attempted) || 0,
-          correctAnswers: Number(s.correct_answers) || 0,
-          questionIds: Array.isArray(s.question_ids) ? s.question_ids : [],
-          questionSources: Array.isArray(s.question_sources) ? s.question_sources : [],
-          manualQuestions: Array.isArray(s.manual_questions) ? s.manual_questions : [],
-          selectedQuestions: Array.isArray(s.selected_questions) ? s.selected_questions : [],
-          accuracy: Number(s.accuracy) || 0,
-          xpEarned: Number(s.xp_earned) || 0,
-          createdAt: s.created_at || new Date().toISOString()
-        }));
-        return res.json({ success: true, sessions: mapped });
-      }
-    } catch (err) {
-      console.warn('Error fetching study sessions from Supabase:', err);
-    }
+  try {
+    const dbRes = await queryPostgres(
+      `SELECT id, user_id, minutes, date, created_at
+       FROM public.user_pomodoro_sessions
+       WHERE user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 100`,
+      [userId]
+    );
+
+    const sessions = dbRes.rows.map((r: any) => ({
+      id: r.id,
+      userId: r.user_id,
+      minutes: Number(r.minutes) || 25,
+      duration: Number(r.minutes) || 25,
+      completedDuration: Number(r.minutes) || 25,
+      date: r.date,
+      status: 'COMPLETED',
+      createdAt: r.created_at
+    }));
+
+    return res.json({ success: true, sessions });
+  } catch (err: any) {
+    console.error('[GET /api/user/study-sessions] Neon error:', err.message);
+    return res.status(500).json({ error: 'Failed to retrieve study sessions', message: err.message });
   }
-
-  const userSessions = userPomodoroSessionsDb.filter(s => s.userId === userId);
-  return res.json({ success: true, sessions: userSessions });
 });
 
 router.post('/api/user/study-sessions', async (req, res) => {
@@ -708,298 +771,90 @@ router.post('/api/user/study-sessions', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
-  const {
-    sessionId,
-    id,
-    subject,
-    topic,
-    duration,
-    startTime,
-    endTime,
-    completedDuration,
-    status,
-    questionsAttempted,
-    correctAnswers,
-    questionIds,
-    questionSources,
-    manualQuestions,
-    selectedQuestions,
-    accuracy,
-    xpEarned
-  } = req.body;
+  const userId = verifiedUser.sub!;
+  const { sessionId, id, duration, completedDuration, date } = req.body;
 
   const targetSessionId = sessionId || id || `pomo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const validMinutes = Math.max(1, Math.min(360, Math.round(Number(completedDuration || duration || 25))));
+  const sessionDate = date || new Date().toISOString().split('T')[0];
 
-  let session = userPomodoroSessionsDb.find(s => s.id === targetSessionId);
-  if (session) {
-    if (session.userId !== userId) {
-      return res.status(403).json({ error: 'Forbidden: Cannot update session owned by another user' });
-    }
-    if (subject) session.subject = subject;
-    if (topic) session.topic = topic;
-    if (duration) session.duration = duration;
-    if (completedDuration !== undefined) session.completedDuration = completedDuration;
-    if (status) session.status = status;
-    if (questionsAttempted !== undefined) session.questionsAttempted = questionsAttempted;
-    if (accuracy !== undefined) session.accuracy = accuracy;
-  } else {
-    session = {
+  try {
+    await queryPostgres(
+      `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, created_at)
+       VALUES ($1, $2, $3, $4, now())
+       ON CONFLICT (id) DO UPDATE SET minutes = $3, date = $4`,
+      [targetSessionId, userId, validMinutes, sessionDate]
+    );
+
+    const session = {
       id: targetSessionId,
       userId,
-      subject: subject || 'General Study',
-      topic: topic || 'General Topic',
-      duration: duration || 25,
-      startTime: startTime || new Date().toISOString(),
-      endTime: endTime || null,
-      completedDuration: completedDuration || 0,
-      status: status || 'ACTIVE',
-      questionsAttempted: questionsAttempted || 0,
-      correctAnswers: correctAnswers || 0,
-      questionIds: Array.isArray(questionIds) ? questionIds : [],
-      questionSources: Array.isArray(questionSources) ? questionSources : [],
-      manualQuestions: Array.isArray(manualQuestions) ? manualQuestions : [],
-      selectedQuestions: Array.isArray(selectedQuestions) ? selectedQuestions : [],
-      accuracy: accuracy || 0,
-      xpEarned: xpEarned || 0,
+      minutes: validMinutes,
+      duration: validMinutes,
+      completedDuration: validMinutes,
+      date: sessionDate,
+      status: 'COMPLETED',
       createdAt: new Date().toISOString()
     };
-    userPomodoroSessionsDb.push(session);
-  }
 
-  if (supabaseServer) {
-    try {
-      await supabaseServer.from('user_pomodoro_sessions').upsert([{
-        id: session.id,
-        user_id: session.userId,
-        subject: session.subject,
-        topic: session.topic,
-        duration: session.duration,
-        start_time: session.startTime,
-        end_time: session.endTime,
-        completed_duration: session.completedDuration,
-        status: session.status,
-        questions_attempted: session.questionsAttempted,
-        correct_answers: session.correctAnswers,
-        question_ids: session.questionIds,
-        question_sources: session.questionSources,
-        manual_questions: session.manualQuestions,
-        selected_questions: session.selectedQuestions,
-        accuracy: session.accuracy,
-        xp_earned: session.xpEarned,
-        created_at: session.createdAt
-      }], { onConflict: 'id' });
-    } catch (e) {
-      console.warn('Supabase pomodoro session upsert error:', e);
-    }
+    return res.json({ success: true, session });
+  } catch (err: any) {
+    console.error('[POST /api/user/study-sessions] Neon error:', err.message);
+    return res.status(500).json({ error: 'Failed to persist study session', message: err.message });
   }
-
-  return res.json({ success: true, session });
 });
 
 router.post('/api/user/study-sessions/:id/complete', async (req, res) => {
   const verifiedUser = await extractVerifiedUserFromReq(req);
-  const userId = verifiedUser?.sub || req.body.userId || 'guest';
+  if (!verifiedUser) {
+    return res.status(401).json({ error: 'Authentication Required' });
+  }
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
-  const { completedDuration, questionsAttempted, correctAnswers, accuracy, nodeId, nodeSource = 'official', subject, topic, subtopic } = req.body;
+  const { completedDuration, duration, date } = req.body;
 
-  // XP DEDUPLICATION CHECK (SERVER-SIDE IDEMPOTENCY)
-  const isAlreadyProcessed = processedSessionsStore.has(id);
-  
-  let session = userPomodoroSessionsDb.find(s => s.id === id);
-  if (session && session.userId !== userId) {
-    return res.status(403).json({ error: 'Forbidden: Cannot complete study session owned by another user' });
-  }
+  const validMinutes = Math.max(1, Math.min(360, Math.round(Number(completedDuration || duration || 25))));
+  const sessionDate = date || new Date().toISOString().split('T')[0];
 
-  if (!session) {
-    session = {
-      id,
-      userId,
-      subject: req.body.subject || 'General Study',
-      topic: req.body.topic || 'General Topic',
-      duration: req.body.duration || 25,
-      startTime: req.body.startTime || new Date().toISOString(),
-      endTime: new Date().toISOString(),
-      completedDuration: completedDuration || 1500,
-      status: 'COMPLETED',
-      questionsAttempted: questionsAttempted || 0,
-      correctAnswers: correctAnswers || 0,
-      questionIds: req.body.questionIds || [],
-      questionSources: req.body.questionSources || [],
-      manualQuestions: req.body.manualQuestions || [],
-      selectedQuestions: req.body.selectedQuestions || [],
-      accuracy: accuracy || 100,
-      xpEarned: 50,
-      createdAt: new Date().toISOString()
-    };
-    userPomodoroSessionsDb.push(session);
-  } else {
-    session.status = 'COMPLETED';
-    session.endTime = new Date().toISOString();
-    if (completedDuration) session.completedDuration = completedDuration;
-    if (questionsAttempted !== undefined) session.questionsAttempted = questionsAttempted;
-    if (correctAnswers !== undefined) session.correctAnswers = correctAnswers;
-    if (accuracy !== undefined) session.accuracy = accuracy;
-  }
+  try {
+    await queryPostgres(
+      `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, created_at)
+       VALUES ($1, $2, $3, $4, now())
+       ON CONFLICT (id) DO UPDATE SET minutes = $3, date = $4`,
+      [id, userId, validMinutes, sessionDate]
+    );
 
-  if (isAlreadyProcessed) {
-    // Persist completed state to Supabase even on retry
-    if (supabaseServer) {
+    // XP calculation
+    const xpAwarded = Math.min(100, Math.max(10, Math.round(validMinutes * 2)));
+
+    // Trigger streak update if session >= 5 minutes
+    let streakResult = null;
+    if (validMinutes >= 5) {
       try {
-        await supabaseServer.from('user_pomodoro_sessions').upsert([{
-          id: session.id,
-          user_id: session.userId,
-          subject: session.subject,
-          topic: session.topic,
-          duration: session.duration,
-          start_time: session.startTime,
-          end_time: session.endTime,
-          completed_duration: session.completedDuration,
-          status: session.status,
-          questions_attempted: session.questionsAttempted,
-          correct_answers: session.correctAnswers,
-          question_ids: session.questionIds,
-          question_sources: session.questionSources,
-          manual_questions: session.manualQuestions,
-          selected_questions: session.selectedQuestions,
-          accuracy: session.accuracy,
-          xp_earned: session.xpEarned,
-          created_at: session.createdAt
-        }], { onConflict: 'id' });
-      } catch (e) {}
+        streakResult = await updateStreak(userId);
+      } catch (e) {
+        console.warn('Failed to update streak:', e);
+      }
     }
 
     return res.json({
       success: true,
-      session,
-      xpAwarded: 0,
-      alreadyAwarded: true,
-      message: 'Session already completed and XP awarded previously.'
+      message: 'Study session completed and recorded to database.',
+      session: {
+        id,
+        userId,
+        minutes: validMinutes,
+        date: sessionDate,
+        status: 'COMPLETED',
+        xpEarned: xpAwarded
+      },
+      streak: streakResult,
+      xpAwarded
     });
+  } catch (err: any) {
+    console.error('[Study Sessions] Complete error:', err?.message || err);
+    return res.status(500).json({ error: 'Failed to complete study session', message: err.message });
   }
-
-  // Mark session ID as processed
-  processedSessionsStore.add(id);
-
-  // Calculate XP reward safely (e.g. 50 base XP)
-  const xpAwarded = Math.min(100, Math.max(10, Math.round((session.completedDuration / 60) * 2)));
-  session.xpEarned = xpAwarded;
-
-  if (supabaseServer) {
-    try {
-      await supabaseServer.from('user_pomodoro_sessions').upsert([{
-        id: session.id,
-        user_id: session.userId,
-        subject: session.subject,
-        topic: session.topic,
-        duration: session.duration,
-        start_time: session.startTime,
-        end_time: session.endTime,
-        completed_duration: session.completedDuration,
-        status: session.status,
-        questions_attempted: session.questionsAttempted,
-        correct_answers: session.correctAnswers,
-        question_ids: session.questionIds,
-        question_sources: session.questionSources,
-        manual_questions: session.manualQuestions,
-        selected_questions: session.selectedQuestions,
-        accuracy: session.accuracy,
-        xp_earned: session.xpEarned,
-        created_at: session.createdAt
-      }], { onConflict: 'id' });
-    } catch (e) {
-      console.warn('Supabase pomodoro completion upsert error:', e);
-    }
-  }
-
-  // Trigger streak update if session >= 5 minutes (300 seconds)
-  let streakResult = null;
-  if ((session.completedDuration || 0) >= 300 || (session.duration || 0) >= 5) {
-    try {
-      streakResult = await updateStreak(userId);
-    } catch (e) {
-      console.warn('Streak update on study session complete error:', e);
-    }
-  }
-
-  // Handle optional syllabus time logging inside the SAME completion request
-  let syllabusTimeLogged = null;
-  let totalTimeForNode = 0;
-  const secondsLogged = Number(req.body.secondsLogged || completedDuration || (session.duration ? session.duration * 60 : 0)) || 0;
-
-  if (secondsLogged > 0 && (nodeId || subject || topic || subtopic)) {
-    try {
-      const logRecord = {
-        id: `stl_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        user_id: userId,
-        node_id: nodeId || null,
-        node_source: nodeSource,
-        subject: subject || session.subject || '',
-        topic: topic || session.topic || '',
-        subtopic: subtopic || '',
-        seconds_logged: secondsLogged,
-        session_id: id,
-        created_at: new Date().toISOString()
-      };
-
-      if (!syllabusTimeLogsStore.has(userId)) syllabusTimeLogsStore.set(userId, []);
-      syllabusTimeLogsStore.get(userId)!.push(logRecord);
-
-      if (supabaseServer) {
-        await supabaseServer.from('syllabus_time_log').insert([logRecord]);
-      }
-
-      // Calculate total time for this node across all logs
-      const userLogs = syllabusTimeLogsStore.get(userId) || [];
-      totalTimeForNode = userLogs
-        .filter(l => (nodeId && l.node_id === nodeId) || (l.subject === (subject || session.subject) && l.subtopic === subtopic))
-        .reduce((sum, l) => sum + (l.seconds_logged || 0), 0);
-
-      // If personal syllabus node, increment time_studied_seconds
-      if (nodeSource === 'personal' && nodeId) {
-        const existingNode = personalSyllabusNodesStore.get(nodeId);
-        if (existingNode) {
-          existingNode.time_studied_seconds = (Number(existingNode.time_studied_seconds) || 0) + secondsLogged;
-          existingNode.updated_at = new Date().toISOString();
-          totalTimeForNode = Math.max(totalTimeForNode, existingNode.time_studied_seconds);
-        }
-        if (supabaseServer) {
-          const { data: currentData } = await supabaseServer
-            .from('personal_syllabus_nodes')
-            .select('time_studied_seconds')
-            .eq('id', nodeId)
-            .maybeSingle();
-          const newTime = ((Number(currentData?.time_studied_seconds)) || 0) + secondsLogged;
-          totalTimeForNode = Math.max(totalTimeForNode, newTime);
-          await supabaseServer
-            .from('personal_syllabus_nodes')
-            .update({ time_studied_seconds: newTime, updated_at: new Date().toISOString() })
-            .eq('id', nodeId);
-        }
-      }
-
-      syllabusTimeLogged = {
-        logged: true,
-        nodeId: nodeId || null,
-        nodeSource,
-        secondsLogged,
-        totalTimeForNode
-      };
-    } catch (stlErr) {
-      console.warn('Syllabus time logging on session complete error:', stlErr);
-    }
-  }
-
-  return res.json({
-    success: true,
-    session,
-    xpAwarded,
-    alreadyAwarded: false,
-    streak: streakResult,
-    syllabusTimeLogged,
-    totalTimeForNode,
-    message: 'Session completed successfully and XP awarded.'
-  });
 });
 
 router.patch('/api/user/study-sessions/:id', async (req, res) => {
@@ -1007,7 +862,7 @@ router.patch('/api/user/study-sessions/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
 
   const session = userPomodoroSessionsDb.find(s => s.id === id);
@@ -1057,7 +912,7 @@ router.delete('/api/user/study-sessions/:id', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { id } = req.params;
 
   const index = userPomodoroSessionsDb.findIndex(s => s.id === id);
@@ -1095,7 +950,7 @@ router.get('/api/user/profile', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
 
   if (supabaseServer && userId) {
     try {
@@ -1156,7 +1011,7 @@ router.post('/api/user/profile', async (req, res) => {
   if (!verifiedUser) {
     return res.status(401).json({ error: 'Authentication Required' });
   }
-  const userId = verifiedUser.sub || 'user_dev';
+  const userId = verifiedUser.sub!;
   const { name, exam, targetExam, educationCategory, stateName, targetYear, isProfileComplete } = req.body;
 
   const chosenExam = targetExam || exam || 'NEET_UG';
@@ -2900,7 +2755,7 @@ router.post('/api/auth/token', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     if (decoded && decoded.email) {
       verifiedEmail = String(decoded.email).trim().toLowerCase();
-      userId = decoded.sub || 'user_dev';
+      userId = toCanonicalUuid(decoded.sub || decoded.email || 'user_authenticated');
       tokenVerified = true;
     }
   } catch (_jwtErr) {}
@@ -3088,15 +2943,37 @@ router.get('/api/dashboard/:userId', async (req, res) => {
   }
 });
 
-router.get('/api/notifications/:userId', async (req, res) => {
+const handleGetNotifications = async (req: any, res: any) => {
   try {
-    const { userId } = req.params;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = req.params.userId || verifiedUser?.sub || (req.query.userId as string);
 
-    if (!userId) {
-      return res.status(400).json({ success: false, error: 'User ID is required' });
+    if (pgPool && userId && userId !== 'guest') {
+      try {
+        const { rows } = await queryPostgres(
+          'SELECT * FROM public.notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50;',
+          [userId]
+        );
+        const list = rows.map((r: any) => {
+          const dataObj = r.data && typeof r.data === 'object' ? r.data : {};
+          return {
+            id: r.id,
+            userId: r.user_id,
+            title: r.title || dataObj.title || 'Notice',
+            message: r.message || dataObj.message || '',
+            type: r.type || dataObj.type || 'system',
+            read: Boolean(r.read),
+            createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+            actionUrl: r.action_url || dataObj.actionUrl
+          };
+        });
+        return res.json({ success: true, notifications: list, data: list });
+      } catch (neonErr: any) {
+        console.warn('[Notifications] Neon error:', neonErr?.message || neonErr);
+      }
     }
 
-    if (supabaseServer) {
+    if (supabaseServer && userId && userId !== 'guest') {
       const { data, error } = await supabaseServer
         .from('notifications')
         .select('*')
@@ -3104,37 +2981,20 @@ router.get('/api/notifications/:userId', async (req, res) => {
         .order('created_at', { ascending: false });
 
       if (!error && Array.isArray(data)) {
-        return res.json({ success: true, data });
+        return res.json({ success: true, notifications: data, data });
       }
     }
 
-    const defaultNotifications = [
-      {
-        id: 'notif_1',
-        userId,
-        title: 'Daily Goal Reminder',
-        message: 'Complete your remaining 2 syllabus topics today to maintain your streak!',
-        type: 'reminder',
-        read: false,
-        created_at: new Date().toISOString(),
-      },
-      {
-        id: 'notif_2',
-        userId,
-        title: 'New Live CBT Test Available',
-        message: 'National Level Mock Test Series is now live. Rank yourself nationwide.',
-        type: 'announcement',
-        read: false,
-        created_at: new Date(Date.now() - 7200000).toISOString(),
-      },
-    ];
-
-    res.json({ success: true, data: defaultNotifications });
+    // Return genuine empty list when user has no active notifications
+    return res.json({ success: true, notifications: [], data: [] });
   } catch (err: any) {
-    console.error('[GET /api/notifications/:userId] error:', err);
+    console.error('[GET /api/notifications] error:', err);
     res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
-});
+};
+
+router.get('/api/notifications', handleGetNotifications);
+router.get('/api/notifications/:userId', handleGetNotifications);
 
 router.post('/api/notifications/:id/read', async (req, res) => {
   try {
@@ -4013,8 +3873,9 @@ router.get('/api/user/analytics/weaknesses', async (req, res) => {
     const userId = verifiedUser?.sub || (req.query.userId as string) || 'guest';
     const exam = (req.query.exam as string) || 'NEET_UG';
 
-    const resultsList = Array.from(cbtResultsStore.values()).filter(
-      (r: any) => (r.userId === userId || userId === 'guest') && (!exam || r.exam === exam)
+    const history = await getCbtHistoryForUser(userId);
+    const resultsList = history.filter(
+      (r: any) => (!exam || r.exam === exam)
     );
 
     const topicStats: Record<string, { topic: string; subject: string; totalAttempts: number; correctCount: number; incorrectCount: number }> = {};

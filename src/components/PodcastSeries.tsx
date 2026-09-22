@@ -13,6 +13,7 @@ import {
   Clock,
   RotateCcw
 } from 'lucide-react';
+import { Stagger, StaggerItem, PressFeedback } from '../lib/animations';
 
 interface TopperPodcast {
   id: string;
@@ -253,60 +254,72 @@ export const PodcastSeries: React.FC = () => {
           ) : podcasts.length === 0 ? (
             <p className="text-xs text-slate-400 text-center py-12">Koi podcast episode nahi mila.</p>
           ) : (
-            podcasts.map(pod => {
-              const isCurrent = playingId === pod.id;
-              const savedPos = localStorage.getItem(`podcast_pos_${pod.id}`);
-              const hasResume = savedPos && parseFloat(savedPos) > 2;
+            <Stagger className="space-y-4">
+              {podcasts.map(pod => {
+                const isCurrent = playingId === pod.id;
+                const savedPos = localStorage.getItem(`podcast_pos_${pod.id}`);
+                const hasResume = savedPos && parseFloat(savedPos) > 2;
 
-              return (
-                <div 
-                  key={pod.id}
-                  className={`bg-slate-900 border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all ${
-                    isCurrent ? 'border-sky-500/50 shadow-sm bg-slate-900' : 'border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex gap-4 items-start text-left">
-                    <button
-                      onClick={() => togglePlay(pod)}
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-slate-950 shrink-0 transition-transform hover:scale-105 ${
-                        isCurrent && isPlaying ? 'bg-sky-400 shadow-md shadow-sky-400/25' : 'bg-white hover:bg-slate-100'
+                return (
+                  <StaggerItem key={pod.id}>
+                    <div 
+                      className={`bg-slate-900 border rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all ${
+                        isCurrent ? 'border-sky-500/50 shadow-sm bg-slate-900' : 'border-slate-800 hover:border-slate-700'
                       }`}
                     >
-                      {isCurrent && isPlaying ? (
-                        <Pause className="w-5 h-5 fill-slate-950" />
-                      ) : (
-                        <Play className="w-5 h-5 fill-slate-950 pl-0.5" />
-                      )}
-                    </button>
-                    
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] bg-slate-950 text-sky-400 border border-slate-800 px-2 py-0.5 rounded font-semibold uppercase">
-                          {pod.rank}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-medium">{pod.duration} Min Duration</span>
-                        {hasResume && !isCurrent && (
-                          <span className="text-[9px] bg-sky-500/10 text-sky-300 border border-sky-500/20 px-1.5 py-0.5 rounded font-mono flex items-center gap-1">
-                            <Clock className="w-2.5 h-2.5 text-sky-400" /> Resume available ({formatTime(parseFloat(savedPos))})
-                          </span>
-                        )}
+                      <div className="flex gap-4 items-start text-left">
+                        <PressFeedback>
+                          <button
+                            onClick={() => togglePlay(pod)}
+                            className={`w-12 h-12 rounded-full flex items-center justify-center text-slate-950 shrink-0 transition-transform cursor-pointer ${
+                              isCurrent && isPlaying ? 'bg-sky-400 shadow-md shadow-sky-400/25' : 'bg-white hover:bg-slate-100'
+                            }`}
+                          >
+                            {isCurrent && isPlaying ? (
+                              <Pause className="w-5 h-5 fill-slate-950" />
+                            ) : (
+                              <Play className="w-5 h-5 fill-slate-950 pl-0.5" />
+                            )}
+                          </button>
+                        </PressFeedback>
+                        
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[10px] bg-slate-950 text-sky-400 border border-slate-800 px-2 py-0.5 rounded font-semibold uppercase">
+                              {pod.rank}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-medium">{pod.duration} Min Duration</span>
+                            {isCurrent && isPlaying && (
+                              <div className="flex items-center gap-0.5 h-3 px-1.5 py-0.5 bg-sky-500/10 rounded-full border border-sky-500/20">
+                                <span className="w-0.5 h-full bg-sky-400 rounded-full animate-pulse" />
+                                <span className="w-0.5 h-2 bg-sky-400 rounded-full animate-bounce" />
+                                <span className="w-0.5 h-full bg-sky-400 rounded-full animate-pulse" />
+                              </div>
+                            )}
+                            {hasResume && !isCurrent && (
+                              <span className="text-[9px] bg-sky-500/10 text-sky-300 border border-sky-500/20 px-1.5 py-0.5 rounded font-mono flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5 text-sky-400" /> Resume available ({formatTime(parseFloat(savedPos))})
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="font-bold text-white text-sm sm:text-base leading-snug">{pod.topperName} - {pod.subject}</h3>
+                          <p className="text-xs text-slate-400 leading-relaxed">{pod.description}</p>
+                        </div>
                       </div>
-                      <h3 className="font-bold text-white text-sm sm:text-base leading-snug">{pod.topperName} - {pod.subject}</h3>
-                      <p className="text-xs text-slate-400 leading-relaxed">{pod.description}</p>
-                    </div>
-                  </div>
 
-                  {/* Strategy List download */}
-                  <button
-                    onClick={() => alert(`Syllabus Booklist of ${pod.topperName} successfully added to Reference Library bookmarks!`)}
-                    className="px-3 py-2 bg-slate-950 hover:bg-slate-900 text-slate-300 hover:text-white font-bold text-[10px] rounded-xl border border-white/10 transition-all flex items-center gap-1 shrink-0 h-fit"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Booklist</span>
-                  </button>
-                </div>
-              );
-            })
+                      {/* Strategy List download */}
+                      <button
+                        onClick={() => alert(`Syllabus Booklist of ${pod.topperName} successfully added to Reference Library bookmarks!`)}
+                        className="px-3 py-2 bg-slate-950 hover:bg-slate-900 text-slate-300 hover:text-white font-bold text-[10px] rounded-xl border border-white/10 transition-all flex items-center gap-1 shrink-0 h-fit cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Booklist</span>
+                      </button>
+                    </div>
+                  </StaggerItem>
+                );
+              })}
+            </Stagger>
           )}
         </div>
 

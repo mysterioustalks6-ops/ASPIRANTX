@@ -9,6 +9,7 @@ import {
 import { CommunityGroup, CommunityPost, CommunityComment, UserProfile } from '../types';
 import { CommunityChat } from './CommunityChat';
 import { CommunityWallet } from './CommunityWallet';
+import { Stagger, StaggerItem, PressFeedback, AccordionTransition, ModalTransition } from '../lib/animations';
 
 interface CommunityPlatformProps {
   userProfile: UserProfile;
@@ -759,16 +760,17 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                   </button>
                 </div>
               ) : (
-                posts.map((post) => {
-                  const isCommentsExpanded = openCommentSectionPostId === post.id;
-                  const commentsList = expandedPostComments[post.id] || [];
-                  const isCommentsLoading = loadingCommentsPostId === post.id;
+                <Stagger className="space-y-4">
+                  {posts.map((post) => {
+                    const isCommentsExpanded = openCommentSectionPostId === post.id;
+                    const commentsList = expandedPostComments[post.id] || [];
+                    const isCommentsLoading = loadingCommentsPostId === post.id;
 
-                  return (
-                    <div
-                      key={post.id}
-                      className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 hover:border-slate-300 transition-all"
-                    >
+                    return (
+                      <StaggerItem key={post.id}>
+                        <div
+                          className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-4 hover:border-slate-300 transition-all"
+                        >
                       {/* POST AUTHOR HEADER */}
                       <div className="flex justify-between items-start">
                         <div className="flex items-center space-x-3">
@@ -1117,9 +1119,11 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                           </div>
                         </div>
                       )}
-                    </div>
-                  );
-                })
+                        </div>
+                      </StaggerItem>
+                    );
+                  })}
+                </Stagger>
               )}
             </div>
           </div>
@@ -1127,18 +1131,17 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
       )}
 
       {/* MODAL 1: CREATE NEW DISCUSSION */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
-                <Plus className="w-5 h-5 text-indigo-600" />
-                <span>Start New Community Discussion</span>
-              </h3>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
+      <ModalTransition isOpen={showCreateModal} onClose={() => setShowCreateModal(false)}>
+        <div className="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <Plus className="w-5 h-5 text-indigo-600" />
+              <span>Start New Community Discussion</span>
+            </h3>
+            <button
+              onClick={() => setShowCreateModal(false)}
+              className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+            >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1293,84 +1296,83 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
               </div>
             </form>
           </div>
-        </div>
-      )}
+      </ModalTransition>
 
       {/* MODAL 2: CREATE NEW LEARNING CIRCLE */}
-      {showCreateGroupModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
-                <Users className="w-5 h-5 text-indigo-600" />
-                <span>Create Custom Study Circle</span>
-              </h3>
-              <button
-                onClick={() => setShowCreateGroupModal(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      <ModalTransition isOpen={showCreateGroupModal} onClose={() => setShowCreateGroupModal(false)}>
+        <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+            <h3 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <Users className="w-5 h-5 text-indigo-600" />
+              <span>Create Custom Study Circle</span>
+            </h3>
+            <button
+              onClick={() => setShowCreateGroupModal(false)}
+              className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <form onSubmit={handleCreateGroup} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Circle Name</label>
+              <input
+                type="text"
+                value={groupName}
+                onChange={(e) => setGroupName(e.target.value)}
+                placeholder="e.g. UPSC Prelims 2026 Core Discussion"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500"
+                required
+              />
             </div>
 
-            <form onSubmit={handleCreateGroup} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Circle Name</label>
-                <input
-                  type="text"
-                  required
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  placeholder="e.g. Geography Optional Mapping Group"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Focus & Description</label>
+              <textarea
+                value={groupDescription}
+                onChange={(e) => setGroupDescription(e.target.value)}
+                placeholder="State the purpose, syllabus tags, and peer accountability goals..."
+                rows={3}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 resize-none"
+                required
+              />
+            </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Description & Rules</label>
-                <textarea
-                  required
-                  rows={3}
-                  value={groupDescription}
-                  onChange={(e) => setGroupDescription(e.target.value)}
-                  placeholder="Describe the focus of this learning circle..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                ></textarea>
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Target Exam Domain</label>
+              <select
+                value={groupExam}
+                onChange={(e) => setGroupExam(e.target.value)}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="UPSC_CSE">UPSC CSE</option>
+                <option value="SSC_CGL">SSC CGL / CHSL</option>
+                <option value="STATE_PSC">State PSC (UPPSC/BPSC/MPPSC)</option>
+                <option value="OTHER">General Knowledge & Aptitude</option>
+              </select>
+            </div>
 
-              <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">Exam Category</label>
-                <select
-                  value={groupExam}
-                  onChange={(e) => setGroupExam(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:outline-none cursor-pointer"
-                >
-                  <option value="UPSC_CSE">UPSC CSE</option>
-                  <option value="SSC_CGL">SSC CGL / CHSL</option>
-                  <option value="STATE_PSC">State PSC (UPPSC/BPSC/MPPSC)</option>
-                  <option value="OTHER">General Knowledge & Aptitude</option>
-                </select>
-              </div>
-
-              <div className="flex items-center space-x-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateGroupModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl"
-                >
-                  Cancel
-                </button>
+            <div className="flex items-center space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCreateGroupModal(false)}
+                className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <PressFeedback className="flex-1">
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md"
+                  className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer"
                 >
                   Create Circle
                 </button>
-              </div>
-            </form>
-          </div>
+              </PressFeedback>
+            </div>
+          </form>
         </div>
-      )}
+      </ModalTransition>
 
       {/* MODAL 3: REPORT ABUSE */}
       {showReportModal && (
