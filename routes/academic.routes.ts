@@ -1663,7 +1663,7 @@ router.delete('/api/academic/pyqs/:id', async (req, res) => {
   }
 });
 
-router.get('/api/academic/questions', async (req, res) => {
+router.get(['/api/academic/questions', '/api/academic/question-bank'], async (req, res) => {
   try {
     const exam = (req.query.exam as string) || '';
     const type = (req.query.type as string) || '';
@@ -2578,7 +2578,7 @@ router.get('/api/academic/cbt/tests/:id', (req, res) => {
   }
 });
 
-router.post('/api/academic/cbt/submit', async (req, res) => {
+router.post(['/api/academic/cbt/submit', '/api/cbt/submit'], async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
     if (!verifiedUser) {
@@ -2758,7 +2758,7 @@ router.post('/api/academic/cbt/submit', async (req, res) => {
   }
 });
 
-router.get('/api/academic/cbt/history', async (req, res) => {
+router.get(['/api/academic/cbt/history', '/api/cbt/history'], async (req, res) => {
   try {
     const userId = (req.query.userId as string) || 'default_user';
     const exam = (req.query.exam as string) || '';
@@ -3746,7 +3746,7 @@ function computeLeitnerSchedule(currentBox: number, rating: 'easy' | 'hard') {
 }
 
 // 1. LIST FLASHCARDS (SEED + USER'S CUSTOM CARDS)
-router.get('/api/academic/flashcards', async (req, res) => {
+router.get(['/api/academic/flashcards', '/api/user/flashcards'], async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const examParam = (req.query.exam as string) || 'ALL';

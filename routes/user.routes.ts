@@ -1563,6 +1563,43 @@ router.post('/api/payments/utr-submit', paymentRateLimiter, async (req, res) => 
   }
 });
 
+router.get('/api/user/utr/records', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const queryUserId = (req.query.userId as string) || '';
+    const userId = verifiedUser?.sub || (queryUserId && queryUserId !== 'guest' ? queryUserId : null);
+    const email = verifiedUser?.email || (req.query.email as string)?.trim()?.toLowerCase() || '';
+
+    let records: any[] = [];
+    try {
+      const { rows } = await queryPostgres<any>(
+        `SELECT id, user_id, user_email, user_name, email, utr, plan, amount, status, processed_by, processed_at, data, created_at, updated_at
+         FROM public.utr_requests
+         WHERE (user_id IS NOT NULL AND user_id = $1) OR (user_email IS NOT NULL AND lower(user_email) = lower($2))
+         ORDER BY created_at DESC LIMIT 50;`,
+        [userId || '', email || '']
+      );
+      records = rows.map((r: any) => ({
+        id: r.id,
+        userId: r.user_id,
+        userEmail: r.user_email || r.email,
+        userName: r.user_name,
+        utr: r.utr,
+        plan: r.plan,
+        amount: Number(r.amount) || 0,
+        status: r.status || 'PENDING',
+        createdAt: r.created_at,
+        updatedAt: r.updated_at
+      }));
+    } catch (neonErr: any) {
+      console.warn('[GET /api/user/utr/records] fallback query:', neonErr?.message);
+    }
+    return res.json({ success: true, records, data: records });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: 'Failed to retrieve UTR records: ' + err.message });
+  }
+});
+
 router.get('/api/user/subscription', async (req, res) => {
   const verifiedUser = await extractVerifiedUserFromReq(req);
   const emailQuery = (req.query.email as string) || '';
@@ -1693,7 +1730,7 @@ function hydrateRewardsFromDisk() {
 hydrateRewardsFromDisk();
 
 // 1. GET REWARD STATUS
-router.get('/api/rewards/status', async (req, res) => {
+router.get(['/api/rewards/status', '/api/user/rewards'], async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const queryUserId = (req.query.userId as string) || '';
