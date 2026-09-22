@@ -657,7 +657,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               {/* Trust Badge */}
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 pt-2 border-t border-slate-800/80">
                 <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                <span>256-bit Encrypted • Powered by Supabase Secure Auth</span>
+                <span>256-bit Encrypted • Powered by Neon Secure Auth</span>
               </div>
             </motion.div>
           </div>
