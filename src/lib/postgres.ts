@@ -27,7 +27,20 @@ dotenv.config();
 
 const { Pool } = pg;
 
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.NEON_DATABASE_URL || process.env.POSTGRES_PRISMA_URL;
+export function findDatabaseUrl(): string | undefined {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (process.env.POSTGRES_URL) return process.env.POSTGRES_URL;
+  if (process.env.NEON_DATABASE_URL) return process.env.NEON_DATABASE_URL;
+  if (process.env.POSTGRES_PRISMA_URL) return process.env.POSTGRES_PRISMA_URL;
+  for (const [k, v] of Object.entries(process.env)) {
+    if (typeof v === 'string' && (v.startsWith('postgresql://') || v.startsWith('postgres://'))) {
+      return v;
+    }
+  }
+  return undefined;
+}
+
+const connectionString = findDatabaseUrl();
 
 let poolInstance: pg.Pool | null = null;
 

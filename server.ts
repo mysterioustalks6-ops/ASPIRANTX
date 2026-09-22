@@ -10,7 +10,7 @@ import { expressEdgeMiddleware } from './authMiddleware.js';
 // Import Shared Backend State & Hydration
 import * as Shared from './routes/shared.js';
 import { isSupabaseDbConfigured, supabaseServer, APP_VERSION } from './routes/shared.js';
-import { pgPool } from './src/lib/postgres.js';
+import { pgPool, findDatabaseUrl } from './src/lib/postgres.js';
 
 // Import Modular Routers
 import academicRoutes from './routes/academic.routes.js';
@@ -102,13 +102,20 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
-    postgresConfigured: Boolean(process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.NEON_DATABASE_URL || process.env.POSTGRES_PRISMA_URL),
+    postgresConfigured: Boolean(findDatabaseUrl()),
     neonPoolInitialized: Boolean(pgPool),
     envKeysDetected: {
       hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
       hasPostgresUrl: Boolean(process.env.POSTGRES_URL),
       hasNeonUrl: Boolean(process.env.NEON_DATABASE_URL),
       hasJwtSecret: Boolean(process.env.JWT_SECRET),
+      detectedCandidateKeys: Object.keys(process.env).filter(k => 
+        k.toLowerCase().includes('data') || 
+        k.toLowerCase().includes('post') || 
+        k.toLowerCase().includes('neon') || 
+        k.toLowerCase().includes('sql') ||
+        k.toLowerCase().includes('db')
+      ),
     },
     supabaseUrl: Boolean(process.env.VITE_SUPABASE_URL),
     supabaseKey: Boolean(process.env.VITE_SUPABASE_ANON_KEY),
