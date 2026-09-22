@@ -7,7 +7,8 @@
  */
 
 import { dedupFetch, getPerfMetrics, recordPerfMarker, type PerfMetrics } from './apiDeduplicator';
-export { getPerfMetrics, recordPerfMarker, type PerfMetrics };
+import { getApiUrl } from './apiConfig';
+export { getPerfMetrics, recordPerfMarker, type PerfMetrics, getApiUrl };
 
 export interface FetchOptions extends RequestInit {
   timeoutMs?: number;
@@ -41,6 +42,7 @@ export async function apiFetch<T = any>(
   url: string,
   options: FetchOptions = {}
 ): Promise<T> {
+  const resolvedUrl = getApiUrl(url);
   const {
     timeoutMs = 12000,
     maxRetries = 3,
@@ -52,7 +54,7 @@ export async function apiFetch<T = any>(
   } = options;
 
   const method = (restOptions.method || 'GET').toUpperCase();
-  const cacheKey = `aspirantx_api_cache_${method}_${url}`;
+  const cacheKey = `aspirantx_api_cache_${method}_${resolvedUrl}`;
 
   // 1. SWR Cache Read (for GET requests)
   if (method === 'GET' && useCache) {
@@ -103,13 +105,16 @@ export async function apiFetch<T = any>(
     ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     ...(headers as Record<string, string>),
   };
+  if (restOptions.body instanceof FormData) {
+    delete mergedHeaders['Content-Type'];
+  }
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await dedupFetch(url, {
+      const response = await dedupFetch(resolvedUrl, {
         ...restOptions,
         headers: mergedHeaders,
         signal: controller.signal,

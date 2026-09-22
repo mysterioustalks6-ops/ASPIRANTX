@@ -188,15 +188,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
           searchQuery
         )}${subjParam}${typeParam}${statusParam}${langParam}`);
 
-        let res = await dedupFetch(url);
-        if (!res.ok && url.includes('127.0.0.1:3000')) {
-          try {
-            const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
-            const fbRes = await dedupFetch(fallbackUrl);
-            if (fbRes.ok) res = fbRes;
-          } catch (_) {}
-        }
-
+        const res = await dedupFetch(url);
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.questions)) {
@@ -209,24 +201,6 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
           }
         }
       } catch (e: any) {
-        // If local native failed with network error, attempt live Vercel fallback
-        try {
-          if (url && url.includes('127.0.0.1:3000')) {
-            const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
-            const fbRes = await dedupFetch(fallbackUrl);
-            if (fbRes.ok) {
-              const data = await fbRes.json();
-              if (data.success && Array.isArray(data.questions)) {
-                setQuestions(data.questions);
-                setTotal(data.total !== undefined ? data.total : data.questions.length);
-                setTotalPages(data.totalPages || 1);
-                loaded = true;
-                setLoading(false);
-                return;
-              }
-            }
-          }
-        } catch (_) {}
         console.warn('Backend API unreachable, checking local and direct Supabase fallback:', e?.message || e);
       }
     }

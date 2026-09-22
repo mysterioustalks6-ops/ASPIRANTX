@@ -206,6 +206,7 @@ import {
   watchdogSystemLogs
 } from './shared.js';
 import * as Shared from './shared.js';
+import { queryPostgres, pgPool } from '../src/lib/postgres.js';
 
 const router = Router();
 const __dirname = path.resolve();
@@ -1581,103 +1582,130 @@ router.post('/api/payments/razorpay-webhook', async (req, res) => {
 });
 
 router.post('/api/payments/utr-submit', paymentRateLimiter, async (req, res) => {
-  const verifiedUser = await extractVerifiedUserFromReq(req);
-  const { utr, plan = 'monthly', amount = 499, userEmail: bodyEmail, userName = '' } = req.body;
-  const userEmail = verifiedUser?.email || bodyEmail;
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const { utr, plan = 'monthly', amount = 499, userEmail: bodyEmail, userName = '' } = req.body;
+    const userEmail = verifiedUser?.email || bodyEmail;
 
-  if (!utr || typeof utr !== 'string' || utr.trim().length < 6) {
-    return res.status(400).json({ error: 'Valid UTR / Transaction reference (minimum 6 characters) is required.' });
-  }
-  if (!userEmail) {
-    return res.status(400).json({ error: 'User email is required for UTR verification submission.' });
-  }
+    if (!utr || typeof utr !== 'string' || utr.trim().length < 6) {
+      return res.status(400).json({ success: false, error: 'Valid UTR / Transaction reference (minimum 6 characters) is required.' });
+    }
+    if (!userEmail || typeof userEmail !== 'string' || !userEmail.includes('@')) {
+      return res.status(400).json({ success: false, error: 'Valid user email is required for UTR verification submission.' });
+    }
 
-  const cleanUtr = utr.trim().toUpperCase();
-  const cleanEmail = userEmail.trim().toLowerCase();
+    const allowedPlans = ['monthly', 'quarterly', 'yearly', 'annual', 'pro', 'lifetime'];
+    if (plan && !allowedPlans.includes(plan.toString().toLowerCase())) {
+      return res.status(400).json({ success: false, error: 'Invalid subscription plan specified.' });
+    }
 
-  // Check if UTR already submitted (in-memory fast path)
-  for (const [_, existing] of pendingUtrRequestsDb.entries()) {
-    if (existing.utr === cleanUtr) {
-      return res.json({
+    const parsedAmount = Number(amount);
+    if (amount !== undefined && (isNaN(parsedAmount) || parsedAmount <= 0)) {
+      return res.status(400).json({ success: false, error: 'Invalid payment amount specified.' });
+    }
+
+    const cleanUtr = utr.trim().toUpperCase();
+    const cleanEmail = userEmail.trim().toLowerCase();
+
+    if (!pgPool) {
+      return res.status(500).json({ success: false, error: 'Authoritative database pool unavailable' });
+    }
+
+    // 1. Authoritative Neon PostgreSQL duplicate check
+    const existingRes = await queryPostgres(
+      'SELECT id, utr, plan, amount, user_email, user_name, status, created_at, updated_at, data FROM public.utr_requests WHERE utr = $1 LIMIT 1',
+      [cleanUtr]
+    );
+
+    if (existingRes.rows.length > 0) {
+      const existing = existingRes.rows[0];
+      const existingRecord: UtrRequestRecord = {
+        id: existing.id,
+        userEmail: existing.user_email || cleanEmail,
+        userName: existing.user_name || 'Aspirant Student',
+        utr: existing.utr || cleanUtr,
+        plan: existing.plan || plan,
+        amount: Number(existing.amount) || parsedAmount,
+        submittedAt: existing.created_at || new Date().toISOString(),
+        status: existing.status || 'PENDING'
+      };
+      pendingUtrRequestsDb.set(existing.id, existingRecord);
+      return res.status(200).json({
         success: true,
         idempotent: true,
-        message: `UTR '${cleanUtr}' has already been submitted for verification. Current status: ${existing.status}`,
-        record: existing,
+        message: `UTR '${cleanUtr}' has already been submitted for verification. Current status: ${existingRecord.status}`,
+        record: existingRecord
       });
     }
-  }
 
-  // Check Supabase for duplicate UTR
-  if (supabaseServer) {
+    // 2. Authoritative Neon PostgreSQL Insert
+    const recordId = `utr_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    const now = new Date();
+    const utrRecord: UtrRequestRecord = {
+      id: recordId,
+      userEmail: cleanEmail,
+      userName: userName || (verifiedUser ? verifiedUser.email : 'Aspirant Student'),
+      utr: cleanUtr,
+      plan: plan.toString().toLowerCase(),
+      amount: parsedAmount || 499,
+      submittedAt: now.toISOString(),
+      status: 'PENDING'
+    };
+
     try {
-      const { data: existingSupabase } = await supabaseServer
-        .from('utr_requests')
-        .select('*')
-        .eq('utr', cleanUtr)
-        .limit(1)
-        .maybeSingle();
+      const insertRes = await queryPostgres(
+        `INSERT INTO public.utr_requests 
+         (id, user_id, email, user_email, user_name, utr, plan, amount, status, data, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'PENDING', $9, $10, $10)
+         RETURNING id, utr, plan, amount, user_email, user_name, status, created_at, updated_at`,
+        [
+          recordId,
+          verifiedUser?.sub || null,
+          cleanEmail,
+          cleanEmail,
+          utrRecord.userName,
+          cleanUtr,
+          utrRecord.plan,
+          utrRecord.amount,
+          JSON.stringify(utrRecord),
+          now
+        ]
+      );
 
-      if (existingSupabase) {
-        const existingRecord = mapRowToUtrRecord(existingSupabase);
-        pendingUtrRequestsDb.set(existingRecord.id, existingRecord);
-        return res.json({
+      const inserted = insertRes.rows[0];
+      pendingUtrRequestsDb.set(recordId, utrRecord);
+      saveAdminStoreToDisk();
+
+      return res.status(200).json({
+        success: true,
+        message: `UTR reference '${cleanUtr}' received and queued for Admin verification.`,
+        record: {
+          ...utrRecord,
+          id: inserted.id,
+          status: inserted.status
+        }
+      });
+    } catch (dbErr: any) {
+      if (dbErr.code === '23505') { // Postgres Unique Constraint on utr
+        const dupRes = await queryPostgres(
+          'SELECT id, utr, plan, amount, user_email, user_name, status, created_at FROM public.utr_requests WHERE utr = $1 LIMIT 1',
+          [cleanUtr]
+        );
+        const dup = dupRes.rows[0] || utrRecord;
+        return res.status(200).json({
           success: true,
           idempotent: true,
-          message: `UTR '${cleanUtr}' has already been submitted for verification. Current status: ${existingRecord.status}`,
-          record: existingRecord,
+          message: `UTR '${cleanUtr}' has already been submitted for verification. Current status: ${dup.status || 'PENDING'}`,
+          record: dup
         });
       }
-    } catch (err) {
-      console.warn('Supabase duplicate UTR check warning:', err);
+      console.error('[POST /api/payments/utr-submit] Database error:', dbErr.message);
+      return res.status(500).json({ success: false, error: 'Database persistence error: ' + dbErr.message });
     }
+  } catch (err: any) {
+    console.error('[POST /api/payments/utr-submit] unexpected error:', err);
+    return res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
-
-  const recordId = `utr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-  const utrRecord: UtrRequestRecord = {
-    id: recordId,
-    userEmail: cleanEmail,
-    userName: userName || (verifiedUser ? verifiedUser.email : 'Aspirant Student'),
-    utr: cleanUtr,
-    plan,
-    amount,
-    submittedAt: new Date().toISOString(),
-    status: 'PENDING',
-  };
-
-  pendingUtrRequestsDb.set(recordId, utrRecord);
-
-  if (supabaseServer) {
-    try {
-      const { error: jsonbErr } = await supabaseServer.from('utr_requests').upsert([{
-        id: recordId,
-        data: utrRecord,
-        updated_at: new Date().toISOString()
-      }], { onConflict: 'id' });
-
-      if (jsonbErr) {
-        await supabaseServer.from('utr_requests').upsert([{
-          id: recordId,
-          utr: cleanUtr,
-          plan,
-          amount,
-          user_email: cleanEmail,
-          user_name: utrRecord.userName,
-          status: 'PENDING',
-          created_at: utrRecord.submittedAt,
-        }], { onConflict: 'id' });
-      }
-    } catch (err) {
-      console.warn('Supabase UTR insert warning:', err);
-    }
-  }
-
-  saveAdminStoreToDisk();
-
-  return res.json({
-    success: true,
-    message: `UTR reference '${cleanUtr}' received and queued for Admin verification.`,
-    record: utrRecord,
-  });
 });
 
 router.get('/api/user/subscription', async (req, res) => {
@@ -1729,123 +1757,563 @@ router.get('/api/user/subscription', async (req, res) => {
   });
 });
 
+// ============================================================================
+// SERVER-AUTHORITATIVE REWARD LEDGER & CRYPTOGRAPHIC AD VERIFICATION
+// ============================================================================
+
+export interface RewardTransactionRecord {
+  id: string;
+  user_id: string;
+  user_email: string;
+  type: string;
+  source: string;
+  amount: number;
+  reference_id: string;
+  status: 'completed' | 'rejected' | 'pending';
+  date: string;
+  metadata?: any;
+  created_at: string;
+}
+
+export interface AdSessionRecord {
+  sessionId: string;
+  userId: string;
+  userEmail: string;
+  startTime: number;
+  minDurationMs: number;
+  expiresAt: number;
+  redeemed: boolean;
+}
+
+const rewardLedgerStore = new Map<string, RewardTransactionRecord>();
+const activeAdSessionsStore = new Map<string, AdSessionRecord>();
+const userProfilesMap = new Map<string, any>();
+
+// Persistent file path for rewards
+function getRewardsStoreFilePath(): string {
+  const candidateDirs = [
+    path.join(process.cwd(), '.data'),
+    path.join(os.tmpdir(), 'aspirantx_data'),
+    os.tmpdir(),
+  ];
+  for (const dir of candidateDirs) {
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      return path.join(dir, 'rewards_store.json');
+    } catch (_e) {}
+  }
+  return path.join(os.tmpdir(), 'rewards_store.json');
+}
+
+function persistRewardsToDisk() {
+  try {
+    const filePath = getRewardsStoreFilePath();
+    const data = {
+      transactions: Array.from(rewardLedgerStore.values()),
+      savedAt: new Date().toISOString()
+    };
+    const tmp = `${filePath}.tmp_${Date.now()}`;
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tmp, filePath);
+  } catch (err: any) {
+    console.warn('[Rewards] Persistence warning:', err?.message || err);
+  }
+}
+
+function hydrateRewardsFromDisk() {
+  try {
+    const filePath = getRewardsStoreFilePath();
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.transactions)) {
+        for (const tx of data.transactions) {
+          if (tx.id) rewardLedgerStore.set(tx.id, tx);
+        }
+      }
+    }
+  } catch (_err) {}
+}
+
+hydrateRewardsFromDisk();
+
+// 1. GET REWARD STATUS
 router.get('/api/rewards/status', async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const emailQuery = (req.query.email as string) || '';
-    const email = verifiedUser?.email || emailQuery.trim().toLowerCase();
+    const queryUserId = (req.query.userId as string) || '';
+    const userId = verifiedUser?.sub || (queryUserId && queryUserId !== 'guest' ? queryUserId : null);
+    const email = verifiedUser?.email || (req.query.email as string)?.trim()?.toLowerCase() || '';
 
-    if (!email) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!userId && !email) {
+      return res.status(401).json({ success: false, error: 'Unauthorized: Authentication required' });
     }
 
-    const today = new Date().toLocaleDateString('en-CA');
-    let record = adRewardsDb.get(email);
-    if (!record) {
-      record = {
-        email,
-        views_today: 0,
-        last_view_date: today,
-        total_videos_watched: 0,
-        reward_premium_until: null,
-        updated_at: new Date().toISOString(),
-      };
-      adRewardsDb.set(email, record);
-    } else if (record.last_view_date !== today) {
-      record.views_today = 0;
-      record.last_view_date = today;
-      adRewardsDb.set(email, record);
-    }
+    const todayDate = new Date().toISOString().slice(0, 10);
+    const userTxs = Array.from(rewardLedgerStore.values()).filter(t => 
+      ((userId && t.user_id === userId) || (email && t.user_email === email)) && t.status === 'completed'
+    );
 
+    const todayViews = userTxs.filter(t => t.type === 'ad_watch' && t.date === todayDate).length;
+    const totalViews = userTxs.filter(t => t.type === 'ad_watch').length;
+
+    // Check premium status
+    const adRecord = email ? adRewardsDb.get(email) : null;
     const now = Date.now();
-    const rewardActive = Boolean(record.reward_premium_until && new Date(record.reward_premium_until).getTime() > now);
+    let rewardPremiumUntil = adRecord?.reward_premium_until || null;
+
+    // Check user_profiles in DB/memory
+    if (userId) {
+      const profile = userProfilesMap.get(userId);
+      if (profile?.premium_until && new Date(profile.premium_until).getTime() > now) {
+        rewardPremiumUntil = profile.premium_until;
+      }
+    }
+
+    const rewardActive = Boolean(rewardPremiumUntil && new Date(rewardPremiumUntil).getTime() > now);
 
     res.json({
-      viewsToday: record.views_today,
+      success: true,
+      viewsToday: todayViews,
       viewsNeeded: 5,
       rewardActive,
-      rewardPremiumUntil: record.reward_premium_until,
-      totalVideosWatched: record.total_videos_watched,
+      rewardPremiumUntil,
+      totalVideosWatched: totalViews,
       justUnlocked: false,
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
+// 2. START CRYPTOGRAPHICALLY VERIFIABLE AD SESSION
+router.post('/api/rewards/ad-session/start', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required to start rewardable ad session' });
+    }
+
+    const userId = verifiedUser.sub;
+    const todayDate = new Date().toISOString().slice(0, 10);
+
+    // Verify daily quota from authoritative ledger
+    const userTodayViews = Array.from(rewardLedgerStore.values()).filter(t => 
+      t.user_id === userId && t.type === 'ad_watch' && t.date === todayDate && t.status === 'completed'
+    ).length;
+
+    if (userTodayViews >= 5) {
+      return res.status(429).json({
+        success: false,
+        error: 'Daily rewarded study ad limit of 5 has already been completed today. Enjoy your PRO Pass!'
+      });
+    }
+
+    const sessionId = `adsess_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
+    const startTime = Date.now();
+
+    // Cryptographic HMAC token bound to session, user, and timestamp
+    const sessionToken = crypto
+      .createHmac('sha256', JWT_SECRET)
+      .update(`${sessionId}:${userId}:${startTime}`)
+      .digest('hex');
+
+    const sessionRecord: AdSessionRecord = {
+      sessionId,
+      userId,
+      userEmail: verifiedUser.email,
+      startTime,
+      minDurationMs: 15000, // Strictly 15 seconds minimum watch time (enforced server-side)
+      expiresAt: startTime + 300000, // 5 minutes validity
+      redeemed: false
+    };
+
+    activeAdSessionsStore.set(sessionId, sessionRecord);
+
+    res.json({
+      success: true,
+      sessionId,
+      sessionToken,
+      minDurationSeconds: 15
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to start ad session: ' + err.message });
+  }
+});
+
+// 3. VERIFY AD COMPLETION & RECORD REWARD IN LEDGER
 router.post('/api/rewards/watch-ad', async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const email = verifiedUser?.email || req.body?.email?.trim()?.toLowerCase();
-
-    if (!email) {
-      return res.status(401).json({ error: 'Unauthorized' });
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Unauthorized: Authentication required' });
     }
 
-    const today = new Date().toLocaleDateString('en-CA');
-    let record = adRewardsDb.get(email);
-    if (!record) {
-      record = {
-        email,
-        views_today: 0,
-        last_view_date: today,
-        total_videos_watched: 0,
-        reward_premium_until: null,
-        updated_at: new Date().toISOString(),
-      };
+    const userId = verifiedUser.sub;
+    const { sessionId, sessionToken } = req.body;
+
+    // Handle legacy calls with informative error
+    if (!sessionId || typeof sessionId !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Verification failed: sessionId is required. Client must initiate a reward session via /api/rewards/ad-session/start.'
+      });
     }
 
-    if (record.last_view_date !== today) {
-      record.views_today = 0;
-      record.last_view_date = today;
+    const session = activeAdSessionsStore.get(sessionId);
+    if (!session) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired ad session' });
     }
 
-    record.views_today += 1;
-    record.total_videos_watched += 1;
-    let justUnlocked = false;
+    // 1. User Association Check
+    if (session.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Forbidden: Ad session user mismatch' });
+    }
 
-    if (record.views_today >= 5) {
-      justUnlocked = true;
-      const now = Date.now();
-      const duration = 172800000; // 2 days in ms
-      let baseTime = now;
-      if (record.reward_premium_until) {
-        const existingExp = new Date(record.reward_premium_until).getTime();
-        if (!isNaN(existingExp) && existingExp > now) {
-          baseTime = existingExp;
-        }
+    // 2. Cryptographic HMAC Signature Verification
+    const expectedToken = crypto
+      .createHmac('sha256', JWT_SECRET)
+      .update(`${sessionId}:${session.userId}:${session.startTime}`)
+      .digest('hex');
+
+    if (sessionToken !== expectedToken) {
+      return res.status(403).json({ success: false, error: 'Forbidden: Ad session cryptographic signature is invalid or tampered' });
+    }
+
+    // 3. Anti-Replay Protection
+    if (session.redeemed) {
+      return res.status(409).json({ success: false, error: 'Conflict: Ad session has already been redeemed. Replay rejected.' });
+    }
+
+    // 4. Minimum Watch Duration Verification
+    const now = Date.now();
+    const elapsed = now - session.startTime;
+    if (elapsed < session.minDurationMs) {
+      return res.status(400).json({
+        success: false,
+        error: `Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: ${Math.round(elapsed / 1000)}s).`
+      });
+    }
+
+    // 5. Expiration Verification
+    if (now > session.expiresAt) {
+      return res.status(400).json({ success: false, error: 'Ad session has expired. Please start a new session.' });
+    }
+
+    // Atomically mark session as redeemed
+    session.redeemed = true;
+    activeAdSessionsStore.set(sessionId, session);
+
+    // Record immutable transaction in ledger
+    const txId = `rtx_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
+    const todayDate = new Date().toISOString().slice(0, 10);
+
+    const tx: RewardTransactionRecord = {
+      id: txId,
+      user_id: userId,
+      user_email: verifiedUser.email,
+      type: 'ad_watch',
+      source: 'rewarded_study_ad',
+      amount: 1,
+      reference_id: sessionId,
+      status: 'completed',
+      date: todayDate,
+      metadata: {
+        elapsedSeconds: Math.round(elapsed / 1000),
+        sessionId
+      },
+      created_at: new Date().toISOString()
+    };
+
+    if (pgPool) {
+      try {
+        await queryPostgres(
+          'INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+          [userId, verifiedUser.email || 'user@example.com']
+        );
+        await queryPostgres(
+          `INSERT INTO public.reward_transactions (id, user_id, user_email, type, source, amount, reference_id, status, metadata, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+           ON CONFLICT (reference_id) DO NOTHING`,
+          [txId, userId, verifiedUser.email, 'ad_watch', 'rewarded_study_ad', 1, sessionId, 'completed', JSON.stringify(tx.metadata), tx.created_at]
+        );
+      } catch (txErr: any) {
+        console.error('[Rewards] Failed to write reward transaction to PostgreSQL:', txErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + txErr.message });
       }
-      record.reward_premium_until = new Date(baseTime + duration).toISOString();
-      record.views_today = 0; // reset for next cycle
+    } else if (supabaseServer) {
+      const { error: txErr } = await supabaseServer.from('reward_transactions').insert([{
+        id: txId,
+        user_id: userId,
+        user_email: verifiedUser.email,
+        type: 'ad_watch',
+        source: 'rewarded_study_ad',
+        amount: 1,
+        reference_id: sessionId,
+        status: 'completed',
+        metadata: tx.metadata,
+        created_at: tx.created_at
+      }]);
+      if (txErr) {
+        console.error('[Rewards] Failed to write reward transaction to Supabase:', txErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + txErr.message });
+      }
     }
 
-    record.updated_at = new Date().toISOString();
-    adRewardsDb.set(email, record);
+    rewardLedgerStore.set(txId, tx);
+    persistRewardsToDisk();
+
+    // Compute user's authoritative views from ledger
+    const userTxs = Array.from(rewardLedgerStore.values()).filter(t => 
+      t.user_id === userId && t.status === 'completed'
+    );
+    const todayViews = userTxs.filter(t => t.type === 'ad_watch' && t.date === todayDate).length;
+    const totalViews = userTxs.filter(t => t.type === 'ad_watch').length;
+
+    let justUnlocked = false;
+    let rewardPremiumUntil: string | null = null;
+
+    if (todayViews >= 5) {
+      justUnlocked = true;
+      const duration = 48 * 60 * 60 * 1000; // 48 hours (2 days)
+      const existingProfile = userProfilesMap.get(userId);
+      let baseTime = now;
+      if (existingProfile?.premium_until) {
+        const exp = new Date(existingProfile.premium_until).getTime();
+        if (!isNaN(exp) && exp > now) baseTime = exp;
+      }
+
+      rewardPremiumUntil = new Date(baseTime + duration).toISOString();
+
+      // Update user profile in DB and memory
+      if (existingProfile) {
+        existingProfile.is_premium = true;
+        existingProfile.premium_until = rewardPremiumUntil;
+        existingProfile.updated_at = new Date().toISOString();
+        userProfilesMap.set(userId, existingProfile);
+      }
+
+      if (supabaseServer) {
+        try {
+          await supabaseServer.from('user_profiles').update({
+            is_premium: true,
+            premium_until: rewardPremiumUntil,
+            updated_at: new Date().toISOString()
+          }).eq('id', userId);
+        } catch (_e) {}
+      }
+
+      // Record unlock in ledger
+      const unlockTxId = `rtx_unlock_${Date.now()}_${crypto.randomUUID().substring(0, 6)}`;
+      rewardLedgerStore.set(unlockTxId, {
+        id: unlockTxId,
+        user_id: userId,
+        user_email: verifiedUser.email,
+        type: 'pro_pass_unlocked',
+        source: 'daily_ad_milestone',
+        amount: 48,
+        reference_id: `unlock_${userId}_${todayDate}`,
+        status: 'completed',
+        date: todayDate,
+        created_at: new Date().toISOString()
+      });
+      persistRewardsToDisk();
+    }
+
+    // Sync to legacy adRewardsDb for backwards compatibility
+    const legacyRecord = {
+      email: verifiedUser.email,
+      views_today: todayViews,
+      last_view_date: todayDate,
+      total_videos_watched: totalViews,
+      reward_premium_until: rewardPremiumUntil,
+      updated_at: new Date().toISOString()
+    };
+    adRewardsDb.set(verifiedUser.email, legacyRecord);
 
     if (supabaseServer) {
       try {
         await supabaseServer.from('ad_rewards').upsert([{
-          id: email,
-          email,
-          data: record,
-          updated_at: record.updated_at,
+          id: verifiedUser.email,
+          email: verifiedUser.email,
+          data: legacyRecord,
+          updated_at: legacyRecord.updated_at
         }], { onConflict: 'id' });
-      } catch (e) {}
+      } catch (_e) {}
     }
 
-    const now = Date.now();
-    const rewardActive = Boolean(record.reward_premium_until && new Date(record.reward_premium_until).getTime() > now);
+    const rewardActive = Boolean(rewardPremiumUntil && new Date(rewardPremiumUntil).getTime() > now);
 
     res.json({
-      viewsToday: record.views_today,
+      success: true,
+      viewsToday: todayViews,
       viewsNeeded: 5,
       rewardActive,
-      rewardPremiumUntil: record.reward_premium_until,
-      totalVideosWatched: record.total_videos_watched,
-      justUnlocked,
+      rewardPremiumUntil,
+      totalVideosWatched: totalViews,
+      justUnlocked
     });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, error: 'Failed to record ad view: ' + err.message });
+  }
+});
+
+// 4. SERVER-AUTHORITATIVE STREAK ENGINE
+router.get('/api/rewards/streak', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const userId = verifiedUser.sub;
+    
+    // Aggregate all unique active dates from Pomodoro and Study sessions
+    const activeDates = new Set<string>();
+    const pomodoroSessions = (userPomodoroSessionsDb || []).filter((s: any) => s.userId === userId || s.user_id === userId);
+    for (const s of pomodoroSessions as any[]) {
+      const d = s.completedAt || s.completed_at || s.createdAt || s.created_at || s.startTime;
+      if (d) activeDates.add(String(d).slice(0, 10));
+    }
+
+    if (supabaseServer) {
+      try {
+        const { data: dbSessions } = await supabaseServer
+          .from('user_pomodoro_sessions')
+          .select('completed_at, created_at, start_time')
+          .eq('user_id', userId);
+        if (Array.isArray(dbSessions)) {
+          for (const s of dbSessions) {
+            const d = s.completed_at || s.created_at || s.start_time;
+            if (d) activeDates.add(String(d).slice(0, 10));
+          }
+        }
+      } catch (_e) {}
+    }
+
+    // Today and yesterday strings
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterdayDate = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    // Calculate consecutive streak ending today or yesterday
+    let streakDays = 0;
+    let checkDate = new Date();
+    // If no activity today, check if active yesterday
+    if (!activeDates.has(today)) {
+      if (activeDates.has(yesterdayDate)) {
+        checkDate = new Date(Date.now() - 86400000);
+      } else {
+        // Streak broken
+        streakDays = 0;
+      }
+    }
+
+    if (activeDates.has(today) || activeDates.has(yesterdayDate)) {
+      while (true) {
+        const dateKey = checkDate.toISOString().slice(0, 10);
+        if (activeDates.has(dateKey)) {
+          streakDays++;
+          checkDate = new Date(checkDate.getTime() - 86400000);
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Minimum streak is 1 if user is active today
+    if (activeDates.has(today) && streakDays === 0) streakDays = 1;
+
+    // Check user_profiles record
+    const profile = userProfilesMap.get(userId);
+    if (profile) {
+      profile.streak_days = Math.max(streakDays, profile.streak_days || 0);
+      profile.last_active_date = today;
+    }
+
+    res.json({
+      success: true,
+      streakDays: Math.max(1, streakDays),
+      lastActiveDate: today,
+      totalActiveDays: activeDates.size
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to calculate streak: ' + err.message });
+  }
+});
+
+// 5. CLAIM STREAK REWARD WITH IDEMPOTENCY & TAMPER-PROOFING
+router.post('/api/rewards/claim-streak', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required to claim streak reward' });
+    }
+
+    const { milestoneDays } = req.body;
+    const days = Number(milestoneDays);
+    if (!days || isNaN(days) || days <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid milestoneDays' });
+    }
+
+    const userId = verifiedUser.sub;
+    const claimKey = `streak_claim_${userId}_${days}`;
+
+    // Anti-replay check: prevent duplicate milestone claims
+    if (rewardClaimsStore.has(claimKey)) {
+      return res.status(409).json({
+        success: false,
+        error: `Milestone of ${days} days has already been claimed.`
+      });
+    }
+
+    // Verify streak on server
+    const profile = userProfilesMap.get(userId);
+    const currentStreak = profile?.streak_days || 1;
+    if (currentStreak < days) {
+      return res.status(400).json({
+        success: false,
+        error: `Streak milestone not reached. Server-verified streak is ${currentStreak} days, but ${days} days required.`
+      });
+    }
+
+    // Reward amount in coins/XP
+    const coinsReward = days * 50;
+    const claimRecord = {
+      id: claimKey,
+      userId,
+      userEmail: verifiedUser.email,
+      milestoneId: `streak_${days}`,
+      milestoneTitle: `${days}-Day Study Streak Champion`,
+      rewardCoins: coinsReward,
+      status: 'completed',
+      claimedAt: new Date().toISOString()
+    };
+
+    rewardClaimsStore.set(claimKey, claimRecord);
+
+    if (profile) {
+      profile.coins = (profile.coins || 0) + coinsReward;
+      profile.xp = (profile.xp || 0) + days * 100;
+    }
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('reward_claims').upsert([{
+          id: claimKey,
+          data: claimRecord,
+          updated_at: new Date().toISOString()
+        }], { onConflict: 'id' });
+      } catch (_e) {}
+    }
+
+    res.json({
+      success: true,
+      milestoneDays: days,
+      rewardGranted: true,
+      coinsAwarded: coinsReward
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to claim streak milestone: ' + err.message });
   }
 });
 
@@ -2750,13 +3218,16 @@ router.get('/api/search', async (req, res) => {
       .map((n: any) => ({ id: n.id, name: n.name || n.title, type: n.type || 'topic', subject: n.subject || '' }))
       .slice(0, 10);
 
+    const payload = {
+      posts,
+      topics,
+      questions,
+    };
+
     res.json({
       success: true,
-      data: {
-        posts,
-        topics,
-        questions,
-      },
+      data: payload,
+      results: payload,
     });
   } catch (err: any) {
     console.error('[GET /api/search] error:', err);
@@ -2764,132 +3235,322 @@ router.get('/api/search', async (req, res) => {
   }
 });
 
-router.get('/api/wallet/:userId', async (req, res) => {
+router.get(['/api/wallet/:userId', '/api/user/wallet'], async (req, res) => {
   try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({ success: false, error: 'User ID is required' });
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    if (supabaseServer) {
-      const { data, error } = await supabaseServer
-        .from('user_wallets')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (!error && data) {
-        return res.json({ success: true, data });
-      }
+    const rawUserId = req.params.userId || (req.query.userId as string) || verifiedUser.sub || (verifiedUser as any).id;
+    if (!rawUserId || typeof rawUserId !== 'string' || !rawUserId.trim() || rawUserId.trim().length > 128) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID' });
     }
 
-    let wallet = userWalletsStore.get(userId);
-    if (!wallet) {
-      wallet = {
-        userId,
-        balance: 150.0,
-        coins: 450,
-        totalEarned: 220.0,
-        updatedAt: new Date().toISOString(),
-      };
-      userWalletsStore.set(userId, wallet);
+    const userId = rawUserId.trim();
+    const callerId = (verifiedUser.sub || (verifiedUser as any).id || (verifiedUser as any).userId || '').toString().trim();
+    const callerRole = (verifiedUser.role || '').toString().toUpperCase();
+    const callerEmail = (verifiedUser.email || '').toString().toLowerCase();
+    const isOwner = callerId === userId;
+    const isAdmin = callerRole === 'ADMIN' || callerEmail === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Forbidden: Access denied to another user\'s wallet' });
     }
 
-    res.json({ success: true, data: wallet });
-  } catch (err: any) {
-    console.error('[GET /api/wallet/:userId] error:', err);
-    res.status(500).json({ success: false, error: err.message || 'Internal server error' });
-  }
-});
+    // Authoritative Neon PostgreSQL initialization and fetch
+    // Uses ON CONFLICT to ensure concurrency-safe single row
+    const { rows } = await queryPostgres(
+      `INSERT INTO public.user_wallets (user_id, balance, coins, total_earned, data, created_at, updated_at)
+       VALUES ($1, 0.0, 0, 0.0, '{}'::jsonb, NOW(), NOW())
+       ON CONFLICT (user_id) DO UPDATE SET updated_at = public.user_wallets.updated_at
+       RETURNING user_id, balance, coins, total_earned, created_at, updated_at;`,
+      [userId]
+    );
 
-router.get('/api/wallet/:userId/transactions', async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    if (!userId) {
-      return res.status(400).json({ success: false, error: 'User ID is required' });
-    }
-
-    if (supabaseServer) {
-      const { data, error } = await supabaseServer
-        .from('wallet_transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (!error && Array.isArray(data)) {
-        return res.json({ success: true, data });
-      }
-    }
-
-    const transactions = (userPayoutsStore.get(userId) || []).map((p: any) => ({
-      id: p.id,
-      userId: p.userId,
-      type: 'payout',
-      amount: p.amount,
-      status: p.status,
-      created_at: p.createdAt || p.created_at || new Date().toISOString(),
-    }));
-
-    res.json({ success: true, data: transactions });
-  } catch (err: any) {
-    console.error('[GET /api/wallet/:userId/transactions] error:', err);
-    res.status(500).json({ success: false, error: err.message || 'Internal server error' });
-  }
-});
-
-router.post('/api/wallet/withdraw', async (req, res) => {
-  try {
-    const { userId, amount, upiId, method } = req.body;
-
-    if (!userId || !amount || Number(amount) <= 0) {
-      return res.status(400).json({ success: false, error: 'Valid user ID and withdrawal amount are required' });
-    }
-
-    const withdrawAmount = Number(amount);
-    let wallet = userWalletsStore.get(userId) || { userId, balance: 0, coins: 0, totalEarned: 0, updatedAt: new Date().toISOString() };
-
-    if (wallet.balance < withdrawAmount) {
-      return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
-    }
-
-    wallet.balance -= withdrawAmount;
-    wallet.updatedAt = new Date().toISOString();
-    userWalletsStore.set(userId, wallet);
-
-    const payoutId = `payout_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const payoutRecord = {
-      id: payoutId,
-      userId,
-      amount: withdrawAmount,
-      upiId: upiId || 'aspirant@upi',
-      method: method || 'UPI',
-      status: 'pending',
-      createdAt: new Date().toISOString(),
+    const row = rows[0];
+    const wallet = {
+      userId: row.user_id,
+      balance: Number(row.balance),
+      coins: Number(row.coins),
+      totalEarned: Number(row.total_earned),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
     };
 
-    allPayoutsStore.set(payoutId, payoutRecord);
-    const userList = userPayoutsStore.get(userId) || [];
-    userList.unshift(payoutRecord);
-    userPayoutsStore.set(userId, userList);
+    // Keep memory map as non-authoritative cache
+    userWalletsStore.set(userId, wallet);
 
-    if (supabaseServer) {
-      await supabaseServer.from('user_payouts').insert({
-        id: payoutId,
-        user_id: userId,
-        amount: withdrawAmount,
-        upi_id: upiId || 'aspirant@upi',
-        method: method || 'UPI',
-        status: 'pending',
-        created_at: payoutRecord.createdAt,
-      });
+    return res.status(200).json({
+      success: true,
+      data: wallet,
+      wallet,
+    });
+  } catch (err: any) {
+    console.error('[GET /api/wallet/:userId] Neon authoritative error:', err);
+    return res.status(500).json({ success: false, error: 'Database error accessing wallet' });
+  }
+});
+
+router.get(['/api/wallet/:userId/transactions', '/api/user/wallet/transactions', '/api/user/wallet/payouts'], async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
     }
 
-    res.json({ success: true, data: { payout: payoutRecord, wallet } });
+    const rawUserId = req.params.userId || (req.query.userId as string) || verifiedUser.sub || (verifiedUser as any).id;
+    if (!rawUserId || typeof rawUserId !== 'string' || !rawUserId.trim() || rawUserId.trim().length > 128) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID' });
+    }
+
+    const userId = rawUserId.trim();
+    const callerId = (verifiedUser.sub || (verifiedUser as any).id || (verifiedUser as any).userId || '').toString().trim();
+    const callerRole = (verifiedUser.role || '').toString().toUpperCase();
+    const callerEmail = (verifiedUser.email || '').toString().toLowerCase();
+    const isOwner = callerId === userId;
+    const isAdmin = callerRole === 'ADMIN' || callerEmail === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Forbidden: Access denied to user transactions' });
+    }
+
+    const { rows } = await queryPostgres(
+      `SELECT id, user_id, type, amount, status, created_at
+       FROM public.wallet_transactions
+       WHERE user_id = $1
+       ORDER BY created_at DESC;`,
+      [userId]
+    );
+
+    const transactions = rows.map((r: any) => ({
+      id: r.id,
+      userId: r.user_id,
+      type: r.type,
+      amount: Number(r.amount),
+      status: r.status,
+      created_at: r.created_at,
+      createdAt: r.created_at,
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: transactions,
+      transactions,
+    });
   } catch (err: any) {
-    console.error('[POST /api/wallet/withdraw] error:', err);
-    res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+    console.error('[GET /api/wallet/:userId/transactions] Neon authoritative error:', err);
+    return res.status(500).json({ success: false, error: 'Database error reading transactions' });
+  }
+});
+
+router.post(['/api/wallet/withdraw', '/api/user/wallet/payout-request'], async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const { amount, upiId, method } = req.body;
+    const rawUserId = req.body.userId || verifiedUser.sub || (verifiedUser as any).id;
+
+    if (!rawUserId || typeof rawUserId !== 'string' || !rawUserId.trim()) {
+      return res.status(400).json({ success: false, error: 'Valid user ID is required' });
+    }
+
+    const userId = rawUserId.trim();
+    const withdrawAmount = Number(amount);
+    if (!withdrawAmount || isNaN(withdrawAmount) || withdrawAmount <= 0) {
+      return res.status(400).json({ success: false, error: 'Valid positive withdrawal amount is required' });
+    }
+
+    const callerId = (verifiedUser.sub || (verifiedUser as any).id || (verifiedUser as any).userId || '').toString().trim();
+    const callerRole = (verifiedUser.role || '').toString().toUpperCase();
+    const callerEmail = (verifiedUser.email || '').toString().toLowerCase();
+    const isOwner = callerId === userId;
+    const isAdmin = callerRole === 'ADMIN' || callerEmail === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Forbidden: Access denied' });
+    }
+
+    // Connect to Neon Pool for Atomic DB Transaction
+    const client = await pgPool!.connect();
+    try {
+      await client.query('BEGIN');
+
+      const selRes = await client.query(
+        `SELECT user_id, balance, coins, total_earned FROM public.user_wallets WHERE user_id = $1 FOR UPDATE;`,
+        [userId]
+      );
+
+      if (selRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, error: 'Wallet not initialized' });
+      }
+
+      const currentBalance = Number(selRes.rows[0].balance);
+      if (currentBalance < withdrawAmount) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, error: 'Insufficient wallet balance' });
+      }
+
+      const updRes = await client.query(
+        `UPDATE public.user_wallets
+         SET balance = balance - $1, updated_at = NOW()
+         WHERE user_id = $2
+         RETURNING user_id, balance, coins, total_earned, created_at, updated_at;`,
+        [withdrawAmount, userId]
+      );
+
+      const payoutId = `payout_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+      const now = new Date();
+
+      await client.query(
+        `INSERT INTO public.wallet_transactions (id, user_id, type, amount, status, created_at)
+         VALUES ($1, $2, 'payout', $3, 'pending', $4);`,
+        [payoutId, userId, withdrawAmount, now]
+      );
+
+      await client.query('COMMIT');
+
+      const updatedRow = updRes.rows[0];
+      const updatedWallet = {
+        userId: updatedRow.user_id,
+        balance: Number(updatedRow.balance),
+        coins: Number(updatedRow.coins),
+        totalEarned: Number(updatedRow.total_earned),
+        createdAt: updatedRow.created_at,
+        updatedAt: updatedRow.updated_at,
+      };
+
+      const payoutRecord = {
+        id: payoutId,
+        userId,
+        amount: withdrawAmount,
+        upiId: upiId || 'aspirant@upi',
+        method: method || 'UPI',
+        status: 'pending',
+        createdAt: now.toISOString(),
+      };
+
+      userWalletsStore.set(userId, updatedWallet);
+
+      return res.status(200).json({
+        success: true,
+        data: { payout: payoutRecord, wallet: updatedWallet },
+        wallet: updatedWallet,
+        payout: payoutRecord,
+      });
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
+  } catch (err: any) {
+    console.error('[POST /api/wallet/withdraw] Neon authoritative error:', err);
+    return res.status(500).json({ success: false, error: 'Database error processing withdrawal' });
+  }
+});
+
+router.post('/api/user/wallet/convert', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const { coins } = req.body;
+    const rawUserId = req.body.userId || verifiedUser.sub || (verifiedUser as any).id;
+
+    if (!rawUserId || typeof rawUserId !== 'string' || !rawUserId.trim()) {
+      return res.status(400).json({ success: false, error: 'Valid user ID is required' });
+    }
+
+    const userId = rawUserId.trim();
+    const callerId = (verifiedUser.sub || (verifiedUser as any).id || (verifiedUser as any).userId || '').toString().trim();
+    const callerRole = (verifiedUser.role || '').toString().toUpperCase();
+    const callerEmail = (verifiedUser.email || '').toString().toLowerCase();
+    const isOwner = callerId === userId;
+    const isAdmin = callerRole === 'ADMIN' || callerEmail === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Forbidden: Access denied' });
+    }
+
+    const requestedCoins = Math.floor(Number(coins));
+    if (!requestedCoins || isNaN(requestedCoins) || requestedCoins <= 0) {
+      return res.status(400).json({ success: false, error: 'Valid positive coin amount is required' });
+    }
+
+    // Conversion rate: 10 coins = 1 INR
+    const convertedAmount = Number((requestedCoins / 10).toFixed(2));
+
+    const client = await pgPool!.connect();
+    try {
+      await client.query('BEGIN');
+
+      const selRes = await client.query(
+        `SELECT user_id, balance, coins, total_earned FROM public.user_wallets WHERE user_id = $1 FOR UPDATE;`,
+        [userId]
+      );
+
+      if (selRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, error: 'Wallet not initialized' });
+      }
+
+      const currentCoins = Number(selRes.rows[0].coins);
+      if (currentCoins < requestedCoins) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ success: false, error: 'Insufficient study coins' });
+      }
+
+      const updRes = await client.query(
+        `UPDATE public.user_wallets
+         SET coins = coins - $1, balance = balance + $2, total_earned = total_earned + $2, updated_at = NOW()
+         WHERE user_id = $3
+         RETURNING user_id, balance, coins, total_earned, created_at, updated_at;`,
+        [requestedCoins, convertedAmount, userId]
+      );
+
+      const txnId = `conv_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+      await client.query(
+        `INSERT INTO public.wallet_transactions (id, user_id, type, amount, status, created_at)
+         VALUES ($1, $2, 'conversion', $3, 'completed', NOW());`,
+        [txnId, userId, convertedAmount]
+      );
+
+      await client.query('COMMIT');
+
+      const updatedRow = updRes.rows[0];
+      const updatedWallet = {
+        userId: updatedRow.user_id,
+        balance: Number(updatedRow.balance),
+        coins: Number(updatedRow.coins),
+        totalEarned: Number(updatedRow.total_earned),
+        createdAt: updatedRow.created_at,
+        updatedAt: updatedRow.updated_at,
+      };
+
+      userWalletsStore.set(userId, updatedWallet);
+
+      return res.status(200).json({
+        success: true,
+        message: `Converted ${requestedCoins} coins to ₹${convertedAmount}`,
+        data: updatedWallet,
+        wallet: updatedWallet,
+      });
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
+  } catch (err: any) {
+    console.error('[POST /api/user/wallet/convert] Neon authoritative error:', err);
+    return res.status(500).json({ success: false, error: 'Database error converting coins' });
   }
 });
 
@@ -2977,6 +3638,435 @@ router.delete('/api/exams/:id', async (req, res) => {
     res.json({ success: true, data: { id, deleted: existed } });
   } catch (err: any) {
     console.error('[DELETE /api/exams/:id] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+});
+
+// ============================================================================
+// FEEDBACK & BUG REPORT ROUTES
+// ============================================================================
+router.post('/api/feedback', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const { section, type, description, user_email } = req.body;
+
+    if (!description || !description.trim()) {
+      return res.status(400).json({ success: false, error: 'Description is required' });
+    }
+
+    const email = verifiedUser?.email || (user_email || '').trim().toLowerCase() || 'aspirant@example.com';
+    const userId = verifiedUser?.sub || 'usr_guest';
+
+    const newReport: any = {
+      id: `rep_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      user_id: userId,
+      user_email: email,
+      email,
+      section: section || 'GENERAL',
+      type: type || 'FEEDBACK',
+      description: description.trim(),
+      status: 'OPEN',
+      admin_note: '',
+      created_at: new Date().toISOString(),
+    };
+
+    feedbackReportsStore.set(newReport.id, newReport);
+
+    if (supabaseServer) {
+      try {
+        await supabaseServer.from('user_feedback').upsert([{
+          id: newReport.id,
+          user_id: userId,
+          user_email: email,
+          section: newReport.section,
+          type: newReport.type,
+          description: newReport.description,
+          status: newReport.status,
+          created_at: newReport.created_at,
+        }]);
+      } catch (_supaErr) {}
+    }
+
+    res.json({ success: true, report: newReport, message: 'Feedback submitted successfully' });
+  } catch (err: any) {
+    console.error('[POST /api/feedback] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+});
+
+router.get('/api/feedback/mine', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const email = (verifiedUser?.email || (req.query.email as string) || '').toLowerCase().trim();
+
+    if (!email && !verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    let reports = Array.from(feedbackReportsStore.values()).filter((r: any) => {
+      const rEmail = (r.user_email || r.email || '').toLowerCase().trim();
+      const rUserId = r.user_id || r.userId;
+      return (email && rEmail === email) || (verifiedUser?.sub && rUserId === verifiedUser.sub);
+    });
+
+    if (reports.length === 0 && supabaseServer) {
+      try {
+        let q = supabaseServer.from('user_feedback').select('*');
+        if (verifiedUser?.sub) q = q.eq('user_id', verifiedUser.sub);
+        else if (email) q = q.eq('user_email', email);
+        const { data, error } = await q;
+        if (!error && Array.isArray(data)) {
+          reports = data;
+          data.forEach((r: any) => feedbackReportsStore.set(r.id, r));
+        }
+      } catch (_supaErr) {}
+    }
+
+    res.json({ success: true, feedback: reports });
+  } catch (err: any) {
+    console.error('[GET /api/feedback/mine] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+});
+
+// ============================================================================
+// USER PERSISTENT TASKS / KANBAN
+// ============================================================================
+const userTasksStore = new Map<string, any[]>();
+
+router.get('/api/user/tasks', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || (req.query.userId as string) || 'guest';
+    const exam = (req.query.exam as string) || 'NEET_UG';
+
+    const cacheKey = `${userId}_${exam}`;
+    let tasks: any[] = [];
+
+    if (pgPool && userId !== 'guest') {
+      try {
+        const { rows } = await queryPostgres(
+          'SELECT * FROM public.user_tasks WHERE user_id = $1 AND exam = $2 ORDER BY created_at DESC',
+          [userId, exam]
+        );
+        tasks = rows.map((r: any) => ({
+          ...r,
+          userId: r.user_id,
+          completed: r.status === 'completed' || r.completed === true
+        }));
+        userTasksStore.set(cacheKey, tasks);
+      } catch (err: any) {
+        console.error('[Tasks] PostgreSQL query error:', err.message);
+        return res.status(500).json({ success: false, error: 'Database query error: ' + err.message });
+      }
+    } else if (supabaseServer && userId !== 'guest') {
+      const { data, error } = await supabaseServer
+        .from('user_tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('exam', exam)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error('[Tasks] Supabase select error:', error.message);
+        return res.status(500).json({ success: false, error: 'Database query error: ' + error.message });
+      }
+      tasks = data || [];
+      userTasksStore.set(cacheKey, tasks);
+    } else {
+      tasks = userTasksStore.get(cacheKey) || [];
+    }
+
+    res.json({ success: true, tasks });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/api/user/tasks', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'guest';
+    const { title, subject, priority, minutes, status, exam } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, error: 'Task title is required' });
+    }
+
+    const newTask = {
+      id: req.body.id || `task_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      userId,
+      user_id: userId,
+      title: title.trim(),
+      subject: subject || 'General Practice',
+      priority: priority || 'High',
+      minutes: Number(minutes) || 45,
+      status: status || 'todo',
+      completed: status === 'completed',
+      exam: exam || 'NEET_UG',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (pgPool && userId !== 'guest') {
+      try {
+        await queryPostgres(
+          'INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+          [userId, verifiedUser?.email || 'user@example.com']
+        );
+        await queryPostgres(
+          `INSERT INTO public.user_tasks (id, user_id, title, subject, priority, minutes, status, completed, exam, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           ON CONFLICT (id) DO UPDATE SET
+             title = EXCLUDED.title,
+             subject = EXCLUDED.subject,
+             priority = EXCLUDED.priority,
+             minutes = EXCLUDED.minutes,
+             status = EXCLUDED.status,
+             completed = EXCLUDED.completed,
+             exam = EXCLUDED.exam,
+             updated_at = EXCLUDED.updated_at`,
+          [
+            newTask.id,
+            newTask.user_id,
+            newTask.title,
+            newTask.subject,
+            newTask.priority,
+            newTask.minutes,
+            newTask.status,
+            newTask.completed,
+            newTask.exam,
+            newTask.created_at,
+            newTask.updated_at
+          ]
+        );
+      } catch (dbErr: any) {
+        console.error('[Tasks] PostgreSQL insert error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + dbErr.message });
+      }
+    } else if (supabaseServer && userId !== 'guest') {
+      const { error: dbErr } = await supabaseServer.from('user_tasks').upsert([newTask], { onConflict: 'id' });
+      if (dbErr) {
+        console.error('[Tasks] Supabase insert error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + dbErr.message });
+      }
+    }
+
+    const cacheKey = `${userId}_${newTask.exam}`;
+    const existing = userTasksStore.get(cacheKey) || [];
+    existing.unshift(newTask);
+    userTasksStore.set(cacheKey, existing);
+
+    res.json({ success: true, task: newTask });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.put('/api/user/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'guest';
+    const updates = req.body;
+    const now = new Date().toISOString();
+
+    if (pgPool && userId !== 'guest') {
+      try {
+        const fields: string[] = [];
+        const values: any[] = [];
+        let pIndex = 1;
+
+        if (updates.title !== undefined) {
+          fields.push(`title = $${pIndex++}`);
+          values.push(updates.title);
+        }
+        if (updates.subject !== undefined) {
+          fields.push(`subject = $${pIndex++}`);
+          values.push(updates.subject);
+        }
+        if (updates.priority !== undefined) {
+          fields.push(`priority = $${pIndex++}`);
+          values.push(updates.priority);
+        }
+        if (updates.minutes !== undefined) {
+          fields.push(`minutes = $${pIndex++}`);
+          values.push(Number(updates.minutes));
+        }
+        if (updates.status !== undefined) {
+          fields.push(`status = $${pIndex++}`);
+          values.push(updates.status);
+          fields.push(`completed = $${pIndex++}`);
+          values.push(updates.status === 'completed');
+        } else if (updates.completed !== undefined) {
+          fields.push(`completed = $${pIndex++}`);
+          values.push(Boolean(updates.completed));
+          if (updates.completed) {
+            fields.push(`status = $${pIndex++}`);
+            values.push('completed');
+          }
+        }
+        if (updates.exam !== undefined) {
+          fields.push(`exam = $${pIndex++}`);
+          values.push(updates.exam);
+        }
+
+        fields.push(`updated_at = $${pIndex++}`);
+        values.push(now);
+
+        values.push(id);
+        const idIndex = pIndex++;
+        values.push(userId);
+        const userIndex = pIndex++;
+
+        const sql = `UPDATE public.user_tasks SET ${fields.join(', ')} WHERE id = $${idIndex} AND user_id = $${userIndex} RETURNING *`;
+        const { rows } = await queryPostgres(sql, values);
+        if (rows.length === 0) {
+          const exists = await queryPostgres('SELECT id, user_id FROM public.user_tasks WHERE id = $1', [id]);
+          if (exists.rows.length > 0) {
+            return res.status(403).json({ success: false, error: 'Forbidden: You do not own this task' });
+          }
+        }
+      } catch (dbErr: any) {
+        console.error('[Tasks] PostgreSQL update error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database update error: ' + dbErr.message });
+      }
+    } else if (supabaseServer && userId !== 'guest') {
+      const { error: dbErr } = await supabaseServer.from('user_tasks').update(updates).eq('id', id);
+      if (dbErr) {
+        console.error('[Tasks] Supabase update error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database update error: ' + dbErr.message });
+      }
+    }
+
+    let updatedTask: any = null;
+    for (const [key, taskList] of userTasksStore.entries()) {
+      const idx = taskList.findIndex((t: any) => t.id === id);
+      if (idx !== -1) {
+        taskList[idx] = {
+          ...taskList[idx],
+          ...updates,
+          completed: updates.status ? updates.status === 'completed' : taskList[idx].completed,
+          updated_at: now,
+        };
+        updatedTask = taskList[idx];
+        userTasksStore.set(key, taskList);
+        break;
+      }
+    }
+
+    if (!updatedTask) {
+      updatedTask = { id, ...updates, updated_at: now };
+    }
+
+    res.json({ success: true, task: updatedTask });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.delete('/api/user/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || (req.query.userId as string) || 'guest';
+
+    if (pgPool && userId !== 'guest') {
+      try {
+        const ownerCheck = await queryPostgres('SELECT id, user_id FROM public.user_tasks WHERE id = $1', [id]);
+        if (ownerCheck.rows.length > 0 && ownerCheck.rows[0].user_id !== userId) {
+          return res.status(403).json({ success: false, error: 'Forbidden: You do not own this task' });
+        }
+        await queryPostgres('DELETE FROM public.user_tasks WHERE id = $1 AND user_id = $2', [id, userId]);
+      } catch (dbErr: any) {
+        console.error('[Tasks] PostgreSQL delete error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database delete error: ' + dbErr.message });
+      }
+    } else if (supabaseServer && userId !== 'guest') {
+      const { error: dbErr } = await supabaseServer.from('user_tasks').delete().eq('id', id);
+      if (dbErr) {
+        console.error('[Tasks] Supabase delete error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database delete error: ' + dbErr.message });
+      }
+    }
+
+    for (const [key, taskList] of userTasksStore.entries()) {
+      const idx = taskList.findIndex((t: any) => t.id === id);
+      if (idx !== -1) {
+        taskList.splice(idx, 1);
+        userTasksStore.set(key, taskList);
+        break;
+      }
+    }
+
+    res.json({ success: true, message: 'Task deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ============================================================================
+// DATA-DRIVEN USER WEAKNESS ANALYTICS
+// ============================================================================
+router.get('/api/user/analytics/weaknesses', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || (req.query.userId as string) || 'guest';
+    const exam = (req.query.exam as string) || 'NEET_UG';
+
+    const resultsList = Array.from(cbtResultsStore.values()).filter(
+      (r: any) => (r.userId === userId || userId === 'guest') && (!exam || r.exam === exam)
+    );
+
+    const topicStats: Record<string, { topic: string; subject: string; totalAttempts: number; correctCount: number; incorrectCount: number }> = {};
+
+    resultsList.forEach((result: any) => {
+      const answers = result.answers || {};
+      const questions = result.questions || [];
+
+      questions.forEach((q: any) => {
+        const topic = q.topic || 'General Practice';
+        const subject = q.subject || 'Core';
+        if (!topicStats[topic]) {
+          topicStats[topic] = { topic, subject, totalAttempts: 0, correctCount: 0, incorrectCount: 0 };
+        }
+        topicStats[topic].totalAttempts += 1;
+        const studentChoice = answers[q.id];
+        if (studentChoice !== undefined && studentChoice !== null && studentChoice === q.correctAnswer) {
+          topicStats[topic].correctCount += 1;
+        } else if (studentChoice !== undefined && studentChoice !== null) {
+          topicStats[topic].incorrectCount += 1;
+        }
+      });
+    });
+
+    const topicBreakdown = Object.values(topicStats).map((stat) => {
+      const accuracy = stat.totalAttempts > 0 ? Math.round((stat.correctCount / stat.totalAttempts) * 100) : 0;
+      let weaknessLevel: 'High' | 'Moderate' | 'Low' = 'Low';
+      if (accuracy < 50) weaknessLevel = 'High';
+      else if (accuracy < 75) weaknessLevel = 'Moderate';
+
+      return {
+        topic: stat.topic,
+        subject: stat.subject,
+        totalAttempts: stat.totalAttempts,
+        correctCount: stat.correctCount,
+        incorrectCount: stat.incorrectCount,
+        accuracy,
+        weaknessLevel,
+      };
+    }).sort((a, b) => a.accuracy - b.accuracy);
+
+    res.json({
+      success: true,
+      exam,
+      userId,
+      hasAttemptHistory: topicBreakdown.length > 0,
+      totalTestsAnalyzed: resultsList.length,
+      topics: topicBreakdown,
+      highWeaknessCount: topicBreakdown.filter(t => t.weaknessLevel === 'High').length,
+    });
+  } catch (err: any) {
+    console.error('[GET /api/user/analytics/weaknesses] error:', err);
     res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 });

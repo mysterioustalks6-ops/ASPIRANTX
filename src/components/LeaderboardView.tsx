@@ -141,17 +141,33 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {filtered.map((item) => (
-                  <tr key={item.userId} className="hover:bg-slate-50/80 transition-all font-medium text-slate-800">
-                    <td className="py-3 px-4 font-extrabold text-slate-900">#{item.rank}</td>
-                    <td className="py-3 px-4 font-bold text-indigo-900">{item.userName}</td>
-                    <td className="py-3 px-4 text-slate-600">{item.stateName}</td>
-                    <td className="py-3 px-4 text-slate-600">{item.batchName}</td>
-                    <td className="py-3 px-4 font-extrabold text-emerald-600">{item.score}</td>
-                    <td className="py-3 px-4 font-bold text-purple-600">{item.percentile}%</td>
-                    <td className="py-3 px-4 text-amber-600 font-bold">{item.xp} XP</td>
+                {filtered.length > 0 ? (
+                  filtered.map((item) => (
+                    <tr key={item.userId} className="hover:bg-slate-50/80 transition-all font-medium text-slate-800">
+                      <td className="py-3 px-4 font-extrabold text-slate-900">#{item.rank}</td>
+                      <td className="py-3 px-4 font-bold text-indigo-900">{item.userName}</td>
+                      <td className="py-3 px-4 text-slate-600">{item.stateName}</td>
+                      <td className="py-3 px-4 text-slate-600">{item.batchName}</td>
+                      <td className="py-3 px-4 font-extrabold text-emerald-600">{item.score}</td>
+                      <td className="py-3 px-4 font-bold text-purple-600">{item.percentile}%</td>
+                      <td className="py-3 px-4 text-amber-600 font-bold">{item.xp} XP</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                          <Trophy className="w-6 h-6" />
+                        </div>
+                        <div className="font-bold text-slate-700 text-sm">No candidate rankings found</div>
+                        <p className="text-xs text-slate-400 max-w-sm">
+                          Be the first aspirant in this scope to complete a CBT mock exam and claim Rank #1!
+                        </p>
+                      </div>
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

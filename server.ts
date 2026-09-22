@@ -34,11 +34,46 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// Enable CORS for native mobile apps (Capacitor/Android/iOS) and local environments
+// Allowed production and mobile application origins
+const ALLOWED_ORIGIN_PATTERNS = [
+  /^https?:\/\/localhost(:[0-9]+)?$/,
+  /^https?:\/\/127\.0\.0\.1(:[0-9]+)?$/,
+  /^capacitor:\/\/localhost$/,
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
+  /^https:\/\/(www\.)?aspirantx\.com$/,
+  /^https:\/\/(www\.)?protrack\.app$/,
+];
+
+const customOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+// Enable CORS for native mobile apps (Capacitor/Android/iOS), web deployments, and local dev
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+
+  let isAllowed = false;
+  if (!origin) {
+    // Non-browser or same-origin direct calls (e.g. native HTTP stack, health probes)
+    isAllowed = true;
+  } else if (customOrigins.includes(origin)) {
+    isAllowed = true;
+  } else if (ALLOWED_ORIGIN_PATTERNS.some(pattern => pattern.test(origin))) {
+    isAllowed = true;
+  }
+
+  if (isAllowed && origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
@@ -142,7 +177,20 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
     });
   } else {
     const distPath = path.join(__dirname, 'dist');
+    const publicPath = path.join(__dirname, 'public');
+    
     app.use(express.static(distPath));
+    app.use(express.static(publicPath));
+    app.use('/audio', express.static(path.join(publicPath, 'audio'), {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.wav')) {
+          res.setHeader('Content-Type', 'audio/wav');
+        } else if (filePath.endsWith('.mp3')) {
+          res.setHeader('Content-Type', 'audio/mpeg');
+        }
+      }
+    }));
+
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });

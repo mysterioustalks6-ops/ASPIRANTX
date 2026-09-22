@@ -636,19 +636,53 @@ router.delete('/api/community/comments/:id', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Comment ID is required' });
     }
 
-    let deleted = false;
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required to delete a comment' });
+    }
+
+    let targetComment: any = null;
+    let targetPostId: string | null = null;
+
     for (const [postId, list] of communityCommentsStore.entries()) {
+      const found = list.find((c: any) => c.id === id);
+      if (found) {
+        targetComment = found;
+        targetPostId = postId;
+        break;
+      }
+    }
+
+    if (!targetComment && supabaseServer) {
+      const { data } = await supabaseServer.from('community_comments').select('*').eq('id', id).maybeSingle();
+      if (data) {
+        targetComment = data;
+        targetPostId = data.post_id || data.postId;
+      }
+    }
+
+    if (!targetComment) {
+      return res.status(404).json({ success: false, error: 'Comment not found' });
+    }
+
+    const isAuthor = targetComment.authorId === verifiedUser.sub || targetComment.user_id === verifiedUser.sub;
+    const isAdmin = verifiedUser.role === 'ADMIN' || verifiedUser.email === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You can only delete your own comments' });
+    }
+
+    if (targetPostId && communityCommentsStore.has(targetPostId)) {
+      const list = communityCommentsStore.get(targetPostId) || [];
       const idx = list.findIndex((c: any) => c.id === id);
       if (idx !== -1) {
         list.splice(idx, 1);
-        communityCommentsStore.set(postId, list);
-        const post = communityPostsStore.get(postId);
+        communityCommentsStore.set(targetPostId, list);
+        const post = communityPostsStore.get(targetPostId);
         if (post && post.commentCount) {
           post.commentCount = Math.max(0, post.commentCount - 1);
-          communityPostsStore.set(postId, post);
+          communityPostsStore.set(targetPostId, post);
         }
-        deleted = true;
-        break;
       }
     }
 
@@ -656,9 +690,51 @@ router.delete('/api/community/comments/:id', async (req, res) => {
       await supabaseServer.from('community_comments').delete().eq('id', id);
     }
 
-    res.json({ success: true, data: { id, deleted } });
+    res.json({ success: true, data: { id, deleted: true } });
   } catch (err: any) {
     console.error('[DELETE /api/community/comments/:id] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+});
+
+router.delete('/api/community/posts/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return res.status(400).json({ success: false, error: 'Post ID is required' });
+
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required to delete a post' });
+    }
+
+    let post = communityPostsStore.get(id);
+    if (!post && supabaseServer) {
+      const { data } = await supabaseServer.from('community_posts').select('*').eq('id', id).maybeSingle();
+      if (data) post = data;
+    }
+
+    if (!post) {
+      return res.status(404).json({ success: false, error: 'Post not found' });
+    }
+
+    const isAuthor = post.authorId === verifiedUser.sub;
+    const isAdmin = verifiedUser.role === 'ADMIN' || verifiedUser.email === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You can only delete your own posts' });
+    }
+
+    communityPostsStore.delete(id);
+    communityCommentsStore.delete(id);
+
+    if (supabaseServer) {
+      await supabaseServer.from('community_posts').delete().eq('id', id);
+      await supabaseServer.from('community_comments').delete().eq('post_id', id);
+    }
+
+    res.json({ success: true, data: { id, deleted: true } });
+  } catch (err: any) {
+    console.error('[DELETE /api/community/posts/:id] error:', err);
     res.status(500).json({ success: false, error: err.message || 'Internal server error' });
   }
 });

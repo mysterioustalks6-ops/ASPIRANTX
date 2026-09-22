@@ -14,6 +14,7 @@ import { middleware as edgeMiddleware } from '../authMiddleware.js';
 import { INITIAL_SYLLABUS_HIERARCHY, INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK } from '../src/data/academicData.js';
 import { COMPREHENSIVE_BOOKS_DATABASE } from '../src/data/booksData.js';
 import { sendTransactionalEmail } from '../src/lib/email.js';
+import { queryPostgres } from '../src/lib/postgres.js';
 
 export { crypto, jwt, fs, path, os, edgeMiddleware, INITIAL_SYLLABUS_HIERARCHY, INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK, COMPREHENSIVE_BOOKS_DATABASE, sendTransactionalEmail };
 
@@ -784,6 +785,7 @@ export interface UtrRequestRecord {
   id: string;
   userEmail: string;
   userName?: string;
+  userId?: string;
   utr: string;
   plan: string;
   amount: number;
@@ -1122,23 +1124,33 @@ export interface TopperPodcastRecord {
 export const DEFAULT_PODCASTS_LIST: TopperPodcastRecord[] = [
   {
     id: 'p1',
-    topperName: 'Anish Thakkar',
-    rank: 'UPSC CSE AIR 3 (2025)',
-    subject: 'Polity & GS Paper 2 Strategy',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    duration: '14:20',
-    description: 'Anish details how keeping answer structures simple, drawing flowcharts, and solving past 10 years papers multiple times led to high marks in GS 2.',
-    booklist: ['Indian Polity by Laxmikanth', 'DD Basu Introduction to the Constitution', 'ARC 2nd Reports on Governance']
+    topperName: 'AspirantX Editorial Desk',
+    rank: 'Synthesized Voice Audio Guide',
+    subject: 'Polity & GS Paper 2 Strategy Masterclass',
+    audioUrl: '/audio/upsc_gs2_polity_masterclass.wav',
+    duration: '00:51',
+    description: 'High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the AspirantX academic editorial desk and delivered via synthetic voice narration for study revision.',
+    booklist: ['Indian Polity by M. Laxmikanth', 'Introduction to the Constitution of India by D.D. Basu', 'Second ARC Reports on Ethics in Governance']
   },
   {
     id: 'p2',
-    topperName: 'Priya Sharma',
-    rank: 'UPSC CSE AIR 12 (2025)',
-    subject: 'Geography Optional & Answer Writing',
-    audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-    duration: '18:45',
-    description: 'Priya shares tips on drawing hand-made maps, highlighting map locations in paper 2, and scoring 290+ in Geography optional.',
-    booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by DR Khullar', 'ProTrack Reference Library Map Notes']
+    topperName: 'AspirantX Editorial Desk',
+    rank: 'Synthesized Voice Audio Guide',
+    subject: 'Geography Optional & Mapping Technique Guide',
+    audioUrl: '/audio/geography_answer_writing_guide.wav',
+    duration: '00:42',
+    description: 'Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
+    booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by D.R. Khullar', 'ProTrack Cartography Reference Sheets']
+  },
+  {
+    id: 'p3',
+    topperName: 'AspirantX Editorial Desk',
+    rank: 'Synthesized Voice Audio Guide',
+    subject: 'NEET UG High-Yield Physics & Diagrammatic Biology',
+    audioUrl: '/audio/neet_physics_problem_solving.wav',
+    duration: '00:39',
+    description: 'Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
+    booklist: ['NCERT Biology Class 11 & 12', 'Concepts of Physics by H.C. Verma', 'Physical Chemistry by O.P. Tandon']
   }
 ];
 
@@ -3525,26 +3537,28 @@ export async function hydrateCommunityPostsFromSupabase() {
 }
 
 export async function hydrateWalletsFromSupabase(userId?: string) {
-  if (!supabaseServer) return;
   try {
-    let query = supabaseServer.from('user_wallets').select('*');
-    if (userId) {
-      query = query.eq('user_id', userId);
-    }
-    const { data, error } = await query;
-    if (error) {
-      console.warn('[HYDRATION WALLETS NOTICE]', error.message);
-    } else if (Array.isArray(data) && data.length > 0) {
-      data.forEach((row: any) => {
+    const res = userId
+      ? await queryPostgres<any>(`SELECT * FROM public.user_wallets WHERE user_id = $1;`, [userId])
+      : await queryPostgres<any>(`SELECT * FROM public.user_wallets;`);
+
+    if (res.rows && res.rows.length > 0) {
+      res.rows.forEach((row: any) => {
         const uid = row.user_id || row.id;
-        const wData = row.data || row;
-        if (uid && wData) {
-          userWalletsStore.set(uid, wData);
+        if (uid) {
+          userWalletsStore.set(uid, {
+            userId: uid,
+            balance: Number(row.balance) || 0,
+            coins: Number(row.coins) || 0,
+            totalEarned: Number(row.total_earned) || 0,
+            createdAt: row.created_at,
+            updatedAt: row.updated_at,
+          });
         }
       });
     }
   } catch (e: any) {
-    console.warn('[HYDRATION WALLETS NOTICE]', e?.message || e);
+    console.warn('[HYDRATION WALLETS NEON NOTICE]', e?.message || e);
   }
 }
 

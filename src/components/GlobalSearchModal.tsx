@@ -73,7 +73,12 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
       const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       if (data.success) {
-        setResults(data.results);
+        const payload = data.data || data.results || { posts: [], topics: [], questions: [] };
+        setResults({
+          posts: Array.isArray(payload.posts) ? payload.posts : [],
+          topics: Array.isArray(payload.topics) ? payload.topics : [],
+          questions: Array.isArray(payload.questions) ? payload.questions : [],
+        });
       }
     } catch (err) {
       console.error('Failed to run global search:', err);
@@ -84,7 +89,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
 
   if (!isOpen) return null;
 
-  const hasContentResults = results.posts.length > 0 || results.topics.length > 0 || results.questions.length > 0;
+  const postsList = results?.posts || [];
+  const topicsList = results?.topics || [];
+  const questionsList = results?.questions || [];
+  const hasContentResults = postsList.length > 0 || topicsList.length > 0 || questionsList.length > 0;
   const hasFeatureResults = matchedFeatures.length > 0;
 
   return (
@@ -100,13 +108,14 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search features (flashcards, pomodoro...), syllabus, PYQs & community..."
             className="w-full bg-transparent text-white text-sm focus:outline-none placeholder:text-slate-500 font-medium"
+            aria-label="Search features, syllabus, questions"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="text-slate-500 hover:text-slate-300">
+            <button onClick={() => setQuery('')} className="text-slate-500 hover:text-slate-300" aria-label="Clear search text">
               <X className="w-4 h-4" />
             </button>
           )}
-          <button onClick={onClose} className="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold">
+          <button onClick={onClose} className="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold" aria-label="Close search modal">
             ESC
           </button>
         </div>
@@ -180,14 +189,14 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
               )}
 
               {/* TOPICS & SYLLABUS */}
-              {results.topics.length > 0 && (
+              {topicsList.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-1">
                     <BookOpen className="w-3.5 h-3.5" />
                     <span>Syllabus Topics</span>
                   </div>
                   <div className="space-y-1">
-                    {results.topics.map((item) => (
+                    {topicsList.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => {
@@ -197,7 +206,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                         className="p-3 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800/80 cursor-pointer flex justify-between items-center text-xs transition-all"
                       >
                         <div>
-                          <span className="font-bold text-slate-200">{item.title}</span>
+                          <span className="font-bold text-slate-200">{item.title || item.name}</span>
                           <span className="text-slate-500 ml-2">({item.subject})</span>
                         </div>
                         <ArrowRight className="w-3.5 h-3.5 text-slate-500" />
@@ -208,14 +217,14 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
               )}
 
               {/* COMMUNITY POSTS */}
-              {results.posts.length > 0 && (
+              {postsList.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-teal-400 flex items-center space-x-1">
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>Community Discussions</span>
                   </div>
                   <div className="space-y-1">
-                    {results.posts.map((post) => (
+                    {postsList.map((post) => (
                       <div
                         key={post.id}
                         onClick={() => {
@@ -236,14 +245,14 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
               )}
 
               {/* QUESTION BANK */}
-              {results.questions.length > 0 && (
+              {questionsList.length > 0 && (
                 <div className="space-y-2">
                   <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center space-x-1">
                     <HelpCircle className="w-3.5 h-3.5" />
                     <span>Question Bank</span>
                   </div>
                   <div className="space-y-1">
-                    {results.questions.map((q) => (
+                    {questionsList.map((q) => (
                       <div
                         key={q.id}
                         onClick={() => {
@@ -253,7 +262,7 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                         className="p-3 bg-slate-950 hover:bg-slate-800 rounded-xl border border-slate-800/80 cursor-pointer flex justify-between items-center text-xs transition-all"
                       >
                         <div>
-                          <div className="font-bold text-slate-200 line-clamp-1">{q.text}</div>
+                          <div className="font-bold text-slate-200 line-clamp-1">{q.text || q.question}</div>
                           <div className="text-slate-500 text-[11px] mt-0.5">{q.subject} • {q.exam}</div>
                         </div>
                         <ArrowRight className="w-3.5 h-3.5 text-slate-500" />

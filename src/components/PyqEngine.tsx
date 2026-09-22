@@ -233,15 +233,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           searchQuery
         )}${langParam}${subjParam}${topicParam}${yearParam}${diffParam}${repeatParam}`);
 
-        let res = await dedupFetch(url, signal ? { signal } : undefined);
-        if (!res.ok && url.includes('127.0.0.1:3000')) {
-          try {
-            const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
-            const fbRes = await dedupFetch(fallbackUrl, signal ? { signal } : undefined);
-            if (fbRes.ok) res = fbRes;
-          } catch (_) {}
-        }
-
+        const res = await dedupFetch(url, signal ? { signal } : undefined);
         if (res.ok) {
           const data = await res.json();
           if ((!signal || !signal.aborted) && data.success && Array.isArray(data.pyqs)) {
@@ -255,24 +247,6 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         }
       } catch (e: any) {
         if (e.name !== 'AbortError') {
-          // If local native failed with network error, attempt live Vercel fallback
-          try {
-            if (url && url.includes('127.0.0.1:3000')) {
-              const fallbackUrl = url.replace('http://127.0.0.1:3000', 'https://aspirantx.vercel.app');
-              const fbRes = await dedupFetch(fallbackUrl, signal ? { signal } : undefined);
-              if (fbRes.ok) {
-                const data = await fbRes.json();
-                if ((!signal || !signal.aborted) && data.success && Array.isArray(data.pyqs)) {
-                  setPyqs(data.pyqs);
-                  setTotal(data.total !== undefined ? data.total : 0);
-                  setTotalPages(data.totalPages || 1);
-                  loadedFromApi = true;
-                  setLoading(false);
-                  return;
-                }
-              }
-            }
-          } catch (_) {}
           console.warn('Backend API unreachable, trying local and direct Supabase fallback:', e?.message || e);
         }
       }

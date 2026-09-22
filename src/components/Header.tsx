@@ -291,6 +291,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onOpenWorkspaceCustomizer}
             className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700/60 text-xs font-semibold text-slate-300 hover:text-white transition-colors shadow-sm"
             title="Personalize My Workspace"
+            aria-label="Personalize My Workspace"
           >
             <LayoutGrid className="w-3.5 h-3.5 text-sky-400" />
             <span className="hidden lg:inline">Workspace</span>
@@ -321,6 +322,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={toggleFullscreen}
           className="hidden md:flex p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition-colors"
           title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
         >
           {isFullscreen ? <Minimize className="w-4 h-4 text-sky-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
         </button>

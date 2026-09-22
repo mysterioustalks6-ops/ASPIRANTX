@@ -205,6 +205,7 @@ import {
   watchdogSystemLogs
 } from './shared.js';
 import * as Shared from './shared.js';
+import { queryPostgres, pgPool } from '../src/lib/postgres.js';
 
 const router = Router();
 const __dirname = path.resolve();
@@ -600,6 +601,13 @@ router.get('/api/admin/customizer', (_req, res) => {
   });
 });
 
+router.get('/api/public/customizer', (_req, res) => {
+  res.json({
+    success: true,
+    customizer: globalAdminSettings.customizer,
+  });
+});
+
 router.post('/api/admin/customizer', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   await updateGlobalAdminSettings(req.body, req.body.updatedBy || 'Admin');
   if (supabaseServer) {
@@ -724,33 +732,40 @@ router.post('/api/admin/error-logs/:id/resolve', adminMutationLimiter, verifyAdm
 });
 
 router.get('/api/admin/utr/requests', verifyAdminAuth, async (req, res) => {
-  let list: UtrRequestRecord[] = [];
-
-  if (supabaseServer) {
-    try {
-      const { data, error } = await supabaseServer
-        .from('utr_requests')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (!error && data) {
-        list = data.map(mapRowToUtrRecord);
-        for (const item of list) {
-          pendingUtrRequestsDb.set(item.id, item);
-        }
-      }
-    } catch (err) {
-      console.warn('Supabase fetch UTR requests warning:', err);
-    }
-  }
-
-  if (list.length === 0) {
-    list = Array.from(pendingUtrRequestsDb.values()).sort(
-      (a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+  try {
+    const { rows } = await queryPostgres<any>(
+      `SELECT id, user_id, user_email, user_name, email, utr, plan, amount, status, processed_by, processed_at, data, created_at, updated_at
+       FROM public.utr_requests
+       ORDER BY created_at DESC;`
     );
-  }
 
-  return res.json({ success: true, requests: list });
+    const list: UtrRequestRecord[] = rows.map((r: any) => {
+      const dataObj = r.data && typeof r.data === 'object' ? r.data : {};
+      return {
+        id: r.id,
+        userId: r.user_id || dataObj.userId || '',
+        userEmail: r.user_email || r.email || dataObj.userEmail || '',
+        userName: r.user_name || dataObj.userName || '',
+        utr: r.utr || dataObj.utr || '',
+        plan: r.plan || dataObj.plan || 'monthly',
+        amount: Number(r.amount) || Number(dataObj.amount) || 0,
+        status: r.status || dataObj.status || 'PENDING',
+        submittedAt: r.created_at ? new Date(r.created_at).toISOString() : dataObj.submittedAt || new Date().toISOString(),
+        processedBy: r.processed_by || dataObj.processedBy,
+        processedAt: r.processed_at ? new Date(r.processed_at).toISOString() : dataObj.processedAt,
+      };
+    });
+
+    // Update memory cache
+    for (const item of list) {
+      pendingUtrRequestsDb.set(item.id, item);
+    }
+
+    return res.json({ success: true, requests: list });
+  } catch (err: any) {
+    console.error('[GET /api/admin/utr/requests] Neon authoritative error:', err);
+    return res.status(500).json({ success: false, error: 'Database error reading UTR requests' });
+  }
 });
 
 router.post('/api/admin/utr/approve', adminMutationLimiter, verifyAdminAuth, async (req, res) => {
@@ -759,138 +774,114 @@ router.post('/api/admin/utr/approve', adminMutationLimiter, verifyAdminAuth, asy
     return res.status(400).json({ error: 'utrId parameter is required' });
   }
 
-  let utrRecord = pendingUtrRequestsDb.get(utrId);
-  if (!utrRecord && supabaseServer) {
-    try {
-      const { data } = await supabaseServer
-        .from('utr_requests')
-        .select('*')
-        .eq('id', utrId)
-        .limit(1)
-        .maybeSingle();
+  try {
+    // Authoritative Neon PostgreSQL lookup
+    const { rows } = await queryPostgres<any>(
+      `SELECT id, user_id, user_email, user_name, email, utr, plan, amount, status, data, created_at
+       FROM public.utr_requests
+       WHERE id = $1 LIMIT 1;`,
+      [utrId]
+    );
 
-      if (data) {
-        utrRecord = mapRowToUtrRecord(data);
-        pendingUtrRequestsDb.set(utrRecord.id, utrRecord);
-      }
-    } catch (err) {
-      console.warn('Supabase UTR lookup warning:', err);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'UTR request record not found' });
     }
-  }
 
-  if (!utrRecord) {
-    return res.status(404).json({ error: 'UTR request record not found' });
-  }
+    const row = rows[0];
+    const dataObj = row.data && typeof row.data === 'object' ? row.data : {};
+    const adminUser = (req as any).adminEmail || DESIGNATED_ADMIN_EMAIL;
+    const now = new Date();
 
-  const adminUser = (req as any).adminEmail || DESIGNATED_ADMIN_EMAIL;
-  const now = new Date();
+    const utrRecord: UtrRequestRecord = {
+      id: row.id,
+      userId: row.user_id || dataObj.userId || '',
+      userEmail: row.user_email || row.email || dataObj.userEmail || '',
+      userName: row.user_name || dataObj.userName || '',
+      utr: row.utr || dataObj.utr || '',
+      plan: row.plan || dataObj.plan || 'monthly',
+      amount: Number(row.amount) || Number(dataObj.amount) || 0,
+      status: action === 'REJECT' ? 'REJECTED' : 'APPROVED',
+      submittedAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
+      processedBy: adminUser,
+      processedAt: now.toISOString(),
+    };
 
-  if (action === 'REJECT') {
-    utrRecord.status = 'REJECTED';
-    utrRecord.processedBy = adminUser;
-    utrRecord.processedAt = now.toISOString();
+    if (action === 'REJECT') {
+      // Authoritative Neon PostgreSQL update
+      await queryPostgres(
+        `UPDATE public.utr_requests
+         SET status = 'REJECTED', processed_by = $1, processed_at = NOW(), updated_at = NOW()
+         WHERE id = $2;`,
+        [adminUser, utrId]
+      );
+
+      pendingUtrRequestsDb.set(utrId, utrRecord);
+
+      recordAdminAuditLog({
+        user: adminUser,
+        action: 'REJECT_UTR',
+        details: `Admin rejected UTR ${utrRecord.utr} for ${utrRecord.userEmail}`,
+        ip: (req as any).clientIp,
+        requestId: (req as any).requestId,
+        endpoint: req.originalUrl,
+        outcome: 'SUCCESS',
+      });
+
+      return res.json({ success: true, message: `UTR '${utrRecord.utr}' rejected.`, record: utrRecord });
+    }
+
+    // Authoritative Neon PostgreSQL update for approval
+    await queryPostgres(
+      `UPDATE public.utr_requests
+       SET status = 'APPROVED', processed_by = $1, processed_at = NOW(), updated_at = NOW()
+       WHERE id = $2;`,
+      [adminUser, utrId]
+    );
+
     pendingUtrRequestsDb.set(utrId, utrRecord);
 
-    if (supabaseServer) {
-      try {
-        const { error: jsonbErr } = await supabaseServer.from('utr_requests').upsert([{
-          id: utrId,
-          data: utrRecord,
-          updated_at: now.toISOString()
-        }], { onConflict: 'id' });
-
-        if (jsonbErr) {
-          await supabaseServer.from('utr_requests').update({
-            status: 'REJECTED',
-            processed_by: adminUser,
-            processed_at: now.toISOString(),
-          }).eq('id', utrId);
-        }
-      } catch (err) {
-        console.warn('Supabase UTR reject update warning:', err);
-      }
+    let expiresAt: string | null = null;
+    if (utrRecord.plan === 'monthly') {
+      expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    } else if (utrRecord.plan === 'annual') {
+      expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
     }
 
-    saveAdminStoreToDisk();
+    const subRecord: SubscriptionRecord = {
+      userEmail: utrRecord.userEmail,
+      planId: utrRecord.plan,
+      isPremium: true,
+      activatedAt: now.toISOString(),
+      expiresAt,
+      paymentId: `utr_${utrRecord.utr}`,
+      orderId: `ord_utr_${utrRecord.id}`,
+      verificationMethod: 'ADMIN_UTR_VERIFIED',
+      amountPaid: utrRecord.amount,
+      currency: 'INR',
+    };
+
+    await persistSubscriptionAtomic(subRecord);
 
     recordAdminAuditLog({
       user: adminUser,
-      action: 'REJECT_UTR',
-      details: `Admin rejected UTR ${utrRecord.utr} for ${utrRecord.userEmail}`,
+      action: 'APPROVE_UTR',
+      details: `Admin approved UTR ${utrRecord.utr} and activated ${utrRecord.plan} subscription for ${utrRecord.userEmail}`,
       ip: (req as any).clientIp,
       requestId: (req as any).requestId,
       endpoint: req.originalUrl,
       outcome: 'SUCCESS',
     });
 
-    return res.json({ success: true, message: `UTR '${utrRecord.utr}' rejected.`, record: utrRecord });
+    return res.json({
+      success: true,
+      message: `UTR '${utrRecord.utr}' approved. ${utrRecord.plan} subscription activated for ${utrRecord.userEmail}`,
+      subscription: subRecord,
+      record: utrRecord,
+    });
+  } catch (err: any) {
+    console.error('[POST /api/admin/utr/approve] Neon authoritative error:', err);
+    return res.status(500).json({ error: 'Database error processing UTR approval' });
   }
-
-  // Approve UTR and Activate Subscription
-  utrRecord.status = 'APPROVED';
-  utrRecord.processedBy = adminUser;
-  utrRecord.processedAt = now.toISOString();
-  pendingUtrRequestsDb.set(utrId, utrRecord);
-
-  if (supabaseServer) {
-    try {
-      const { error: jsonbErr } = await supabaseServer.from('utr_requests').upsert([{
-        id: utrId,
-        data: utrRecord,
-        updated_at: now.toISOString()
-      }], { onConflict: 'id' });
-
-      if (jsonbErr) {
-        await supabaseServer.from('utr_requests').update({
-          status: 'APPROVED',
-          processed_by: adminUser,
-          processed_at: now.toISOString(),
-        }).eq('id', utrId);
-      }
-    } catch (err) {
-      console.warn('Supabase UTR approve update warning:', err);
-    }
-  }
-
-  let expiresAt: string | null = null;
-  if (utrRecord.plan === 'monthly') {
-    expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-  } else if (utrRecord.plan === 'annual') {
-    expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString();
-  }
-
-  const subRecord: SubscriptionRecord = {
-    userEmail: utrRecord.userEmail,
-    planId: utrRecord.plan,
-    isPremium: true,
-    activatedAt: now.toISOString(),
-    expiresAt,
-    paymentId: `utr_${utrRecord.utr}`,
-    orderId: `ord_utr_${utrRecord.id}`,
-    verificationMethod: 'ADMIN_UTR_VERIFIED',
-    amountPaid: utrRecord.amount,
-    currency: 'INR',
-  };
-
-  await persistSubscriptionAtomic(subRecord);
-  saveAdminStoreToDisk();
-
-  recordAdminAuditLog({
-    user: adminUser,
-    action: 'APPROVE_UTR',
-    details: `Admin approved UTR ${utrRecord.utr} and activated ${utrRecord.plan} subscription for ${utrRecord.userEmail}`,
-    ip: (req as any).clientIp,
-    requestId: (req as any).requestId,
-    endpoint: req.originalUrl,
-    outcome: 'SUCCESS',
-  });
-
-  return res.json({
-    success: true,
-    message: `UTR '${utrRecord.utr}' approved. ${utrRecord.plan} subscription activated for ${utrRecord.userEmail}`,
-    subscription: subRecord,
-    record: utrRecord,
-  });
 });
 
 router.post('/api/admin/podcasts', adminMutationLimiter, verifyAdminAuth, async (req, res) => {

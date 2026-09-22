@@ -7,17 +7,15 @@ import './index.css';
 import { registerServiceWorker } from './pwaRegister.ts';
 import { initTactileTouchListener } from './lib/haptics.ts';
 
+import { API_BASE_URL } from './lib/apiConfig';
+
 // ── Native App Network Interceptor ───────────────────────────────────────────
 // In standalone native APK build, WebView origin is https://localhost.
-// Intercept ONLY relative `/api/*` fetch calls and route them directly to the live backend server.
+// Intercept relative `/api/*` and localhost `/api/*` fetch calls and route them directly to the configured production backend origin.
 // Never intercept local files, assets (JS/CSS/images/fonts), UI routing, or root document.
-const BACKEND_API_ROOT = (
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_API_URL) ||
-  (Capacitor.isNativePlatform() ? 'http://127.0.0.1:3000' : (typeof window !== 'undefined' ? window.location.origin : 'https://protrack.vercel.app'))
-).replace(/\/$/, '');
+const BACKEND_API_ROOT = API_BASE_URL;
 
-if (Capacitor.isNativePlatform()) {
+if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
   const originalFetch = window.fetch;
   window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
     if (typeof input === 'string') {

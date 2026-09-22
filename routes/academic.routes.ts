@@ -206,6 +206,7 @@ import {
   watchdogSystemLogs
 } from './shared.js';
 import * as Shared from './shared.js';
+import { queryPostgres, pgPool } from '../src/lib/postgres.js';
 
 const router = Router();
 const __dirname = path.resolve();
@@ -1226,31 +1227,6 @@ router.get('/api/academic/pyqs', async (req, res) => {
   }
 });
 
-router.get('/api/academic/pyqs/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (pyqStore.has(id)) {
-      return res.json({ success: true, pyq: pyqStore.get(id) });
-    }
-    if (supabaseServer) {
-      const { data, error } = await supabaseServer.from('pyqs').select('id, data').eq('id', id).maybeSingle();
-      if (!error && data) {
-        const item = normalizePyqItem(data);
-        return res.json({ success: true, pyq: item });
-      }
-      // Fallback check question_bank
-      const { data: qbData } = await supabaseServer.from('question_bank').select('*').eq('id', id).maybeSingle();
-      if (qbData) {
-        const item = normalizePyqItem(qbData);
-        return res.json({ success: true, pyq: item });
-      }
-    }
-    res.status(404).json({ error: 'PYQ not found' });
-  } catch (err: any) {
-    res.status(500).json({ error: 'Failed to fetch PYQ', details: err.message });
-  }
-});
-
 router.get('/api/academic/pyqs/analytics', (req, res) => {
   try {
     const exam = (req.query.exam as string) || '';
@@ -1343,7 +1319,32 @@ router.get('/api/academic/pyqs/pdfs', async (req, res) => {
     
     res.json({ success: true, count: filtered.length, papers: filtered });
   } catch (err: any) {
-    res.status(500).json({ error: 'Failed to fetch PDF papers', details: err.message });
+    res.status(500).json({ error: 'Failed to fetch PYQ PDF directory', details: err.message });
+  }
+});
+
+router.get('/api/academic/pyqs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (pyqStore.has(id)) {
+      return res.json({ success: true, pyq: pyqStore.get(id) });
+    }
+    if (supabaseServer) {
+      const { data, error } = await supabaseServer.from('pyqs').select('id, data').eq('id', id).maybeSingle();
+      if (!error && data) {
+        const item = normalizePyqItem(data);
+        return res.json({ success: true, pyq: item });
+      }
+      // Fallback check question_bank
+      const { data: qbData } = await supabaseServer.from('question_bank').select('*').eq('id', id).maybeSingle();
+      if (qbData) {
+        const item = normalizePyqItem(qbData);
+        return res.json({ success: true, pyq: item });
+      }
+    }
+    res.status(404).json({ error: 'PYQ not found' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch PYQ', details: err.message });
   }
 });
 
@@ -3494,4 +3495,851 @@ router.get('/api/academic/leaderboard', (req, res) => {
   }
 });
 
+// ============================================================================
+// ACTIVE RECALL FLASHCARDS & SERVER-AUTHORITATIVE LEITNER ENGINE
+// ============================================================================
+
+export interface FlashcardItem {
+  id: string;
+  user_id?: string;
+  userId?: string;
+  exam: string;
+  category: string;
+  question: string;
+  answer: string;
+  hint: string;
+  isCustom?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface FlashcardReviewItem {
+  id: string;
+  card_id: string;
+  cardId: string;
+  user_id: string;
+  userId: string;
+  rating: 'easy' | 'hard';
+  leitner_box: number;
+  leitnerBox: number;
+  next_review_at: string;
+  nextReviewAt: string;
+  reviewed_at: string;
+  reviewedAt: string;
+  review_count: number;
+  reviewCount: number;
+}
+
+const SEED_FLASHCARDS: FlashcardItem[] = [
+  // NEET UG Decks
+  {
+    id: 'neet-f1',
+    exam: 'NEET_UG',
+    category: 'Biology — Human Physiology',
+    question: 'Kupffer cells kin organs me paaye jaate hain aur inka primary function kya hai?',
+    answer: 'Kupffer cells Liver ke sinusoids me paaye jane wale specialized Macrophages hote hain. Inka primary function micro-organisms, worn-out red blood cells (RBCs), aur foreign debris ko Phagocytosis ke dwara destroy karna hota hai.',
+    hint: 'Phagocytic liver macrophages'
+  },
+  {
+    id: 'neet-f2',
+    exam: 'NEET_UG',
+    category: 'Chemistry — Chemical Bonding',
+    question: 'XeF4 (Xenon Tetrafluoride) ki Molecular Geometry aur Hybridization kya hai?',
+    answer: 'XeF4 ki Hybridization sp3d2 hoti hai. Isme 4 Bond Pairs aur 2 Lone Pairs hote hain. Iski Electron Geometry Octahedral aur Molecular Geometry Square Planar hoti hai.',
+    hint: '2 Lone pairs occupy axial positions'
+  },
+  {
+    id: 'neet-f3',
+    exam: 'NEET_UG',
+    category: 'Physics — Electrostatics',
+    question: 'Electric dipole in a uniform electric field par net Force aur Torque kitna hota hai?',
+    answer: 'Uniform electric field me Electric dipole par Net Force hamesha zero (0) hota hai. Par Torque = p × E = p E sin(θ) act karta hai jo dipole ko field ke direction me align karne ki koshish karta hai.',
+    hint: 'Net Force = 0, Torque = p × E'
+  },
+
+  // NDA / NA Decks
+  {
+    id: 'nda-f1',
+    exam: 'NDA_NA',
+    category: 'General Ability — Physics',
+    question: 'Sound waves air me kaunsi type ki wave hoti hain aur vacuum me travel kyu nahi kar sakti?',
+    answer: 'Sound waves Mechanical Longitudinal Waves hoti hain. Inhe propagation ke liye material medium (compressions & rarefactions) ki zaroorat hoti hai, isliye ye vacuum me travel nahi kar sakti.',
+    hint: 'Speed of sound in air ≈ 343 m/s'
+  },
+  {
+    id: 'nda-f2',
+    exam: 'NDA_NA',
+    category: 'Mathematics — Matrices & Determinants',
+    question: 'If A is a square matrix of order n, then det(adj A) equals what in terms of det(A)?',
+    answer: 'det(adj A) = |A|^(n-1). For a 3x3 matrix (n=3), det(adj A) = |A|^2.',
+    hint: 'Power is (n - 1)'
+  },
+  {
+    id: 'nda-f3',
+    exam: 'NDA_NA',
+    category: 'General Knowledge — Indian History',
+    question: 'Battle of Plassey (1757) kis kis ke beech hui thi aur iska historic significance kya tha?',
+    answer: 'Battle of Plassey 23 June 1757 ko Nawab of Bengal (Siraj-ud-Daulah) aur British East India Company (Robert Clive) ke beech hui thi. Mir Jafar ki treachery ki wajah se Clive jeeta aur Bharat me British rule ki foundation padi.',
+    hint: 'Robert Clive vs Siraj-ud-Daulah'
+  },
+
+  // UPSC CSE Decks
+  {
+    id: 'upsc-f1',
+    exam: 'UPSC_CSE',
+    category: 'Indian Polity & Governance',
+    question: 'Writ of Habeas Corpus kya hota hai and iska literary meaning kya hai?',
+    answer: 'Habeas Corpus ka literary meaning hai "To have the body of". Ye writ court tab issue karta hai jab kisi person ko illegally detain kiya gaya ho. Court detaining authority ko direct karta hai ki detained person ko court ke samne produce kiya jaye.',
+    hint: 'Under Article 32 (Supreme Court) and Article 226 (High Courts)'
+  },
+  {
+    id: 'upsc-f2',
+    exam: 'UPSC_CSE',
+    category: 'Modern Indian History',
+    question: 'Swadeshi Movement ki formal start kab aur kis event ke response me hui thi?',
+    answer: 'Swadeshi Movement ki formal start 7 August 1905 ko Town Hall, Calcutta me Boycott Resolution pass hone ke sath hui thi. Ye Lord Curzon dwara announced Partition of Bengal (July 1905) ke response me shuru hua tha.',
+    hint: 'Lal-Bal-Pal led this movement in different parts of India'
+  },
+
+  // SSC CGL Decks
+  {
+    id: 'ssc-f1',
+    exam: 'SSC_CGL',
+    category: 'Quantitative Aptitude — Geometry',
+    question: 'Right-angled triangle me Inradius (r) aur Circumradius (R) ki lengths ka formula kya hota hai?',
+    answer: 'Right-angled triangle with sides a, b and hypotenuse c:\nInradius r = (a + b - c) / 2\nCircumradius R = c / 2 (Hypotenuse ka half).',
+    hint: 'Circumcentre lies at the midpoint of hypotenuse'
+  },
+
+  // JEE MAIN Decks
+  {
+    id: 'jee-f1',
+    exam: 'JEE_MAIN',
+    category: 'Physics — Thermodynamics',
+    question: 'Carnot engine efficiency formula in terms of source temperature T1 and sink temperature T2?',
+    answer: 'Efficiency η = 1 - (T2 / T1) = (T1 - T2) / T1, where temperatures T1 and T2 must be in Kelvin.',
+    hint: 'Temperatures must be absolute (Kelvin)'
+  }
+];
+
+const customFlashcardsStore = new Map<string, FlashcardItem>();
+const flashcardReviewsStore = new Map<string, FlashcardReviewItem>();
+const reviewLocks = new Map<string, number>();
+
+// Persistent file path
+function getFlashcardStoreFilePath(): string {
+  const candidateDirs = [
+    path.join(process.cwd(), '.data'),
+    path.join(os.tmpdir(), 'aspirantx_data'),
+    os.tmpdir(),
+  ];
+  for (const dir of candidateDirs) {
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      return path.join(dir, 'flashcards_store.json');
+    } catch (_e) {}
+  }
+  return path.join(os.tmpdir(), 'flashcards_store.json');
+}
+
+function persistFlashcardsToDisk() {
+  try {
+    const filePath = getFlashcardStoreFilePath();
+    const data = {
+      customCards: Array.from(customFlashcardsStore.values()),
+      reviews: Array.from(flashcardReviewsStore.values()),
+      savedAt: new Date().toISOString()
+    };
+    const tmp = `${filePath}.tmp_${Date.now()}`;
+    fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
+    fs.renameSync(tmp, filePath);
+  } catch (err: any) {
+    console.warn('[Flashcards] Persistence warning:', err?.message || err);
+  }
+}
+
+function hydrateFlashcardsFromDisk() {
+  try {
+    const filePath = getFlashcardStoreFilePath();
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.customCards)) {
+        for (const card of data.customCards) {
+          if (card.id) customFlashcardsStore.set(card.id, card);
+        }
+      }
+      if (Array.isArray(data.reviews)) {
+        for (const rev of data.reviews) {
+          const key = `${rev.userId || rev.user_id}:::${rev.cardId || rev.card_id}`;
+          flashcardReviewsStore.set(key, rev);
+        }
+      }
+    }
+  } catch (_err) {}
+}
+
+// Hydrate on startup
+hydrateFlashcardsFromDisk();
+
+function computeLeitnerSchedule(currentBox: number, rating: 'easy' | 'hard') {
+  let newBox = 1;
+  let intervalMs = 4 * 60 * 60 * 1000; // 4 hours for hard / repeat
+
+  if (rating === 'easy') {
+    newBox = Math.min(5, Math.max(1, currentBox) + 1);
+    switch (newBox) {
+      case 2:
+        intervalMs = 24 * 60 * 60 * 1000; // 1 day
+        break;
+      case 3:
+        intervalMs = 3 * 24 * 60 * 60 * 1000; // 3 days
+        break;
+      case 4:
+        intervalMs = 7 * 24 * 60 * 60 * 1000; // 7 days
+        break;
+      case 5:
+        intervalMs = 14 * 24 * 60 * 60 * 1000; // 14 days
+        break;
+      default:
+        intervalMs = 24 * 60 * 60 * 1000;
+    }
+  } else {
+    newBox = 1;
+    intervalMs = 4 * 60 * 60 * 1000;
+  }
+
+  const now = Date.now();
+  return {
+    newBox,
+    intervalMs,
+    nextReviewAt: new Date(now + intervalMs).toISOString(),
+    reviewedAt: new Date(now).toISOString()
+  };
+}
+
+// 1. LIST FLASHCARDS (SEED + USER'S CUSTOM CARDS)
+router.get('/api/academic/flashcards', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const examParam = (req.query.exam as string) || 'ALL';
+    const normExam = examParam.trim().toUpperCase().replace(/\s+/g, '_');
+
+    // Filter seed cards
+    let seed = SEED_FLASHCARDS;
+    if (normExam !== 'ALL') {
+      seed = SEED_FLASHCARDS.filter(c => c.exam === 'ALL' || c.exam.toUpperCase() === normExam);
+    }
+
+    // Filter user's custom cards with strict tenant isolation (PostgreSQL authoritative)
+    const customCards: FlashcardItem[] = [];
+    if (verifiedUser?.sub) {
+      if (pgPool) {
+        try {
+          const dbRes = await queryPostgres(
+            'SELECT * FROM public.flashcards WHERE user_id = $1 ORDER BY created_at DESC',
+            [verifiedUser.sub]
+          );
+          for (const c of dbRes.rows) {
+            if (normExam === 'ALL' || c.exam === 'ALL' || (c.exam && c.exam.toUpperCase() === normExam)) {
+              customCards.push({
+                id: c.id,
+                userId: c.user_id,
+                user_id: c.user_id,
+                exam: c.exam,
+                category: c.category,
+                question: c.question,
+                answer: c.answer,
+                hint: c.hint,
+                isCustom: true,
+                created_at: c.created_at,
+                updated_at: c.updated_at
+              });
+            }
+          }
+        } catch (dbErr: any) {
+          console.error('[Flashcards] Database select error:', dbErr.message);
+          return res.status(500).json({ success: false, error: 'Database query error: ' + dbErr.message });
+        }
+      } else if (supabaseServer) {
+        const { data: dbCards, error: dbErr } = await supabaseServer
+          .from('flashcards')
+          .select('*')
+          .eq('user_id', verifiedUser.sub);
+        if (dbErr) {
+          console.error('[Flashcards] Database select error:', dbErr.message);
+          return res.status(500).json({ success: false, error: 'Database query error: ' + dbErr.message });
+        }
+        if (Array.isArray(dbCards)) {
+          for (const c of dbCards) {
+            if (normExam === 'ALL' || c.exam === 'ALL' || (c.exam && c.exam.toUpperCase() === normExam)) {
+              customCards.push({
+                id: c.id,
+                userId: c.user_id,
+                user_id: c.user_id,
+                exam: c.exam,
+                category: c.category,
+                question: c.question,
+                answer: c.answer,
+                hint: c.hint,
+                isCustom: true,
+                created_at: c.created_at,
+                updated_at: c.updated_at
+              });
+            }
+          }
+        }
+      } else {
+        for (const card of customFlashcardsStore.values()) {
+          if (card.userId === verifiedUser.sub || card.user_id === verifiedUser.sub) {
+            if (normExam === 'ALL' || card.exam === 'ALL' || card.exam.toUpperCase() === normExam) {
+              customCards.push(card);
+            }
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      exam: examParam,
+      cards: [...seed, ...customCards],
+      total: seed.length + customCards.length,
+      customCount: customCards.length
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to retrieve flashcards: ' + err.message });
+  }
+});
+
+// 2. CREATE CUSTOM FLASHCARD
+router.post('/api/academic/flashcards/custom', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required to create custom flashcards' });
+    }
+
+    const { question, answer, category, hint, exam } = req.body;
+    if (!question || typeof question !== 'string' || !question.trim()) {
+      return res.status(400).json({ success: false, error: 'Flashcard question is required' });
+    }
+    if (!answer || typeof answer !== 'string' || !answer.trim()) {
+      return res.status(400).json({ success: false, error: 'Flashcard answer is required' });
+    }
+
+    const cardId = `fc_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
+    const now = new Date().toISOString();
+
+    const newCard: FlashcardItem = {
+      id: cardId,
+      user_id: verifiedUser.sub,
+      userId: verifiedUser.sub,
+      exam: (exam || 'ALL').toString().trim(),
+      category: (category || 'Custom Notes').toString().trim(),
+      question: question.trim(),
+      answer: answer.trim(),
+      hint: (hint || 'Custom note').toString().trim(),
+      isCustom: true,
+      created_at: now,
+      updated_at: now
+    };
+
+    // Authoritative PostgreSQL persistence
+    if (pgPool) {
+      try {
+        await queryPostgres(
+          'INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+          [verifiedUser.sub, verifiedUser.email || 'user@example.com']
+        );
+        await queryPostgres(
+          `INSERT INTO public.flashcards (id, user_id, exam, category, question, answer, hint, is_custom, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, true, $8, $9)
+           ON CONFLICT (id) DO UPDATE SET
+             exam = EXCLUDED.exam,
+             category = EXCLUDED.category,
+             question = EXCLUDED.question,
+             answer = EXCLUDED.answer,
+             hint = EXCLUDED.hint,
+             updated_at = EXCLUDED.updated_at`,
+          [cardId, verifiedUser.sub, newCard.exam, newCard.category, newCard.question, newCard.answer, newCard.hint, now, now]
+        );
+      } catch (dbErr: any) {
+        console.error('[Flashcards] Database insert failure:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + dbErr.message });
+      }
+    } else if (supabaseServer) {
+      const { error: dbErr } = await supabaseServer.from('flashcards').upsert([{
+        id: cardId,
+        user_id: verifiedUser.sub,
+        exam: newCard.exam,
+        category: newCard.category,
+        question: newCard.question,
+        answer: newCard.answer,
+        hint: newCard.hint,
+        is_custom: true,
+        created_at: now,
+        updated_at: now
+      }]);
+      if (dbErr) {
+        console.error('[Flashcards] Database insert failure:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + dbErr.message });
+      }
+    }
+
+    customFlashcardsStore.set(cardId, newCard);
+    persistFlashcardsToDisk();
+
+    res.status(201).json({ success: true, card: newCard });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to create flashcard: ' + err.message });
+  }
+});
+
+// 3. UPDATE CUSTOM FLASHCARD
+router.put('/api/academic/flashcards/custom/:id', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const cardId = req.params.id;
+    const card = customFlashcardsStore.get(cardId);
+    if (!card) {
+      return res.status(404).json({ success: false, error: 'Flashcard not found' });
+    }
+
+    // IDOR ownership check
+    if (card.userId !== verifiedUser.sub && card.user_id !== verifiedUser.sub && verifiedUser.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Forbidden: You do not own this flashcard' });
+    }
+
+    const { question, answer, category, hint, exam } = req.body;
+    if (question && typeof question === 'string') card.question = question.trim();
+    if (answer && typeof answer === 'string') card.answer = answer.trim();
+    if (category && typeof category === 'string') card.category = category.trim();
+    if (hint && typeof hint === 'string') card.hint = hint.trim();
+    if (exam && typeof exam === 'string') card.exam = exam.trim();
+    card.updated_at = new Date().toISOString();
+
+    if (pgPool) {
+      try {
+        const updateRes = await queryPostgres(
+          `UPDATE public.flashcards SET
+             question = COALESCE($1, question),
+             answer = COALESCE($2, answer),
+             category = COALESCE($3, category),
+             hint = COALESCE($4, hint),
+             exam = COALESCE($5, exam),
+             updated_at = $6
+           WHERE id = $7 AND (user_id = $8 OR $9 = 'ADMIN')
+           RETURNING *`,
+          [card.question, card.answer, card.category, card.hint, card.exam, card.updated_at, cardId, verifiedUser.sub, verifiedUser.role]
+        );
+        if (updateRes.rowCount === 0) {
+          return res.status(403).json({ success: false, error: 'Forbidden: You do not own this flashcard' });
+        }
+      } catch (dbErr: any) {
+        console.error('[Flashcards] Database update error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database update error: ' + dbErr.message });
+      }
+    } else if (supabaseServer) {
+      const { error: dbErr } = await supabaseServer
+        .from('flashcards')
+        .update({
+          question: card.question,
+          answer: card.answer,
+          category: card.category,
+          hint: card.hint,
+          exam: card.exam,
+          updated_at: card.updated_at
+        })
+        .eq('id', cardId)
+        .eq('user_id', verifiedUser.sub);
+      if (dbErr) {
+        console.error('[Flashcards] Database update error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database update error: ' + dbErr.message });
+      }
+    }
+
+    customFlashcardsStore.set(cardId, card);
+    persistFlashcardsToDisk();
+
+    res.json({ success: true, card });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to update flashcard: ' + err.message });
+  }
+});
+
+// 4. DELETE CUSTOM FLASHCARD
+router.delete('/api/academic/flashcards/custom/:id', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const cardId = req.params.id;
+    const card = customFlashcardsStore.get(cardId);
+    if (!card) {
+      return res.status(404).json({ success: false, error: 'Flashcard not found' });
+    }
+
+    // IDOR ownership check
+    if (card.userId !== verifiedUser.sub && card.user_id !== verifiedUser.sub && verifiedUser.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Forbidden: You do not own this flashcard' });
+    }
+
+    if (pgPool) {
+      try {
+        const delRes = await queryPostgres(
+          'DELETE FROM public.flashcards WHERE id = $1 AND (user_id = $2 OR $3 = \'ADMIN\') RETURNING id',
+          [cardId, verifiedUser.sub, verifiedUser.role]
+        );
+        if (delRes.rowCount === 0) {
+          return res.status(403).json({ success: false, error: 'Forbidden: You do not own this flashcard' });
+        }
+      } catch (dbErr: any) {
+        console.error('[Flashcards] Database delete error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database delete error: ' + dbErr.message });
+      }
+    } else if (supabaseServer) {
+      const { error: dbErr } = await supabaseServer
+        .from('flashcards')
+        .delete()
+        .eq('id', cardId)
+        .eq('user_id', verifiedUser.sub);
+      if (dbErr) {
+        console.error('[Flashcards] Database delete error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database delete error: ' + dbErr.message });
+      }
+    }
+
+    customFlashcardsStore.delete(cardId);
+    flashcardReviewsStore.delete(`${verifiedUser.sub}:::${cardId}`);
+    persistFlashcardsToDisk();
+
+    res.json({ success: true, message: 'Flashcard deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to delete flashcard: ' + err.message });
+  }
+});
+
+// 5. GET REVIEWS & LEITNER STATE FOR USER
+router.get('/api/academic/flashcards/reviews', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required to view reviews' });
+    }
+
+    const userId = verifiedUser.sub;
+    const userReviews: Record<string, any> = {};
+    const boxDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let easyCount = 0;
+    let hardCount = 0;
+    let dueCount = 0;
+    const nowIso = new Date().toISOString();
+
+    if (pgPool) {
+      try {
+        const dbReviews = await queryPostgres(
+          'SELECT * FROM public.flashcard_reviews WHERE user_id = $1',
+          [userId]
+        );
+        for (const rev of dbReviews.rows) {
+          const cardId = rev.card_id;
+          userReviews[cardId] = {
+            rating: rev.rating,
+            leitnerBox: rev.leitner_box || 1,
+            nextReviewAt: rev.next_review_at,
+            reviewedAt: rev.reviewed_at,
+            reviewCount: rev.review_count || 1
+          };
+          const box = rev.leitner_box || 1;
+          boxDistribution[box] = (boxDistribution[box] || 0) + 1;
+          if (rev.rating === 'easy') easyCount++;
+          else if (rev.rating === 'hard') hardCount++;
+          const nextRev = rev.next_review_at;
+          if (nextRev && nextRev <= nowIso) {
+            dueCount++;
+          }
+        }
+      } catch (dbRevErr: any) {
+        console.error('[Flashcards] Review fetch error:', dbRevErr.message);
+        return res.status(500).json({ success: false, error: 'Database query error: ' + dbRevErr.message });
+      }
+    } else if (supabaseServer) {
+      const { data: dbReviews, error: dbRevErr } = await supabaseServer
+        .from('flashcard_reviews')
+        .select('*')
+        .eq('user_id', userId);
+      if (dbRevErr) {
+        console.error('[Flashcards] Review fetch error:', dbRevErr.message);
+        return res.status(500).json({ success: false, error: 'Database query error: ' + dbRevErr.message });
+      }
+      if (Array.isArray(dbReviews)) {
+        for (const rev of dbReviews) {
+          const cardId = rev.card_id;
+          userReviews[cardId] = {
+            rating: rev.rating,
+            leitnerBox: rev.leitner_box || 1,
+            nextReviewAt: rev.next_review_at,
+            reviewedAt: rev.reviewed_at,
+            reviewCount: rev.review_count || 1
+          };
+          const box = rev.leitner_box || 1;
+          boxDistribution[box] = (boxDistribution[box] || 0) + 1;
+          if (rev.rating === 'easy') easyCount++;
+          else if (rev.rating === 'hard') hardCount++;
+          const nextRev = rev.next_review_at;
+          if (nextRev && nextRev <= nowIso) {
+            dueCount++;
+          }
+        }
+      }
+    } else {
+      for (const [key, rev] of flashcardReviewsStore.entries()) {
+        if (key.startsWith(`${userId}:::`)) {
+          const cardId = rev.cardId || rev.card_id;
+          userReviews[cardId] = {
+            rating: rev.rating,
+            leitnerBox: rev.leitnerBox || rev.leitner_box || 1,
+            nextReviewAt: rev.nextReviewAt || rev.next_review_at,
+            reviewedAt: rev.reviewedAt || rev.reviewed_at,
+            reviewCount: rev.reviewCount || rev.review_count || 1
+          };
+
+          const box = rev.leitnerBox || rev.leitner_box || 1;
+          boxDistribution[box] = (boxDistribution[box] || 0) + 1;
+
+          if (rev.rating === 'easy') easyCount++;
+          else if (rev.rating === 'hard') hardCount++;
+
+          const nextRev = rev.nextReviewAt || rev.next_review_at;
+          if (nextRev && nextRev <= nowIso) {
+            dueCount++;
+          }
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      reviews: userReviews,
+      statistics: {
+        totalReviewed: Object.keys(userReviews).length,
+        easyCount,
+        hardCount,
+        dueCount,
+        boxDistribution
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to retrieve review state: ' + err.message });
+  }
+});
+
+// 6. SUBMIT REVIEW RATING (AUTHORITATIVE LEITNER CALCULATION)
+router.post('/api/academic/flashcards/review', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required to submit flashcard review' });
+    }
+
+    const { cardId, rating } = req.body;
+    if (!cardId || typeof cardId !== 'string') {
+      return res.status(400).json({ success: false, error: 'cardId is required' });
+    }
+
+    const normalizedRating = String(rating || '').trim().toLowerCase();
+    if (normalizedRating !== 'easy' && normalizedRating !== 'hard') {
+      return res.status(400).json({ success: false, error: 'Rating must be either "easy" or "hard"' });
+    }
+
+    const userId = verifiedUser.sub;
+    const reviewKey = `${userId}:::${cardId}`;
+
+    // Concurrency & duplicate debounce (only if same rating submitted within 400ms)
+    const now = Date.now();
+    const lastLock = reviewLocks.get(reviewKey);
+    const existingReview = flashcardReviewsStore.get(reviewKey);
+    if (lastLock && now - lastLock < 400 && existingReview && existingReview.rating === normalizedRating) {
+      return res.json({ success: true, idempotent: true, review: existingReview });
+    }
+    reviewLocks.set(reviewKey, now);
+
+    // Verify card exists and belongs to user if custom
+    const customCard = customFlashcardsStore.get(cardId);
+    if (customCard && customCard.userId !== userId && customCard.user_id !== userId && verifiedUser.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Forbidden: Cannot review another user\'s flashcard' });
+    }
+
+    const prevReview = flashcardReviewsStore.get(reviewKey);
+    const currentBox = prevReview ? (prevReview.leitnerBox || prevReview.leitner_box || 1) : 1;
+
+    const schedule = computeLeitnerSchedule(currentBox, normalizedRating as 'easy' | 'hard');
+    const reviewId = prevReview ? prevReview.id : `rev_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
+    const reviewCount = (prevReview ? (prevReview.reviewCount || prevReview.review_count || 0) : 0) + 1;
+
+    const reviewRecord: FlashcardReviewItem = {
+      id: reviewId,
+      card_id: cardId,
+      cardId,
+      user_id: userId,
+      userId,
+      rating: normalizedRating as 'easy' | 'hard',
+      leitner_box: schedule.newBox,
+      leitnerBox: schedule.newBox,
+      next_review_at: schedule.nextReviewAt,
+      nextReviewAt: schedule.nextReviewAt,
+      reviewed_at: schedule.reviewedAt,
+      reviewedAt: schedule.reviewedAt,
+      review_count: reviewCount,
+      reviewCount
+    };
+
+    // Authoritative PostgreSQL persistence
+    if (pgPool) {
+      try {
+        await queryPostgres(
+          'INSERT INTO auth.users (id, email) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+          [userId, verifiedUser.email || 'user@example.com']
+        );
+        await queryPostgres(
+          `INSERT INTO public.flashcard_reviews (id, card_id, user_id, rating, leitner_box, next_review_at, reviewed_at, review_count, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (user_id, card_id) DO UPDATE SET
+             rating = EXCLUDED.rating,
+             leitner_box = EXCLUDED.leitner_box,
+             next_review_at = EXCLUDED.next_review_at,
+             reviewed_at = EXCLUDED.reviewed_at,
+             review_count = public.flashcard_reviews.review_count + 1`,
+          [reviewId, cardId, userId, normalizedRating, schedule.newBox, schedule.nextReviewAt, schedule.reviewedAt, reviewCount, schedule.reviewedAt]
+        );
+      } catch (dbErr: any) {
+        console.error('[Flashcards] Review DB error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + dbErr.message });
+      }
+    } else if (supabaseServer) {
+      const { error: dbErr } = await supabaseServer.from('flashcard_reviews').upsert([{
+        id: reviewId,
+        card_id: cardId,
+        user_id: userId,
+        rating: normalizedRating,
+        leitner_box: schedule.newBox,
+        next_review_at: schedule.nextReviewAt,
+        reviewed_at: schedule.reviewedAt,
+        created_at: schedule.reviewedAt
+      }]);
+      if (dbErr) {
+        console.error('[Flashcards] Review DB error:', dbErr.message);
+        return res.status(500).json({ success: false, error: 'Database persistence error: ' + dbErr.message });
+      }
+    }
+
+    flashcardReviewsStore.set(reviewKey, reviewRecord);
+    persistFlashcardsToDisk();
+
+    res.json({
+      success: true,
+      review: {
+        cardId,
+        rating: normalizedRating,
+        leitnerBox: schedule.newBox,
+        nextReviewAt: schedule.nextReviewAt,
+        reviewedAt: schedule.reviewedAt,
+        reviewCount
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Failed to record flashcard review: ' + err.message });
+  }
+});
+
+// 7. SAFE MIGRATION ROUTE FOR LEGACY LOCALSTORAGE
+router.post('/api/academic/flashcards/migrate', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser?.sub) {
+      return res.status(401).json({ success: false, error: 'Authentication required for migration' });
+    }
+
+    const { customCards, reviews } = req.body;
+    let migratedCards = 0;
+    let migratedReviews = 0;
+    const userId = verifiedUser.sub;
+    const now = new Date().toISOString();
+
+    if (Array.isArray(customCards)) {
+      for (const card of customCards) {
+        if (card && card.question && card.answer) {
+          const cardId = card.id || `fc_${Date.now()}_${crypto.randomUUID().substring(0, 8)}`;
+          if (!customFlashcardsStore.has(cardId)) {
+            const newCard: FlashcardItem = {
+              id: cardId,
+              user_id: userId,
+              userId,
+              exam: card.exam || 'ALL',
+              category: card.category || 'Custom Notes',
+              question: String(card.question).trim(),
+              answer: String(card.answer).trim(),
+              hint: card.hint || 'Custom note',
+              isCustom: true,
+              created_at: now,
+              updated_at: now
+            };
+            customFlashcardsStore.set(cardId, newCard);
+            migratedCards++;
+          }
+        }
+      }
+    }
+
+    if (reviews && typeof reviews === 'object') {
+      for (const [cardId, ratingVal] of Object.entries(reviews)) {
+        const rating = ratingVal === 'easy' ? 'easy' : 'hard';
+        const reviewKey = `${userId}:::${cardId}`;
+        if (!flashcardReviewsStore.has(reviewKey)) {
+          const schedule = computeLeitnerSchedule(1, rating);
+          const reviewRecord: FlashcardReviewItem = {
+            id: `rev_mig_${Date.now()}_${crypto.randomUUID().substring(0, 6)}`,
+            card_id: cardId,
+            cardId,
+            user_id: userId,
+            userId,
+            rating,
+            leitner_box: schedule.newBox,
+            leitnerBox: schedule.newBox,
+            next_review_at: schedule.nextReviewAt,
+            nextReviewAt: schedule.nextReviewAt,
+            reviewed_at: schedule.reviewedAt,
+            reviewedAt: schedule.reviewedAt,
+            review_count: 1,
+            reviewCount: 1
+          };
+          flashcardReviewsStore.set(reviewKey, reviewRecord);
+          migratedReviews++;
+        }
+      }
+    }
+
+    if (migratedCards > 0 || migratedReviews > 0) {
+      persistFlashcardsToDisk();
+    }
+
+    res.json({
+      success: true,
+      migratedCards,
+      migratedReviews,
+      totalCustomCards: Array.from(customFlashcardsStore.values()).filter(c => c.userId === userId).length
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: 'Migration failed: ' + err.message });
+  }
+});
+
 export default router;
+

@@ -62,37 +62,37 @@ export const PodcastSeries: React.FC = () => {
     } catch (err: any) {
       console.warn('Loading curated topper podcasts fallback');
     } finally {
-      // Fallback offline curated topper podcasts
+      // Fallback offline curated podcasts (Synthesized Voice Audio Guides)
       setPodcasts([
         {
           id: 'p1',
-          topperName: 'Anish Thakkar',
-          rank: 'UPSC CSE AIR 3 (2025)',
-          subject: 'Polity & GS Paper 2 Strategy',
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-          duration: '14:20',
-          description: 'Anish details how keeping answer structures simple, drawing flowcharts, and solving past 10 years papers multiple times led to high marks in GS 2.',
-          booklist: ['Indian Polity by Laxmikanth', 'DD Basu Introduction to the Constitution', 'ARC 2nd Reports on Governance']
+          topperName: 'AspirantX Editorial Desk',
+          rank: 'Synthesized Voice Audio Guide',
+          subject: 'Polity & GS Paper 2 Strategy Masterclass',
+          audioUrl: '/audio/upsc_gs2_polity_masterclass.wav',
+          duration: '00:51',
+          description: 'High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the AspirantX academic editorial desk and delivered via synthetic voice narration for study revision.',
+          booklist: ['Indian Polity by M. Laxmikanth', 'Introduction to the Constitution of India by D.D. Basu', 'Second ARC Reports on Ethics in Governance']
         },
         {
           id: 'p2',
-          topperName: 'Priya Sharma',
-          rank: 'UPSC CSE AIR 12 (2025)',
-          subject: 'Geography Optional & Answer Writing',
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-          duration: '18:45',
-          description: 'Priya shares tips on drawing hand-made maps, highlighting map locations in paper 2, and scoring 290+ in Geography optional.',
-          booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by DR Khullar', 'ProTrack Reference Library Map Notes']
+          topperName: 'AspirantX Editorial Desk',
+          rank: 'Synthesized Voice Audio Guide',
+          subject: 'Geography Optional & Mapping Technique Guide',
+          audioUrl: '/audio/geography_answer_writing_guide.wav',
+          duration: '00:42',
+          description: 'Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
+          booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by D.R. Khullar', 'ProTrack Cartography Reference Sheets']
         },
         {
           id: 'p3',
-          topperName: 'Aarav Patel',
-          rank: 'NEET UG 715/720 (AIR 24)',
-          subject: 'Physics Problem Solving & NCERT Biology Line-by-Line',
-          audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-          duration: '16:10',
-          description: 'Aarav explains how to approach tough numericals in Physics and master NCERT line-by-line diagrams for 360/360 in Biology.',
-          booklist: ['NCERT Biology Class 11 & 12', 'Concepts of Physics by HC Verma', 'Physical Chemistry by OP Tandon']
+          topperName: 'AspirantX Editorial Desk',
+          rank: 'Synthesized Voice Audio Guide',
+          subject: 'NEET UG High-Yield Physics & Diagrammatic Biology',
+          audioUrl: '/audio/neet_physics_problem_solving.wav',
+          duration: '00:39',
+          description: 'Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
+          booklist: ['NCERT Biology Class 11 & 12', 'Concepts of Physics by H.C. Verma', 'Physical Chemistry by O.P. Tandon']
         }
       ]);
       setLoading(false);
@@ -223,13 +223,13 @@ export const PodcastSeries: React.FC = () => {
         </div>
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2 tracking-tight">
-            Topper Podcasts & Strategy Hub
+            Strategy Audio Masterclasses & Study Guides
             <span className="text-[9px] bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded border border-sky-500/20 font-semibold tracking-wider uppercase">
-              Audio Engine
+              Synthesized Voice Narration
             </span>
           </h1>
           <p className="text-xs text-slate-400">
-            Listen to strategy interviews, guest lectures, and preparation podcasts from top-ranked civil services officers.
+            High-yield audio strategy lectures and answer-writing frameworks. Masterclasses are scripted by the AspirantX academic editorial desk and rendered via synthetic narration for rapid audio revision.
           </p>
         </div>
       </div>

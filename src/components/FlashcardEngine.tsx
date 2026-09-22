@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BookOpen, 
   Sparkles, 
@@ -7,12 +7,17 @@ import {
   ChevronRight, 
   Smile, 
   Frown, 
-  CheckCircle,
   HelpCircle,
   Plus,
   Info,
   X,
-  Layers
+  Layers,
+  Trash2,
+  CloudCheck,
+  CheckCircle2,
+  Clock,
+  Flame,
+  ShieldCheck
 } from 'lucide-react';
 import { EXAM_LIST } from '../lib/examList';
 import { normalizeExamId } from '../lib/examRegistry';
@@ -25,6 +30,14 @@ export interface Flashcard {
   answer: string;
   hint: string;
   isCustom?: boolean;
+}
+
+export interface ReviewState {
+  rating: 'easy' | 'hard';
+  leitnerBox: number;
+  nextReviewAt?: string;
+  reviewedAt?: string;
+  reviewCount?: number;
 }
 
 const SEED_FLASHCARDS: Flashcard[] = [
@@ -76,7 +89,7 @@ const SEED_FLASHCARDS: Flashcard[] = [
     exam: 'NDA_NA',
     category: 'General Knowledge — Indian History',
     question: 'Battle of Plassey (1757) kis kis ke beech hui thi aur iska historic significance kya tha?',
-    answer: 'Battle of Plassey 23 June 1757 ko Nawab of Bengal (Siraj-ud-Daulah) aur British East India Company (Robert Clive) ke beech hui थी. Mir Jafar ki treachery ki wajah se Clive jeeta aur Bharat me British rule ki foundation padi.',
+    answer: 'Battle of Plassey 23 June 1757 ko Nawab of Bengal (Siraj-ud-Daulah) aur British East India Company (Robert Clive) ke beech hui thi. Mir Jafar ki treachery ki wajah se Clive jeeta aur Bharat me British rule ki foundation padi.',
     hint: 'Robert Clive vs Siraj-ud-Daulah'
   },
 
@@ -106,6 +119,16 @@ const SEED_FLASHCARDS: Flashcard[] = [
     question: 'Right-angled triangle me Inradius (r) aur Circumradius (R) ki lengths ka formula kya hota hai?',
     answer: 'Right-angled triangle with sides a, b and hypotenuse c:\nInradius r = (a + b - c) / 2\nCircumradius R = c / 2 (Hypotenuse ka half).',
     hint: 'Circumcentre lies at the midpoint of hypotenuse'
+  },
+
+  // JEE MAIN Decks
+  {
+    id: 'jee-f1',
+    exam: 'JEE_MAIN',
+    category: 'Physics — Thermodynamics',
+    question: 'Carnot engine efficiency formula in terms of source temperature T1 and sink temperature T2?',
+    answer: 'Efficiency η = 1 - (T2 / T1) = (T1 - T2) / T1, where temperatures T1 and T2 must be in Kelvin.',
+    hint: 'Temperatures must be absolute (Kelvin)'
   }
 ];
 
@@ -115,28 +138,17 @@ interface FlashcardEngineProps {
 }
 
 export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ 
-  selectedExam = 'NEET_UG',
-  onExamChange 
+  selectedExam = 'NEET_UG'
 }) => {
-  const [cards, setCards] = useState<Flashcard[]>(() => {
-    try {
-      const saved = localStorage.getItem('aspirantx_custom_flashcards');
-      if (saved) {
-        const custom: Flashcard[] = JSON.parse(saved);
-        return [...SEED_FLASHCARDS, ...custom];
-      }
-    } catch {
-      // fallback
-    }
-    return SEED_FLASHCARDS;
-  });
-
+  const [cards, setCards] = useState<Flashcard[]>(SEED_FLASHCARDS);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [showHint, setShowHint] = useState<boolean>(false);
   const [showInfoDrawer, setShowInfoDrawer] = useState<boolean>(false);
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [serverSynced, setServerSynced] = useState<boolean>(false);
 
   // New card form state
   const [newCategory, setNewCategory] = useState<string>('');
@@ -144,14 +156,83 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
   const [newAnswer, setNewAnswer] = useState<string>('');
   const [newHint, setNewHint] = useState<string>('');
 
-  // Review tracking status per card
-  const [reviews, setReviews] = useState<{ [cardId: string]: 'easy' | 'hard' }>(() => {
-    try {
-      const saved = localStorage.getItem('aspirantx_flashcard_reviews');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return {};
+  // Authoritative server review state per card
+  const [reviews, setReviews] = useState<Record<string, ReviewState>>({});
+  const [statistics, setStatistics] = useState({
+    totalReviewed: 0,
+    easyCount: 0,
+    hardCount: 0,
+    dueCount: 0,
+    boxDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<number, number>
   });
+
+  const getAuthHeader = (): Record<string, string> => {
+    const token = localStorage.getItem('aspirantx_auth_token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+  };
+
+  // Fetch cards and reviews from backend
+  const loadFlashcardsData = useCallback(async () => {
+    try {
+      const headers = getAuthHeader();
+      
+      // 1. Fetch cards for selected exam
+      const cardsRes = await fetch(`/api/academic/flashcards?exam=${encodeURIComponent(selectedExam)}`, { headers });
+      if (cardsRes.ok) {
+        const cardsData = await cardsRes.json();
+        if (cardsData.success && Array.isArray(cardsData.cards) && cardsData.cards.length > 0) {
+          setCards(cardsData.cards);
+        }
+      }
+
+      // 2. Fetch server-authoritative review state
+      if (headers['Authorization']) {
+        const reviewsRes = await fetch('/api/academic/flashcards/reviews', { headers });
+        if (reviewsRes.ok) {
+          const reviewsData = await reviewsRes.json();
+          if (reviewsData.success && reviewsData.reviews) {
+            setReviews(reviewsData.reviews);
+            if (reviewsData.statistics) {
+              setStatistics(reviewsData.statistics);
+            }
+            setServerSynced(true);
+          }
+        }
+
+        // 3. One-time Migration: check if legacy localStorage exists
+        const legacyCustom = localStorage.getItem('aspirantx_custom_flashcards');
+        const legacyReviews = localStorage.getItem('aspirantx_flashcard_reviews');
+        if (legacyCustom || legacyReviews) {
+          try {
+            const parsedCustom = legacyCustom ? JSON.parse(legacyCustom) : [];
+            const parsedReviews = legacyReviews ? JSON.parse(legacyReviews) : {};
+            const migrateRes = await fetch('/api/academic/flashcards/migrate', {
+              method: 'POST',
+              headers: { ...headers, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ customCards: parsedCustom, reviews: parsedReviews })
+            });
+            if (migrateRes.ok) {
+              // Only clear legacy storage AFTER server confirms migration
+              localStorage.removeItem('aspirantx_custom_flashcards');
+              localStorage.removeItem('aspirantx_flashcard_reviews');
+              // Reload cards
+              const refreshed = await fetch(`/api/academic/flashcards?exam=${encodeURIComponent(selectedExam)}`, { headers });
+              if (refreshed.ok) {
+                const refData = await refreshed.json();
+                if (refData.cards) setCards(refData.cards);
+              }
+            }
+          } catch (_migErr) {}
+        }
+      }
+    } catch (_err) {
+      console.warn('Flashcards loaded in offline/seed mode');
+    }
+  }, [selectedExam]);
+
+  useEffect(() => {
+    loadFlashcardsData();
+  }, [loadFlashcardsData]);
 
   // Filter cards strictly for normalized active exam or universal cards
   const normActive = normalizeExamId(selectedExam);
@@ -188,53 +269,140 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
     }, 150);
   };
 
-  const handleCreateCard = (e: React.FormEvent) => {
+  const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newQuestion.trim() || !newAnswer.trim()) return;
 
-    const newCard: Flashcard = {
-      id: `custom-${Date.now()}`,
-      exam: selectedExam,
-      category: newCategory.trim() || 'Custom Notes',
-      question: newQuestion,
-      answer: newAnswer,
-      hint: newHint || 'Custom user note',
-      isCustom: true
-    };
-
-    const updated = [...cards, newCard];
-    setCards(updated);
+    setIsSubmitting(true);
+    const headers = getAuthHeader();
 
     try {
-      const customOnly = updated.filter(c => c.isCustom);
-      localStorage.setItem('aspirantx_custom_flashcards', JSON.stringify(customOnly));
-    } catch {
-      // ignore
-    }
+      if (headers['Authorization']) {
+        const res = await fetch('/api/academic/flashcards/custom', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            exam: selectedExam,
+            category: newCategory.trim() || 'Custom Notes',
+            question: newQuestion.trim(),
+            answer: newAnswer.trim(),
+            hint: newHint.trim() || 'Custom user note'
+          })
+        });
 
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.card) {
+            setCards(prev => [...prev, data.card]);
+            setNewCategory('');
+            setNewQuestion('');
+            setNewAnswer('');
+            setNewHint('');
+            setShowCreateModal(false);
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+    } catch (_e) {}
+
+    // Fallback in-memory card
+    const fallbackCard: Flashcard = {
+      id: `fc_${Date.now()}`,
+      exam: selectedExam,
+      category: newCategory.trim() || 'Custom Notes',
+      question: newQuestion.trim(),
+      answer: newAnswer.trim(),
+      hint: newHint.trim() || 'Custom user note',
+      isCustom: true
+    };
+    setCards(prev => [...prev, fallbackCard]);
     setNewCategory('');
     setNewQuestion('');
     setNewAnswer('');
     setNewHint('');
     setShowCreateModal(false);
+    setIsSubmitting(false);
   };
 
-  const markReview = (status: 'easy' | 'hard') => {
+  const handleDeleteCard = async (cardId: string) => {
+    const headers = getAuthHeader();
+    try {
+      if (headers['Authorization']) {
+        await fetch(`/api/academic/flashcards/custom/${cardId}`, {
+          method: 'DELETE',
+          headers
+        });
+      }
+    } catch (_e) {}
+    setCards(prev => prev.filter(c => c.id !== cardId));
+    if (currentIndex >= filteredCards.length - 1) {
+      setCurrentIndex(Math.max(0, filteredCards.length - 2));
+    }
+  };
+
+  const markReview = async (status: 'easy' | 'hard') => {
     if (!currentCard) return;
-    setReviews(prev => {
-      const next = { ...prev, [currentCard.id]: status };
-      try {
-        localStorage.setItem('aspirantx_flashcard_reviews', JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+
+    // Optimistic UI update
+    const prevReview = reviews[currentCard.id];
+    const prevBox = prevReview?.leitnerBox || 1;
+    const optimisticBox = status === 'easy' ? Math.min(5, prevBox + 1) : 1;
+
+    setReviews(prev => ({
+      ...prev,
+      [currentCard.id]: {
+        rating: status,
+        leitnerBox: optimisticBox
+      }
+    }));
+
     handleNext();
+
+    // Authoritative server Leitner update
+    try {
+      const headers = getAuthHeader();
+      if (headers['Authorization']) {
+        const res = await fetch('/api/academic/flashcards/review', {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cardId: currentCard.id, rating: status })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.review) {
+            setReviews(prev => ({
+              ...prev,
+              [currentCard.id]: data.review
+            }));
+            // Refresh stats
+            const statsRes = await fetch('/api/academic/flashcards/reviews', { headers });
+            if (statsRes.ok) {
+              const statsData = await statsRes.json();
+              if (statsData.statistics) setStatistics(statsData.statistics);
+            }
+          }
+        }
+      }
+    } catch (_err) {}
   };
 
-  const easyCount = Object.values(reviews).filter(v => v === 'easy').length;
-  const hardCount = Object.values(reviews).filter(v => v === 'hard').length;
+  const easyCount = statistics.easyCount || Object.values(reviews).filter(v => v.rating === 'easy').length;
+  const hardCount = statistics.hardCount || Object.values(reviews).filter(v => v.rating === 'hard').length;
+  const currentCardReview = currentCard ? reviews[currentCard.id] : null;
 
   const currentExamLabel = EXAM_LIST.find(e => e.id === selectedExam)?.label || selectedExam.replace(/_/g, ' ');
+
+  const getBoxLabel = (box: number) => {
+    switch (box) {
+      case 1: return { label: 'Box 1 • Daily (1 Day)', color: 'bg-amber-500/10 text-amber-300 border-amber-500/20' };
+      case 2: return { label: 'Box 2 • 3 Days', color: 'bg-sky-500/10 text-sky-300 border-sky-500/20' };
+      case 3: return { label: 'Box 3 • 7 Days', color: 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20' };
+      case 4: return { label: 'Box 4 • 14 Days', color: 'bg-purple-500/10 text-purple-300 border-purple-500/20' };
+      case 5: return { label: 'Box 5 • Mastered (30 Days)', color: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' };
+      default: return { label: 'New Card', color: 'bg-slate-800 text-slate-400 border-slate-700' };
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -250,9 +418,14 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
               <span className="text-[10px] bg-sky-500/10 text-sky-400 px-2.5 py-0.5 rounded-full border border-sky-500/20 font-semibold uppercase">
                 {currentExamLabel}
               </span>
+              {serverSynced && (
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-medium flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> Cloud Synced
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              High-yield spaced repetition cards mapped strictly to <strong className="text-slate-200">{currentExamLabel}</strong>.
+              High-yield spaced repetition cards with server-authoritative Leitner scheduling for <strong className="text-slate-200">{currentExamLabel}</strong>.
             </p>
           </div>
         </div>
@@ -261,6 +434,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowInfoDrawer(prev => !prev)}
+            aria-label="Toggle information panel on why to use flashcards"
             className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
           >
             <Info className="w-4 h-4 text-sky-400" />
@@ -269,6 +443,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
 
           <button
             onClick={() => setShowCreateModal(true)}
+            aria-label="Add a custom study flashcard"
             className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
           >
             <Plus className="w-4 h-4" />
@@ -282,6 +457,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
         <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3 relative text-left">
           <button
             onClick={() => setShowInfoDrawer(false)}
+            aria-label="Close information drawer"
             className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
           >
             <X className="w-4 h-4" />
@@ -300,9 +476,9 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
               </p>
             </div>
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-              <strong className="text-sky-400 block font-bold">📈 2. Spaced Repetition</strong>
+              <strong className="text-sky-400 block font-bold">📈 2. Leitner System</strong>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Reviewing hard concepts right before you forget them flattens Ebbinghaus's Forgetting Curve and locks facts into long-term memory.
+                5-box spaced repetition system flattens Ebbinghaus's Forgetting Curve and locks facts into long-term memory automatically.
               </p>
             </div>
             <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
@@ -352,10 +528,15 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
           ))}
         </div>
 
-        <div className="text-xs text-slate-400 font-semibold flex items-center gap-2">
+        <div className="text-xs text-slate-400 font-semibold flex items-center gap-2 flex-wrap">
           <span>Reviewed: {easyCount + hardCount}</span>
           <span className="text-emerald-400 font-medium">({easyCount} Easy</span>
           <span className="text-rose-400 font-medium">• {hardCount} Hard)</span>
+          {statistics.dueCount > 0 && (
+            <span className="text-amber-400 font-medium bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              {statistics.dueCount} Due Today
+            </span>
+          )}
         </div>
       </div>
 
@@ -370,8 +551,13 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="text-center text-xs font-semibold text-slate-400">
-            Card {currentIndex + 1} of {filteredCards.length}
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-400 px-2">
+            <span>Card {currentIndex + 1} of {filteredCards.length}</span>
+            {currentCardReview && (
+              <span className={`px-2.5 py-0.5 rounded-full border text-[11px] font-bold ${getBoxLabel(currentCardReview.leitnerBox).color}`}>
+                {getBoxLabel(currentCardReview.leitnerBox).label}
+              </span>
+            )}
           </div>
 
           <div
@@ -383,13 +569,37 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
             }`}
           >
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[10px] font-semibold uppercase">
-                {currentCard.category}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[10px] font-semibold uppercase">
+                  {currentCard.category}
+                </span>
+                {currentCard.isCustom && (
+                  <span className="px-2 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px] font-bold">
+                    Custom Card
+                  </span>
+                )}
+              </div>
 
-              <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
-                <RotateCw className="w-3 h-3 text-sky-400" /> Click anywhere to flip
-              </span>
+              <div className="flex items-center gap-3">
+                {currentCard.isCustom && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm('Delete this custom flashcard?')) {
+                        handleDeleteCard(currentCard.id);
+                      }
+                    }}
+                    aria-label="Delete this custom flashcard"
+                    className="text-rose-400 hover:text-rose-300 p-1"
+                    title="Delete card"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-1">
+                  <RotateCw className="w-3 h-3 text-sky-400" /> Click anywhere to flip
+                </span>
+              </div>
             </div>
 
             <div className="my-6 text-center text-base sm:text-lg font-bold leading-relaxed whitespace-pre-line px-4">
@@ -414,6 +624,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
                     e.stopPropagation();
                     setShowHint(!showHint);
                   }}
+                  aria-label="Toggle memory hint"
                   className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
@@ -431,6 +642,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
           <div className="flex items-center justify-between gap-4 pt-2">
             <button
               onClick={handlePrev}
+              aria-label="Navigate to previous flashcard"
               className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-300 flex items-center gap-1.5 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" /> Previous Card
@@ -439,15 +651,17 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() => markReview('hard')}
+                aria-label="Mark card as hard: reset to Leitner Box 1"
                 className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1 transition-colors"
-                title="Mark for Spaced Repetition Review"
+                title="Mark Hard (Box 1 • Review in 4 Hours)"
               >
                 <Frown className="w-4 h-4" /> Hard
               </button>
               <button
                 onClick={() => markReview('easy')}
+                aria-label="Mark card as easy: advance to next Leitner Box"
                 className="px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-colors"
-                title="Mastered"
+                title="Mark Easy (Advance Leitner Box)"
               >
                 <Smile className="w-4 h-4" /> Easy
               </button>
@@ -455,6 +669,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
 
             <button
               onClick={handleNext}
+              aria-label="Navigate to next flashcard"
               className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-colors"
             >
               Next Card <ChevronRight className="w-4 h-4" />
@@ -472,7 +687,11 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
                 <Plus className="w-4 h-4 text-sky-400" />
                 Add Custom Flashcard for {currentExamLabel}
               </h3>
-              <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-white">
+              <button 
+                onClick={() => setShowCreateModal(false)}
+                aria-label="Close create flashcard modal" 
+                className="text-slate-400 hover:text-white"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -535,9 +754,10 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold shadow-sm"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-semibold shadow-sm"
                 >
-                  Save Card
+                  {isSubmitting ? 'Saving to Database...' : 'Save Card'}
                 </button>
               </div>
             </form>

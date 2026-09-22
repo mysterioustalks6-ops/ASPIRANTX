@@ -142,7 +142,12 @@ export async function middleware(req: any) {
 export async function expressEdgeMiddleware(req: any, res: any, next: any) {
   try {
     const pathname = req.path || req.url || '';
-    const isAdminPath = pathname === '/admin' || pathname.startsWith('/admin/') || pathname.startsWith('/api/admin');
+    const isPublicConfigRead = req.method === 'GET' && (
+      pathname === '/api/admin/customizer' ||
+      pathname === '/api/admin/demo-limits' ||
+      pathname.startsWith('/api/public/')
+    );
+    const isAdminPath = (pathname === '/admin' || pathname.startsWith('/admin/') || pathname.startsWith('/api/admin')) && !isPublicConfigRead;
     if (!isAdminPath) {
       return next();
     }

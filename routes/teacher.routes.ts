@@ -1850,8 +1850,8 @@ router.get('/api/podcasts', async (_req, res) => {
   try {
     if (supabaseServer) {
       try {
-        const { data } = await supabaseServer.from('podcasts').select('id, title, description, audio_url, duration, category, created_at, data');
-        if (data && data.length > 0) {
+        const { data, error } = await supabaseServer.from('podcasts').select('*');
+        if (!error && data && data.length > 0) {
           for (const item of data) {
             const pod = item.data ? { ...item.data, id: item.id } : item;
             if (pod.id) podcastsStore.set(pod.id, pod);

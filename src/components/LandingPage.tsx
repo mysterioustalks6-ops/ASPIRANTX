@@ -119,29 +119,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         });
 
         if (error) {
-          if (emailInput.trim().toLowerCase() === 'ambujyadav0010@gmail.com') {
-            setShowEmailModal(false);
-            const adminUser: UserProfile = {
-              id: 'admin-ambuj-123',
-              name: 'Ambuj Yadav (Admin)',
-              email: 'ambujyadav0010@gmail.com',
-              avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
-              exam: 'UPSC_CSE',
-              targetYear: 2026,
-              streakDays: 45,
-              isPremium: true,
-              studyHoursToday: 6.0,
-              xp: 2500,
-              coins: 999,
-              level: 10,
-              role: 'ADMIN',
-              isProfileComplete: true,
-            };
-            document.cookie = `user_email=ambujyadav0010@gmail.com; path=/; max-age=86400`;
-            document.cookie = `user_role=ADMIN; path=/; max-age=86400`;
-            onLoginSuccess(adminUser);
-            return;
-          }
           setAuthError(error.message);
         } else if (data?.user) {
           logAuthDiagnostic('AUTH', 'session immediately after signIn', {

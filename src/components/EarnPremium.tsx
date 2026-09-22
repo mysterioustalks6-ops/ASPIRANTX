@@ -19,6 +19,8 @@ export const EarnPremium: React.FC<EarnPremiumProps> = ({ user, onNavigate }) =>
   const [justUnlockedModal, setJustUnlockedModal] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const [activeSession, setActiveSession] = useState<{ sessionId: string; sessionToken: string } | null>(null);
+
   const fetchStatus = async () => {
     try {
       const token = localStorage.getItem('aspirantx_auth_token');
@@ -59,13 +61,42 @@ export const EarnPremium: React.FC<EarnPremiumProps> = ({ user, onNavigate }) =>
     };
   }, [watchingAd, adCountdown]);
 
-  const handleStartWatchAd = () => {
-    setAdCountdown(15);
-    setWatchingAd(true);
+  const handleStartWatchAd = async () => {
+    setErrorMsg(null);
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch('/api/rewards/ad-session/start', {
+        method: 'POST',
+        headers
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || 'Failed to start verified ad session.');
+        return;
+      }
+
+      setActiveSession({
+        sessionId: data.sessionId,
+        sessionToken: data.sessionToken
+      });
+      setAdCountdown(data.minDurationSeconds || 15);
+      setWatchingAd(true);
+    } catch (e) {
+      setErrorMsg('Network error starting ad session.');
+    }
   };
 
   const onAdWatchComplete = async () => {
     setWatchingAd(false);
+    if (!activeSession) {
+      setErrorMsg('Verification session not found.');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('aspirantx_auth_token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -74,9 +105,19 @@ export const EarnPremium: React.FC<EarnPremiumProps> = ({ user, onNavigate }) =>
       const res = await fetch('/api/rewards/watch-ad', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ email: user?.email }),
+        body: JSON.stringify({
+          sessionId: activeSession.sessionId,
+          sessionToken: activeSession.sessionToken
+        }),
       });
+
       const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || 'Ad verification failed.');
+        setActiveSession(null);
+        return;
+      }
+
       if (data && data.viewsToday !== undefined) {
         setViewsToday(data.viewsToday);
         setRewardActive(Boolean(data.rewardActive));
@@ -85,8 +126,10 @@ export const EarnPremium: React.FC<EarnPremiumProps> = ({ user, onNavigate }) =>
           setJustUnlockedModal(true);
         }
       }
+      setActiveSession(null);
     } catch (e) {
-      setErrorMsg('Failed to record ad view.');
+      setErrorMsg('Failed to record verified ad view.');
+      setActiveSession(null);
     }
   };
 
@@ -159,11 +202,12 @@ export const EarnPremium: React.FC<EarnPremiumProps> = ({ user, onNavigate }) =>
             </div>
             <button
               onClick={handleStartWatchAd}
-              disabled={watchingAd}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 disabled:opacity-50"
+              disabled={watchingAd || (viewsToday >= 5 && rewardActive)}
+              aria-label={viewsToday >= 5 && rewardActive ? 'Daily ad quota completed. PRO Pass is active.' : 'Watch verified study ad to earn free PRO pass'}
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-sm transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2.5 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               <Play className="w-4 h-4 fill-slate-950" />
-              <span>Watch Study Ad (15s)</span>
+              <span>{viewsToday >= 5 && rewardActive ? 'Daily Limit Reached (PRO Active)' : 'Watch Study Ad (15s)'}</span>
             </button>
           </div>
         </div>

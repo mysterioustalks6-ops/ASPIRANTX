@@ -39,18 +39,39 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
     return INITIAL_TASKS;
   });
 
-  // Reload tasks when selectedExam or userId changes
+  // Reload tasks from Server (with LocalStorage optimistic cache)
   useEffect(() => {
-    const raw = localStorage.getItem(getTaskKey(userId, selectedExam));
-    if (raw) {
+    let unmounted = false;
+    const fetchTasks = async () => {
       try {
-        setTasks(JSON.parse(raw));
-        return;
-      } catch (e) {
-        // fallback
+        const token = localStorage.getItem('aspirantx_auth_token');
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`/api/user/tasks?userId=${encodeURIComponent(userId || 'guest')}&exam=${encodeURIComponent(selectedExam || 'NEET_UG')}`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.tasks) && data.tasks.length > 0 && !unmounted) {
+            setTasks(data.tasks);
+            localStorage.setItem(getTaskKey(userId, selectedExam), JSON.stringify(data.tasks));
+            return;
+          }
+        }
+      } catch (_err) {}
+
+      // Fallback to local storage
+      const raw = localStorage.getItem(getTaskKey(userId, selectedExam));
+      if (raw && !unmounted) {
+        try {
+          setTasks(JSON.parse(raw));
+          return;
+        } catch (e) {}
       }
-    }
-    setTasks(INITIAL_TASKS);
+      if (!unmounted) setTasks(INITIAL_TASKS);
+    };
+
+    fetchTasks();
+    return () => { unmounted = true; };
   }, [selectedExam, userId]);
 
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -62,8 +83,6 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
   const [newPriority, setNewPriority] = useState<'High' | 'Medium' | 'Low'>('High');
   const [newMinutes, setNewMinutes] = useState<number>(45);
   const [newStatus, setNewStatus] = useState<TaskStatus>('todo');
-
-  // NOTE: Removed duplicate [userId]-only useEffect — the [selectedExam, userId] effect above handles both cases.
 
   // Save to LocalStorage on change per exam
   useEffect(() => {
@@ -90,6 +109,19 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
       })
     );
 
+    // Sync status with server
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      fetch(`/api/user/tasks/${id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ status: nextStatus, userId, exam: selectedExam })
+      }).catch(() => {});
+    } catch (_e) {}
+
     if (earnedReward) {
       await awardXPAndCoins(20, 5, 'Completed Daily Task', userId);
       try {
@@ -114,6 +146,12 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
 
   const deleteTask = (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      fetch(`/api/user/tasks/${id}`, { method: 'DELETE', headers }).catch(() => {});
+    } catch (_e) {}
   };
 
   const handleAddTask = (e: React.FormEvent) => {
@@ -134,6 +172,18 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
     setTasks([newTask, ...tasks]);
     setNewTitle('');
     setShowAddModal(false);
+
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      fetch('/api/user/tasks', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ ...newTask, userId, exam: selectedExam })
+      }).catch(() => {});
+    } catch (_e) {}
   };
 
   // Drag and Drop Handlers
