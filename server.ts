@@ -10,6 +10,7 @@ import { expressEdgeMiddleware } from './authMiddleware.js';
 // Import Shared Backend State & Hydration
 import * as Shared from './routes/shared.js';
 import { isSupabaseDbConfigured, supabaseServer, APP_VERSION } from './routes/shared.js';
+import { pgPool } from './src/lib/postgres.js';
 
 // Import Modular Routers
 import academicRoutes from './routes/academic.routes.js';
@@ -102,6 +103,8 @@ app.get('/api/health', (_req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development',
     version: '1.0.0-enterprise',
+    postgresConfigured: Boolean(process.env.DATABASE_URL),
+    neonPoolInitialized: Boolean(pgPool),
     supabaseUrl: Boolean(process.env.VITE_SUPABASE_URL),
     supabaseKey: Boolean(process.env.VITE_SUPABASE_ANON_KEY),
     isSupabaseDbConfigured,
