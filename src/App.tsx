@@ -644,14 +644,6 @@ function AppContent() {
     }, 600);
 
     async function checkAuthSession() {
-      if (!isSupabaseConfigured) {
-        logAuthDiagnostic('AUTH', 'Supabase not configured, skipping auth restore');
-        recordPerfMarker('authResolved');
-        recordPerfMarker('appShellRendered');
-        setInitializing(false);
-        return;
-      }
-
       try {
         const { data, error } = await supabase.auth.getSession();
         recordPerfMarker('authResolved');
@@ -802,8 +794,8 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    if (isSupabaseConfigured) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (supabase?.auth?.onAuthStateChange) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
         logAuthDiagnostic('AUTH', `auth state event: ${event}`, {
           hasSession: Boolean(session?.user),
           userId: session?.user?.id || null,
@@ -1027,7 +1019,7 @@ function AppContent() {
 
   const handleLogout = async () => {
     logAuthDiagnostic('NAVIGATION', 'Redirecting to /signin', { reason: 'User clicked Logout button' });
-    if (isSupabaseConfigured) {
+    if (supabase?.auth?.signOut) {
       await supabase.auth.signOut().catch(() => {});
     }
     localStorage.removeItem('aspirantx_auth_token');

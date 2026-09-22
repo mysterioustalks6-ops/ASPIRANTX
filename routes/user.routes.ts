@@ -2762,6 +2762,356 @@ router.get('/api/rewards/my-claims', (req, res) => {
   res.json({ success: true, claims: userClaims });
 });
 
+// ─── Direct Google OAuth & Native Authentication Endpoints (Supabase-Free) ───
+router.post('/api/auth/google', async (req, res) => {
+  try {
+    const { credential, accessToken } = req.body;
+    let email = '';
+    let name = '';
+    let picture = '';
+    let googleId = '';
+
+    if (!credential && !accessToken) {
+      return res.status(400).json({ success: false, error: 'Google credential or access token is required.' });
+    }
+
+    if (credential) {
+      const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+      if (!verifyRes.ok) {
+        return res.status(401).json({ success: false, error: 'Invalid Google credential token.' });
+      }
+      const tokenInfo: any = await verifyRes.json();
+      email = String(tokenInfo.email || '').trim().toLowerCase();
+      name = String(tokenInfo.name || tokenInfo.given_name || email.split('@')[0] || 'Aspirant');
+      picture = String(tokenInfo.picture || '');
+      googleId = String(tokenInfo.sub || '');
+    } else if (accessToken) {
+      const userinfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!userinfoRes.ok) {
+        return res.status(401).json({ success: false, error: 'Invalid Google access token.' });
+      }
+      const userInfo: any = await userinfoRes.json();
+      email = String(userInfo.email || '').trim().toLowerCase();
+      name = String(userInfo.name || userInfo.given_name || email.split('@')[0] || 'Aspirant');
+      picture = String(userInfo.picture || '');
+      googleId = String(userInfo.sub || '');
+    }
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Could not extract verified email from Google.' });
+    }
+
+    const isSuper = email === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+    const assignedRole = isSuper ? 'ADMIN' : 'USER';
+    let userId = toCanonicalUuid(`google_${googleId || email}`);
+
+    if (pgPool) {
+      try {
+        const existing = await queryPostgres('SELECT id, raw_user_meta_data FROM auth.users WHERE email = $1 LIMIT 1', [email]);
+        if (existing.rows && existing.rows.length > 0) {
+          userId = existing.rows[0].id;
+        } else {
+          await queryPostgres(
+            'INSERT INTO auth.users (id, email, created_at, raw_user_meta_data) VALUES ($1, $2, NOW(), $3) ON CONFLICT (id) DO NOTHING',
+            [userId, email, JSON.stringify({ name, avatar_url: picture, provider: 'google' })]
+          );
+        }
+
+        await queryPostgres(
+          'INSERT INTO user_profiles (id, xp, coins, level, is_premium, streak_days, updated_at) VALUES ($1, 100, 50, 1, $2, 1, NOW()) ON CONFLICT (id) DO UPDATE SET updated_at = NOW()',
+          [userId, isSuper]
+        );
+
+        const adminUserData = {
+          id: userId,
+          name,
+          email,
+          avatar_url: picture,
+          exam: isSuper ? 'UPSC_CSE' : 'NEET_UG',
+          role: assignedRole,
+          isPremium: isSuper,
+          planName: isSuper ? 'LIFETIME' : 'FREE',
+          streakDays: 1,
+          xp: 100,
+          coins: 50,
+          level: 1,
+          status: 'ACTIVE',
+          isProfileComplete: true,
+          joinedAt: new Date().toISOString()
+        };
+        await queryPostgres(
+          `INSERT INTO admin_users (id, user_id, email, data, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, NOW(), NOW())
+           ON CONFLICT (id) DO UPDATE SET data = $4, updated_at = NOW()`,
+          [userId, userId, email, JSON.stringify(adminUserData)]
+        );
+      } catch (dbErr) {
+        console.warn('Neon persistence in Google auth notice:', dbErr);
+      }
+    }
+
+    let knownUser = adminUsersDb.find((u) => u.email.toLowerCase() === email);
+    if (!knownUser) {
+      knownUser = {
+        id: userId,
+        name,
+        email,
+        exam: isSuper ? 'UPSC_CSE' : 'NEET_UG',
+        role: assignedRole,
+        isPremium: isSuper,
+        planName: isSuper ? 'LIFETIME' : 'FREE',
+        streakDays: 1,
+        xp: 100,
+        coins: 50,
+        level: 1,
+        completedTopicsCount: 0,
+        joinedAt: new Date().toISOString(),
+        status: 'ACTIVE',
+        isProfileComplete: true,
+      };
+      adminUsersDb.push(knownUser);
+      saveAdminStoreToDisk();
+    }
+
+    if (knownUser.status === 'BANNED' && !isSuper) {
+      return res.status(403).json({
+        error: 'ACCOUNT_BANNED',
+        message: 'Your account has been suspended for violating community guidelines.'
+      });
+    }
+
+    const internalToken = jwt.sign(
+      {
+        sub: userId,
+        email,
+        role: assignedRole,
+        isPremium: isSuper || knownUser.isPremium,
+        iss: 'protrack-auth-server'
+      },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    return res.json({
+      success: true,
+      token: internalToken,
+      user: {
+        id: userId,
+        name: knownUser.name || name,
+        email,
+        avatar_url: picture || (knownUser as any).avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        exam: knownUser.exam || (isSuper ? 'UPSC_CSE' : 'NEET_UG'),
+        role: assignedRole,
+        isPremium: isSuper || knownUser.isPremium,
+        streakDays: knownUser.streakDays || 1,
+        xp: knownUser.xp || 100,
+        coins: knownUser.coins || 50,
+        level: knownUser.level || 1,
+        isProfileComplete: true,
+      }
+    });
+  } catch (err: any) {
+    console.error('Google auth error:', err);
+    return res.status(500).json({ success: false, error: err?.message || 'Google authentication failed' });
+  }
+});
+
+router.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+    if (!email || !email.includes('@') || !password || password.length < 6) {
+      return res.status(400).json({ success: false, error: 'A valid email and password (minimum 6 characters) are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = (name || cleanEmail.split('@')[0] || 'Aspirant').trim();
+
+    if (pgPool) {
+      const existing = await queryPostgres('SELECT id FROM auth.users WHERE email = $1 LIMIT 1', [cleanEmail]);
+      if (existing.rows && existing.rows.length > 0) {
+        return res.status(400).json({ success: false, error: 'An account with this email already exists. Please sign in.' });
+      }
+    }
+
+    const salt = crypto.randomBytes(16).toString('hex');
+    const hash = crypto.scryptSync(password, salt, 64).toString('hex');
+    const passwordHash = `${salt}:${hash}`;
+    const userId = toCanonicalUuid(`email_${cleanEmail}`);
+    const isSuper = cleanEmail === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+    const assignedRole = isSuper ? 'ADMIN' : 'USER';
+
+    if (pgPool) {
+      try {
+        await queryPostgres(
+          'INSERT INTO auth.users (id, email, password_hash, created_at, raw_user_meta_data) VALUES ($1, $2, $3, NOW(), $4) ON CONFLICT (id) DO UPDATE SET password_hash = $3',
+          [userId, cleanEmail, passwordHash, JSON.stringify({ name: cleanName })]
+        );
+        await queryPostgres(
+          'INSERT INTO user_profiles (id, xp, coins, level, is_premium, streak_days, updated_at) VALUES ($1, 100, 50, 1, $2, 1, NOW()) ON CONFLICT (id) DO UPDATE SET updated_at = NOW()',
+          [userId, isSuper]
+        );
+        const adminUserData = {
+          id: userId,
+          name: cleanName,
+          email: cleanEmail,
+          exam: isSuper ? 'UPSC_CSE' : 'NEET_UG',
+          role: assignedRole,
+          isPremium: isSuper,
+          planName: isSuper ? 'LIFETIME' : 'FREE',
+          streakDays: 1,
+          xp: 100,
+          coins: 50,
+          level: 1,
+          status: 'ACTIVE',
+          isProfileComplete: true,
+          joinedAt: new Date().toISOString()
+        };
+        await queryPostgres(
+          `INSERT INTO admin_users (id, user_id, email, data, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, NOW(), NOW())
+           ON CONFLICT (id) DO UPDATE SET data = $4, updated_at = NOW()`,
+          [userId, userId, cleanEmail, JSON.stringify(adminUserData)]
+        );
+      } catch (dbErr) {
+        console.warn('Neon persistence in register notice:', dbErr);
+      }
+    }
+
+    const internalToken = jwt.sign(
+      { sub: userId, email: cleanEmail, role: assignedRole, isPremium: isSuper, iss: 'protrack-auth-server' },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    return res.json({
+      success: true,
+      token: internalToken,
+      user: {
+        id: userId,
+        name: cleanName,
+        email: cleanEmail,
+        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        exam: isSuper ? 'UPSC_CSE' : 'NEET_UG',
+        role: assignedRole,
+        isPremium: isSuper,
+        streakDays: 1,
+        xp: 100,
+        coins: 50,
+        level: 1,
+        isProfileComplete: true,
+      }
+    });
+  } catch (err: any) {
+    console.error('Register error:', err);
+    return res.status(500).json({ success: false, error: err?.message || 'Registration failed' });
+  }
+});
+
+router.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    let userRow: any = null;
+
+    if (pgPool) {
+      try {
+        const resQuery = await queryPostgres('SELECT id, email, password_hash, raw_user_meta_data FROM auth.users WHERE email = $1 LIMIT 1', [cleanEmail]);
+        if (resQuery.rows && resQuery.rows.length > 0) {
+          userRow = resQuery.rows[0];
+        }
+      } catch (dbErr) {
+        console.warn('Neon login query notice:', dbErr);
+      }
+    }
+
+    if (!userRow) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password.' });
+    }
+
+    if (userRow.password_hash) {
+      const [salt, storedHash] = userRow.password_hash.split(':');
+      if (salt && storedHash) {
+        const verifyHash = crypto.scryptSync(password, salt, 64).toString('hex');
+        if (verifyHash !== storedHash) {
+          return res.status(401).json({ success: false, error: 'Invalid email or password.' });
+        }
+      }
+    }
+
+    const userId = userRow.id;
+    const isSuper = cleanEmail === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+    const assignedRole = isSuper ? 'ADMIN' : 'USER';
+    const metadata = userRow.raw_user_meta_data || {};
+    const name = metadata.name || cleanEmail.split('@')[0] || 'Aspirant';
+
+    const internalToken = jwt.sign(
+      { sub: userId, email: cleanEmail, role: assignedRole, isPremium: isSuper, iss: 'protrack-auth-server' },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    return res.json({
+      success: true,
+      token: internalToken,
+      user: {
+        id: userId,
+        name,
+        email: cleanEmail,
+        avatar_url: metadata.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        exam: isSuper ? 'UPSC_CSE' : 'NEET_UG',
+        role: assignedRole,
+        isPremium: isSuper,
+        streakDays: 1,
+        xp: 100,
+        coins: 50,
+        level: 1,
+        isProfileComplete: true,
+      }
+    });
+  } catch (err: any) {
+    console.error('Login error:', err);
+    return res.status(500).json({ success: false, error: err?.message || 'Login failed' });
+  }
+});
+
+router.get('/api/auth/me', async (req, res) => {
+  try {
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    if (!verifiedUser) {
+      return res.status(401).json({ success: false, error: 'Authentication required' });
+    }
+
+    const email = verifiedUser.email.toLowerCase();
+    const isSuper = email === DESIGNATED_ADMIN_EMAIL.toLowerCase();
+    const knownUser = adminUsersDb.find((u) => u.email.toLowerCase() === email);
+
+    return res.json({
+      success: true,
+      user: {
+        id: verifiedUser.sub,
+        email,
+        name: knownUser?.name || email.split('@')[0] || 'Aspirant',
+        role: verifiedUser.role,
+        isPremium: isSuper || (knownUser ? knownUser.isPremium : false),
+        exam: knownUser?.exam || (isSuper ? 'UPSC_CSE' : 'NEET_UG'),
+        streakDays: knownUser?.streakDays || 1,
+        xp: knownUser?.xp || 100,
+        coins: knownUser?.coins || 50,
+        level: knownUser?.level || 1,
+        isProfileComplete: true,
+      }
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Failed to fetch user' });
+  }
+});
+
 router.post('/api/auth/token', async (req, res) => {
   const authHeader = req.headers.authorization;
   const clientIp = String(req.headers['x-forwarded-for'] || req.ip || req.socket?.remoteAddress || '127.0.0.1').split(',')[0].trim();

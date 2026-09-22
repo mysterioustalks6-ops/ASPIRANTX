@@ -9,13 +9,16 @@
     <!-- Google AdSense Official Master Script -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8740054860974100" crossorigin="anonymous"></script>
 
+    <!-- Google Identity Services (Direct Sign-In) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
     <!-- Mobile App OAuth Bridge: redirect back into native APK if auth callback is received -->
     <script>
       (function() {
         try {
           var h = window.location.hash || '';
           var s = window.location.search || '';
-          if (h.indexOf('access_token=') !== -1 || s.indexOf('code=') !== -1) {
+          if (h.indexOf('access_token=') !== -1 || s.indexOf('code=') !== -1 || h.indexOf('id_token=') !== -1) {
             var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
             if (isMobile) {
               window.location.replace('com.aspirantx.app://auth' + s + h);
