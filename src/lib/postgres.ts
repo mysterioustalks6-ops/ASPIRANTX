@@ -1,23 +1,25 @@
 import dns from 'dns';
-try {
-  dns.setServers(['8.8.8.8', '1.1.1.1']);
-  const defaultLookup = dns.lookup;
-  (dns.lookup as any) = (hostname: any, options: any, callback: any) => {
-    if (typeof options === 'function') {
-      callback = options;
-      options = {};
-    }
-    dns.resolve4(hostname, (err, addresses) => {
-      if (!err && addresses && addresses.length > 0) {
-        if (options && options.all) {
-          return callback(null, addresses.map((a) => ({ address: a, family: 4 })));
-        }
-        return callback(null, addresses[0], 4);
+if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+    const defaultLookup = dns.lookup;
+    (dns.lookup as any) = (hostname: any, options: any, callback: any) => {
+      if (typeof options === 'function') {
+        callback = options;
+        options = {};
       }
-      defaultLookup(hostname, options, callback);
-    });
-  };
-} catch (_e) {}
+      dns.resolve4(hostname, (err, addresses) => {
+        if (!err && addresses && addresses.length > 0) {
+          if (options && options.all) {
+            return callback(null, addresses.map((a) => ({ address: a, family: 4 })));
+          }
+          return callback(null, addresses[0], 4);
+        }
+        defaultLookup(hostname, options, callback);
+      });
+    };
+  } catch (_e) {}
+}
 
 import pg from 'pg';
 import dotenv from 'dotenv';
