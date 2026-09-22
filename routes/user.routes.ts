@@ -2781,6 +2781,15 @@ router.post('/api/auth/google', async (req, res) => {
         return res.status(401).json({ success: false, error: 'Invalid Google credential token.' });
       }
       const tokenInfo: any = await verifyRes.json();
+      
+      const expectedAud = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '676723605247-47f3o2t685h9j61vo1qeuqma46tlsbu3.apps.googleusercontent.com';
+      if (tokenInfo.aud && tokenInfo.aud !== expectedAud) {
+        return res.status(401).json({ success: false, error: 'Google credential audience mismatch.' });
+      }
+      if (tokenInfo.email_verified !== 'true' && tokenInfo.email_verified !== true) {
+        return res.status(401).json({ success: false, error: 'Google email address is not verified.' });
+      }
+
       email = String(tokenInfo.email || '').trim().toLowerCase();
       name = String(tokenInfo.name || tokenInfo.given_name || email.split('@')[0] || 'Aspirant');
       picture = String(tokenInfo.picture || '');
@@ -2793,6 +2802,10 @@ router.post('/api/auth/google', async (req, res) => {
         return res.status(401).json({ success: false, error: 'Invalid Google access token.' });
       }
       const userInfo: any = await userinfoRes.json();
+      if (userInfo.email_verified !== true && userInfo.email_verified !== 'true') {
+        return res.status(401).json({ success: false, error: 'Google email address is not verified.' });
+      }
+
       email = String(userInfo.email || '').trim().toLowerCase();
       name = String(userInfo.name || userInfo.given_name || email.split('@')[0] || 'Aspirant');
       picture = String(userInfo.picture || '');

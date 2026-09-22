@@ -691,13 +691,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 <p className="font-bold text-sky-400">💡 Quick Troubleshooting Steps:</p>
                 <ul className="list-disc pl-4 space-y-1.5 text-slate-300 text-[11px]">
                   <li>
-                    <strong>If "Provider is not enabled":</strong> Open <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className="text-sky-400 underline">Supabase Dashboard</a> ➔ <strong>Authentication</strong> ➔ <strong>Providers</strong> ➔ Enable Google provider.
+                    <strong>If "popup_closed_by_user":</strong> Please ensure popups are allowed in your browser, or try logging in again.
                   </li>
                   <li>
-                    <strong>If "redirect_uri_mismatch":</strong> In <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-sky-400 underline">Google Cloud Console</a> ➔ OAuth Client ➔ Add <code>https://ixwpkzorjutnhpnybuvx.supabase.co/auth/v1/callback</code> under <em>Authorized redirect URIs</em>.
+                    <strong>If "redirect_uri_mismatch":</strong> In <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer" className="text-sky-400 underline">Google Cloud Console</a> ➔ OAuth Client ➔ Ensure <code>https://aspirantx.vercel.app</code> is added under <em>Authorized JavaScript origins</em> and <em>Authorized redirect URIs</em>.
                   </li>
                   <li>
-                    <strong>Email Sign-In Available:</strong> You can also click "Sign In / Register" in the top bar to sign in or register with email and password directly.
+                    <strong>Email Sign-In Available:</strong> You can also click "Sign In / Register" in the top bar to sign in or register with email and password directly with our database.
                   </li>
                 </ul>
               </div>
