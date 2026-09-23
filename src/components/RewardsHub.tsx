@@ -22,6 +22,7 @@ import {
 import { UserProfile, TrophyItem, ChallengeItem } from '../types';
 import { PressFeedback, SlideUp, CountUp, ProgressAnimation } from '../lib/animations';
 import { RewardMilestones } from './RewardMilestones';
+import { getApiUrl } from '../lib/apiConfig';
 
 interface RewardsHubProps {
   user: UserProfile | null;
@@ -64,34 +65,43 @@ export const RewardsHub: React.FC<RewardsHubProps> = ({
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
+  const getHeaders = () => {
+    const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('supabase.auth.token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (user?.id) headers['x-user-id'] = user.id;
+    if (user?.email) headers['x-user-email'] = user.email;
+    return headers;
+  };
+
   // Fetch Authoritative Data from Neon
   const fetchData = async () => {
     if (!user) return;
     setLoading(true);
     try {
       // 1. Overview
-      const oRes = await fetch('/api/rewards/overview');
+      const oRes = await fetch(getApiUrl('/api/rewards/overview'), { headers: getHeaders() });
       const oData = await oRes.json();
       if (oData.success) {
         setOverview(oData.overview);
       }
 
       // 2. Trophies
-      const tRes = await fetch('/api/rewards/achievements');
+      const tRes = await fetch(getApiUrl('/api/rewards/achievements'), { headers: getHeaders() });
       const tData = await tRes.json();
       if (tData.success) {
         setTrophies(tData.achievements);
       }
 
       // 3. Challenges
-      const cRes = await fetch(`/api/rewards/challenges?exam=${encodeURIComponent(user.exam || 'ALL')}`);
+      const cRes = await fetch(getApiUrl(`/api/rewards/challenges?exam=${encodeURIComponent(user.exam || 'ALL')}`), { headers: getHeaders() });
       const cData = await cRes.json();
       if (cData.success) {
         setChallenges(cData.challenges);
       }
 
       // 4. History
-      const hRes = await fetch('/api/rewards/history?limit=20');
+      const hRes = await fetch(getApiUrl('/api/rewards/history?limit=20'), { headers: getHeaders() });
       const hData = await hRes.json();
       if (hData.success) {
         setHistory(hData.history);

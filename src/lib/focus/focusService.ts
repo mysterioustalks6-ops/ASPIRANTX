@@ -2,6 +2,22 @@ import { pgPool, queryPostgres } from '../postgres.js';
 import { RewardEngine, EventProcessResult } from '../rewards/rewardEngine.js';
 import crypto from 'crypto';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function toCanonicalUuid(input?: string | null): string {
+  if (!input || typeof input !== 'string') return '00000000-0000-4000-8000-000000000000';
+  const trimmed = input.trim();
+  if (UUID_REGEX.test(trimmed)) return trimmed.toLowerCase();
+  const hash = crypto.createHash('sha256').update(`aspirantx_user:${trimmed.toLowerCase()}`).digest('hex');
+  return [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    '4' + hash.substring(13, 16),
+    ((parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0') + hash.substring(18, 20),
+    hash.substring(20, 32)
+  ].join('-').toLowerCase();
+}
+
 export interface FocusSessionRecord {
   id: string;
   userId: string;
@@ -27,6 +43,7 @@ export class FocusService {
     blockedApps: string[];
   }): Promise<{ success: boolean; session: FocusSessionRecord }> {
     const { userId, requestedMinutes, blockedApps } = params;
+    const canonicalUserId = toCanonicalUuid(userId);
 
     const validRequestedMinutes = Math.max(5, Math.min(360, Math.round(Number(requestedMinutes) || 25)));
     const sessionId = `foc_${crypto.randomUUID()}`;
@@ -35,12 +52,20 @@ export class FocusService {
     try {
       await client.query('BEGIN');
 
+      // Ensure user profile exists for foreign key constraint
+      await client.query(
+        `INSERT INTO public.user_profiles (id, xp, coins, level, is_premium, streak_days, updated_at)
+         VALUES ($1, 0, 0, 1, false, 0, NOW())
+         ON CONFLICT (id) DO NOTHING;`,
+        [canonicalUserId]
+      );
+
       // Cancel any existing active sessions for this user to prevent ghost sessions
       await client.query(
         `UPDATE public.focus_sessions
          SET status = 'CANCELLED', updated_at = NOW()
          WHERE user_id = $1 AND status IN ('ACTIVE', 'PAUSED');`,
-        [userId]
+        [canonicalUserId]
       );
 
       const insertRes = await client.query(
@@ -50,7 +75,7 @@ export class FocusService {
          )
          VALUES ($1, $2, $3, 0, 0, $4, 'ACTIVE', NOW(), NOW(), NOW(), NOW(), NOW())
          RETURNING *;`,
-        [sessionId, userId, validRequestedMinutes, JSON.stringify(blockedApps || [])]
+        [sessionId, canonicalUserId, validRequestedMinutes, JSON.stringify(blockedApps || [])]
       );
 
       await client.query('COMMIT');
@@ -77,13 +102,14 @@ export class FocusService {
     sessionId: string;
   }): Promise<{ success: boolean; elapsedSeconds: number }> {
     const { userId, sessionId } = params;
+    const canonicalUserId = toCanonicalUuid(userId);
 
     const res = await queryPostgres(
       `UPDATE public.focus_sessions
        SET last_heartbeat_at = NOW(), updated_at = NOW()
        WHERE id = $1 AND user_id = $2 AND status = 'ACTIVE'
        RETURNING *;`,
-      [sessionId, userId]
+      [sessionId, canonicalUserId]
     );
 
     if (res.rows.length === 0) {
@@ -109,6 +135,7 @@ export class FocusService {
     sessionId: string;
   }): Promise<{ success: boolean; accumulatedSeconds: number }> {
     const { userId, sessionId } = params;
+    const canonicalUserId = toCanonicalUuid(userId);
 
     const client = await pgPool.connect();
     try {
@@ -116,7 +143,7 @@ export class FocusService {
 
       const lockRes = await client.query(
         `SELECT * FROM public.focus_sessions WHERE id = $1 AND user_id = $2 FOR UPDATE;`,
-        [sessionId, userId]
+        [sessionId, canonicalUserId]
       );
 
       if (lockRes.rows.length === 0) {
@@ -158,13 +185,14 @@ export class FocusService {
     sessionId: string;
   }): Promise<{ success: boolean; resumedAt: string }> {
     const { userId, sessionId } = params;
+    const canonicalUserId = toCanonicalUuid(userId);
 
     const res = await queryPostgres(
       `UPDATE public.focus_sessions
        SET status = 'ACTIVE', resumed_at = NOW(), last_heartbeat_at = NOW(), updated_at = NOW()
        WHERE id = $1 AND user_id = $2 AND status = 'PAUSED'
        RETURNING resumed_at;`,
-      [sessionId, userId]
+      [sessionId, canonicalUserId]
     );
 
     if (res.rows.length === 0) {
@@ -187,6 +215,7 @@ export class FocusService {
     rewards: EventProcessResult;
   }> {
     const { userId, sessionId, userExam = 'ALL' } = params;
+    const canonicalUserId = toCanonicalUuid(userId);
 
     const client = await pgPool.connect();
     try {
@@ -194,7 +223,7 @@ export class FocusService {
 
       const lockRes = await client.query(
         `SELECT * FROM public.focus_sessions WHERE id = $1 AND user_id = $2 FOR UPDATE;`,
-        [sessionId, userId]
+        [sessionId, canonicalUserId]
       );
 
       if (lockRes.rows.length === 0) {
@@ -251,7 +280,7 @@ export class FocusService {
         `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, created_at)
          VALUES ($1, $2, $3, $4, NOW())
          ON CONFLICT (id) DO NOTHING;`,
-        [sessionId, userId, verifiedMinutes, pomoDate]
+        [sessionId, canonicalUserId, verifiedMinutes, pomoDate]
       );
 
       await client.query('COMMIT');
@@ -259,7 +288,7 @@ export class FocusService {
       // Dispatch to Reward Engine
       const blockedList = Array.isArray(row.blocked_apps) ? row.blocked_apps : [];
       const rewards = await RewardEngine.processEvent({
-        userId,
+        userId: canonicalUserId,
         eventType: 'FOCUS_SESSION_COMPLETED',
         referenceId: sessionId,
         payload: {
@@ -292,13 +321,14 @@ export class FocusService {
     sessionId: string;
   }): Promise<{ success: boolean }> {
     const { userId, sessionId } = params;
+    const canonicalUserId = toCanonicalUuid(userId);
 
     const res = await queryPostgres(
       `UPDATE public.focus_sessions
        SET status = 'CANCELLED', updated_at = NOW()
        WHERE id = $1 AND user_id = $2 AND status IN ('ACTIVE', 'PAUSED')
        RETURNING id;`,
-      [sessionId, userId]
+      [sessionId, canonicalUserId]
     );
 
     return { success: res.rows.length > 0 };
@@ -313,25 +343,27 @@ export class FocusService {
     totalSessions: number;
     recentSessions: FocusSessionRecord[];
   }> {
+    const canonicalUserId = toCanonicalUuid(userId);
+
     const todayRes = await queryPostgres(
       `SELECT COALESCE(SUM(verified_minutes), 0) as today_minutes
        FROM public.focus_sessions
        WHERE user_id = $1 AND status = 'COMPLETED' AND completed_at >= CURRENT_DATE;`,
-      [userId]
+      [canonicalUserId]
     );
 
     const weekRes = await queryPostgres(
       `SELECT COALESCE(SUM(verified_minutes), 0) as week_minutes
        FROM public.focus_sessions
        WHERE user_id = $1 AND status = 'COMPLETED' AND completed_at >= (CURRENT_DATE - INTERVAL '7 days');`,
-      [userId]
+      [canonicalUserId]
     );
 
     const countRes = await queryPostgres(
       `SELECT COUNT(*) as total_sessions
        FROM public.focus_sessions
        WHERE user_id = $1 AND status = 'COMPLETED';`,
-      [userId]
+      [canonicalUserId]
     );
 
     const recRes = await queryPostgres(
@@ -339,7 +371,7 @@ export class FocusService {
        WHERE user_id = $1
        ORDER BY created_at DESC
        LIMIT 10;`,
-      [userId]
+      [canonicalUserId]
     );
 
     return {

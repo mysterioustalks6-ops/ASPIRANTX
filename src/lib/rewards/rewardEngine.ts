@@ -1,6 +1,22 @@
 import { pgPool, queryPostgres } from '../postgres.js';
 import crypto from 'crypto';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function toCanonicalUuid(input?: string | null): string {
+  if (!input || typeof input !== 'string') return '00000000-0000-4000-8000-000000000000';
+  const trimmed = input.trim();
+  if (UUID_REGEX.test(trimmed)) return trimmed.toLowerCase();
+  const hash = crypto.createHash('sha256').update(`aspirantx_user:${trimmed.toLowerCase()}`).digest('hex');
+  return [
+    hash.substring(0, 8),
+    hash.substring(8, 12),
+    '4' + hash.substring(13, 16),
+    ((parseInt(hash.substring(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0') + hash.substring(18, 20),
+    hash.substring(20, 32)
+  ].join('-').toLowerCase();
+}
+
 export type StudyEventType = 
   | 'POMODORO_COMPLETED'
   | 'TASK_COMPLETED'
@@ -88,6 +104,7 @@ export class RewardEngine {
     userExam?: string;
   }): Promise<EventProcessResult> {
     const { userId, eventType, referenceId, payload, userExam = 'ALL' } = params;
+    const canonicalUserId = toCanonicalUuid(userId);
 
     if (!pgPool) {
       throw new Error('Database pool is not initialized');
@@ -97,6 +114,14 @@ export class RewardEngine {
     try {
       await client.query('BEGIN');
 
+      // Ensure user profile exists
+      await client.query(
+        `INSERT INTO public.user_profiles (id, xp, coins, level, is_premium, streak_days, updated_at)
+         VALUES ($1, 0, 0, 1, false, 0, NOW())
+         ON CONFLICT (id) DO NOTHING;`,
+        [canonicalUserId]
+      );
+
       // 1. Idempotency Check: Insert into reward_events
       const eventId = `evt_${crypto.randomUUID()}`;
       const eventRes = await client.query(
@@ -104,13 +129,13 @@ export class RewardEngine {
          VALUES ($1, $2, $3, $4, $5, NOW())
          ON CONFLICT (user_id, event_type, reference_id) DO NOTHING
          RETURNING id;`,
-        [eventId, userId, eventType, referenceId, JSON.stringify(payload)]
+        [eventId, canonicalUserId, eventType, referenceId, JSON.stringify(payload)]
       );
 
       // If duplicate action, return current state without double awarding
       if (eventRes.rowCount === 0) {
         await client.query('COMMIT');
-        const prof = await this.getUserProfile(client, userId);
+        const prof = await this.getUserProfile(client, canonicalUserId);
         return {
           success: true,
           duplicate: true,
@@ -179,19 +204,19 @@ export class RewardEngine {
       totalXpToAward += baseEventXp;
 
       // 3. Challenge Progress Updates
-      const challengeXp = await this.updateChallenges(client, userId, eventType, payload, userExam);
+      const challengeXp = await this.updateChallenges(client, canonicalUserId, eventType, payload, userExam);
       totalXpToAward += challengeXp.awardedXp;
       challengesUpdatedCount = challengeXp.updatedCount;
 
       // 4. Achievement & Trophy Evaluation
-      const trophies = await this.evaluateAchievements(client, userId, eventType, payload);
+      const trophies = await this.evaluateAchievements(client, canonicalUserId, eventType, payload);
       for (const t of trophies) {
         totalXpToAward += t.xpReward;
         unlockedTrophies.push(t);
       }
 
       // 5. Update User Profile & Record in Ledger
-      const userProfile = await this.creditUserXp(client, userId, totalXpToAward, eventType, referenceId, eventDesc);
+      const userProfile = await this.creditUserXp(client, canonicalUserId, totalXpToAward, eventType, referenceId, eventDesc);
 
       await client.query('COMMIT');
 

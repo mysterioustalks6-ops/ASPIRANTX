@@ -84,8 +84,26 @@ public class FocusShieldVpnService extends VpnService implements Runnable {
         try {
             Builder builder = new Builder();
             builder.setSession("ProTrack Focus Shield");
+            
+            // IPv4 Local Black-hole
             builder.addAddress("10.254.1.1", 32);
             builder.addRoute("0.0.0.0", 0);
+
+            // IPv6 Local Black-hole (prevents bypass on Jio/Airtel 5G & IPv6 networks)
+            try {
+                builder.addAddress("fd00::1", 128);
+                builder.addRoute("::", 0);
+            } catch (Exception e) {
+                Log.w(TAG, "IPv6 configuration notice: " + e.getMessage());
+            }
+
+            // DNS Local Black-hole for restricted applications
+            try {
+                builder.addDnsServer("10.254.1.1");
+                builder.addDnsServer("fd00::1");
+            } catch (Exception e) {
+                Log.w(TAG, "DNS configuration notice: " + e.getMessage());
+            }
 
             PackageManager pm = getPackageManager();
             int allowedCount = 0;

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { extractVerifiedUserFromReq } from '../authMiddleware.js';
-import { FocusService } from '../src/lib/focus/focusService.js';
+import { FocusService, toCanonicalUuid } from '../src/lib/focus/focusService.js';
 
 const router = Router();
 
@@ -10,7 +10,7 @@ async function getAuthUserId(req: Request): Promise<string> {
   if (!uid) {
     throw new Error('Authentication Required');
   }
-  return uid;
+  return toCanonicalUuid(uid);
 }
 
 /**

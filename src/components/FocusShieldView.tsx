@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, TrophyItem } from '../types';
 import { PressFeedback, SlideUp, triggerConfetti } from '../lib/animations';
+import { getApiUrl } from '../lib/apiConfig';
 
 // Direct Capacitor bridge for FocusShield
 declare const Capacitor: any;
@@ -60,6 +61,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const [totalRequestedSeconds, setTotalRequestedSeconds] = useState<number>(25 * 60);
   const [isVpnActive, setIsVpnActive] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showVpnDisclosure, setShowVpnDisclosure] = useState<boolean>(false);
 
   // Stats
   const [stats, setStats] = useState<{
@@ -75,11 +77,20 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 
+  const getHeaders = () => {
+    const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('supabase.auth.token');
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (user?.id) headers['x-user-id'] = user.id;
+    if (user?.email) headers['x-user-email'] = user.email;
+    return headers;
+  };
+
   // Fetch telemetry
   const fetchStats = async () => {
     if (!user) return;
     try {
-      const res = await fetch('/api/focus/stats');
+      const res = await fetch(getApiUrl('/api/focus/stats'), { headers: getHeaders() });
       const data = await res.json();
       if (data.success && data.stats) {
         setStats({
@@ -122,6 +133,14 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const handleStartFocus = async () => {
     if (!user) return;
     setErrorMsg(null);
+
+    // Google Play VpnService Prominent Disclosure check
+    const hasConsented = localStorage.getItem('protrack_vpn_disclosure_consented') === 'true';
+    if (!hasConsented && typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+      setShowVpnDisclosure(true);
+      return;
+    }
+
     setSessionState('STARTING');
 
     const duration = selectedDuration === -1 ? Math.max(5, parseInt(customDuration, 10) || 45) : selectedDuration;
@@ -137,9 +156,9 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
       }
 
       // 2. Start session on server
-      const sRes = await fetch('/api/focus/session/start', {
+      const sRes = await fetch(getApiUrl('/api/focus/session/start'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({
           requestedMinutes: duration,
           blockedApps: selectedApps
@@ -166,6 +185,12 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     }
   };
 
+  const handleAgreeDisclosure = () => {
+    localStorage.setItem('protrack_vpn_disclosure_consented', 'true');
+    setShowVpnDisclosure(false);
+    handleStartFocus();
+  };
+
   // Heartbeat loop & countdown timer
   useEffect(() => {
     if (sessionState === 'ACTIVE') {
@@ -183,7 +208,10 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
       // Server Heartbeat every 60s
       heartbeatRef.current = setInterval(() => {
         if (activeSessionId) {
-          fetch(`/api/focus/session/${activeSessionId}/heartbeat`, { method: 'POST' }).catch(() => {});
+          fetch(getApiUrl(`/api/focus/session/${activeSessionId}/heartbeat`), {
+            method: 'POST',
+            headers: getHeaders()
+          }).catch(() => {});
         }
       }, 60000);
     } else {
@@ -201,7 +229,10 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const handlePause = async () => {
     if (!activeSessionId) return;
     try {
-      await fetch(`/api/focus/session/${activeSessionId}/pause`, { method: 'POST' });
+      await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/pause`), {
+        method: 'POST',
+        headers: getHeaders()
+      });
       setSessionState('PAUSED');
     } catch (e) {}
   };
@@ -210,7 +241,10 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const handleResume = async () => {
     if (!activeSessionId) return;
     try {
-      await fetch(`/api/focus/session/${activeSessionId}/resume`, { method: 'POST' });
+      await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/resume`), {
+        method: 'POST',
+        headers: getHeaders()
+      });
       setSessionState('ACTIVE');
     } catch (e) {}
   };
@@ -223,9 +257,9 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
       await callNativePlugin('stopShield');
       setIsVpnActive(false);
 
-      const res = await fetch(`/api/focus/session/${activeSessionId}/complete`, {
+      const res = await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/complete`), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ exam: user?.exam || 'ALL' })
       });
       const data = await res.json();
@@ -249,7 +283,10 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     try {
       await callNativePlugin('stopShield');
       setIsVpnActive(false);
-      await fetch(`/api/focus/session/${activeSessionId}/cancel`, { method: 'POST' });
+      await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/cancel`), {
+        method: 'POST',
+        headers: getHeaders()
+      });
       setSessionState('IDLE');
       setActiveSessionId(null);
     } catch (e) {
@@ -513,6 +550,54 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
               <span>Start Focus Session ({selectedDuration === -1 ? customDuration : selectedDuration} Min)</span>
             </button>
           </PressFeedback>
+        </div>
+      )}
+
+      {/* ── GOOGLE PLAY VPNSERVICE PROMINENT DISCLOSURE MODAL ── */}
+      {showVpnDisclosure && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-indigo-500/40 p-6 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
+              <Shield className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">Focus Shield Network Permission</h3>
+              <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider">
+                Google Play Policy Disclosure
+              </p>
+            </div>
+
+            <div className="space-y-2 text-xs text-slate-300 leading-relaxed max-h-60 overflow-y-auto pr-1">
+              <p>
+                To help you maintain distraction-free study sessions, <strong>ProTrack Focus Shield</strong> uses the Android <strong>VpnService</strong> API.
+              </p>
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
+                <div className="font-semibold text-white">How it works:</div>
+                <ul className="list-disc list-inside space-y-1 text-slate-300">
+                  <li>Creates a <strong>local on-device filter</strong> to restrict network access <em>only</em> for the specific apps you select (e.g., YouTube, Instagram).</li>
+                  <li><strong>Zero Data Collection:</strong> No internet traffic is collected, inspected, tracked, or sent to any remote server.</li>
+                  <li><strong>All other apps & ProTrack</strong> maintain full, unrestricted internet access.</li>
+                  <li>Active <em>only</em> during your study timer. Stops immediately when the timer ends or you tap Stop.</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowVpnDisclosure(false)}
+                className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAgreeDisclosure}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-black text-sm shadow-lg shadow-sky-500/20 transition-all"
+              >
+                Agree & Continue
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
