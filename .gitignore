@@ -51,6 +51,7 @@ screen_*.png
 device_screenshots/
 scratch_*.js
 scratch_*.mjs
+evidence_*.png
 
 # Temporary patch and test scripts at root
 /patch*.js

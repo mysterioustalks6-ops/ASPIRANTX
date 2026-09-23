@@ -15,7 +15,12 @@ import {
   Smartphone, 
   ShieldCheck, 
   Sparkles,
-  WifiOff
+  WifiOff,
+  AlertTriangle,
+  ExternalLink,
+  Search,
+  CheckCheck,
+  X
 } from 'lucide-react';
 import { UserProfile, TrophyItem } from '../types';
 import { PressFeedback, SlideUp, triggerConfetti } from '../lib/animations';
@@ -23,6 +28,21 @@ import { getApiUrl } from '../lib/apiConfig';
 
 // Direct Capacitor bridge for FocusShield
 declare const Capacitor: any;
+
+// Helper to call native FocusShield plugin
+const callNativePlugin = async (method: string, data: any = {}) => {
+  if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+    try {
+      const { Plugins } = (window as any).Capacitor;
+      if (Plugins?.FocusShield && typeof Plugins.FocusShield[method] === 'function') {
+        return await Plugins.FocusShield[method](data);
+      }
+    } catch (e: any) {
+      console.warn(`[FocusShield] Native plugin call ${method} failed:`, e?.message || e);
+    }
+  }
+  return null;
+};
 
 interface FocusShieldViewProps {
   user: UserProfile | null;
@@ -34,24 +54,45 @@ interface DistractingApp {
   name: string;
   package: string;
   icon: string;
-  defaultBlocked: boolean;
+  category?: string;
+  isDistraction?: boolean;
+  defaultBlocked?: boolean;
 }
 
-const DISTRACTING_APPS: DistractingApp[] = [
-  { id: 'youtube', name: 'YouTube', package: 'com.google.android.youtube', icon: '▶️', defaultBlocked: true },
-  { id: 'instagram', name: 'Instagram', package: 'com.instagram.android', icon: '📸', defaultBlocked: true },
-  { id: 'facebook', name: 'Facebook', package: 'com.facebook.katana', icon: '👥', defaultBlocked: false },
-  { id: 'snapchat', name: 'Snapchat', package: 'com.snapchat.android', icon: '👻', defaultBlocked: false },
-  { id: 'reddit', name: 'Reddit', package: 'com.reddit.frontpage', icon: '🤖', defaultBlocked: false },
-  { id: 'twitter', name: 'X / Twitter', package: 'com.twitter.android', icon: '🐦', defaultBlocked: false }
+const DEFAULT_DISTRACTING_APPS: DistractingApp[] = [
+  { id: 'instagram', name: 'Instagram', package: 'com.instagram.android', icon: '📸', category: 'Social', isDistraction: true, defaultBlocked: true },
+  { id: 'youtube', name: 'YouTube', package: 'com.google.android.youtube', icon: '▶️', category: 'Entertainment', isDistraction: true, defaultBlocked: true },
+  { id: 'facebook', name: 'Facebook', package: 'com.facebook.katana', icon: '👥', category: 'Social', isDistraction: true, defaultBlocked: true },
+  { id: 'snapchat', name: 'Snapchat', package: 'com.snapchat.android', icon: '👻', category: 'Social', isDistraction: true, defaultBlocked: true },
+  { id: 'hotstar', name: 'Disney+ Hotstar', package: 'in.startv.hotstar', icon: '⭐', category: 'Entertainment', isDistraction: true, defaultBlocked: true },
+  { id: 'sharechat', name: 'ShareChat', package: 'in.mohalla.sharechat', icon: '💬', category: 'Social', isDistraction: true, defaultBlocked: true },
+  { id: 'moj', name: 'Moj Video', package: 'in.mohalla.video', icon: '🎬', category: 'Entertainment', isDistraction: true, defaultBlocked: true },
+  { id: 'spotify', name: 'Spotify Music', package: 'com.spotify.music', icon: '🎵', category: 'Entertainment', isDistraction: true, defaultBlocked: false },
+  { id: 'reddit', name: 'Reddit', package: 'com.reddit.frontpage', icon: '🤖', category: 'Social', isDistraction: true, defaultBlocked: true },
+  { id: 'twitter', name: 'X / Twitter', package: 'com.twitter.android', icon: '🐦', category: 'Social', isDistraction: true, defaultBlocked: true },
+  { id: 'flipkart', name: 'Flipkart', package: 'com.flipkart.android', icon: '🛍️', category: 'Shopping', isDistraction: true, defaultBlocked: false },
+  { id: 'amazon', name: 'Amazon Shopping', package: 'in.amazon.mShop.android.shopping', icon: '📦', category: 'Shopping', isDistraction: true, defaultBlocked: false },
+  { id: 'myntra', name: 'Myntra', package: 'com.myntra.android', icon: '👗', category: 'Shopping', isDistraction: true, defaultBlocked: false },
+  { id: 'swiggy', name: 'Swiggy Food & Dineout', package: 'in.swiggy.android', icon: '🍔', category: 'Shopping', isDistraction: true, defaultBlocked: false },
+  { id: 'games', name: 'Google Play Games', package: 'com.google.android.play.games', icon: '🎮', category: 'Gaming', isDistraction: true, defaultBlocked: true }
 ];
 
 export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophyUnlock }) => {
   const [selectedDuration, setSelectedDuration] = useState<number>(25);
   const [customDuration, setCustomDuration] = useState<string>('45');
+  const [installedApps, setInstalledApps] = useState<DistractingApp[]>(DEFAULT_DISTRACTING_APPS);
+  const [loadingApps, setLoadingApps] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('DISTRACTIONS');
   const [selectedApps, setSelectedApps] = useState<string[]>([
     'com.google.android.youtube',
-    'com.instagram.android'
+    'com.instagram.android',
+    'com.facebook.katana',
+    'com.snapchat.android',
+    'in.startv.hotstar',
+    'in.mohalla.sharechat',
+    'in.mohalla.video',
+    'com.reddit.frontpage'
   ]);
 
   // Session state
@@ -61,7 +102,13 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const [totalRequestedSeconds, setTotalRequestedSeconds] = useState<number>(25 * 60);
   const [isVpnActive, setIsVpnActive] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [showVpnDisclosure, setShowVpnDisclosure] = useState<boolean>(false);
+  const [showAccessibilityGuide, setShowAccessibilityGuide] = useState<boolean>(false);
+  const [showStrictFrictionModal, setShowStrictFrictionModal] = useState<boolean>(false);
+  const [frictionAction, setFrictionAction] = useState<'GIVE_UP' | 'PAUSE' | 'FINISH_EARLY'>('GIVE_UP');
+  const [frictionCountdown, setFrictionCountdown] = useState<number>(15);
+  const [frictionInput, setFrictionInput] = useState<string>('');
+  const frictionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const STRICT_PLEDGE = "I AM GIVING UP MY STUDY GOAL";
 
   // Stats
   const [stats, setStats] = useState<{
@@ -105,6 +152,43 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   useEffect(() => {
     fetchStats();
 
+    // Load all launchable apps from device
+    const loadInstalledApps = async () => {
+      setLoadingApps(true);
+      try {
+        const res = await callNativePlugin('getInstalledApps');
+        if (res && Array.isArray(res.apps) && res.apps.length > 0) {
+          setInstalledApps(res.apps);
+
+          // Restore saved selection or default to all auto-detected distraction apps
+          const savedSelection = localStorage.getItem('protrack_focus_shield_selected_apps');
+          if (savedSelection) {
+            try {
+              const parsed = JSON.parse(savedSelection);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setSelectedApps(parsed);
+                return;
+              }
+            } catch (e) {}
+          }
+
+          // Default: select all apps identified as distractions
+          const distractionPkgs = res.apps
+            .filter((a: any) => a.isDistraction)
+            .map((a: any) => a.package);
+          if (distractionPkgs.length > 0) {
+            setSelectedApps(distractionPkgs);
+          }
+        }
+      } catch (err) {
+        console.warn('[FocusShield] Failed to query installed apps:', err);
+      } finally {
+        setLoadingApps(false);
+      }
+    };
+
+    loadInstalledApps();
+
     // Check if there is an active session in localStorage or native plugin
     const checkActiveSession = async () => {
       const saved = localStorage.getItem('protrack_active_focus_session');
@@ -146,27 +230,34 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     checkActiveSession();
   }, [user?.id]);
 
-  // App toggle handler
+  // App toggle handler with persistence
   const toggleApp = (pkg: string) => {
     if (sessionState !== 'IDLE') return;
-    setSelectedApps(prev => 
-      prev.includes(pkg) ? prev.filter(p => p !== pkg) : [...prev, pkg]
-    );
+    setSelectedApps(prev => {
+      const next = prev.includes(pkg) ? prev.filter(p => p !== pkg) : [...prev, pkg];
+      localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify(next));
+      return next;
+    });
   };
 
-  // Helper to call native FocusShield plugin
-  const callNativePlugin = async (method: string, data: any = {}) => {
-    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-      try {
-        const { Plugins } = (window as any).Capacitor;
-        if (Plugins?.FocusShield && typeof Plugins.FocusShield[method] === 'function') {
-          return await Plugins.FocusShield[method](data);
-        }
-      } catch (e: any) {
-        console.warn(`[FocusShield] Native plugin call ${method} failed:`, e?.message || e);
-      }
-    }
-    return null;
+  // Quick Selection Helpers
+  const handleSelectAllDistractions = () => {
+    const distractionPkgs = installedApps
+      .filter(a => a.isDistraction)
+      .map(a => a.package);
+    setSelectedApps(distractionPkgs);
+    localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify(distractionPkgs));
+  };
+
+  const handleSelectAllVisible = (visiblePkgs: string[]) => {
+    const combined = Array.from(new Set([...selectedApps, ...visiblePkgs]));
+    setSelectedApps(combined);
+    localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify(combined));
+  };
+
+  const handleClearAll = () => {
+    setSelectedApps([]);
+    localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify([]));
   };
 
   // Start Focus Session
@@ -174,11 +265,13 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     if (!user) return;
     setErrorMsg(null);
 
-    // Google Play VpnService Prominent Disclosure check
-    const hasConsented = localStorage.getItem('protrack_vpn_disclosure_consented') === 'true';
-    if (!hasConsented && typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-      setShowVpnDisclosure(true);
-      return;
+    // 1. Accessibility permission check on Android native
+    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+      const accessRes = await callNativePlugin('isAccessibilityEnabled');
+      if (accessRes && accessRes.enabled === false) {
+        setShowAccessibilityGuide(true);
+        return;
+      }
     }
 
     setSessionState('STARTING');
@@ -187,14 +280,6 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     const durationSeconds = duration * 60;
 
     try {
-      // 1. Check & request Android VPN permission if on native Android
-      const prepRes = await callNativePlugin('prepareVpn');
-      if (prepRes && prepRes.granted === false) {
-        setErrorMsg('VPN Permission was not granted by system. Focus Shield requires VPN permission to restrict network for selected apps.');
-        setSessionState('IDLE');
-        return;
-      }
-
       // 2. Start session on server with graceful fallback
       let sessionId = `foc_local_${Date.now()}`;
       try {
@@ -226,8 +311,12 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         selectedApps
       }));
 
-      // 3. Start native Android VPN black-hole
-      await callNativePlugin('startShield', { apps: selectedApps });
+      // 3. Start native Android Accessibility app blocker
+      await callNativePlugin('startShield', { 
+        apps: selectedApps,
+        durationMinutes: duration,
+        durationSeconds: durationSeconds
+      });
       setIsVpnActive(true);
 
       setSessionState('ACTIVE');
@@ -237,10 +326,37 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     }
   };
 
-  const handleAgreeDisclosure = () => {
-    localStorage.setItem('protrack_vpn_disclosure_consented', 'true');
-    setShowVpnDisclosure(false);
-    handleStartFocus();
+  // Strict Friction Trigger (Enforces anti-impulse delay on Pause, Early Finish, & Give Up)
+  const handleInitiateFriction = (action: 'GIVE_UP' | 'PAUSE' | 'FINISH_EARLY' = 'GIVE_UP') => {
+    setFrictionAction(action);
+    setShowStrictFrictionModal(true);
+    setFrictionCountdown(15);
+    setFrictionInput('');
+    if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
+    frictionTimerRef.current = setInterval(() => {
+      setFrictionCountdown(prev => {
+        if (prev <= 1) {
+          if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleConfirmStrictAction = async () => {
+    if (frictionCountdown > 0 || frictionInput.trim().toUpperCase() !== STRICT_PLEDGE) {
+      return;
+    }
+    if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
+    setShowStrictFrictionModal(false);
+    if (frictionAction === 'PAUSE') {
+      await handlePause();
+    } else if (frictionAction === 'FINISH_EARLY') {
+      await handleCompleteFocus();
+    } else {
+      await handleCancelFocus();
+    }
   };
 
   // Heartbeat loop & countdown timer
@@ -431,39 +547,47 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-4 pt-2">
+          {/* Controls with Strict Anti-Impulse Friction */}
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             {sessionState === 'ACTIVE' ? (
               <button
-                onClick={handlePause}
-                className="py-3 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm flex items-center gap-2 transition-all border border-slate-700"
+                onClick={() => handleInitiateFriction('PAUSE')}
+                className="py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all border border-slate-700 shadow-sm"
+                title="Strict Focus: Requires 15s cooldown and pledge"
               >
-                <Pause className="w-4 h-4" />
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
                 <span>Pause</span>
               </button>
             ) : (
               <button
                 onClick={handleResume}
-                className="py-3 px-6 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-sky-500/25"
+                className="py-3 px-5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-lg shadow-sky-500/25"
               >
                 <Play className="w-4 h-4" />
-                <span>Resume</span>
+                <span>Resume Session</span>
               </button>
             )}
 
             <button
-              onClick={handleCompleteFocus}
-              className="py-3 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/25"
+              onClick={() => {
+                // If more than 90% completed, allow finish early directly; otherwise enforce friction
+                if (remainingSeconds <= totalRequestedSeconds * 0.1) {
+                  handleCompleteFocus();
+                } else {
+                  handleInitiateFriction('FINISH_EARLY');
+                }
+              }}
+              className="py-3 px-5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all border border-emerald-500/40"
             >
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
               <span>Finish Early</span>
             </button>
 
             <button
-              onClick={handleCancelFocus}
-              className="py-3 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-rose-400 font-semibold text-sm transition-all border border-slate-800"
+              onClick={() => handleInitiateFriction('GIVE_UP')}
+              className="py-3 px-4 rounded-xl bg-slate-950 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 font-semibold text-xs sm:text-sm transition-all border border-slate-800"
             >
-              <span>Cancel</span>
+              <span>Give Up</span>
             </button>
           </div>
         </motion.div>
@@ -539,53 +663,182 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
           {/* Distracting Apps Checklist */}
           <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800/90 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <WifiOff className="w-4 h-4 text-indigo-400" />
-              <span>2. Select Distracting Apps to Restrict</span>
-            </h3>
-            <p className="text-xs text-slate-400">
-              Only the selected apps will have their network paused during your session. ProTrack, browsers, and study resources maintain full high-speed internet.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-indigo-400" />
+                  <span>2. Select Distracting Apps to Lock ({selectedApps.length} Selected)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Opening any selected app will immediately show the ProTrack Lock Screen until your timer completes.
+                </p>
+              </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              {DISTRACTING_APPS.map(app => {
-                const isSelected = selectedApps.includes(app.package);
-                return (
-                  <div
-                    key={app.id}
-                    onClick={() => toggleApp(app.package)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-indigo-950/30 border-indigo-500/40 text-white'
-                        : 'bg-slate-950/50 border-slate-800/80 text-slate-400 hover:text-slate-200'
-                    }`}
+              {/* Quick Preset Buttons */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleSelectAllDistractions}
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 hover:from-amber-500/30 hover:to-orange-500/30 transition-all shadow-sm"
+                  title="Select all apps categorized as distractions"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Block All Distractions ({installedApps.filter(a => a.isDistraction).length})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white font-medium text-xs transition-all"
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+
+            {/* Search & Category Filter Bar */}
+            <div className="space-y-3 pt-1">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search installed apps (e.g. Instagram, Hotstar, Moj, Snapchat)..."
+                  className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{app.icon}</span>
-                      <div>
-                        <div className="font-bold text-sm text-white">{app.name}</div>
-                        <div className="text-[10px] text-slate-400">{app.package}</div>
-                      </div>
-                    </div>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
 
-                    <input 
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => {}}
-                      className="w-4 h-4 rounded text-indigo-500 focus:ring-0"
-                    />
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
+                {[
+                  { id: 'DISTRACTIONS', label: 'Distractions', count: installedApps.filter(a => a.isDistraction).length, icon: '⚡' },
+                  { id: 'ALL', label: 'All Installed', count: installedApps.length, icon: '📱' },
+                  { id: 'Social', label: 'Social', count: installedApps.filter(a => a.category === 'Social').length, icon: '💬' },
+                  { id: 'Entertainment', label: 'Video / OTT', count: installedApps.filter(a => a.category === 'Entertainment').length, icon: '🎬' },
+                  { id: 'Gaming', label: 'Games', count: installedApps.filter(a => a.category === 'Gaming').length, icon: '🎮' },
+                  { id: 'Shopping', label: 'Shopping', count: installedApps.filter(a => a.category === 'Shopping').length, icon: '🛍️' }
+                ].filter(c => c.count > 0 || c.id === 'DISTRACTIONS' || c.id === 'ALL').map(cat => {
+                  const isActive = selectedCategory === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={`px-3 py-1.5 rounded-lg border font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all ${
+                        isActive
+                          ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
+                          : 'bg-slate-950/70 text-slate-400 hover:text-slate-200 border-slate-800'
+                      }`}
+                    >
+                      <span>{cat.icon}</span>
+                      <span>{cat.label}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-indigo-700 text-white' : 'bg-slate-800 text-slate-400'}`}>
+                        {cat.count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Apps Grid */}
+            {(() => {
+              const filteredList = installedApps.filter(app => {
+                if (selectedCategory === 'DISTRACTIONS' && !app.isDistraction) return false;
+                if (selectedCategory !== 'ALL' && selectedCategory !== 'DISTRACTIONS' && app.category !== selectedCategory) return false;
+                if (searchQuery.trim()) {
+                  const q = searchQuery.toLowerCase().trim();
+                  if (!app.name.toLowerCase().includes(q) && !app.package.toLowerCase().includes(q)) {
+                    return false;
+                  }
+                }
+                return true;
+              });
+
+              if (filteredList.length === 0) {
+                return (
+                  <div className="p-8 text-center rounded-2xl bg-slate-950/50 border border-slate-800/80 text-slate-400 text-xs">
+                    No apps found matching your query or filter.
                   </div>
                 );
-              })}
-            </div>
+              }
+
+              return (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                    <span>Showing {filteredList.length} apps</span>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectAllVisible(filteredList.map(a => a.package))}
+                      className="text-indigo-400 hover:text-indigo-300 font-semibold"
+                    >
+                      + Select All {filteredList.length}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+                    {filteredList.map(app => {
+                      const isSelected = selectedApps.includes(app.package);
+                      return (
+                        <div
+                          key={app.package}
+                          onClick={() => toggleApp(app.package)}
+                          className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                            isSelected
+                              ? 'bg-indigo-950/40 border-indigo-500/50 text-white shadow-sm'
+                              : 'bg-slate-950/50 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-2xl flex-shrink-0">{app.icon || '📱'}</span>
+                            <div className="min-w-0">
+                              <div className="font-bold text-xs sm:text-sm text-white truncate flex items-center gap-1.5">
+                                <span>{app.name}</span>
+                                {app.isDistraction && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                    Distraction
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-400 truncate">{app.package}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {isSelected && (
+                              <Lock className="w-3.5 h-3.5 text-indigo-400" />
+                            )}
+                            <input 
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {}}
+                              className="w-4 h-4 rounded text-indigo-500 focus:ring-0 cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Trust & Privacy Notice */}
           <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-start gap-3 text-xs text-slate-400 leading-relaxed">
             <ShieldCheck className="w-5 h-5 flex-shrink-0 text-emerald-400 mt-0.5" />
             <div>
-              <span className="text-white font-semibold">100% On-Device Privacy: </span>
-              Focus Shield runs an on-device local network filter. ProTrack does not route your traffic to external servers, does not inspect your messages, and does not require Accessibility hacks.
+              <span className="text-white font-semibold">100% On-Device Protection: </span>
+              Focus Shield intercepts distracting apps instantly using Android Accessibility. The moment a blocked app is tapped, ProTrack's branded lock overlay opens with your active countdown timer. No VPN, no battery drain, zero privacy risk.
             </div>
           </div>
 
@@ -607,48 +860,126 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         </div>
       )}
 
-      {/* ── GOOGLE PLAY VPNSERVICE PROMINENT DISCLOSURE MODAL ── */}
-      {showVpnDisclosure && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      {/* ── ACCESSIBILITY SERVICE PERMISSION GUIDE MODAL ── */}
+      {showAccessibilityGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
           <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-indigo-500/40 p-6 shadow-2xl space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
-              <Shield className="w-6 h-6" />
+              <Lock className="w-6 h-6" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">Focus Shield Network Permission</h3>
+              <h3 className="text-lg font-bold text-white">Enable Focus Shield Blocker</h3>
               <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider">
-                Google Play Policy Disclosure
+                Android Accessibility Setup
               </p>
             </div>
 
-            <div className="space-y-2 text-xs text-slate-300 leading-relaxed max-h-60 overflow-y-auto pr-1">
+            <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
               <p>
-                To help you maintain distraction-free study sessions, <strong>ProTrack Focus Shield</strong> uses the Android <strong>VpnService</strong> API.
+                To block distracting apps (YouTube, Instagram) from opening and display the <strong>ProTrack Lock Screen Overlay with Timer</strong>, Android requires the <strong>ProTrack Focus Shield</strong> accessibility permission.
               </p>
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
-                <div className="font-semibold text-white">How it works:</div>
-                <ul className="list-disc list-inside space-y-1 text-slate-300">
-                  <li>Creates a <strong>local on-device filter</strong> to restrict network access <em>only</em> for the specific apps you select (e.g., YouTube, Instagram).</li>
-                  <li><strong>Zero Data Collection:</strong> No internet traffic is collected, inspected, tracked, or sent to any remote server.</li>
-                  <li><strong>All other apps & ProTrack</strong> maintain full, unrestricted internet access.</li>
-                  <li>Active <em>only</em> during your study timer. Stops immediately when the timer ends or you tap Stop.</li>
-                </ul>
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="font-semibold text-white">Quick 3-Step Setup:</div>
+                <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
+                  <li>Tap <strong>Open Accessibility Settings</strong> below.</li>
+                  <li>Find and tap <strong>ProTrack Focus Shield</strong> (under Downloaded Apps).</li>
+                  <li>Toggle the switch to <strong>ON</strong> and tap Allow.</li>
+                </ol>
               </div>
             </div>
 
             <div className="flex gap-3 pt-2">
               <button
-                onClick={() => setShowVpnDisclosure(false)}
-                className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-all"
+                onClick={() => setShowAccessibilityGuide(false)}
+                className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-all"
               >
-                Cancel
+                Close
               </button>
               <button
-                onClick={handleAgreeDisclosure}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-black text-sm shadow-lg shadow-sky-500/20 transition-all"
+                onClick={async () => {
+                  await callNativePlugin('openAccessibilitySettings');
+                  setShowAccessibilityGuide(false);
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-black text-sm shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2"
               >
-                Agree & Continue
+                <ExternalLink className="w-4 h-4" />
+                <span>Open Settings</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STRICT FRICTION / ANTI-QUIT MODAL ── */}
+      {showStrictFrictionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-rose-500/40 p-6 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">
+                Strict Focus Mode: {frictionAction === 'PAUSE' ? 'Pause Session?' : frictionAction === 'FINISH_EARLY' ? 'Finish Early?' : 'Give Up?'}
+              </h3>
+              <p className="text-xs text-rose-400 font-semibold uppercase tracking-wider">
+                Anti-Impulse Friction Challenge
+              </p>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Focus Shield enforces ironclad study discipline. To {frictionAction === 'PAUSE' ? 'pause' : frictionAction === 'FINISH_EARLY' ? 'finish early' : 'cancel'} your session before the timer completes, you must wait out the reflection cooldown and type the pledge below.
+            </p>
+
+            {/* Friction Cooldown Display */}
+            <div className={`p-3 rounded-xl border text-center font-bold text-sm transition-all ${
+              frictionCountdown > 0 
+                ? 'bg-rose-950/30 border-rose-500/40 text-rose-300' 
+                : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
+            }`}>
+              {frictionCountdown > 0 ? (
+                <span>⏳ Wait {frictionCountdown}s before unlock activates</span>
+              ) : (
+                <span>✓ Reflection delay passed</span>
+              )}
+            </div>
+
+            {/* Confirmation Pledge Input */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-400">
+                Type exactly: <span className="text-rose-400 font-bold tracking-wider">{STRICT_PLEDGE}</span>
+              </label>
+              <input
+                type="text"
+                value={frictionInput}
+                onChange={e => setFrictionInput(e.target.value)}
+                placeholder={STRICT_PLEDGE}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-rose-500 font-mono"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => {
+                  if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
+                  setShowStrictFrictionModal(false);
+                }}
+                className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-all"
+              >
+                Keep Focusing
+              </button>
+              <button
+                disabled={frictionCountdown > 0 || frictionInput.trim().toUpperCase() !== STRICT_PLEDGE}
+                onClick={handleConfirmStrictAction}
+                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
+                  frictionCountdown === 0 && frictionInput.trim().toUpperCase() === STRICT_PLEDGE
+                    ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 cursor-pointer'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
+                }`}
+              >
+                {frictionAction === 'PAUSE' ? 'Confirm Pause' : frictionAction === 'FINISH_EARLY' ? 'Confirm Finish' : 'Confirm Give Up'}
               </button>
             </div>
           </div>

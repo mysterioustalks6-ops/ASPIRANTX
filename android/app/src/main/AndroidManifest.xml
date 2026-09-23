@@ -57,17 +57,25 @@
                 android:resource="@xml/wallpaper" />
         </service>
 
+        <activity
+            android:name=".BlockOverlayActivity"
+            android:theme="@style/AppTheme.BlockOverlay"
+            android:launchMode="singleInstance"
+            android:taskAffinity="com.aspirantx.app.blockoverlay"
+            android:excludeFromRecents="true"
+            android:exported="true" />
+
         <service
-            android:name=".FocusShieldVpnService"
-            android:permission="android.permission.BIND_VPN_SERVICE"
-            android:foregroundServiceType="specialUse"
-            android:exported="false">
+            android:name=".FocusShieldAccessibilityService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:label="@string/accessibility_service_name"
+            android:exported="true">
             <intent-filter>
-                <action android:name="android.net.VpnService" />
+                <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Focus study timer app network distraction filtering" />
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
         </service>
     </application>
 
@@ -80,9 +88,14 @@
     <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
-    <!-- Android 11+ Package Visibility Queries for System Wallpaper Picker -->
+    <!-- Android 11+ Package Visibility Queries for Focus Shield and System Services -->
     <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
         <intent>
             <action android:name="android.service.wallpaper.WallpaperService" />
         </intent>
@@ -101,5 +114,13 @@
         <package android:name="com.snapchat.android" />
         <package android:name="com.reddit.frontpage" />
         <package android:name="com.twitter.android" />
+        <package android:name="in.startv.hotstar" />
+        <package android:name="in.mohalla.sharechat" />
+        <package android:name="in.mohalla.video" />
+        <package android:name="com.spotify.music" />
+        <package android:name="com.flipkart.android" />
+        <package android:name="in.amazon.mShop.android.shopping" />
+        <package android:name="com.myntra.android" />
+        <package android:name="in.swiggy.android" />
     </queries>
 </manifest>
