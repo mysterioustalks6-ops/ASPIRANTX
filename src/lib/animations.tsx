@@ -684,3 +684,230 @@ export const ToastTransition: React.FC<{
     </AnimatePresence>
   );
 };
+
+/**
+ * Hook to reveal element on viewport enter using native IntersectionObserver
+ * Zero scroll listener overhead, zero layout thrashing.
+ */
+export function useScrollReveal(threshold = 0.1, rootMargin = '0px 0px -40px 0px') {
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const elementRef = React.useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = elementRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setIsIntersecting(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsIntersecting(true);
+          observer.unobserve(node);
+        }
+      },
+      { threshold, rootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [threshold, rootMargin]);
+
+  return { ref: elementRef, isVisible: isIntersecting };
+}
+
+/**
+ * Scroll Reveal Component via IntersectionObserver
+ * Opacity 0 -> 1, translateY(12px) -> 0, 350ms, respects prefers-reduced-motion
+ */
+export const ScrollReveal: React.FC<{
+  children: React.ReactNode;
+  delay?: number;
+  duration?: number;
+  distance?: number;
+  className?: string;
+}> = ({
+  children,
+  delay = 0,
+  duration = 0.35,
+  distance = 12,
+  className = '',
+}) => {
+  const reduced = usePrefersReducedMotion();
+  const { ref, isVisible } = useScrollReveal();
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible || reduced ? 'none' : `translateY(${distance}px)`,
+        transition: reduced
+          ? 'opacity 0.1s ease'
+          : `opacity ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s, transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1) ${delay}s`,
+        willChange: isVisible ? 'auto' : 'opacity, transform',
+      }}
+      className={className}
+    >
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Natural Bottom Sheet Transition with Backdrop
+ */
+export const BottomSheetTransition: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ isOpen, onClose, children, className = '' }) => {
+  const reduced = usePrefersReducedMotion();
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0.05 : 0.2 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+          />
+
+          {/* Sheet Body */}
+          <motion.div
+            initial={{ y: reduced ? 0 : '100%', opacity: reduced ? 1 : 0.8 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: reduced ? 0 : '100%', opacity: reduced ? 1 : 0 }}
+            transition={{
+              duration: reduced ? 0.08 : MOTION_TIMING.modal,
+              ease: MOTION_EASE.outCubic,
+            }}
+            className={`relative z-10 w-full max-h-[92vh] overflow-y-auto rounded-t-3xl bg-slate-900 border-t border-slate-800 shadow-2xl ${className}`}
+          >
+            {/* Sheet Handle */}
+            <div className="w-12 h-1.5 bg-slate-700/60 rounded-full mx-auto my-3" />
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+/**
+ * Micro Checkmark Pop Interaction
+ * Subtle 0.85 -> 1.12 -> 1.0 scale pop for instant tactile feedback
+ */
+export const CheckmarkPop: React.FC<{
+  isChecked: boolean;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ isChecked, children, className = '' }) => {
+  const reduced = usePrefersReducedMotion();
+
+  return (
+    <motion.div
+      key={isChecked ? 'checked' : 'unchecked'}
+      initial={false}
+      animate={
+        isChecked && !reduced
+          ? { scale: [0.85, 1.12, 1] }
+          : { scale: 1 }
+      }
+      transition={{ duration: 0.18, ease: MOTION_EASE.outCubic }}
+      className={`inline-flex items-center justify-center ${className}`}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+/**
+ * Ephemeral Floating Reward Badge (+XP / +Coins)
+ * Gently floats up ~18px and fades over 650ms, auto-unmounting.
+ */
+export const FloatingRewardBadge: React.FC<{
+  text: string;
+  onComplete?: () => void;
+  className?: string;
+}> = ({ text, onComplete, className = '' }) => {
+  const reduced = usePrefersReducedMotion();
+
+  return (
+    <motion.span
+      initial={{ opacity: 0, y: 0, scale: 0.8 }}
+      animate={{ opacity: [0, 1, 1, 0], y: reduced ? 0 : -20, scale: 1 }}
+      transition={{
+        duration: 0.7,
+        times: [0, 0.2, 0.7, 1],
+        ease: MOTION_EASE.outCubic,
+      }}
+      onAnimationComplete={onComplete}
+      className={`pointer-events-none absolute z-30 font-black text-xs px-2 py-0.5 rounded-full shadow-md ${className || 'bg-amber-400 text-slate-950 border border-amber-300'}`}
+    >
+      {text}
+    </motion.span>
+  );
+};
+
+/**
+ * Progressive Discovery / Next Recommended Action Card
+ * Smoothly reveals next step contextual suggestion with settle easing
+ */
+export const ProgressiveDiscoveryCard: React.FC<{
+  title: string;
+  subtitle: string;
+  actionLabel: string;
+  onAction: () => void;
+  icon?: React.ReactNode;
+  badge?: string;
+  className?: string;
+}> = ({ title, subtitle, actionLabel, onAction, icon, badge, className = '' }) => {
+  const reduced = usePrefersReducedMotion();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: reduced ? 0 : 12, scale: reduced ? 1 : 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: reduced ? 0 : -10 }}
+      transition={{ duration: MOTION_TIMING.normal, ease: MOTION_EASE.outCubic }}
+      className={`p-4 rounded-2xl bg-gradient-to-r from-sky-950/40 via-slate-900 to-indigo-950/40 border border-sky-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg ${className}`}
+    >
+      <div className="flex items-center gap-3">
+        {icon && (
+          <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+            {icon}
+          </div>
+        )}
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="text-xs sm:text-sm font-bold text-white">{title}</h4>
+            {badge && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-0.5">{subtitle}</p>
+        </div>
+      </div>
+      <PressFeedback>
+        <button
+          onClick={onAction}
+          className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs transition-colors shrink-0 shadow-md shadow-sky-500/20 flex items-center gap-1.5 cursor-pointer"
+        >
+          {actionLabel}
+        </button>
+      </PressFeedback>
+    </motion.div>
+  );
+};
+
+

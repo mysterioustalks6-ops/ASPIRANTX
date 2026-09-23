@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-09-23T11:12:39.123Z",
+  "totalSyllabusAudited": 54,
+  "quarantinedCount": 6,
+  "reprocessedVerifiedCount": 2,
+  "legacyMarkedCount": 40,
+  "pilotPreservedCount": 5,
+  "csirContentHash": "17b65f71afbac83b0b0d52d13e73cdb2b201874fa5d3c4992c7c87f820c59d85",
+  "ugcContentHash": "199c3e691cbb7d27dbc9bc4c7bf408a4cfd1ac3927beb55e9272514c1e41a6d7",
+  "reprocessResults": {
+    "CSIR_NATIONAL_ELIGIBILITY": {
+      "status": "SUCCESS_AUTHENTIC_VERIFIED",
+      "reason": "Authentic syllabus extracted from official NTA Information Bulletin PDF.",
+      "secCount": 3,
+      "topCount": 16
+    },
+    "UGC_NET": {
+      "status": "SUCCESS_AUTHENTIC_VERIFIED",
+      "reason": "Authentic syllabus extracted from official NTA Information Bulletin PDF.",
+      "secCount": 2,
+      "topCount": 15
+    },
+    "ANM_GNM": {
+      "status": "FAILED_QUARANTINED_CLEAN",
+      "reason": "Official WBJEEB portal returned network connection reset during PDF probe.",
+      "secCount": 0,
+      "topCount": 0
+    },
+    "IMU_CET": {
+      "status": "FAILED_QUARANTINED_CLEAN",
+      "reason": "Official IMU admissions server unreachable during scheduled batch probe.",
+      "secCount": 0,
+      "topCount": 0
+    },
+    "JEECUP": {
+      "status": "FAILED_QUARANTINED_CLEAN",
+      "reason": "Portal index contains multiple course brochures; requires interactive branch selection.",
+      "secCount": 0,
+      "topCount": 0
+    },
+    "JENPAS_UG": {
+      "status": "FAILED_QUARANTINED_CLEAN",
+      "reason": "Official WBJEEB portal returned network connection reset during PDF probe.",
+      "secCount": 0,
+      "topCount": 0
+    },
+    "KARNATAKA_COMMON_ENTRANCE": {
+      "status": "FAILED_QUARANTINED_CLEAN",
+      "reason": "KEA portal homepage requires session token for syllabus brochure.",
+      "secCount": 0,
+      "topCount": 0
+    },
+    "RAJASTHAN_PUBLIC_SERVICE_": {
+      "status": "FAILED_QUARANTINED_CLEAN",
+      "reason": "RPSC syllabus repository requires search form interaction.",
+      "secCount": 0,
+      "topCount": 0
+    }
+  },
+  "approvedCount": 0,
+  "pendingCount": 77,
+  "artificialHashCollisionFound": false
+}

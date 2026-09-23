@@ -47,6 +47,10 @@ qa_0*.png
 home_screen.png
 official_preview.png
 screen_*.png
+*_screen*.png
+device_screenshots/
+scratch_*.js
+scratch_*.mjs
 
 # Temporary patch and test scripts at root
 /patch*.js
@@ -66,4 +70,5 @@ android/.gradle/
 android/capacitor-cordova-android-plugins/build/
 android/app/src/main/assets/public/
 *.zip
+supabase/.temp/
 

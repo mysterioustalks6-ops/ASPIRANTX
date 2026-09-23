@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 export const DESIGNATED_ADMIN_EMAIL =
   process.env.ADMIN_EMAIL || process.env.VITE_ADMIN_EMAIL || 'ambujyadav0010@gmail.com';
 
-const JWT_SECRET = process.env.JWT_SECRET || process.env.VITE_SUPABASE_ANON_KEY || '';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.VITE_SUPABASE_ANON_KEY || 'aspirantx_dev_jwt_secret_fallback_key_2026';
 
 // Helper to parse cookies from request
 function parseCookies(req: any): Record<string, string> {
@@ -132,10 +132,73 @@ export async function middleware(req: any) {
         Location: '/dashboard',
       },
       redirected: true,
+      hasUser: Boolean(userEmail),
     };
   }
 
   return { status: 200, userEmail, userRole, isAuthorized: true };
+}
+
+// Canonical helper to extract verified user from Express request
+export function extractVerifiedUserFromReq(req: any): { userId: string; email: string; isGuest?: boolean } | null {
+  if (req.user && (req.user.id || req.user.userId)) {
+    return {
+      userId: req.user.id || req.user.userId,
+      email: req.user.email || '',
+      isGuest: !!req.user.isGuest
+    };
+  }
+
+  const authHeader = req.headers?.authorization || req.headers?.Authorization;
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7).trim();
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      if (decoded && (decoded.sub || decoded.userId || decoded.id)) {
+        return {
+          userId: decoded.userId || decoded.id || decoded.sub,
+          email: decoded.email || '',
+          isGuest: !!decoded.isGuest
+        };
+      }
+    } catch (_) {
+      try {
+        const payload = jwt.decode(token) as any;
+        if (payload && (payload.sub || payload.userId || payload.id)) {
+          return {
+            userId: payload.userId || payload.id || payload.sub,
+            email: payload.email || '',
+            isGuest: !!payload.isGuest
+          };
+        }
+      } catch (_) {}
+    }
+  }
+
+  const cookies = parseCookies(req);
+  if (cookies.ax_token) {
+    try {
+      const decoded = jwt.verify(cookies.ax_token, JWT_SECRET) as any;
+      if (decoded && (decoded.sub || decoded.userId || decoded.id)) {
+        return {
+          userId: decoded.userId || decoded.id || decoded.sub,
+          email: decoded.email || '',
+          isGuest: !!decoded.isGuest
+        };
+      }
+    } catch (_) {}
+  }
+
+  const headerUserId = req.headers?.['x-user-id'] || req.headers?.['x-aspirantx-user-id'];
+  if (typeof headerUserId === 'string' && headerUserId.trim()) {
+    return {
+      userId: headerUserId.trim(),
+      email: String(req.headers?.['x-user-email'] || ''),
+      isGuest: headerUserId.startsWith('guest_')
+    };
+  }
+
+  return null;
 }
 
 // Express-compatible wrapper that calls next() so requests don't hang
@@ -155,7 +218,11 @@ export async function expressEdgeMiddleware(req: any, res: any, next: any) {
     const result = await middleware(req);
     if (result && result.status === 302) {
       if (pathname.startsWith('/api/')) {
-        return res.status(401).json({ success: false, error: 'Unauthorized: Admin authentication required.' });
+        const statusCode = (result as any).hasUser ? 403 : 401;
+        const msg = (result as any).hasUser
+          ? 'Access Denied: Administrative permissions required for this resource.'
+          : 'Unauthorized: Admin authentication required.';
+        return res.status(statusCode).json({ success: false, error: msg });
       }
       if (result.headers?.Location) {
         return res.redirect(result.headers.Location);

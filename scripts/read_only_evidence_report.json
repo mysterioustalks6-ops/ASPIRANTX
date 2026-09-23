@@ -1,0 +1,597 @@
+{
+  "timestamp": "2026-09-22T10:16:02.743Z",
+  "databaseVerification": {
+    "tables": {
+      "flashcards": true,
+      "flashcard_reviews": true,
+      "reward_transactions": true,
+      "ad_rewards": true,
+      "reward_claims": true,
+      "podcasts": true,
+      "user_profiles": true,
+      "user_tasks": true,
+      "user_syllabus_progress": true,
+      "user_pomodoro_sessions": true,
+      "feedback_reports": true,
+      "community_comments": true
+    },
+    "primaryKeys": {
+      "flashcards": "id",
+      "flashcard_reviews": "id",
+      "reward_transactions": "id",
+      "user_tasks": "id",
+      "podcasts": "id",
+      "ad_rewards": "id",
+      "reward_claims": "id",
+      "user_profiles": "id",
+      "user_pomodoro_sessions": "id",
+      "user_syllabus_progress": "id",
+      "feedback_reports": "id",
+      "community_comments": "id"
+    },
+    "foreignKeys": [
+      {
+        "constraint_name": "flashcards_user_id_fkey",
+        "table_name": "flashcards",
+        "column_name": "user_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      },
+      {
+        "constraint_name": "flashcard_reviews_user_id_fkey",
+        "table_name": "flashcard_reviews",
+        "column_name": "user_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      },
+      {
+        "constraint_name": "reward_transactions_user_id_fkey",
+        "table_name": "reward_transactions",
+        "column_name": "user_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      },
+      {
+        "constraint_name": "user_tasks_user_id_fkey",
+        "table_name": "user_tasks",
+        "column_name": "user_id",
+        "foreign_table_name": "users",
+        "foreign_column_name": "id"
+      }
+    ],
+    "uniqueConstraints": [
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_user_id_card_id_key"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_reference_id_key"
+      }
+    ],
+    "checkConstraints": [
+      {
+        "table_name": "flashcards",
+        "constraint_name": "flashcards_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "flashcards",
+        "constraint_name": "flashcards_exam_not_null",
+        "check_clause": "exam IS NOT NULL"
+      },
+      {
+        "table_name": "flashcards",
+        "constraint_name": "flashcards_category_not_null",
+        "check_clause": "category IS NOT NULL"
+      },
+      {
+        "table_name": "flashcards",
+        "constraint_name": "flashcards_question_not_null",
+        "check_clause": "question IS NOT NULL"
+      },
+      {
+        "table_name": "flashcards",
+        "constraint_name": "flashcards_answer_not_null",
+        "check_clause": "answer IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_rating_check",
+        "check_clause": "(rating = ANY (ARRAY['easy'::text, 'hard'::text]))"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_leitner_box_check",
+        "check_clause": "((leitner_box >= 1) AND (leitner_box <= 5))"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_card_id_not_null",
+        "check_clause": "card_id IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_user_id_not_null",
+        "check_clause": "user_id IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_rating_not_null",
+        "check_clause": "rating IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_leitner_box_not_null",
+        "check_clause": "leitner_box IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_next_review_at_not_null",
+        "check_clause": "next_review_at IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_reviewed_at_not_null",
+        "check_clause": "reviewed_at IS NOT NULL"
+      },
+      {
+        "table_name": "flashcard_reviews",
+        "constraint_name": "flashcard_reviews_review_count_not_null",
+        "check_clause": "review_count IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_user_id_not_null",
+        "check_clause": "user_id IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_user_email_not_null",
+        "check_clause": "user_email IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_type_not_null",
+        "check_clause": "type IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_source_not_null",
+        "check_clause": "source IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_amount_not_null",
+        "check_clause": "amount IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_reference_id_not_null",
+        "check_clause": "reference_id IS NOT NULL"
+      },
+      {
+        "table_name": "reward_transactions",
+        "constraint_name": "reward_transactions_status_not_null",
+        "check_clause": "status IS NOT NULL"
+      },
+      {
+        "table_name": "user_tasks",
+        "constraint_name": "user_tasks_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "user_tasks",
+        "constraint_name": "user_tasks_title_not_null",
+        "check_clause": "title IS NOT NULL"
+      },
+      {
+        "table_name": "podcasts",
+        "constraint_name": "podcasts_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "podcasts",
+        "constraint_name": "podcasts_data_not_null",
+        "check_clause": "data IS NOT NULL"
+      },
+      {
+        "table_name": "ad_rewards",
+        "constraint_name": "ad_rewards_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "ad_rewards",
+        "constraint_name": "ad_rewards_data_not_null",
+        "check_clause": "data IS NOT NULL"
+      },
+      {
+        "table_name": "reward_claims",
+        "constraint_name": "reward_claims_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "user_profiles",
+        "constraint_name": "user_profiles_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "user_pomodoro_sessions",
+        "constraint_name": "user_pomodoro_sessions_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "user_syllabus_progress",
+        "constraint_name": "user_syllabus_progress_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "feedback_reports",
+        "constraint_name": "feedback_reports_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      },
+      {
+        "table_name": "community_comments",
+        "constraint_name": "community_comments_id_not_null",
+        "check_clause": "id IS NOT NULL"
+      }
+    ],
+    "indexes": [
+      {
+        "table": "flashcards",
+        "index": "flashcards_pkey"
+      },
+      {
+        "table": "flashcards",
+        "index": "idx_flashcards_user_id"
+      },
+      {
+        "table": "flashcards",
+        "index": "idx_flashcards_exam"
+      },
+      {
+        "table": "flashcard_reviews",
+        "index": "flashcard_reviews_pkey"
+      },
+      {
+        "table": "flashcard_reviews",
+        "index": "flashcard_reviews_user_id_card_id_key"
+      },
+      {
+        "table": "flashcard_reviews",
+        "index": "idx_flashcard_reviews_user_card"
+      },
+      {
+        "table": "flashcard_reviews",
+        "index": "idx_flashcard_reviews_next"
+      },
+      {
+        "table": "reward_transactions",
+        "index": "reward_transactions_pkey"
+      },
+      {
+        "table": "reward_transactions",
+        "index": "reward_transactions_reference_id_key"
+      },
+      {
+        "table": "reward_transactions",
+        "index": "idx_reward_transactions_user"
+      },
+      {
+        "table": "reward_transactions",
+        "index": "idx_reward_transactions_ref"
+      },
+      {
+        "table": "user_tasks",
+        "index": "user_tasks_pkey"
+      },
+      {
+        "table": "user_tasks",
+        "index": "idx_user_tasks_user_id"
+      },
+      {
+        "table": "user_tasks",
+        "index": "idx_user_tasks_exam"
+      },
+      {
+        "table": "podcasts",
+        "index": "podcasts_pkey"
+      },
+      {
+        "table": "ad_rewards",
+        "index": "ad_rewards_pkey"
+      },
+      {
+        "table": "reward_claims",
+        "index": "reward_claims_pkey"
+      },
+      {
+        "table": "user_profiles",
+        "index": "user_profiles_pkey"
+      },
+      {
+        "table": "user_pomodoro_sessions",
+        "index": "user_pomodoro_sessions_pkey"
+      },
+      {
+        "table": "user_syllabus_progress",
+        "index": "user_syllabus_progress_pkey"
+      },
+      {
+        "table": "feedback_reports",
+        "index": "feedback_reports_pkey"
+      },
+      {
+        "table": "community_comments",
+        "index": "community_comments_pkey"
+      }
+    ],
+    "rlsStatus": {
+      "flashcards": true,
+      "flashcard_reviews": true,
+      "reward_transactions": true,
+      "user_tasks": true,
+      "podcasts": false,
+      "ad_rewards": false,
+      "reward_claims": false,
+      "user_profiles": false,
+      "user_pomodoro_sessions": false,
+      "user_syllabus_progress": false,
+      "feedback_reports": false,
+      "community_comments": false
+    },
+    "rlsPolicies": [
+      {
+        "schemaname": "public",
+        "tablename": "flashcards",
+        "policyname": "Users can manage their own flashcards",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "cmd": "ALL",
+        "qual": "((auth.uid() = user_id) OR (user_id IS NULL))"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "flashcard_reviews",
+        "policyname": "Users can manage their own flashcard reviews",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "cmd": "ALL",
+        "qual": "(auth.uid() = user_id)"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "reward_transactions",
+        "policyname": "Users can view their own reward transactions",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "cmd": "SELECT",
+        "qual": "(auth.uid() = user_id)"
+      },
+      {
+        "schemaname": "public",
+        "tablename": "user_tasks",
+        "policyname": "Users can manage their own tasks",
+        "permissive": "PERMISSIVE",
+        "roles": "{public}",
+        "cmd": "ALL",
+        "qual": "(auth.uid() = user_id)"
+      }
+    ]
+  },
+  "flashcardPersistence": {
+    "cardId": "fc_1790072171044_54d00bcf",
+    "apiCreationStatus": 201,
+    "persistedInPostgreSql": true,
+    "dbCardRecord": {
+      "id": "fc_1790072171044_54d00bcf",
+      "user_id": "6f5e0712-5be9-4036-a0ab-c8dadf00c811",
+      "exam": "UPSC",
+      "category": "Polity",
+      "question": "Audit Evidence Q: What is basic structure doctrine?",
+      "answer": "Kesavananda Bharati v. State of Kerala (1973)",
+      "hint": "Custom note",
+      "is_custom": true,
+      "created_at": "2026-09-22T10:16:11.044Z",
+      "updated_at": "2026-09-22T10:16:11.044Z"
+    },
+    "apiReviewStatus": 200,
+    "reviewPersistedInPostgreSql": true,
+    "dbReviewRecord": {
+      "id": "rev_1790072174839_d56bab64",
+      "card_id": "fc_1790072171044_54d00bcf",
+      "user_id": "6f5e0712-5be9-4036-a0ab-c8dadf00c811",
+      "rating": "easy",
+      "leitner_box": 2,
+      "next_review_at": "2026-09-23T10:16:14.839Z",
+      "reviewed_at": "2026-09-22T10:16:14.839Z",
+      "review_count": 1,
+      "created_at": "2026-09-22T10:16:14.839Z"
+    },
+    "userBIsolation": {
+      "userBSeesCard": false,
+      "userBUpdateStatus": 403,
+      "userBDeleteStatus": 403
+    }
+  },
+  "taskPersistence": {
+    "taskId": "task_1790072176222_7iut",
+    "apiCreationStatus": 200,
+    "persistedInPostgreSql": true,
+    "dbTaskRecord": {
+      "id": "task_1790072176222_7iut",
+      "user_id": "6f5e0712-5be9-4036-a0ab-c8dadf00c811",
+      "title": "Evidence Audit Task: Revise Modern History",
+      "subject": "History",
+      "priority": "High",
+      "minutes": 60,
+      "status": "todo",
+      "completed": false,
+      "exam": "UPSC",
+      "created_at": "2026-09-22T10:16:16.222Z",
+      "updated_at": "2026-09-22T10:16:16.222Z"
+    },
+    "userBIsolation": {
+      "userBSeesTask": false,
+      "userBUpdateStatus": 403
+    }
+  },
+  "rewardPersistence": {},
+  "rewardTimingMatrix": [
+    {
+      "scenario": "0 seconds",
+      "targetDelayMs": 0,
+      "measuredElapsedMs": 0,
+      "httpStatus": 400,
+      "responseBody": {
+        "success": false,
+        "error": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 0s)."
+      },
+      "expected": "Reject",
+      "passedExpected": true
+    },
+    {
+      "scenario": "10 seconds",
+      "targetDelayMs": 10000,
+      "measuredElapsedMs": 10009,
+      "httpStatus": 400,
+      "responseBody": {
+        "success": false,
+        "error": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 10s)."
+      },
+      "expected": "Reject",
+      "passedExpected": true
+    },
+    {
+      "scenario": "14.0 seconds",
+      "targetDelayMs": 14000,
+      "measuredElapsedMs": 14004,
+      "httpStatus": 400,
+      "responseBody": {
+        "success": false,
+        "error": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 14s)."
+      },
+      "expected": "Reject",
+      "passedExpected": true
+    },
+    {
+      "scenario": "14.5 seconds",
+      "targetDelayMs": 14500,
+      "measuredElapsedMs": 14500,
+      "httpStatus": 400,
+      "responseBody": {
+        "success": false,
+        "error": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 15s)."
+      },
+      "expected": "Reject",
+      "passedExpected": true
+    },
+    {
+      "scenario": "14.8 seconds",
+      "targetDelayMs": 14800,
+      "measuredElapsedMs": 14800,
+      "httpStatus": 400,
+      "responseBody": {
+        "success": false,
+        "error": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 15s)."
+      },
+      "expected": "Reject",
+      "passedExpected": true
+    },
+    {
+      "scenario": "15.5 seconds",
+      "targetDelayMs": 15500,
+      "measuredElapsedMs": 15503,
+      "httpStatus": 200,
+      "responseBody": {
+        "success": true,
+        "viewsToday": 1,
+        "viewsNeeded": 5,
+        "rewardActive": false,
+        "rewardPremiumUntil": null,
+        "totalVideosWatched": 1,
+        "justUnlocked": false
+      },
+      "expected": "Accept",
+      "passedExpected": true
+    }
+  ],
+  "rewardSecurity": {
+    "forgedHmacStatus": 400,
+    "modifiedHmacStatus": 403,
+    "wrongUserStatus": 403,
+    "legitimateStatus": 200,
+    "rewardTransactionPersistedInPostgreSql": true,
+    "dbRewardRecord": {
+      "id": "rtx_1790072266168_4a8158b3",
+      "user_id": "76f5d347-e4b3-407e-8ae3-2aae7315c73d",
+      "user_email": "sec_user_1790072250500@example.com",
+      "type": "ad_watch",
+      "source": "rewarded_study_ad",
+      "amount": 1,
+      "reference_id": "adsess_1790072250535_105de972",
+      "status": "completed",
+      "metadata": {
+        "sessionId": "adsess_1790072250535_105de972",
+        "elapsedSeconds": 16
+      },
+      "created_at": "2026-09-22T10:17:46.168Z"
+    },
+    "replayStatus": 409,
+    "concurrentStatuses": [
+      409,
+      200
+    ],
+    "concurrentExactlyOneSuccess": true,
+    "tamperAmountAccepted": false
+  },
+  "streakVerification": {
+    "streakHttpStatus": 200,
+    "serverDerivedStreak": 1,
+    "totalActiveDays": 0,
+    "forgedMilestoneRejectionStatus": 400,
+    "serverDerivationEvidence": "Streak computed dynamically on server from user_pomodoro_sessions; ignores client forged streak"
+  },
+  "podcastProvenance": {
+    "allTruthfullyLabeled": true,
+    "hasMisleadingRankClaim": false,
+    "attributionType": "Editorial Desk Scripted Audio Narration (Synthesized Voice)",
+    "zeroSoundHelix": true,
+    "verdict": "PROVENANCE VERIFIED - TRUTHFULLY LABELED"
+  },
+  "podcastTechnical": {
+    "podcastListStatus": 200,
+    "episodeCount": 3,
+    "allAudioFilesHttp200": true,
+    "allAudioMimeTypeCorrect": true,
+    "rangeRequestStatus": 206,
+    "rangeRequestSupported": true,
+    "contentRangeHeader": "bytes 0-1023/2230174",
+    "noSoundHelixUrls": true
+  },
+  "targetedRegressions": {
+    "authBypassRejected": true,
+    "adminRbacEnforced": true,
+    "communityCommentIdorProtected": true,
+    "taskOwnershipIsolated": true,
+    "syllabusProgressStatus": 200,
+    "pyqAnalyticsStatus": 200,
+    "pyqPdfsStatus": 200,
+    "globalSearchContractValid": true,
+    "feedbackOwnershipStatus": 200
+  },
+  "summary": {
+    "allBlockersResolved": true,
+    "decision": "FINAL ACCEPTANCE — 28/28 VERIFIED"
+  }
+}

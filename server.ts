@@ -19,6 +19,9 @@ import adminRoutes from './routes/admin.routes.js';
 import userRoutes from './routes/user.routes.js';
 import teacherRoutes from './routes/teacher.routes.js';
 import aiRoutes from './routes/ai.routes.js';
+import cbtRoutes from './routes/cbt.routes.js';
+import rewardsRoutes from './routes/rewards.routes.js';
+import focusRoutes from './routes/focus.routes.js';
 
 // Server Startup & Initialization (Standalone Mode)
 const PORT = 3000;
@@ -170,6 +173,9 @@ app.use(adminRoutes);
 app.use(userRoutes);
 app.use(teacherRoutes);
 app.use(aiRoutes);
+app.use(cbtRoutes);
+app.use(rewardsRoutes);
+app.use(focusRoutes);
 
 // Standalone Server Listening (Skipped in Vercel Serverless / AWS Lambda)
 if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {

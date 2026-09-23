@@ -26,10 +26,10 @@ export interface AppCustomizerSettings {
 }
 
 export const DEFAULT_CUSTOMIZER_SETTINGS: AppCustomizerSettings = {
-  brandName: 'PROTRACK',
+  brandName: 'ASPIRANTX',
   brandTagline: 'Precision Exam Prep & Progress Suite',
   brandBadge: 'PRO',
-  logoIconText: 'PT',
+  logoIconText: 'AX',
   logoUrl: '',
   
   themePalette: 'CYBER_EMERALD',
@@ -48,16 +48,16 @@ export const DEFAULT_CUSTOMIZER_SETTINGS: AppCustomizerSettings = {
   announcementText: '🔥 New Syllabus Templates added for UPPSC, Bihar Board, Class 10/12 PCM & Ph.D. Entrance! Customize your goal in Profile.',
 };
 
-const STORAGE_KEY = 'protrack_customizer_settings_v2';
-const LEGACY_STORAGE_KEY = 'aspirantx_customizer_settings_v1';
+const STORAGE_KEY = 'aspirantx_customizer_settings_v3';
+const LEGACY_STORAGE_KEY = 'protrack_customizer_settings_v2';
 
 function normalizeSettings(data: any): AppCustomizerSettings {
   const merged: AppCustomizerSettings = { ...DEFAULT_CUSTOMIZER_SETTINGS, ...data };
-  if (!merged.brandName || merged.brandName.toUpperCase() === 'ASPIRANTX') {
-    merged.brandName = 'PROTRACK';
+  if (!merged.brandName || merged.brandName.toUpperCase() === 'PROTRACK') {
+    merged.brandName = 'ASPIRANTX';
   }
-  if (!merged.logoIconText || merged.logoIconText.toUpperCase() === 'AX') {
-    merged.logoIconText = 'PT';
+  if (!merged.logoIconText || merged.logoIconText.toUpperCase() === 'PT') {
+    merged.logoIconText = 'AX';
   }
   return merged;
 }

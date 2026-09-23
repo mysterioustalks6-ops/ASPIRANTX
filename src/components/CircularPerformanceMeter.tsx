@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, TrendingUp, Award, Zap, ShieldCheck } from 'lucide-react';
+import { CountUp } from '../lib/animations';
 
 interface CircularRingProps {
   progress: number; // 0 to 100
@@ -81,7 +82,7 @@ export const CircularRingMeter: React.FC<CircularRingProps> = ({
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
           <div className="text-slate-400 mb-0.5">{icon}</div>
           <span className="text-xl font-extrabold text-slate-100 tracking-tight">
-            {valueLabel || `${Math.round(clampedProgress)}%`}
+            {valueLabel ? valueLabel : <CountUp value={Math.round(clampedProgress)} suffix="%" duration={1.2} />}
           </span>
         </div>
       </div>

@@ -116,7 +116,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     {
       title: 'Account & Perks',
       items: [
-        { id: 'premium' as ActiveTab, label: 'ProTrack PRO Access', icon: Crown, badge: 'PRO' },
+        { id: 'premium' as ActiveTab, label: 'AspirantX PRO Access', icon: Crown, badge: 'PRO' },
         { id: 'reward_milestones' as ActiveTab, label: 'Study Milestones', icon: Gift },
         { id: 'wallpaper' as ActiveTab, label: 'Habit Wallpaper', icon: Smartphone, badge: 'HD' },
       ]
@@ -126,32 +126,33 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex flex-col justify-end">
+        <div className="fixed inset-0 z-50 flex">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
           />
 
-          {/* Drawer Sheet */}
+          {/* Drawer Body */}
           <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="relative w-full max-h-[88vh] bg-slate-900 border-t border-slate-800 rounded-t-3xl shadow-2xl flex flex-col z-10 overflow-hidden pb-safe"
+            initial={{ x: '-100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '-100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+            className="relative z-10 w-80 max-w-[85vw] h-full bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl"
           >
-            {/* Header Handle & Close */}
-            <div className="p-4 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+            {/* Drawer Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-xs shadow-md shadow-sky-600/25">
-                  {customizer?.logoIconText || 'PT'}
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 text-white font-black text-xl">
+                  {customizer?.brandName ? customizer.brandName[0] : 'A'}
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-100">{customizer?.brandName || 'PROTRACK'}</h2>
+                  <h2 className="text-sm font-bold text-slate-100">{customizer?.brandName || 'ASPIRANTX'}</h2>
                   <p className="text-[11px] text-slate-400">Complete Mobile Navigation</p>
                 </div>
               </div>

@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AspirantXWallpaperPlugin.class);
+        registerPlugin(FocusShieldPlugin.class);
         super.onCreate(savedInstanceState);
         if (bridge != null && bridge.getWebView() != null) {
             bridge.getWebView().getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);

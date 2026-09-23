@@ -1,0 +1,633 @@
+[
+  {
+    "id": "UPSC_CSE",
+    "body": "Union Public Service Commission",
+    "domain": "upsc.gov.in",
+    "syllabusUrls": [
+      "https://upsc.gov.in/examinations/revised-syllabus-scheme",
+      "https://upsc.gov.in/examinations/civil-services-preliminary-examination"
+    ],
+    "pyqUrls": [
+      "https://upsc.gov.in/examinations/previous-question-papers"
+    ]
+  },
+  {
+    "id": "NDA_NA",
+    "body": "Union Public Service Commission",
+    "domain": "upsc.gov.in",
+    "syllabusUrls": [
+      "https://upsc.gov.in/examinations/national-defence-academy-and-naval-academy-examination"
+    ],
+    "pyqUrls": [
+      "https://upsc.gov.in/examinations/previous-question-papers"
+    ]
+  },
+  {
+    "id": "CDS",
+    "body": "Union Public Service Commission",
+    "domain": "upsc.gov.in",
+    "syllabusUrls": [
+      "https://upsc.gov.in/examinations/combined-defence-services-examination"
+    ],
+    "pyqUrls": [
+      "https://upsc.gov.in/examinations/previous-question-papers"
+    ]
+  },
+  {
+    "id": "UPSC_CAPF",
+    "body": "Union Public Service Commission",
+    "domain": "upsc.gov.in",
+    "syllabusUrls": [
+      "https://upsc.gov.in/examinations/central-armed-police-forces-ac-examination"
+    ],
+    "pyqUrls": [
+      "https://upsc.gov.in/examinations/previous-question-papers"
+    ]
+  },
+  {
+    "id": "SSC_CGL",
+    "body": "Staff Selection Commission",
+    "domain": "ssc.gov.in",
+    "syllabusUrls": [
+      "https://ssc.gov.in/candidate-corner/syllabus"
+    ],
+    "pyqUrls": [
+      "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+    ]
+  },
+  {
+    "id": "SSC_CHSL",
+    "body": "Staff Selection Commission",
+    "domain": "ssc.gov.in",
+    "syllabusUrls": [
+      "https://ssc.gov.in/candidate-corner/syllabus"
+    ],
+    "pyqUrls": [
+      "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+    ]
+  },
+  {
+    "id": "SSC_MTS",
+    "body": "Staff Selection Commission",
+    "domain": "ssc.gov.in",
+    "syllabusUrls": [
+      "https://ssc.gov.in/candidate-corner/syllabus"
+    ],
+    "pyqUrls": [
+      "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+    ]
+  },
+  {
+    "id": "SSC_GD",
+    "body": "Staff Selection Commission",
+    "domain": "ssc.gov.in",
+    "syllabusUrls": [
+      "https://ssc.gov.in/candidate-corner/syllabus"
+    ],
+    "pyqUrls": [
+      "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+    ]
+  },
+  {
+    "id": "RRB_NTPC",
+    "body": "Railway Recruitment Control Board",
+    "domain": "rrbcdg.gov.in",
+    "syllabusUrls": [
+      "https://www.rrbcdg.gov.in/notifications.php"
+    ],
+    "pyqUrls": [
+      "https://www.rrbcdg.gov.in/"
+    ]
+  },
+  {
+    "id": "RRB_JE",
+    "body": "Railway Recruitment Control Board",
+    "domain": "rrbcdg.gov.in",
+    "syllabusUrls": [
+      "https://www.rrbcdg.gov.in/notifications.php"
+    ],
+    "pyqUrls": [
+      "https://www.rrbcdg.gov.in/"
+    ]
+  },
+  {
+    "id": "GROUP_D",
+    "body": "Railway Recruitment Cells",
+    "domain": "rrbcdg.gov.in",
+    "syllabusUrls": [
+      "https://www.rrbcdg.gov.in/"
+    ],
+    "pyqUrls": [
+      "https://www.rrbcdg.gov.in/"
+    ]
+  },
+  {
+    "id": "RAILWAY_PROTECTION_FORCE_",
+    "body": "Ministry of Railways",
+    "domain": "rpf.indianrailways.gov.in",
+    "syllabusUrls": [
+      "https://rpf.indianrailways.gov.in/"
+    ],
+    "pyqUrls": [
+      "https://rpf.indianrailways.gov.in/"
+    ]
+  },
+  {
+    "id": "IBPS_PO",
+    "body": "Institute of Banking Personnel Selection",
+    "domain": "ibps.in",
+    "syllabusUrls": [
+      "https://www.ibps.in/crp-po-mt/"
+    ],
+    "pyqUrls": [
+      "https://www.ibps.in/crp-po-mt/"
+    ]
+  },
+  {
+    "id": "IBPS_CLERK",
+    "body": "Institute of Banking Personnel Selection",
+    "domain": "ibps.in",
+    "syllabusUrls": [
+      "https://www.ibps.in/crp-clerical-cadre/"
+    ],
+    "pyqUrls": [
+      "https://www.ibps.in/crp-clerical-cadre/"
+    ]
+  },
+  {
+    "id": "SBI_PO",
+    "body": "State Bank of India",
+    "domain": "sbi.co.in",
+    "syllabusUrls": [
+      "https://sbi.co.in/web/careers/current-openings"
+    ],
+    "pyqUrls": [
+      "https://sbi.co.in/web/careers/current-openings"
+    ]
+  },
+  {
+    "id": "NEET_UG",
+    "body": "National Testing Agency",
+    "domain": "exams.nta.ac.in",
+    "syllabusUrls": [
+      "https://exams.nta.ac.in/NEET/syllabus",
+      "https://www.nmc.org.in/neet/neet-ug"
+    ],
+    "pyqUrls": [
+      "https://nta.ac.in/Downloads"
+    ]
+  },
+  {
+    "id": "UGC_NET",
+    "body": "National Testing Agency",
+    "domain": "ugcnet.nta.ac.in",
+    "syllabusUrls": [
+      "https://ugcnet.nta.ac.in/",
+      "https://www.ugcnetonline.in/syllabus-new.php"
+    ],
+    "pyqUrls": [
+      "https://nta.ac.in/Downloads"
+    ]
+  },
+  {
+    "id": "CSIR_NATIONAL_ELIGIBILITY",
+    "body": "National Testing Agency",
+    "domain": "csirnet.nta.ac.in",
+    "syllabusUrls": [
+      "https://csirnet.nta.ac.in/",
+      "https://csirhrdg.res.in/Home/Index/1/Default/1446/60"
+    ],
+    "pyqUrls": [
+      "https://csirhrdg.res.in/"
+    ]
+  },
+  {
+    "id": "CTET",
+    "body": "Central Board of Secondary Education",
+    "domain": "ctet.nic.in",
+    "syllabusUrls": [
+      "https://ctet.nic.in/information-bulletin/"
+    ],
+    "pyqUrls": [
+      "https://ctet.nic.in/previous-year-question-paper/"
+    ]
+  },
+  {
+    "id": "UPPSC_PCS",
+    "body": "Uttar Pradesh Public Service Commission",
+    "domain": "uppsc.up.nic.in",
+    "syllabusUrls": [
+      "https://uppsc.up.nic.in/Candidate_Corner/Syllabus.aspx"
+    ],
+    "pyqUrls": [
+      "https://uppsc.up.nic.in/Candidate_Corner/PreviousQuestionPapers.aspx"
+    ]
+  },
+  {
+    "id": "BPSC_PCS",
+    "body": "Bihar Public Service Commission",
+    "domain": "bpsc.bih.nic.in",
+    "syllabusUrls": [
+      "https://bpsc.bih.nic.in/Syllabus.htm"
+    ],
+    "pyqUrls": [
+      "https://bpsc.bih.nic.in/"
+    ]
+  },
+  {
+    "id": "WBCS",
+    "body": "West Bengal Public Service Commission",
+    "domain": "wbpsc.gov.in",
+    "syllabusUrls": [
+      "https://wbpsc.gov.in/syllabus.jsp"
+    ],
+    "pyqUrls": [
+      "https://wbpsc.gov.in/previous_question.jsp"
+    ]
+  },
+  {
+    "id": "UPSSSC_PET",
+    "body": "Uttar Pradesh Subordinate Services Selection Commission",
+    "domain": "upsssc.gov.in",
+    "syllabusUrls": [
+      "https://upsssc.gov.in/AllNotification.aspx"
+    ],
+    "pyqUrls": [
+      "https://upsssc.gov.in/"
+    ]
+  },
+  {
+    "id": "UP_POLICE_CONSTABLE",
+    "body": "UP Police Recruitment and Promotion Board",
+    "domain": "uppbpb.gov.in",
+    "syllabusUrls": [
+      "http://uppbpb.gov.in/"
+    ],
+    "pyqUrls": [
+      "http://uppbpb.gov.in/"
+    ]
+  },
+  {
+    "id": "UP_POLICE_SI",
+    "body": "UP Police Recruitment and Promotion Board",
+    "domain": "uppbpb.gov.in",
+    "syllabusUrls": [
+      "http://uppbpb.gov.in/"
+    ],
+    "pyqUrls": [
+      "http://uppbpb.gov.in/"
+    ]
+  },
+  {
+    "id": "BIHAR_POLICE_CONSTABLE",
+    "body": "Central Selection Board of Constable Bihar",
+    "domain": "csbc.bih.nic.in",
+    "syllabusUrls": [
+      "https://csbc.bih.nic.in/"
+    ],
+    "pyqUrls": [
+      "https://csbc.bih.nic.in/"
+    ]
+  },
+  {
+    "id": "BIHAR_POLICE_SI",
+    "body": "Bihar Police Subordinate Services Commission",
+    "domain": "bpssc.bih.nic.in",
+    "syllabusUrls": [
+      "https://bpssc.bih.nic.in/"
+    ],
+    "pyqUrls": [
+      "https://bpssc.bih.nic.in/"
+    ]
+  },
+  {
+    "id": "WBP_CONSTABLE",
+    "body": "West Bengal Police Recruitment Board",
+    "domain": "prb.wb.gov.in",
+    "syllabusUrls": [
+      "https://prb.wb.gov.in/"
+    ],
+    "pyqUrls": [
+      "https://prb.wb.gov.in/"
+    ]
+  },
+  {
+    "id": "KP_CONSTABLE",
+    "body": "West Bengal Police Recruitment Board",
+    "domain": "prb.wb.gov.in",
+    "syllabusUrls": [
+      "https://prb.wb.gov.in/"
+    ],
+    "pyqUrls": [
+      "https://prb.wb.gov.in/"
+    ]
+  },
+  {
+    "id": "MP_POLICE_CONSTABLE",
+    "body": "Madhya Pradesh Employees Selection Board",
+    "domain": "esb.mp.gov.in",
+    "syllabusUrls": [
+      "https://esb.mp.gov.in/Rulebooks.html"
+    ],
+    "pyqUrls": [
+      "https://esb.mp.gov.in/"
+    ]
+  },
+  {
+    "id": "RAJASTHAN_POLICE_CONSTABLE",
+    "body": "Rajasthan Police",
+    "domain": "police.rajasthan.gov.in",
+    "syllabusUrls": [
+      "https://police.rajasthan.gov.in/Recruitment.aspx"
+    ],
+    "pyqUrls": [
+      "https://police.rajasthan.gov.in/"
+    ]
+  },
+  {
+    "id": "CHHATTISGARH_PUBLIC_SERVI",
+    "body": "Chhattisgarh Public Service Commission",
+    "domain": "psc.cg.gov.in",
+    "syllabusUrls": [
+      "https://psc.cg.gov.in/Syllabus.htm"
+    ],
+    "pyqUrls": [
+      "https://psc.cg.gov.in/"
+    ]
+  },
+  {
+    "id": "ASSAM_PUBLIC_SERVICE_COMM",
+    "body": "Assam Public Service Commission",
+    "domain": "apsc.nic.in",
+    "syllabusUrls": [
+      "https://apsc.nic.in/syllabus.asp"
+    ],
+    "pyqUrls": [
+      "https://apsc.nic.in/previous_question_papers.asp"
+    ]
+  },
+  {
+    "id": "RAJASTHAN_PUBLIC_SERVICE_",
+    "body": "Rajasthan Public Service Commission",
+    "domain": "rpsc.rajasthan.gov.in",
+    "syllabusUrls": [
+      "https://rpsc.rajasthan.gov.in/syllabus"
+    ],
+    "pyqUrls": [
+      "https://rpsc.rajasthan.gov.in/previous-question-papers"
+    ]
+  },
+  {
+    "id": "COMMON_UNIVERSITY_ENTRANC",
+    "body": "National Testing Agency",
+    "domain": "cuetug.nta.ac.in",
+    "syllabusUrls": [
+      "https://cuetug.nta.ac.in/syllabus.html"
+    ],
+    "pyqUrls": [
+      "https://nta.ac.in/Downloads"
+    ]
+  },
+  {
+    "id": "COMMON_ADMISSION_TEST",
+    "body": "Indian Institutes of Management",
+    "domain": "iimcat.ac.in",
+    "syllabusUrls": [
+      "https://iimcat.ac.in/"
+    ],
+    "pyqUrls": [
+      "https://iimcat.ac.in/"
+    ]
+  },
+  {
+    "id": "COMMON_LAW_ADMISSION_TEST",
+    "body": "Consortium of National Law Universities",
+    "domain": "consortiumofnlus.ac.in",
+    "syllabusUrls": [
+      "https://consortiumofnlus.ac.in/clat-2025/syllabus.html"
+    ],
+    "pyqUrls": [
+      "https://consortiumofnlus.ac.in/"
+    ]
+  },
+  {
+    "id": "GRADUATE_APTITUDE_TEST_IN",
+    "body": "Indian Institute of Science / IITs",
+    "domain": "gate2025.iitr.ac.in",
+    "syllabusUrls": [
+      "https://gate2025.iitr.ac.in/syllabus.html"
+    ],
+    "pyqUrls": [
+      "https://gate2025.iitr.ac.in/old-question-papers.html"
+    ]
+  },
+  {
+    "id": "ALL_INDIA_BAR_EXAMINATION",
+    "body": "Bar Council of India",
+    "domain": "allindiabarexamination.com",
+    "syllabusUrls": [
+      "https://allindiabarexamination.com/syllabus.html"
+    ],
+    "pyqUrls": [
+      "https://allindiabarexamination.com/"
+    ]
+  },
+  {
+    "id": "AIR_FORCE_COMMON_ADMISSIO",
+    "body": "Indian Air Force",
+    "domain": "afcat.cdac.in",
+    "syllabusUrls": [
+      "https://afcat.cdac.in/AFCAT/syllabus.html"
+    ],
+    "pyqUrls": [
+      "https://afcat.cdac.in/AFCAT/samplePapers.html"
+    ]
+  },
+  {
+    "id": "COMBINED_MEDICAL_SERVICES",
+    "body": "Union Public Service Commission",
+    "domain": "upsc.gov.in",
+    "syllabusUrls": [
+      "https://upsc.gov.in/examinations/combined-medical-services-examination"
+    ],
+    "pyqUrls": [
+      "https://upsc.gov.in/examinations/previous-question-papers"
+    ]
+  },
+  {
+    "id": "ENGINEERING_SERVICES_EXAM",
+    "body": "Union Public Service Commission",
+    "domain": "upsc.gov.in",
+    "syllabusUrls": [
+      "https://upsc.gov.in/examinations/engineering-services-examination"
+    ],
+    "pyqUrls": [
+      "https://upsc.gov.in/examinations/previous-question-papers"
+    ]
+  },
+  {
+    "id": "INDIAN_FOREST_SERVICE_EXA",
+    "body": "Union Public Service Commission",
+    "domain": "upsc.gov.in",
+    "syllabusUrls": [
+      "https://upsc.gov.in/examinations/indian-forest-service-examination"
+    ],
+    "pyqUrls": [
+      "https://upsc.gov.in/examinations/previous-question-papers"
+    ]
+  },
+  {
+    "id": "UTTAR_PRADESH_TEACHER_ELI",
+    "body": "Uttar Pradesh Basic Education Board",
+    "domain": "updeled.gov.in",
+    "syllabusUrls": [
+      "https://updeled.gov.in/"
+    ],
+    "pyqUrls": [
+      "https://updeled.gov.in/"
+    ]
+  },
+  {
+    "id": "BIHAR_BED",
+    "body": "Lalit Narayan Mithila University",
+    "domain": "biharcetbed-lnmu.in",
+    "syllabusUrls": [
+      "https://biharcetbed-lnmu.in/"
+    ],
+    "pyqUrls": [
+      "https://biharcetbed-lnmu.in/"
+    ]
+  },
+  {
+    "id": "RAJASTHAN_ELIGIBILITY_EXA",
+    "body": "Board of Secondary Education Rajasthan",
+    "domain": "rajeduboard.rajasthan.gov.in",
+    "syllabusUrls": [
+      "https://rajeduboard.rajasthan.gov.in/"
+    ],
+    "pyqUrls": [
+      "https://rajeduboard.rajasthan.gov.in/"
+    ]
+  },
+  {
+    "id": "MP_CPCT",
+    "body": "Madhya Pradesh Agency for Promotion of Information Technology",
+    "domain": "cpct.mp.gov.in",
+    "syllabusUrls": [
+      "https://cpct.mp.gov.in/Syllabus.html"
+    ],
+    "pyqUrls": [
+      "https://cpct.mp.gov.in/"
+    ]
+  },
+  {
+    "id": "JEECUP",
+    "body": "Joint Entrance Examination Council Uttar Pradesh",
+    "domain": "jeecup.admissions.nic.in",
+    "syllabusUrls": [
+      "https://jeecup.admissions.nic.in/"
+    ],
+    "pyqUrls": [
+      "https://jeecup.admissions.nic.in/"
+    ]
+  },
+  {
+    "id": "BIHAR_DELED",
+    "body": "Bihar School Examination Board",
+    "domain": "secondary.biharboardonline.com",
+    "syllabusUrls": [
+      "https://secondary.biharboardonline.com/"
+    ],
+    "pyqUrls": [
+      "https://secondary.biharboardonline.com/"
+    ]
+  },
+  {
+    "id": "MAHARASHTRA_COMMON_ENTRAN",
+    "body": "State Common Entrance Test Cell Maharashtra",
+    "domain": "cetcell.mahacet.org",
+    "syllabusUrls": [
+      "https://cetcell.mahacet.org/"
+    ],
+    "pyqUrls": [
+      "https://cetcell.mahacet.org/"
+    ]
+  },
+  {
+    "id": "KARNATAKA_COMMON_ENTRANCE",
+    "body": "Karnataka Examinations Authority",
+    "domain": "kea.kar.nic.in",
+    "syllabusUrls": [
+      "https://cetonline.karnataka.gov.in/kea/"
+    ],
+    "pyqUrls": [
+      "https://cetonline.karnataka.gov.in/kea/"
+    ]
+  },
+  {
+    "id": "TELANGANA_ENGINEERING_AGR",
+    "body": "Jawaharlal Nehru Technological University Hyderabad",
+    "domain": "eapcet.tsche.ac.in",
+    "syllabusUrls": [
+      "https://eapcet.tsche.ac.in/TSEAPCET/EAPCET_Syllabus.aspx"
+    ],
+    "pyqUrls": [
+      "https://eapcet.tsche.ac.in/"
+    ]
+  },
+  {
+    "id": "ANDHRA_PRADESH_AGRICULTUR",
+    "body": "Jawaharlal Nehru Technological University Kakinada",
+    "domain": "cets.apsche.ap.gov.in",
+    "syllabusUrls": [
+      "https://cets.apsche.ap.gov.in/EAPCET/Eapcet/EAPCET_Syllabus.aspx"
+    ],
+    "pyqUrls": [
+      "https://cets.apsche.ap.gov.in/EAPCET/"
+    ]
+  },
+  {
+    "id": "IMU_CET",
+    "body": "Indian Maritime University",
+    "domain": "imu.edu.in",
+    "syllabusUrls": [
+      "https://www.imu.edu.in/imunew/admissions"
+    ],
+    "pyqUrls": [
+      "https://www.imu.edu.in/"
+    ]
+  },
+  {
+    "id": "JENPAS_UG",
+    "body": "West Bengal Joint Entrance Examinations Board",
+    "domain": "wbjeeb.nic.in",
+    "syllabusUrls": [
+      "https://wbjeeb.nic.in/jenpas-ug/"
+    ],
+    "pyqUrls": [
+      "https://wbjeeb.nic.in/jenpas-ug/"
+    ]
+  },
+  {
+    "id": "ANM_GNM",
+    "body": "West Bengal Joint Entrance Examinations Board",
+    "domain": "wbjeeb.nic.in",
+    "syllabusUrls": [
+      "https://wbjeeb.nic.in/anm-gnm/"
+    ],
+    "pyqUrls": [
+      "https://wbjeeb.nic.in/anm-gnm/"
+    ]
+  },
+  {
+    "id": "WBPSC_FOOD_SI",
+    "body": "West Bengal Public Service Commission",
+    "domain": "wbpsc.gov.in",
+    "syllabusUrls": [
+      "https://wbpsc.gov.in/"
+    ],
+    "pyqUrls": [
+      "https://wbpsc.gov.in/"
+    ]
+  }
+]

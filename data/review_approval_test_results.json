@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-09-23T11:33:15.965Z",
+  "testResults": {
+    "unauthorized_no_token": "PASS",
+    "unauthorized_student_token": "PASS",
+    "pre_approval_visibility": "PASS",
+    "gate_invalid_placeholder": "PASS",
+    "gate_extraction_failed": "PASS",
+    "gate_legacy_fallback": "PASS",
+    "admin_approval": "PASS",
+    "post_approval_visibility": "PASS",
+    "rejection_revocation": "PASS",
+    "neon_authority": "PASS",
+    "audit_trail": "PASS"
+  },
+  "allPassed": true
+}

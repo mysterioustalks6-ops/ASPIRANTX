@@ -71,133 +71,136 @@ export const Header: React.FC<HeaderProps> = ({
       case 'dashboard':
       case 'student_dashboard':
         return {
-          title: 'Candidate Command Center',
-          subtitle: 'Live Study Telemetry & High-Impact Priority Actions',
+          title: 'Study Dashboard',
+          subtitle: 'Daily focus, progress, and exam countdown',
         };
       case 'syllabus':
         return {
-          title: 'Syllabus Command Center',
-          subtitle: 'Track GS, CSAT, Optional, and Tier-1/2 exam topics',
+          title: 'Syllabus Tracker',
+          subtitle: 'Chapter-by-chapter curriculum checklist',
         };
       case 'wallpaper':
         return {
-          title: 'Lockscreen Habit Wallpaper',
-          subtitle: 'HD dynamic persona countdown lockscreen generator',
+          title: 'Habit Wallpaper',
+          subtitle: 'Lockscreen countdown generator',
         };
       case 'cbt_exam':
       case 'cbt':
         return {
-          title: 'CBT Mock Test Simulator',
-          subtitle: 'Real-time online exam series with instant evaluation',
+          title: 'CBT Simulator',
+          subtitle: 'Timed online mock examinations',
         };
       case 'pyq':
         return {
-          title: 'PYQ Archive & Predictor',
-          subtitle: '35+ years past exam papers with AI model solutions',
+          title: 'PYQ Archive',
+          subtitle: '35-year past exam papers & solutions',
         };
       case 'question_bank':
         return {
-          title: 'Question Bank Engine',
-          subtitle: 'Topic-wise practice questions & smart filters',
+          title: 'Question Bank',
+          subtitle: 'Topic-wise practice questions',
         };
       case 'flashcards':
         return {
-          title: 'Active Recall Flashcards',
-          subtitle: 'Spaced repetition decks for rapid revision',
+          title: 'Flashcards',
+          subtitle: 'Active recall spaced repetition decks',
         };
       case 'library':
         return {
-          title: 'Digital Resource Library',
-          subtitle: 'NCERTs, standard books & curated toppers notes',
+          title: 'Digital Library',
+          subtitle: 'NCERT textbooks & reference notes',
         };
       case 'timer':
         return {
-          title: 'Deep-Work Focus Timer',
-          subtitle: 'Pomodoro focus intervals with ambient soundscapes',
+          title: 'Focus Timer',
+          subtitle: 'Deep-work Pomodoro intervals',
         };
       case 'tasks':
         return {
-          title: 'Daily Study Tasks & Schedule',
-          subtitle: 'Manage editorial reading, mock tests, and answer writing',
+          title: 'Daily Tasks',
+          subtitle: 'Study schedule & target checklist',
         };
       case 'chat':
         return {
           title: 'AI Study Mentor',
-          subtitle: 'Instant answer structuring & syllabus doubt solver',
+          subtitle: 'Instant concept doubts & evaluations',
         };
       case 'community':
         return {
-          title: 'Peer Study Community',
-          subtitle: 'Collaborate with fellow serious aspirants',
+          title: 'Community Feed',
+          subtitle: 'Peer discussions & preparation tips',
         };
       case 'study_buddy':
         return {
-          title: 'Study Buddy Sync',
-          subtitle: 'Accountability partner & co-study session',
+          title: 'Study Buddy',
+          subtitle: 'Accountability partner & co-study',
         };
       case 'weakness':
         return {
-          title: 'AI Weakness Detector',
-          subtitle: 'Telemetry diagnostic & targeted revision roadmap',
+          title: 'Weakness Detector',
+          subtitle: 'Diagnostic analysis & score booster',
         };
       case 'leaderboard':
         return {
-          title: 'All-India Rank & Leaderboard',
-          subtitle: 'Benchmark your preparation against aspirants nationwide',
+          title: 'Leaderboard',
+          subtitle: 'National study consistency rankings',
         };
       case 'eligibility':
         return {
-          title: 'Exam Eligibility Checker',
-          subtitle: 'Age, educational qualification & reservation matrix',
+          title: 'Eligibility Checker',
+          subtitle: 'Age limits & attempt verification',
         };
       case 'premium':
       case 'earn_premium':
         return {
-          title: 'ProTrack PRO Access',
-          subtitle: 'Unlock unlimited AI evaluation & mock test series',
+          title: 'PRO Membership',
+          subtitle: 'Unlimited AI evaluations & mock tests',
         };
       case 'reward_milestones':
         return {
-          title: 'Study Milestones & Rewards',
-          subtitle: 'Redeem your consistency streak coins for PRO access',
+          title: 'Rewards & Milestones',
+          subtitle: 'Study consistency perks & badges',
         };
       case 'teachers':
         return {
-          title: 'Teacher & Faculty Portal',
-          subtitle: 'Manage student cohorts, assignments, and test series',
+          title: 'Teacher Portal',
+          subtitle: 'Educator console & test series',
         };
       case 'collaboration':
         return {
-          title: 'Classroom Collaboration',
-          subtitle: 'Group study sessions & collective problem solving',
+          title: 'Collaboration',
+          subtitle: 'Student partnerships & ambassador perks',
         };
       case 'blog':
         return {
-          title: 'Aspirant Insights & Articles',
-          subtitle: 'Exam strategies, toppers notes, and subject deep-dives',
+          title: 'Editorial & Articles',
+          subtitle: 'Subject deep-dives & exam updates',
         };
       case 'blog_submit':
         return {
-          title: 'Publish Editorial Article',
-          subtitle: 'Submit subject articles and study notes for review',
+          title: 'Submit Article',
+          subtitle: 'Share study notes with aspirants',
         };
       case 'feedback':
         return {
-          title: 'Candidate Feedback',
-          subtitle: 'Help shape and improve the ProTrack study platform',
+          title: 'Feedback',
+          subtitle: 'Suggestions & support requests',
         };
       case 'podcasts':
         return {
-          title: 'Audio Lecture Series',
-          subtitle: 'High-yield audio revisions & daily editorial analysis',
+          title: 'Topper Podcasts',
+          subtitle: 'Audio lessons & topper revision advice',
         };
       case 'admin':
         return {
-          title: 'Master Operations & Admin Panel',
-          subtitle: 'Platform analytics, content databases, payments & operations',
+          title: 'Admin Panel',
+          subtitle: 'System control & configuration',
         };
       default:
-        return { title: 'Candidate Command Center', subtitle: 'Live Study Dashboard & Metrics' };
+        return {
+          title: 'Workspace',
+          subtitle: 'Precision exam preparation',
+        };
     }
   };
 

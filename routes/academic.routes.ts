@@ -7,6 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { RewardEngine } from '../src/lib/rewards/rewardEngine.js';
 import {
   type AdminAnnouncement,
   type AiConversationRecord,
@@ -2572,7 +2573,15 @@ router.get('/api/academic/cbt/tests/:id', (req, res) => {
     if (!test) {
       return res.status(404).json({ error: 'CBT Test not found' });
     }
-    res.json({ success: true, test });
+    // Safe projection: during active test taking, strip answers & explanations
+    const sanitizedTest = {
+      ...test,
+      questions: (test.questions || []).map((q: any) => {
+        const { correctOption, correctAnswer, explanation, optionExplanations, ...safeQ } = q;
+        return safeQ;
+      })
+    };
+    res.json({ success: true, test: sanitizedTest });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to fetch CBT test details' });
   }
@@ -4270,6 +4279,22 @@ router.post('/api/academic/flashcards/review', async (req, res) => {
     flashcardReviewsStore.set(reviewKey, reviewRecord);
     persistFlashcardsToDisk();
 
+    let reviewRewards = null;
+    try {
+      reviewRewards = await RewardEngine.processEvent({
+        userId,
+        eventType: 'FLASHCARD_REVIEWED',
+        referenceId: `rev_${cardId}_${Date.now()}`,
+        payload: {
+          cardId,
+          rating: normalizedRating,
+          box: schedule.newBox
+        }
+      });
+    } catch (e) {
+      console.warn('[Flashcards] RewardEngine processEvent warning:', e);
+    }
+
     res.json({
       success: true,
       review: {
@@ -4279,7 +4304,8 @@ router.post('/api/academic/flashcards/review', async (req, res) => {
         nextReviewAt: schedule.nextReviewAt,
         reviewedAt: schedule.reviewedAt,
         reviewCount
-      }
+      },
+      rewards: reviewRewards
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: 'Failed to record flashcard review: ' + err.message });
@@ -4365,6 +4391,234 @@ router.post('/api/academic/flashcards/migrate', async (req, res) => {
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: 'Migration failed: ' + err.message });
+  }
+});
+
+// ============================================================================
+// AUTONOMOUS EXAM DATA AUTO-FETCH AGENT ENDPOINTS
+// ============================================================================
+
+router.post('/admin/auto-fetch-agent/run', async (req, res) => {
+  try {
+    const { examId, type, mode, freshnessDays, force, dryRun } = req.body || {};
+    const { runAutoFetchPipeline, isAutoFetchRunning } = await import('../src/lib/autoFetch/agentPipeline.js');
+
+    if (isAutoFetchRunning()) {
+      return res.status(409).json({ success: false, error: 'Auto-fetch pipeline is already running.' });
+    }
+
+    if (examId && mode !== 'batch') {
+      const summary = await runAutoFetchPipeline({
+        examId,
+        type: type || 'all',
+        mode: 'on-demand',
+        freshnessDays: typeof freshnessDays === 'number' ? freshnessDays : 30,
+        force: Boolean(force),
+        dryRun: Boolean(dryRun),
+      });
+      return res.json({ success: true, summary });
+    } else {
+      runAutoFetchPipeline({
+        examId,
+        type: type || 'all',
+        mode: 'batch',
+        freshnessDays: typeof freshnessDays === 'number' ? freshnessDays : 30,
+        force: Boolean(force),
+        dryRun: Boolean(dryRun),
+      }).catch((err) => {
+        console.error('[AutoFetch Pipeline Background Error]:', err);
+      });
+      return res.json({ success: true, message: 'Auto-fetch batch pipeline started in background.' });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/admin/auto-fetch-agent/status', async (req, res) => {
+  try {
+    const { isAutoFetchRunning, getLatestRunSummary } = await import('../src/lib/autoFetch/agentPipeline.js');
+    const { getDomainStats } = await import('../src/lib/autoFetch/politeFetcher.js');
+
+    res.json({
+      isRunning: isAutoFetchRunning(),
+      domainStats: getDomainStats(),
+      lastRunFinishedAt: getLatestRunSummary()?.finishedAt || null,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/admin/auto-fetch-agent/report', async (req, res) => {
+  try {
+    const { getLatestRunSummary } = await import('../src/lib/autoFetch/agentPipeline.js');
+    const summary = getLatestRunSummary();
+    if (!summary) {
+      return res.json({ message: 'No run summary recorded yet.' });
+    }
+    res.json(summary);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get(['/api/exams/:examId/canonical-content', '/exams/:examId/canonical-content'], async (req, res) => {
+  try {
+    const { examId } = req.params;
+    const { getAllStoredExamContent } = await import('../src/lib/autoFetch/contentStore.js');
+    // Public API strictly serves ONLY approved records — pending_review content is invisible to live users
+    const content = await getAllStoredExamContent(examId, { approvedOnly: true });
+    res.json({
+      success: true,
+      examId,
+      canonical: content,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Admin Review Endpoint: allows manual review of pending_review records (Server-Authorized)
+router.get(['/api/admin/exam-content/:examId', '/admin/exam-content/:examId'], verifyAdminAuth, async (req, res) => {
+  try {
+    const { examId } = req.params;
+    const { getAllStoredExamContent } = await import('../src/lib/autoFetch/contentStore.js');
+    // Admin endpoint can view pending_review content for manual audit
+    const content = await getAllStoredExamContent(examId, { approvedOnly: false });
+    res.json({
+      success: true,
+      examId,
+      canonical: content,
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Admin Approval/Rejection Endpoint with Strict Provenance Gate & Audit Trail
+router.patch(['/api/admin/exam-content/:examId/status', '/admin/exam-content/:examId/status'], verifyAdminAuth, async (req, res) => {
+  try {
+    const { examId } = req.params;
+    const { type, status, reviewReason } = req.body || {};
+    if (!type || !['pending_review', 'approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ success: false, error: 'Invalid type or status' });
+    }
+
+    const { queryPostgres } = await import('../src/lib/postgres.js');
+    const { getContentRecord, writeLocalCache } = await import('../src/lib/autoFetch/contentStore.js');
+
+    // 1. Fetch current record from Neon PostgreSQL
+    const dbRes = await queryPostgres(
+      `SELECT exam_id, type, source_url, status, sections, questions, content_usage, verification_status, provenance, factual_metadata
+       FROM exam_content WHERE exam_id = $1 AND type = $2 LIMIT 1`,
+      [examId, type]
+    );
+
+    if (dbRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: `Exam content record not found for ${examId} (${type})` });
+    }
+
+    const row = dbRes.rows[0];
+
+    // 2. Strict Provenance Gate for Approval
+    if (status === 'approved') {
+      const vStatus = row.verification_status;
+
+      // Block invalid / failed / unextracted states
+      const blockedStatuses = ['invalid_placeholder', 'extraction_failed', 'blocked', 'needs_ocr_or_manual', 'not_found_official'];
+      if (blockedStatuses.includes(vStatus)) {
+        return res.status(422).json({
+          success: false,
+          error: `PROVENANCE_GATE_BLOCKED: Cannot approve record with verification_status '${vStatus}'. Content is invalid or unextracted.`
+        });
+      }
+
+      // Block unverified legacy fallbacks
+      if (vStatus === 'legacy_fallback') {
+        return res.status(422).json({
+          success: false,
+          error: `PROVENANCE_GATE_BLOCKED: Cannot approve legacy_fallback record without official verification.`
+        });
+      }
+
+      if (vStatus !== 'verified') {
+        return res.status(422).json({
+          success: false,
+          error: `PROVENANCE_GATE_BLOCKED: Record must have verification_status = 'verified' prior to publication (received '${vStatus}').`
+        });
+      }
+
+      // Check syllabus non-empty content
+      if (type === 'syllabus') {
+        const sections = typeof row.sections === 'string' ? JSON.parse(row.sections) : (row.sections || []);
+        const topicCount = sections.reduce((acc: number, s: any) => acc + (s.topics?.length || 0), 0);
+        if (sections.length === 0 || topicCount === 0) {
+          return res.status(422).json({
+            success: false,
+            error: 'PROVENANCE_GATE_BLOCKED: Cannot approve syllabus record with 0 sections or 0 topics.'
+          });
+        }
+      }
+
+      // Check PYQ rights/provenance
+      if (type === 'pyq') {
+        if (row.content_usage === 'verbatim_exam_content' && vStatus !== 'verified') {
+          return res.status(422).json({
+            success: false,
+            error: 'PROVENANCE_GATE_BLOCKED: Verbatim exam questions require explicit rights clearance before approval.'
+          });
+        }
+      }
+    }
+
+    // 3. Apply status transition in Neon PostgreSQL
+    let newVerificationStatus = row.verification_status;
+    let newReason = reviewReason || row.review_reason;
+
+    if (status === 'rejected') {
+      newVerificationStatus = 'invalid_placeholder';
+      newReason = reviewReason || 'Admin rejected during content review gate';
+    }
+
+    await queryPostgres(
+      `UPDATE exam_content
+       SET status = $1,
+           verification_status = $2,
+           review_reason = $3,
+           updated_at = NOW()
+       WHERE exam_id = $4 AND type = $5`,
+      [status, newVerificationStatus, newReason, examId, type]
+    );
+
+    // 4. Log to Audit Trail
+    const adminUser = (req as any).user?.email || 'ADMIN';
+    Shared.recordAdminAuditLog({
+      user: adminUser,
+      action: 'EXAM_CONTENT_STATUS_TRANSITION',
+      details: `Transitioned exam content [${examId}::${type}] from '${row.status}' to '${status}'. Verification: '${newVerificationStatus}'. Note: ${newReason || 'None'}`,
+      beforeValue: { status: row.status, verification_status: row.verification_status },
+      afterValue: { status, verification_status: newVerificationStatus },
+      endpoint: req.originalUrl,
+      outcome: 'SUCCESS'
+    });
+
+    // 5. Synchronize local cache mirror
+    const updatedRecord = await getContentRecord(examId, type);
+    if (updatedRecord) {
+      writeLocalCache(updatedRecord);
+    }
+
+    res.json({
+      success: true,
+      examId,
+      type,
+      status,
+      verification_status: newVerificationStatus,
+      review_reason: newReason
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SlideUp, Stagger, StaggerItem, PressFeedback, ProgressAnimation, CountUp, triggerConfetti, AccordionTransition, ModalTransition } from '../lib/animations';
+import { 
+  SlideUp, 
+  Stagger, 
+  StaggerItem, 
+  PressFeedback, 
+  ProgressAnimation, 
+  CountUp, 
+  triggerConfetti, 
+  AccordionTransition, 
+  ModalTransition,
+  CheckmarkPop,
+  FloatingRewardBadge,
+  ProgressiveDiscoveryCard
+} from '../lib/animations';
 import { SyllabusTopic, SubTopic, ExamType, PredictorSettings } from '../types';
 import { INITIAL_SYLLABUS_HIERARCHY } from '../data/academicData';
 import { EXAM_LIST } from '../lib/examList';
@@ -113,6 +126,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   const [searchBothTabs, setSearchBothTabs] = useState<boolean>(false);
 
   const [completedSubtopicIds, setCompletedSubtopicIds] = useState<Set<string>>(new Set());
+  const [recentlyCheckedSubId, setRecentlyCheckedSubId] = useState<string | null>(null);
   const [predictorSettings, setPredictorSettings] = useState<PredictorSettings>(() => loadPredictorSettings(userId));
   const [syncState, setSyncState] = useState<SyncState>({ status: 'synced', message: 'Ready' });
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
@@ -275,21 +289,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     setTimeSummary(summary);
   };
 
-  // Auto-expand top topics when syllabus raw nodes change
-  useEffect(() => {
-    const initExpanded: Record<string, boolean> = {};
-    if (officialTopics.length > 0) {
-      initExpanded[officialTopics[0].id] = true;
-      if (officialTopics[1]) initExpanded[officialTopics[1].id] = true;
-    }
-    if (personalTopics.length > 0) {
-      initExpanded[personalTopics[0].id] = true;
-    }
-    if (Object.keys(initExpanded).length > 0) {
-      setExpandedTopics((prev) => ({ ...initExpanded, ...prev }));
-    }
-  }, [officialRawNodes, personalRawNodes]);
-
   useEffect(() => {
     loadData();
 
@@ -364,7 +363,14 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     setSyncState(res);
 
     if (isNowChecking && res.status === 'synced') {
-      triggerConfetti({ particleCount: 35, spread: 60 });
+      setRecentlyCheckedSubId(subtopicId);
+      // Check if this subtopic check completes all subtopics of this topic
+      const pool = activeTab === 'official' ? officialTopics : personalTopics;
+      const parentTopic = pool.find(t => t.subtopics?.some(s => s.id === subtopicId));
+      const topicJustCompleted = parentTopic && parentTopic.subtopics && parentTopic.subtopics.length > 0 && parentTopic.subtopics.every(s => nextSet.has(s.id));
+      if (topicJustCompleted) {
+        triggerConfetti({ particleCount: 30, spread: 55 });
+      }
       await awardXPAndCoins(30, 10, 'Checked off Syllabus Sub-topic', userId);
     }
   };
@@ -638,16 +644,37 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     currentTopics = [...officialTopics, ...personalTopics];
   }
 
-  // Filter topics based on stage & search query
+  // Subject-wise Filtering
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('ALL');
+
+  // Available distinct subjects for filtering
+  const availableSubjects = useMemo(() => {
+    const map = new Map<string, number>();
+    currentTopics.forEach((t) => {
+      const subj = t.category || 'General';
+      map.set(subj, (map.get(subj) || 0) + 1);
+    });
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
+  }, [currentTopics]);
+
+  // Filter topics based on stage, subject & search query
   const filteredTopics = currentTopics.filter((t) => {
     const matchesStage = activeStageFilter === 'All' || t.stage === activeStageFilter;
+    const matchesSubject = selectedSubjectFilter === 'ALL' || t.category === selectedSubjectFilter;
     const matchesQuery = 
       !searchQuery.trim() ||
       t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.subtopics && t.subtopics.some((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase())));
-    return matchesStage && matchesQuery;
+    return matchesStage && matchesSubject && matchesQuery;
   });
+
+  // Next Recommended Topic for progressive disclosure
+  const nextRecommendedTopic = useMemo(() => {
+    return filteredTopics.find(
+      (t) => t.subtopics && t.subtopics.some((s) => !completedSubtopicIds.has(s.id))
+    ) || null;
+  }, [filteredTopics, completedSubtopicIds]);
 
   // Calculate distinct progress metrics
   const getProgressStats = (topicList: SyllabusTopic[]) => {
@@ -897,6 +924,35 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         </div>
       </div>
 
+      {/* Subject-Wise Horizontal Filter Pills */}
+      {availableSubjects.length > 1 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            onClick={() => setSelectedSubjectFilter('ALL')}
+            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              selectedSubjectFilter === 'ALL'
+                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+            }`}
+          >
+            All Subjects ({currentTopics.length})
+          </button>
+          {availableSubjects.map((subj) => (
+            <button
+              key={subj.name}
+              onClick={() => setSelectedSubjectFilter(subj.name)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                selectedSubjectFilter === subj.name
+                  ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+              }`}
+            >
+              {subj.name} ({subj.count})
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Topic List Render */}
       {activeTab === 'personal' ? (
         <MySyllabusDndTree
@@ -981,6 +1037,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
             return (
               <div
                 key={topic.id}
+                id={`topic-card-${topic.id}`}
                 className={`rounded-3xl border transition-all duration-300 overflow-hidden ${
                   isFullyCompleted
                     ? 'bg-sky-500/5 border-sky-500/20 shadow-sm'
@@ -992,87 +1049,60 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 {/* Topic Accordion Header */}
                 <div
                   onClick={() => toggleAccordion(topic.id)}
-                  className="p-5 sm:p-6 cursor-pointer flex items-center justify-between gap-4 select-none"
+                  className="p-4 sm:p-5 cursor-pointer flex items-center justify-between gap-3 select-none"
                 >
-                  <div className="flex items-start gap-4 min-w-0">
+                  <div className="flex items-center gap-3.5 min-w-0">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleParentTopicCompletion(filteredTopics, topic.id);
                       }}
-                      className="mt-0.5 text-slate-400 hover:text-sky-400 transition-colors shrink-0 cursor-pointer"
+                      className="text-slate-400 hover:text-sky-400 transition-colors shrink-0 cursor-pointer"
                       title={isFullyCompleted ? 'Uncheck all subtopics' : 'Check all subtopics'}
                     >
                       {isFullyCompleted ? (
-                        <CheckCircle2 className="w-6 h-6 text-sky-400 fill-sky-400/20" />
+                        <CheckCircle2 className="w-5 h-5 text-sky-400 fill-sky-400/20" />
                       ) : (
-                        <Circle className="w-6 h-6 text-slate-600 hover:text-sky-400" />
+                        <Circle className="w-5 h-5 text-slate-600 hover:text-sky-400" />
                       )}
                     </button>
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className={`text-base font-extrabold tracking-tight ${isFullyCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
+                        <h4 className={`text-sm sm:text-base font-bold tracking-tight ${isFullyCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
                           {topic.title}
                         </h4>
                         <span
-                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border uppercase tracking-wider ${
+                          className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
                             topic.weightage === 'High'
-                              ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                               : topic.weightage === 'Medium'
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                              : 'bg-slate-800 text-slate-400 border-slate-700'
+                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              : 'bg-slate-800 text-slate-400'
                           }`}
                         >
-                          {topic.weightage} Weight
+                          {topic.weightage}
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-sky-300 border border-slate-800">
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-900 text-slate-400 border border-slate-800">
                           {topic.stage}
                         </span>
-
-                        {/* Official Syllabus Tab -> Bulk Import Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isEntireTopicImported) return;
-                            const items = subList.map((s) => ({
-                              subject: topic.category,
-                              topic: topic.title,
-                              subtopic: s.title,
-                              officialNodeId: s.id,
-                              stage: topic.stage,
-                              weightage: topic.weightage
-                            }));
-                            handleImportNode(items);
-                          }}
-                          disabled={isEntireTopicImported}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                            isEntireTopicImported
-                              ? 'bg-slate-800 text-slate-500 border border-slate-700 opacity-70 cursor-not-allowed'
-                              : 'bg-slate-850 hover:bg-slate-800 text-sky-400 border border-slate-700 shadow-sm'
-                          }`}
-                        >
-                          <Download className="w-3 h-3" />
-                          {isEntireTopicImported ? '✓ In My Syllabus' : 'Import Subject'}
-                        </button>
                       </div>
 
-                      <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                        <span>{topic.category}</span>
+                      <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+                        <span className="truncate">{topic.category}</span>
                         <span>•</span>
-                        <span className="text-sky-400 font-semibold">
-                          {completedCount} of {subCount} Sub-topics Completed
+                        <span className="text-sky-400 font-semibold shrink-0">
+                          {completedCount}/{subCount} Done ({topicPercentage}%)
                         </span>
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 shrink-0">
+                  <div className="flex items-center gap-3 shrink-0">
                     <div className="hidden sm:flex flex-col items-end">
                       <span className="text-xs font-black text-white">{topicPercentage}%</span>
-                      <div className="w-20 h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1 border border-slate-800">
+                      <div className="w-16 h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1 border border-slate-800">
                         <div
                           className={`h-full rounded-full transition-all duration-300 ${
                             isFullyCompleted ? 'bg-sky-500' : 'bg-sky-600'
@@ -1082,137 +1112,141 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
-                      {isExpanded ? <ChevronUp className="w-5 h-5 text-white" /> : <ChevronDown className="w-5 h-5" />}
+                    <div className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
+                      <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-sky-400' : ''}`} />
                     </div>
                   </div>
                 </div>
 
                 {/* Sub-topics Accordion Drawer */}
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.25 }}
-                      className="border-t border-slate-800 bg-slate-950 p-5 sm:p-6 space-y-3"
-                    >
-                      <div className="flex items-center justify-between text-xs text-slate-400 mb-2 px-1">
-                        <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5 text-sky-400" /> Sub-topics Checklist ({subList.length})
-                        </span>
-                      </div>
+                <AccordionTransition isOpen={isExpanded} className="border-t border-slate-800/80 bg-slate-950/80 p-4 sm:p-5 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-slate-400 mb-1 px-0.5">
+                    <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 text-[11px]">
+                      <Layers className="w-3.5 h-3.5 text-sky-400" /> Sub-topics ({subList.length})
+                    </span>
 
-                      {subList.length === 0 ? (
-                        <p className="text-xs text-slate-500 italic p-3">No individual sub-topics loaded.</p>
-                      ) : (
-                        <div className="grid grid-cols-1 gap-2.5">
-                          {subList.map((sub) => {
-                            const isDone = completedSubtopicIds.has(sub.id) || sub.completed;
-                            const isImported = importedOfficialIds.has(sub.id) || Boolean(sub.origin_official_id);
+                    {/* Single Clean Import Topic Action */}
+                    {activeTab === 'official' && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isEntireTopicImported) return;
+                          const items = subList.map((s) => ({
+                            subject: topic.category,
+                            topic: topic.title,
+                            subtopic: s.title,
+                            officialNodeId: s.id,
+                            stage: topic.stage,
+                            weightage: topic.weightage
+                          }));
+                          handleImportNode(items);
+                        }}
+                        disabled={isEntireTopicImported}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                          isEntireTopicImported
+                            ? 'bg-slate-800 text-slate-500 border border-slate-700 opacity-70 cursor-not-allowed'
+                            : 'bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-sm'
+                        }`}
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>{isEntireTopicImported ? '✓ In My Syllabus' : 'Import Topic'}</span>
+                      </button>
+                    )}
+                  </div>
 
-                            // Calculate accumulated time studied for this subtopic
-                            const key = `${topic.category}|||${topic.title}|||${sub.title}`;
-                            const studiedSecs = timeSummary[sub.id] || sub.time_studied_seconds || timeSummary[key] || 0;
-                            const timeText = formatStudiedTime(studiedSecs);
+                  {subList.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic p-3">No individual sub-topics loaded.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-2">
+                      {subList.map((sub) => {
+                        const isDone = completedSubtopicIds.has(sub.id) || sub.completed;
 
-                            return (
-                              <div
-                                key={sub.id}
-                                onClick={() => toggleSubtopicCompletion(sub.id, topic.category, topic.title, sub.title)}
-                                className={`p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group ${
-                                  isDone
-                                    ? 'bg-sky-500/10 border-sky-500/30 text-slate-200 shadow-sm'
-                                    : 'bg-slate-900 border-slate-800 hover:border-slate-700 text-slate-200'
-                                }`}
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="shrink-0">
-                                    {isDone ? (
-                                      <div className="w-5 h-5 rounded-lg bg-sky-600 text-white flex items-center justify-center font-bold shadow-sm">
-                                        <Check className="w-3.5 h-3.5 stroke-[3]" />
-                                      </div>
-                                    ) : (
-                                      <div className="w-5 h-5 rounded-lg border-2 border-slate-600 group-hover:border-sky-500 transition-colors" />
-                                    )}
-                                  </div>
+                        // Calculate accumulated time studied for this subtopic
+                        const key = `${topic.category}|||${topic.title}|||${sub.title}`;
+                        const studiedSecs = timeSummary[sub.id] || sub.time_studied_seconds || timeSummary[key] || 0;
+                        const timeText = formatStudiedTime(studiedSecs);
 
-                                  <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                    <span className={`text-xs font-semibold ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}`}>
-                                      {sub.title}
-                                    </span>
-
-                                    {/* PHASE 5: Time Studied Badge */}
-                                    {studiedSecs > 0 && (
-                                      <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1">
-                                        <Clock className="w-3 h-3 text-sky-400" />
-                                        {timeText}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {/* Official Syllabus Tab -> Single Subtopic Import Button */}
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (isImported) return;
-                                      handleImportNode([{
-                                        subject: topic.category,
-                                        topic: topic.title,
-                                        subtopic: sub.title,
-                                        officialNodeId: sub.id,
-                                        stage: topic.stage,
-                                        weightage: topic.weightage
-                                      }]);
-                                    }}
-                                    disabled={isImported}
-                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                                      isImported
-                                        ? 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed opacity-80'
-                                        : 'bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-700 shadow-sm'
-                                    }`}
-                                  >
-                                    {importingNodeId === sub.id ? (
-                                      <span>Importing...</span>
-                                    ) : isImported ? (
-                                      <span>✓ In My Syllabus</span>
-                                    ) : (
-                                      <>
-                                        <Download className="w-3 h-3" />
-                                        <span>Import</span>
-                                      </>
-                                    )}
-                                  </button>
-
-                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-900 text-slate-400 border border-slate-800 flex items-center gap-1">
-                                    <Clock className="w-3 h-3 text-sky-400" /> {sub.estimatedHours || 2.5} hrs
-                                  </span>
-                                </div>
+                        return (
+                          <div
+                            key={sub.id}
+                            onClick={() => toggleSubtopicCompletion(sub.id, topic.category, topic.title, sub.title)}
+                            className={`p-3 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group ${
+                              isDone
+                                ? 'bg-sky-500/10 border-sky-500/25 text-slate-200'
+                                : 'bg-slate-900/80 border-slate-800/90 hover:border-slate-700 text-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="shrink-0 relative">
+                                <CheckmarkPop isChecked={isDone}>
+                                  {isDone ? (
+                                    <div className="w-4 h-4 rounded-md bg-sky-600 text-white flex items-center justify-center font-bold">
+                                      <Check className="w-3 h-3 stroke-[3]" />
+                                    </div>
+                                  ) : (
+                                    <div className="w-4 h-4 rounded-md border-2 border-slate-600 group-hover:border-sky-500 transition-colors" />
+                                  )}
+                                </CheckmarkPop>
+                                {recentlyCheckedSubId === sub.id && (
+                                  <FloatingRewardBadge text="+30 XP" onComplete={() => setRecentlyCheckedSubId(null)} />
+                                )}
                               </div>
-                            );
-                          })}
-                        </div>
-                      )}
 
-                      {topic.notes && (
-                        <div className="mt-4 p-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-slate-300 flex items-start gap-2">
-                          <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                          <span><strong>Note:</strong> {topic.notes}</span>
-                        </div>
-                      )}
-                    </motion.div>
+                              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                <span className={`text-xs font-medium ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}`}>
+                                  {sub.title}
+                                </span>
+
+                                {studiedSecs > 0 && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5 text-sky-400" />
+                                    {timeText}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-950 text-slate-400 border border-slate-800/80 flex items-center gap-1">
+                                <Clock className="w-2.5 h-2.5 text-slate-500" /> {sub.estimatedHours || 2.5}h
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-            );
-          })
+
+                  {topic.notes && (
+                    <div className="mt-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 text-[11px] text-slate-400 flex items-start gap-2">
+                      <Info className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                      <span><strong className="text-slate-300">Note:</strong> {topic.notes}</span>
+                    </div>
+                  )}
+                </AccordionTransition>
+                  </div>
+                );
+              })
+            )}
+
+            {/* Progressive Discovery: Next Recommended Topic */}
+            {nextRecommendedTopic && completedSubtopicIds.size > 0 && (
+              <ProgressiveDiscoveryCard
+                title={`Next Recommended: ${nextRecommendedTopic.title}`}
+                subtitle={`Category: ${nextRecommendedTopic.category} • Ready for study focus`}
+                actionLabel="Study Topic"
+                badge="Next Up"
+                icon={<Sparkles className="w-5 h-5 text-sky-400" />}
+                onAction={() => {
+                  setExpandedTopics((prev) => ({ ...prev, [nextRecommendedTopic.id]: true }));
+                  const el = document.getElementById(`topic-card-${nextRecommendedTopic.id}`);
+                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}
+              />
+            )}
+          </div>
         )}
-      </div>
-    )}
 
       {/* Hierarchy Builder Modal for My Syllabus Tab */}
       <AnimatePresence>

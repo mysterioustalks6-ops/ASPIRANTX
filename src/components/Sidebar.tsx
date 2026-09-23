@@ -31,7 +31,10 @@ import {
   GripVertical,
   X,
   ArrowDownRight,
-  Smartphone
+  Smartphone,
+  Shield,
+  Trophy,
+  Download
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
@@ -82,6 +85,9 @@ const ICON_MAP: Record<string, any> = {
   Crown,
   Handshake,
   Smartphone,
+  Shield,
+  Trophy,
+  Download,
 };
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -327,13 +333,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
               ) : (
                 <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-sky-600/25 group-hover:scale-105 transition-transform shrink-0">
-                  {customizer?.logoIconText || 'PT'}
+                  {customizer?.logoIconText || 'AX'}
                 </div>
               )}
               <div className="truncate">
                 <div className="flex items-center gap-1.5">
                   <h1 className="font-bold text-slate-100 tracking-wide text-sm truncate">
-                    {customizer?.brandName || 'PROTRACK'}
+                    {customizer?.brandName || 'ASPIRANTX'}
                   </h1>
                   <span className="px-1.5 py-0.5 text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-md uppercase shrink-0">
                     {customizer?.brandBadge || 'PRO'}

@@ -1,0 +1,26 @@
+[
+  {
+    "source": "https://github.com/Samkarya/online-exam-questions",
+    "licenseName": "ExamOven Non-Commercial Open Source License (ENCOSL)",
+    "licenseTerms": "non_commercial_only",
+    "status": "blocked_license_conflict",
+    "blockedReason": "AspirantX has active monetization/commercial features (Found active Premium PRO Pass plans (Daily, Weekly, Monthly, Lifetime) in src/components/PremiumPlans.tsx; Found active Razorpay payment gateway endpoints in routes/user.routes.ts; Found manual UPI/UTR payment verification & PRO pass activation endpoint (/api/payments/utr-submit); Found Community Wallet monetization & payout mechanisms in src/components/CommunityWallet.tsx). Under Section 2 (\"COMMERCIAL RESTRICTIONS\") of the ExamOven Non-Commercial Open Source License, commercial use is strictly prohibited for all entities except ExamOven. Ingestion is blocked until explicit written permission or commercial licensing is obtained from the repository owner.",
+    "audit": {
+      "isMonetized": true,
+      "triggers": {
+        "hasPremiumPlansUI": true,
+        "hasPaymentRoutes": true,
+        "hasUtrVerification": true,
+        "hasWalletPayouts": true,
+        "hasRazorpayEnv": false
+      },
+      "details": [
+        "Found active Premium PRO Pass plans (Daily, Weekly, Monthly, Lifetime) in src/components/PremiumPlans.tsx",
+        "Found active Razorpay payment gateway endpoints in routes/user.routes.ts",
+        "Found manual UPI/UTR payment verification & PRO pass activation endpoint (/api/payments/utr-submit)",
+        "Found Community Wallet monetization & payout mechanisms in src/components/CommunityWallet.tsx"
+      ]
+    },
+    "timestamp": "2026-09-23T09:43:22.072Z"
+  }
+]

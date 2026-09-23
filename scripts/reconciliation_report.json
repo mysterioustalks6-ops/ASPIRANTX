@@ -1,0 +1,250 @@
+{
+  "disputedTables": [
+    {
+      "schema": "auth",
+      "table": "users",
+      "primaryKey": "id",
+      "foreignKeys": [],
+      "indexes": [
+        "users_pkey"
+      ],
+      "rowCount": 23,
+      "runtimeUsage": "Foreign key target for user_id in flashcards, user_tasks, reward_transactions"
+    },
+    {
+      "schema": "public",
+      "table": "user_wallets",
+      "primaryKey": "user_id",
+      "foreignKeys": [],
+      "indexes": [
+        "user_wallets_pkey"
+      ],
+      "rowCount": 0,
+      "runtimeUsage": "Backing store for /api/wallet/:userId coin balance"
+    },
+    {
+      "schema": "public",
+      "table": "utr_requests",
+      "primaryKey": "id",
+      "foreignKeys": [],
+      "indexes": [
+        "utr_requests_pkey"
+      ],
+      "rowCount": 0,
+      "runtimeUsage": "Backing store for /api/payments/utr-submit premium subscription verification"
+    },
+    {
+      "schema": "public",
+      "table": "wallet_transactions",
+      "primaryKey": "id",
+      "foreignKeys": [],
+      "indexes": [
+        "wallet_transactions_pkey"
+      ],
+      "rowCount": 0,
+      "runtimeUsage": "Backing store for /api/wallet/:userId/transactions ledger"
+    }
+  ],
+  "feature15_wallet": {
+    "endpoint": "GET /api/wallet/:userId",
+    "route": "routes/user.routes.ts line 3211",
+    "dbTable": "public.user_wallets",
+    "httpStatus": 200,
+    "apiResponse": {
+      "success": true,
+      "data": {
+        "userId": "080b3031-3db1-46db-bf28-f6060775c68d",
+        "balance": 150,
+        "coins": 450,
+        "totalEarned": 220,
+        "updatedAt": "2026-09-22T10:57:57.837Z"
+      }
+    },
+    "neonRow": null
+  },
+  "feature16_streak": {
+    "endpoint": "GET /api/rewards/streak",
+    "route": "routes/user.routes.ts line 2135",
+    "dbTable": "public.user_profiles & public.reward_claims",
+    "httpStatus": 200,
+    "apiResponse": {
+      "success": true,
+      "streakDays": 1,
+      "lastActiveDate": "2026-09-22",
+      "totalActiveDays": 0
+    }
+  },
+  "feature27_utr": {
+    "endpoint": "POST /api/payments/utr-submit",
+    "route": "routes/user.routes.ts line 1584",
+    "dbTable": "public.utr_requests",
+    "httpStatus": 200,
+    "apiResponse": {
+      "success": true,
+      "message": "UTR reference 'UTR1790074678362' received and queued for Admin verification.",
+      "record": {
+        "id": "utr_1790074680683_83v9",
+        "userEmail": "wallet_student_1790074677048@example.com",
+        "userName": "Reconciliation Student",
+        "utr": "UTR1790074678362",
+        "plan": "monthly",
+        "amount": 499,
+        "submittedAt": "2026-09-22T10:58:00.683Z",
+        "status": "PENDING"
+      }
+    },
+    "neonRow": null
+  },
+  "feature1_auth": {
+    "endpoint": "JWT Bearer Auth & auth.users table in Neon",
+    "route": "authMiddleware.ts line 55 & routes/user.routes.ts line 2004",
+    "dbTable": "auth.users",
+    "neonRow": {
+      "id": "080b3031-3db1-46db-bf28-f6060775c68d",
+      "email": "wallet_student_1790074677048@example.com",
+      "created_at": "2026-09-22T10:57:57.340Z"
+    }
+  },
+  "restartPersistencePreCheck": {
+    "taskInNeon": {
+      "id": "probe_1790073566139",
+      "title": "Database Connectivity Probe",
+      "created_at": "2026-09-22T10:39:26.388Z"
+    },
+    "cardInNeon": {
+      "id": "fc_1790073572426_e2b77397",
+      "question": "Section 3 Audit Question: What is Judicial Review?",
+      "answer": "Updated Answer: Power under Articles 13, 32, and 226."
+    },
+    "rewardInNeon": {
+      "id": "rtx_1790073592013_11645ea0",
+      "reference_id": "adsess_1790073576475_87db47a6",
+      "amount": 1
+    }
+  },
+  "rewardTiming": {
+    "mathematicalRule": "elapsedSeconds < 15.0 => HTTP 400; elapsedSeconds >= 15.0 => HTTP 200",
+    "serverSourceLocation": "routes/user.routes.ts lines 2315-2325",
+    "authoritativeMeasurement": "Server Date.now() - session.startedAt",
+    "explanation": "At 14.99s client sleep on Windows, OS timer scheduling jitter pushed server arrival to 15.003s. The server accurately evaluated 15.003s >= 15.000s and accepted it. Sub-15s arrivals (0s, 10s, 14s, 14.5s, 14.8s) were strictly rejected with HTTP 400."
+  },
+  "podcasts": {
+    "rowCount": 3,
+    "columns": [
+      "data",
+      "updated_at",
+      "id"
+    ],
+    "neonRows": [
+      {
+        "id": "p1",
+        "data": {
+          "id": "p1",
+          "rank": "Synthesized Voice Audio Guide",
+          "subject": "Polity & GS Paper 2 Strategy Masterclass",
+          "audioUrl": "/audio/upsc_gs2_polity_masterclass.wav",
+          "booklist": [
+            "Indian Polity by M. Laxmikanth",
+            "Introduction to the Constitution of India by D.D. Basu",
+            "Second ARC Reports on Ethics in Governance"
+          ],
+          "duration": "00:51",
+          "topperName": "AspirantX Editorial Desk",
+          "description": "High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the AspirantX academic editorial desk and delivered via synthetic voice narration for study revision."
+        },
+        "updated_at": "2026-09-22T10:15:06.509Z"
+      },
+      {
+        "id": "p2",
+        "data": {
+          "id": "p2",
+          "rank": "Synthesized Voice Audio Guide",
+          "subject": "Geography Optional & Mapping Technique Guide",
+          "audioUrl": "/audio/geography_answer_writing_guide.wav",
+          "booklist": [
+            "Physical Geography by Savindra Singh",
+            "India: A Comprehensive Geography by D.R. Khullar",
+            "ProTrack Cartography Reference Sheets"
+          ],
+          "duration": "00:42",
+          "topperName": "AspirantX Editorial Desk",
+          "description": "Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration."
+        },
+        "updated_at": "2026-09-22T10:15:06.964Z"
+      },
+      {
+        "id": "p3",
+        "data": {
+          "id": "p3",
+          "rank": "Synthesized Voice Audio Guide",
+          "subject": "NEET UG High-Yield Physics & Diagrammatic Biology",
+          "audioUrl": "/audio/neet_physics_problem_solving.wav",
+          "booklist": [
+            "NCERT Biology Class 11 & 12",
+            "Concepts of Physics by H.C. Verma",
+            "Physical Chemistry by O.P. Tandon"
+          ],
+          "duration": "00:39",
+          "topperName": "AspirantX Editorial Desk",
+          "description": "Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration."
+        },
+        "updated_at": "2026-09-22T10:15:07.251Z"
+      }
+    ],
+    "apiPodcasts": [
+      {
+        "id": "p1",
+        "rank": "Synthesized Voice Audio Guide",
+        "subject": "Polity & GS Paper 2 Strategy Masterclass",
+        "audioUrl": "/audio/upsc_gs2_polity_masterclass.wav",
+        "booklist": [
+          "Indian Polity by M. Laxmikanth",
+          "Introduction to the Constitution of India by D.D. Basu",
+          "Second ARC Reports on Ethics in Governance"
+        ],
+        "duration": "00:51",
+        "topperName": "AspirantX Editorial Desk",
+        "description": "High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the AspirantX academic editorial desk and delivered via synthetic voice narration for study revision."
+      },
+      {
+        "id": "p2",
+        "rank": "Synthesized Voice Audio Guide",
+        "subject": "Geography Optional & Mapping Technique Guide",
+        "audioUrl": "/audio/geography_answer_writing_guide.wav",
+        "booklist": [
+          "Physical Geography by Savindra Singh",
+          "India: A Comprehensive Geography by D.R. Khullar",
+          "ProTrack Cartography Reference Sheets"
+        ],
+        "duration": "00:42",
+        "topperName": "AspirantX Editorial Desk",
+        "description": "Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration."
+      },
+      {
+        "id": "p3",
+        "rank": "Synthesized Voice Audio Guide",
+        "subject": "NEET UG High-Yield Physics & Diagrammatic Biology",
+        "audioUrl": "/audio/neet_physics_problem_solving.wav",
+        "booklist": [
+          "NCERT Biology Class 11 & 12",
+          "Concepts of Physics by H.C. Verma",
+          "Physical Chemistry by O.P. Tandon"
+        ],
+        "duration": "00:39",
+        "topperName": "AspirantX Editorial Desk",
+        "description": "Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration."
+      }
+    ],
+    "truthfulAttribution": true,
+    "fakeClaimsFound": false
+  },
+  "apk": {
+    "path": "C:\\Users\\AMBUJ YADAV\\Documents\\Aspirantx\\android\\app\\build\\outputs\\apk\\release\\app-release.apk",
+    "sizeBytes": 11300078,
+    "sha256": "147DCDB11347524F380F1B7663653112A7B25F7C6313F58CF93E59F9AAA872BC",
+    "distSha256": "147DCDB11347524F380F1B7663653112A7B25F7C6313F58CF93E59F9AAA872BC",
+    "hashesMatch": true,
+    "versionName": "2.4.2",
+    "versionCode": 3
+  }
+}

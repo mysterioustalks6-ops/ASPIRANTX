@@ -1,0 +1,628 @@
+{
+  "summaryCounts": {
+    "totalExamsEvaluated": 57,
+    "officialPyqFoundInline": 0,
+    "pdfOnlyIndex": 0,
+    "wafBlocked": 1,
+    "tlsHandshakeError": 1,
+    "spaEmpty": 0,
+    "notFoundOfficial": 55
+  },
+  "results": [
+    {
+      "examId": "UPSC_CSE",
+      "conductingBody": "Union Public Service Commission",
+      "officialDomain": "upsc.gov.in",
+      "pyqUrls": [
+        "https://upsc.gov.in/examinations/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 307,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "NDA_NA",
+      "conductingBody": "Union Public Service Commission",
+      "officialDomain": "upsc.gov.in",
+      "pyqUrls": [
+        "https://upsc.gov.in/examinations/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 307,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "CDS",
+      "conductingBody": "Union Public Service Commission",
+      "officialDomain": "upsc.gov.in",
+      "pyqUrls": [
+        "https://upsc.gov.in/examinations/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 307,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "UPSC_CAPF",
+      "conductingBody": "Union Public Service Commission",
+      "officialDomain": "upsc.gov.in",
+      "pyqUrls": [
+        "https://upsc.gov.in/examinations/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 307,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "SSC_CGL",
+      "conductingBody": "Staff Selection Commission",
+      "officialDomain": "ssc.gov.in",
+      "pyqUrls": [
+        "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "SSC_CHSL",
+      "conductingBody": "Staff Selection Commission",
+      "officialDomain": "ssc.gov.in",
+      "pyqUrls": [
+        "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "SSC_MTS",
+      "conductingBody": "Staff Selection Commission",
+      "officialDomain": "ssc.gov.in",
+      "pyqUrls": [
+        "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "SSC_GD",
+      "conductingBody": "Staff Selection Commission",
+      "officialDomain": "ssc.gov.in",
+      "pyqUrls": [
+        "https://ssc.gov.in/candidate-corner/tentative-answer-keys"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "RRB_NTPC",
+      "conductingBody": "Railway Recruitment Control Board",
+      "officialDomain": "rrbcdg.gov.in",
+      "pyqUrls": [
+        "https://www.rrbcdg.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "RRB_JE",
+      "conductingBody": "Railway Recruitment Control Board",
+      "officialDomain": "rrbcdg.gov.in",
+      "pyqUrls": [
+        "https://www.rrbcdg.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "GROUP_D",
+      "conductingBody": "Railway Recruitment Cells",
+      "officialDomain": "rrbcdg.gov.in",
+      "pyqUrls": [
+        "https://www.rrbcdg.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "RAILWAY_PROTECTION_FORCE_",
+      "conductingBody": "Ministry of Railways",
+      "officialDomain": "rpf.indianrailways.gov.in",
+      "pyqUrls": [
+        "https://rpf.indianrailways.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "IBPS_PO",
+      "conductingBody": "Institute of Banking Personnel Selection",
+      "officialDomain": "ibps.in",
+      "pyqUrls": [
+        "https://www.ibps.in/crp-po-mt/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 301,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "IBPS_CLERK",
+      "conductingBody": "Institute of Banking Personnel Selection",
+      "officialDomain": "ibps.in",
+      "pyqUrls": [
+        "https://www.ibps.in/crp-clerical-cadre/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 404,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "SBI_PO",
+      "conductingBody": "State Bank of India",
+      "officialDomain": "sbi.co.in",
+      "pyqUrls": [
+        "https://sbi.co.in/web/careers/current-openings"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 301,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "NEET_UG",
+      "conductingBody": "National Testing Agency",
+      "officialDomain": "exams.nta.ac.in",
+      "pyqUrls": [
+        "https://nta.ac.in/Downloads"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "UGC_NET",
+      "conductingBody": "National Testing Agency",
+      "officialDomain": "ugcnet.nta.ac.in",
+      "pyqUrls": [
+        "https://nta.ac.in/Downloads"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "CSIR_NATIONAL_ELIGIBILITY",
+      "conductingBody": "National Testing Agency",
+      "officialDomain": "csirnet.nta.ac.in",
+      "pyqUrls": [
+        "https://csirhrdg.res.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "CTET",
+      "conductingBody": "Central Board of Secondary Education",
+      "officialDomain": "ctet.nic.in",
+      "pyqUrls": [
+        "https://ctet.nic.in/previous-year-question-paper/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "UPPSC_PCS",
+      "conductingBody": "Uttar Pradesh Public Service Commission",
+      "officialDomain": "uppsc.up.nic.in",
+      "pyqUrls": [
+        "https://uppsc.up.nic.in/Candidate_Corner/PreviousQuestionPapers.aspx"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "BPSC_PCS",
+      "conductingBody": "Bihar Public Service Commission",
+      "officialDomain": "bpsc.bih.nic.in",
+      "pyqUrls": [
+        "https://bpsc.bih.nic.in/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "WBCS",
+      "conductingBody": "West Bengal Public Service Commission",
+      "officialDomain": "wbpsc.gov.in",
+      "pyqUrls": [
+        "https://wbpsc.gov.in/previous_question.jsp"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "UPSSSC_PET",
+      "conductingBody": "Uttar Pradesh Subordinate Services Selection Commission",
+      "officialDomain": "upsssc.gov.in",
+      "pyqUrls": [
+        "https://upsssc.gov.in/"
+      ],
+      "status": "tls_handshake_error",
+      "details": "SSL/TLS protocol error (write EPROTO F87A0000:error:0A000152:SSL routines:final_renegotiate:unsafe legacy renegotiation disabled:openssl\\ssl\\statem\\extensions.c:894:\n). Conducting body server uses legacy/incompatible ciphers."
+    },
+    {
+      "examId": "UP_POLICE_CONSTABLE",
+      "conductingBody": "UP Police Recruitment and Promotion Board",
+      "officialDomain": "uppbpb.gov.in",
+      "pyqUrls": [
+        "http://uppbpb.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 301,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "UP_POLICE_SI",
+      "conductingBody": "UP Police Recruitment and Promotion Board",
+      "officialDomain": "uppbpb.gov.in",
+      "pyqUrls": [
+        "http://uppbpb.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 301,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "BIHAR_POLICE_CONSTABLE",
+      "conductingBody": "Central Selection Board of Constable Bihar",
+      "officialDomain": "csbc.bih.nic.in",
+      "pyqUrls": [
+        "https://csbc.bih.nic.in/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "BIHAR_POLICE_SI",
+      "conductingBody": "Bihar Police Subordinate Services Commission",
+      "officialDomain": "bpssc.bih.nic.in",
+      "pyqUrls": [
+        "https://bpssc.bih.nic.in/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "WBP_CONSTABLE",
+      "conductingBody": "West Bengal Police Recruitment Board",
+      "officialDomain": "prb.wb.gov.in",
+      "pyqUrls": [
+        "https://prb.wb.gov.in/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "KP_CONSTABLE",
+      "conductingBody": "West Bengal Police Recruitment Board",
+      "officialDomain": "prb.wb.gov.in",
+      "pyqUrls": [
+        "https://prb.wb.gov.in/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "MP_POLICE_CONSTABLE",
+      "conductingBody": "Madhya Pradesh Employees Selection Board",
+      "officialDomain": "esb.mp.gov.in",
+      "pyqUrls": [
+        "https://esb.mp.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "RAJASTHAN_POLICE_CONSTABLE",
+      "conductingBody": "Rajasthan Police",
+      "officialDomain": "police.rajasthan.gov.in",
+      "pyqUrls": [
+        "https://police.rajasthan.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "CHHATTISGARH_PUBLIC_SERVI",
+      "conductingBody": "Chhattisgarh Public Service Commission",
+      "officialDomain": "psc.cg.gov.in",
+      "pyqUrls": [
+        "https://psc.cg.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "ASSAM_PUBLIC_SERVICE_COMM",
+      "conductingBody": "Assam Public Service Commission",
+      "officialDomain": "apsc.nic.in",
+      "pyqUrls": [
+        "https://apsc.nic.in/previous_question_papers.asp"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 404,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "RAJASTHAN_PUBLIC_SERVICE_",
+      "conductingBody": "Rajasthan Public Service Commission",
+      "officialDomain": "rpsc.rajasthan.gov.in",
+      "pyqUrls": [
+        "https://rpsc.rajasthan.gov.in/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 404,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "COMMON_UNIVERSITY_ENTRANC",
+      "conductingBody": "National Testing Agency",
+      "officialDomain": "cuetug.nta.ac.in",
+      "pyqUrls": [
+        "https://nta.ac.in/Downloads"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "COMMON_ADMISSION_TEST",
+      "conductingBody": "Indian Institutes of Management",
+      "officialDomain": "iimcat.ac.in",
+      "pyqUrls": [
+        "https://iimcat.ac.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "COMMON_LAW_ADMISSION_TEST",
+      "conductingBody": "Consortium of National Law Universities",
+      "officialDomain": "consortiumofnlus.ac.in",
+      "pyqUrls": [
+        "https://consortiumofnlus.ac.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "GRADUATE_APTITUDE_TEST_IN",
+      "conductingBody": "Indian Institute of Science / IITs",
+      "officialDomain": "gate2025.iitr.ac.in",
+      "pyqUrls": [
+        "https://gate2025.iitr.ac.in/old-question-papers.html"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 404,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "ALL_INDIA_BAR_EXAMINATION",
+      "conductingBody": "Bar Council of India",
+      "officialDomain": "allindiabarexamination.com",
+      "pyqUrls": [
+        "https://allindiabarexamination.com/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 301,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "AIR_FORCE_COMMON_ADMISSIO",
+      "conductingBody": "Indian Air Force",
+      "officialDomain": "afcat.cdac.in",
+      "pyqUrls": [
+        "https://afcat.cdac.in/AFCAT/samplePapers.html"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 404,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "COMBINED_MEDICAL_SERVICES",
+      "conductingBody": "Union Public Service Commission",
+      "officialDomain": "upsc.gov.in",
+      "pyqUrls": [
+        "https://upsc.gov.in/examinations/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 307,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "ENGINEERING_SERVICES_EXAM",
+      "conductingBody": "Union Public Service Commission",
+      "officialDomain": "upsc.gov.in",
+      "pyqUrls": [
+        "https://upsc.gov.in/examinations/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 307,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "INDIAN_FOREST_SERVICE_EXA",
+      "conductingBody": "Union Public Service Commission",
+      "officialDomain": "upsc.gov.in",
+      "pyqUrls": [
+        "https://upsc.gov.in/examinations/previous-question-papers"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 307,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "UTTAR_PRADESH_TEACHER_ELI",
+      "conductingBody": "Uttar Pradesh Basic Education Board",
+      "officialDomain": "updeled.gov.in",
+      "pyqUrls": [
+        "https://updeled.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "BIHAR_BED",
+      "conductingBody": "Lalit Narayan Mithila University",
+      "officialDomain": "biharcetbed-lnmu.in",
+      "pyqUrls": [
+        "https://biharcetbed-lnmu.in/"
+      ],
+      "status": "waf_blocked",
+      "httpStatus": 503,
+      "details": "HTTP 503 Forbidden. Official server employs WAF/anti-bot protection."
+    },
+    {
+      "examId": "RAJASTHAN_ELIGIBILITY_EXA",
+      "conductingBody": "Board of Secondary Education Rajasthan",
+      "officialDomain": "rajeduboard.rajasthan.gov.in",
+      "pyqUrls": [
+        "https://rajeduboard.rajasthan.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "MP_CPCT",
+      "conductingBody": "Madhya Pradesh Agency for Promotion of Information Technology",
+      "officialDomain": "cpct.mp.gov.in",
+      "pyqUrls": [
+        "https://cpct.mp.gov.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "JEECUP",
+      "conductingBody": "Joint Entrance Examination Council Uttar Pradesh",
+      "officialDomain": "jeecup.admissions.nic.in",
+      "pyqUrls": [
+        "https://jeecup.admissions.nic.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "BIHAR_DELED",
+      "conductingBody": "Bihar School Examination Board",
+      "officialDomain": "secondary.biharboardonline.com",
+      "pyqUrls": [
+        "https://secondary.biharboardonline.com/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "MAHARASHTRA_COMMON_ENTRAN",
+      "conductingBody": "State Common Entrance Test Cell Maharashtra",
+      "officialDomain": "cetcell.mahacet.org",
+      "pyqUrls": [
+        "https://cetcell.mahacet.org/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "KARNATAKA_COMMON_ENTRANCE",
+      "conductingBody": "Karnataka Examinations Authority",
+      "officialDomain": "kea.kar.nic.in",
+      "pyqUrls": [
+        "https://cetonline.karnataka.gov.in/kea/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "TELANGANA_ENGINEERING_AGR",
+      "conductingBody": "Jawaharlal Nehru Technological University Hyderabad",
+      "officialDomain": "eapcet.tsche.ac.in",
+      "pyqUrls": [
+        "https://eapcet.tsche.ac.in/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: getaddrinfo ENOTFOUND eapcet.tsche.ac.in"
+    },
+    {
+      "examId": "ANDHRA_PRADESH_AGRICULTUR",
+      "conductingBody": "Jawaharlal Nehru Technological University Kakinada",
+      "officialDomain": "cets.apsche.ap.gov.in",
+      "pyqUrls": [
+        "https://cets.apsche.ap.gov.in/EAPCET/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 200,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "IMU_CET",
+      "conductingBody": "Indian Maritime University",
+      "officialDomain": "imu.edu.in",
+      "pyqUrls": [
+        "https://www.imu.edu.in/"
+      ],
+      "status": "not_found_official",
+      "httpStatus": 302,
+      "details": "Official page returned HTTP 200, but no past question papers were found in content."
+    },
+    {
+      "examId": "JENPAS_UG",
+      "conductingBody": "West Bengal Joint Entrance Examinations Board",
+      "officialDomain": "wbjeeb.nic.in",
+      "pyqUrls": [
+        "https://wbjeeb.nic.in/jenpas-ug/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "ANM_GNM",
+      "conductingBody": "West Bengal Joint Entrance Examinations Board",
+      "officialDomain": "wbjeeb.nic.in",
+      "pyqUrls": [
+        "https://wbjeeb.nic.in/anm-gnm/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    },
+    {
+      "examId": "WBPSC_FOOD_SI",
+      "conductingBody": "West Bengal Public Service Commission",
+      "officialDomain": "wbpsc.gov.in",
+      "pyqUrls": [
+        "https://wbpsc.gov.in/"
+      ],
+      "status": "not_found_official",
+      "details": "Network error reaching official domain: TIMEOUT (4s)"
+    }
+  ]
+}

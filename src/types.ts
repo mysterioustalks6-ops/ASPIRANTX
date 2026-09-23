@@ -33,7 +33,51 @@ export interface UserProfile {
   isProfileComplete?: boolean;
 }
 
-export type ActiveTab = 'syllabus' | 'pyq' | 'question_bank' | 'cbt' | 'dashboard' | 'leaderboard' | 'cbt_exam' | 'student_dashboard' | 'timer' | 'tasks' | 'chat' | 'community' | 'study_buddy' | 'premium' | 'earn_premium' | 'reward_milestones' | 'admin' | 'collaboration' | 'library' | 'flashcards' | 'weakness' | 'teachers' | 'podcasts' | 'eligibility' | 'feedback' | 'blog' | 'blog_submit' | 'wallpaper';
+export type ActiveTab = 'syllabus' | 'pyq' | 'question_bank' | 'cbt' | 'dashboard' | 'leaderboard' | 'cbt_exam' | 'student_dashboard' | 'timer' | 'tasks' | 'chat' | 'community' | 'study_buddy' | 'premium' | 'earn_premium' | 'reward_milestones' | 'rewards' | 'focus_shield' | 'download' | 'admin' | 'collaboration' | 'library' | 'flashcards' | 'weakness' | 'teachers' | 'podcasts' | 'eligibility' | 'feedback' | 'blog' | 'blog_submit' | 'wallpaper' | 'practice_hub' | 'progress_hub' | 'more_hub' | 'figma_preview';
+
+export interface TrophyItem {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  category: 'FOCUS' | 'CONSISTENCY' | 'PRACTICE' | 'MASTERY' | 'SPECIAL';
+  rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  icon: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  xpReward: number;
+  isUnlocked: boolean;
+  unlockedAt?: string | null;
+  progressPercentage: number;
+}
+
+export interface ChallengeItem {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  frequency: 'DAILY' | 'WEEKLY' | 'MILESTONE';
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  xpReward: number;
+  examId?: string;
+  isCompleted: boolean;
+  xpAwarded: boolean;
+  completedAt?: string | null;
+  progressPercentage: number;
+}
+
+export interface FocusSessionState {
+  id: string;
+  requestedMinutes: number;
+  verifiedMinutes: number;
+  status: 'IDLE' | 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'CANCELLED';
+  blockedApps: string[];
+  startedAt?: string;
+  lastHeartbeatAt?: string;
+}
 
 export interface BlogPost {
   id: string;
@@ -393,13 +437,13 @@ export interface CbtQuestion {
   section: string;
   questionText: string;
   options: string[];
-  correctOption: number;
+  correctOption?: number;
   passageText?: string;
   assertionText?: string;
   reasonText?: string;
   imageUrl?: string;
   language: 'English' | 'Hindi';
-  explanation: string;
+  explanation?: string;
   subject: string;
   topic: string;
   marks: number;
@@ -440,6 +484,7 @@ export interface CbtUserResponse {
 
 export interface CbtExamSessionState {
   testId: string;
+  attemptId?: string;
   startTimeIso: string;
   elapsedSeconds: number;
   currentQuestionIndex: number;
@@ -451,6 +496,7 @@ export interface CbtExamSessionState {
 
 export interface CbtExamResult {
   testId: string;
+  attemptId?: string;
   testTitle: string;
   sessionState?: CbtExamSessionState;
   score: number;
@@ -477,6 +523,7 @@ export interface CbtExamResult {
   nextRevisionPlan?: string[];
   recommendedPyqIds?: string[];
   recommendedTopics?: string[];
+  reviewQuestions?: any[];
 }
 
 export interface LeaderboardEntry {

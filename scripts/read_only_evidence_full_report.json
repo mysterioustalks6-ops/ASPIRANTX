@@ -1,0 +1,1215 @@
+{
+  "timestamp": "2026-09-22T10:39:21.708Z",
+  "section1_database": {
+    "databaseHost": "ep-holy-lake-b4yeup0a-pooler.c-6.us-east-2.aws.neon.tech",
+    "databasePort": "5432",
+    "databaseProvider": "Neon Cloud Serverless PostgreSQL",
+    "currentDatabase": "neondb",
+    "currentSchema": "public",
+    "authenticatedUser": "neondb_owner",
+    "postgresVersion": "PostgreSQL 18.6",
+    "serverIp": "::1",
+    "sslMode": "require",
+    "backendLiveConnectionProven": true,
+    "probeTaskId": "probe_1790073566139",
+    "probeRowFoundInNeon": {
+      "id": "probe_1790073566139",
+      "user_id": "6f5e0712-5be9-4036-a0ab-c8dadf00c811",
+      "title": "Database Connectivity Probe",
+      "created_at": "2026-09-22T10:39:26.388Z"
+    }
+  },
+  "section2_schema": {
+    "tableCount": 70,
+    "tables": [
+      {
+        "schema": "public",
+        "table": "active_sponsors",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "active_sponsors_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "ad_rewards",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "ad_rewards_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "admin_announcements",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "admin_announcements_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "admin_content",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "admin_content_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "admin_settings",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "admin_settings_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "admin_users",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "admin_users_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "ai_conversations",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "ai_conversations_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "ai_messages",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "ai_messages_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "assignment_submissions",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "assignment_submissions_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "audit_logs",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "audit_logs_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "avatars",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "avatars_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "blog_content_requests",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "blog_content_requests_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "blog_posts",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "blog_posts_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "books_library",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "books_library_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "cbt_results",
+        "primaryKey": "user_id",
+        "foreignKeys": [],
+        "indexes": [
+          "cbt_results_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "class_assignments",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "class_assignments_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "class_attendance",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "class_attendance_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "class_enrollments",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "class_enrollments_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "community_comments",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "community_comments_pkey"
+        ],
+        "constraintsCount": 2,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "community_groups",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "community_groups_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "community_messages",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "community_messages_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "community_posts",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "community_posts_pkey",
+          "idx_community_posts_created_at"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "community_reports",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "community_reports_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "community_votes",
+        "primaryKey": "key",
+        "foreignKeys": [],
+        "indexes": [
+          "community_votes_pkey",
+          "idx_community_votes_post_id",
+          "idx_community_votes_user_id"
+        ],
+        "constraintsCount": 5,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "educator_bookings",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "educator_bookings_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "educator_chats",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "educator_chats_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "educators",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "educators_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "exams",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "exams_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "feature_flags",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "feature_flags_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "feedback_reports",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "feedback_reports_pkey"
+        ],
+        "constraintsCount": 2,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "flashcard_reviews",
+        "primaryKey": "id",
+        "foreignKeys": [
+          "user_id -> users(id)"
+        ],
+        "indexes": [
+          "flashcard_reviews_pkey",
+          "flashcard_reviews_user_id_card_id_key",
+          "idx_flashcard_reviews_next",
+          "idx_flashcard_reviews_user_card"
+        ],
+        "constraintsCount": 13,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "flashcards",
+        "primaryKey": "id",
+        "foreignKeys": [
+          "user_id -> users(id)"
+        ],
+        "indexes": [
+          "flashcards_pkey",
+          "idx_flashcards_exam",
+          "idx_flashcards_user_id"
+        ],
+        "constraintsCount": 7,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "karma_votes",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "idx_karma_votes_target",
+          "idx_karma_votes_target_owner",
+          "idx_karma_votes_voter",
+          "karma_votes_pkey",
+          "uq_karma_votes_voter_target"
+        ],
+        "constraintsCount": 11,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "notifications",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "notifications_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "office_activity_feed",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "office_activity_feed_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "orders",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "orders_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "personal_syllabus_nodes",
+        "primaryKey": "id",
+        "foreignKeys": [
+          "user_id -> users(id)"
+        ],
+        "indexes": [
+          "idx_personal_syllabus_user_exam_subject",
+          "personal_syllabus_nodes_pkey"
+        ],
+        "constraintsCount": 6,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "podcasts",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "podcasts_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "pyq_bank",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "pyq_bank_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "pyqs",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "pyqs_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "question_bank",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "question_bank_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "reward_claims",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "reward_claims_pkey"
+        ],
+        "constraintsCount": 2,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "reward_milestones",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "reward_milestones_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "reward_transactions",
+        "primaryKey": "id",
+        "foreignKeys": [
+          "user_id -> users(id)"
+        ],
+        "indexes": [
+          "idx_reward_transactions_ref",
+          "idx_reward_transactions_user",
+          "reward_transactions_pkey",
+          "reward_transactions_reference_id_key"
+        ],
+        "constraintsCount": 11,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "sponsor_inquiries",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "sponsor_inquiries_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "sponsorship_applications",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "sponsorship_applications_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "sponsorship_tiers",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "sponsorship_tiers_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "study_buddy_matches",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "study_buddy_matches_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "study_buddy_queue",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "study_buddy_queue_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "study_heartbeats",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "study_heartbeats_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "syllabus_nodes",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "syllabus_nodes_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "syllabus_time_log",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "syllabus_time_log_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "teacher_classes",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "teacher_classes_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "teacher_profiles",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "teacher_profiles_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "team_applications",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "idx_team_applications_created_at",
+          "team_applications_pkey"
+        ],
+        "constraintsCount": 5,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "user_custom_subjects",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_custom_subjects_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_dashboards",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_dashboards_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_error_logs",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_error_logs_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_feedback",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_feedback_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_karma",
+        "primaryKey": "user_id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_karma_pkey"
+        ],
+        "constraintsCount": 4,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "user_manual_questions",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_manual_questions_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_payouts",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "idx_user_payouts_created_at",
+          "idx_user_payouts_user_id",
+          "user_payouts_pkey"
+        ],
+        "constraintsCount": 4,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "user_pomodoro_sessions",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_pomodoro_sessions_pkey"
+        ],
+        "constraintsCount": 2,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_profiles",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_profiles_pkey"
+        ],
+        "constraintsCount": 2,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "user_subscriptions",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_subscriptions_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_syllabus_progress",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_syllabus_progress_pkey"
+        ],
+        "constraintsCount": 2,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "user_tasks",
+        "primaryKey": "id",
+        "foreignKeys": [
+          "user_id -> users(id)"
+        ],
+        "indexes": [
+          "idx_user_tasks_exam",
+          "idx_user_tasks_user_id",
+          "user_tasks_pkey"
+        ],
+        "constraintsCount": 4,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "user_wallets",
+        "primaryKey": "user_id",
+        "foreignKeys": [],
+        "indexes": [
+          "user_wallets_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": true
+      },
+      {
+        "schema": "public",
+        "table": "utr_requests",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "utr_requests_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      },
+      {
+        "schema": "public",
+        "table": "wallet_transactions",
+        "primaryKey": "id",
+        "foreignKeys": [],
+        "indexes": [
+          "wallet_transactions_pkey"
+        ],
+        "constraintsCount": 3,
+        "rlsEnabled": false
+      }
+    ]
+  },
+  "section3_flashcards": {
+    "cardId": "fc_1790073572426_e2b77397",
+    "creationStatus": 201,
+    "readStatus": 200,
+    "cardFoundInUserAList": true,
+    "updateStatus": 200,
+    "reviewStatus": 200,
+    "leitnerBoxAdvancement": 2,
+    "directNeonCardRecord": {
+      "id": "fc_1790073572426_e2b77397",
+      "user_id": "1ea0fe34-0b66-4c5c-8279-ce2e71e90efd",
+      "exam": "UPSC",
+      "category": "Polity",
+      "question": "Section 3 Audit Question: What is Judicial Review?",
+      "answer": "Updated Answer: Power under Articles 13, 32, and 226.",
+      "hint": "Custom note",
+      "is_custom": true,
+      "created_at": "2026-09-22T10:39:32.426Z",
+      "updated_at": "2026-09-22T10:39:33.338Z"
+    },
+    "directNeonReviewRecord": {
+      "id": "rev_1790073573599_c722e84c",
+      "card_id": "fc_1790073572426_e2b77397",
+      "user_id": "1ea0fe34-0b66-4c5c-8279-ce2e71e90efd",
+      "rating": "easy",
+      "leitner_box": 2,
+      "next_review_at": "2026-09-23T10:39:33.598Z",
+      "reviewed_at": "2026-09-22T10:39:33.598Z",
+      "review_count": 1,
+      "created_at": "2026-09-22T10:39:33.598Z"
+    },
+    "userBIsolation": {
+      "userBSeesCard": false,
+      "userBUpdateStatus": 403,
+      "userBReviewStatus": 403,
+      "userBDeleteStatus": 403
+    },
+    "authoritativeSource": "Neon PostgreSQL public.flashcards"
+  },
+  "section4_rewards_ledger": {
+    "transactionsCountBefore": 12,
+    "transactionsCountAfter": 13,
+    "incrementedByOne": true,
+    "legitimateRedeemStatus": 200,
+    "directNeonRow": {
+      "id": "rtx_1790073592013_11645ea0",
+      "user_id": "ce1f3bf5-790e-42a0-84db-c6bbe30d4deb",
+      "user_email": "sec_student_1790073576117@example.com",
+      "type": "ad_watch",
+      "source": "rewarded_study_ad",
+      "amount": 1,
+      "reference_id": "adsess_1790073576475_87db47a6",
+      "status": "completed",
+      "metadata": {
+        "sessionId": "adsess_1790073576475_87db47a6",
+        "elapsedSeconds": 16
+      },
+      "created_at": "2026-09-22T10:39:52.013Z"
+    },
+    "replayAttackStatus": 409,
+    "crossUserAttackStatus": 403,
+    "concurrentStatuses": [
+      409,
+      200
+    ],
+    "concurrentExactlyOneSuccess": true,
+    "tamperAmountAwarded": 1
+  },
+  "section5_timing_matrix": [
+    {
+      "label": "0 seconds",
+      "targetDelayMs": 0,
+      "clientMeasuredMs": 0,
+      "httpStatus": 400,
+      "expectedDecision": "Reject",
+      "errorMessage": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 0s).",
+      "pass": true
+    },
+    {
+      "label": "10 seconds",
+      "targetDelayMs": 10000,
+      "clientMeasuredMs": 10013,
+      "httpStatus": 400,
+      "expectedDecision": "Reject",
+      "errorMessage": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 10s).",
+      "pass": true
+    },
+    {
+      "label": "14 seconds",
+      "targetDelayMs": 14000,
+      "clientMeasuredMs": 14004,
+      "httpStatus": 400,
+      "expectedDecision": "Reject",
+      "errorMessage": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 14s).",
+      "pass": true
+    },
+    {
+      "label": "14.5 seconds",
+      "targetDelayMs": 14500,
+      "clientMeasuredMs": 14501,
+      "httpStatus": 400,
+      "expectedDecision": "Reject",
+      "errorMessage": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 15s).",
+      "pass": true
+    },
+    {
+      "label": "14.8 seconds",
+      "targetDelayMs": 14800,
+      "clientMeasuredMs": 14802,
+      "httpStatus": 400,
+      "expectedDecision": "Reject",
+      "errorMessage": "Ad verification failed: minimum watch duration of 15 seconds not completed (elapsed: 15s).",
+      "pass": true
+    },
+    {
+      "label": "14.99 seconds",
+      "targetDelayMs": 14990,
+      "clientMeasuredMs": 15003,
+      "httpStatus": 200,
+      "expectedDecision": "Reject",
+      "errorMessage": null,
+      "pass": false
+    },
+    {
+      "label": "15.1 seconds (15.0s+)",
+      "targetDelayMs": 15150,
+      "clientMeasuredMs": 15158,
+      "httpStatus": 200,
+      "expectedDecision": "Accept",
+      "errorMessage": null,
+      "pass": true
+    },
+    {
+      "label": "15.5 seconds",
+      "targetDelayMs": 15500,
+      "clientMeasuredMs": 15515,
+      "httpStatus": 200,
+      "expectedDecision": "Accept",
+      "errorMessage": null,
+      "pass": true
+    }
+  ],
+  "section6_local_fallback": {
+    "academicRoutesUsesPgPool": true,
+    "userRoutesUsesPgPool": true,
+    "databaseErrorsAbortWithoutFallback": true,
+    "authoritativeStore": "Neon PostgreSQL (public schema tables)",
+    "localMemoryOrJsonStatus": "Secondary in-process read cache only; writes strictly commit to PostgreSQL"
+  },
+  "section7_podcasts": {
+    "apiEpisodeCount": 3,
+    "databaseEpisodeCount": 3,
+    "fakeRankClaimsDetected": false,
+    "truthfulAttributionVerified": true,
+    "attributionType": "Editorial Desk Scripted Audio Narration (Synthesized Voice)",
+    "zeroSoundHelix": true,
+    "allAudioHttp200": true,
+    "allAudioWavMime": true,
+    "range206Supported": true,
+    "contentRangeSample": "bytes 0-2048/2230174"
+  },
+  "section8_regressions": {
+    "authBypassRejected": true,
+    "adminRbacEnforced": true,
+    "communityCommentIdorProtected": true,
+    "taskOwnershipIsolated": true,
+    "syllabusProgressStatus": 200,
+    "pyqAnalyticsStatus": 200,
+    "pyqPdfsStatus": 200,
+    "globalSearchContractValid": true,
+    "feedbackIsolationStatus": 200
+  },
+  "section9_twenty_eight_features": [
+    {
+      "id": 1,
+      "name": "Authentication & Session Persistence",
+      "status": "PASS",
+      "liveEvidence": "POST /api/auth/token returns verified JWT; survives reload",
+      "dbEvidence": "auth.users verified in Neon"
+    },
+    {
+      "id": 2,
+      "name": "Admin Dashboard & Watchdog",
+      "status": "PASS",
+      "liveEvidence": "GET /api/admin/watchdog returns 200 for admin, 401/403 for student",
+      "dbEvidence": "audit_logs & admin_settings in Neon"
+    },
+    {
+      "id": 3,
+      "name": "Student Dashboard",
+      "status": "PASS",
+      "liveEvidence": "GET /api/user/syllabus-progress/ALL returns student progress",
+      "dbEvidence": "user_profiles & user_syllabus_progress in Neon"
+    },
+    {
+      "id": 4,
+      "name": "CBT Exam Simulator",
+      "status": "PASS",
+      "liveEvidence": "GET /api/academic/questions returns live questions with timer",
+      "dbEvidence": "question_bank in Neon"
+    },
+    {
+      "id": 5,
+      "name": "Question Bank Engine",
+      "status": "PASS",
+      "liveEvidence": "Pagination, subject & exam filters verified",
+      "dbEvidence": "public.question_bank table verified"
+    },
+    {
+      "id": 6,
+      "name": "35-Year PYQ Archive Engine",
+      "status": "PASS",
+      "liveEvidence": "GET /api/academic/pyqs/analytics & pdfs functional",
+      "dbEvidence": "public.pyqs & pyq_bank tables verified"
+    },
+    {
+      "id": 7,
+      "name": "Personal Syllabus Tracker",
+      "status": "PASS",
+      "liveEvidence": "GET /api/syllabus/personal user isolated",
+      "dbEvidence": "public.personal_syllabus_nodes in Neon"
+    },
+    {
+      "id": 8,
+      "name": "Task Manager / Kanban",
+      "status": "PASS",
+      "liveEvidence": "POST /api/user/tasks, IDOR protected with 403",
+      "dbEvidence": "public.user_tasks in Neon"
+    },
+    {
+      "id": 9,
+      "name": "Active Recall Leitner Flashcards",
+      "status": "PASS",
+      "liveEvidence": "POST /api/academic/flashcards/custom & review advance box",
+      "dbEvidence": "public.flashcards & flashcard_reviews in Neon"
+    },
+    {
+      "id": 10,
+      "name": "Pomodoro Focus Timer",
+      "status": "PASS",
+      "liveEvidence": "Session logging & streak increments operational",
+      "dbEvidence": "public.user_pomodoro_sessions in Neon"
+    },
+    {
+      "id": 11,
+      "name": "AI Study Mentor Chat",
+      "status": "PASS",
+      "liveEvidence": "POST /api/ai/chat returns contextual guidance",
+      "dbEvidence": "public.ai_conversations & ai_messages in Neon"
+    },
+    {
+      "id": 12,
+      "name": "Community Forum & Posts",
+      "status": "PASS",
+      "liveEvidence": "GET /api/community/posts returns feed",
+      "dbEvidence": "public.community_posts in Neon"
+    },
+    {
+      "id": 13,
+      "name": "Community Comments & Moderation",
+      "status": "PASS",
+      "liveEvidence": "IDOR delete protected with HTTP 403",
+      "dbEvidence": "public.community_comments in Neon"
+    },
+    {
+      "id": 14,
+      "name": "Study Buddy Real-Time Matcher",
+      "status": "PASS",
+      "liveEvidence": "Peer matching queue operational",
+      "dbEvidence": "public.study_buddy_queue in Neon"
+    },
+    {
+      "id": 15,
+      "name": "Study Coin Wallet & Escrow",
+      "status": "PASS",
+      "liveEvidence": "Wallet balances & coin transfer ledger validated",
+      "dbEvidence": "public.user_wallets in Neon"
+    },
+    {
+      "id": 16,
+      "name": "Daily Streak & Reward Milestones",
+      "status": "PASS",
+      "liveEvidence": "GET /api/rewards/streak derives days server-side",
+      "dbEvidence": "public.reward_claims in Neon"
+    },
+    {
+      "id": 17,
+      "name": "Rewarded Study Ads",
+      "status": "PASS",
+      "liveEvidence": ">=15.0s watch lock strictly enforced; HMAC verified",
+      "dbEvidence": "public.reward_transactions in Neon"
+    },
+    {
+      "id": 18,
+      "name": "Topper Audio Podcasts",
+      "status": "PASS",
+      "liveEvidence": "HTTP 200 WAV audio & 206 Range requests; truthful provenance",
+      "dbEvidence": "public.podcasts in Neon"
+    },
+    {
+      "id": 19,
+      "name": "Books & Reference Library",
+      "status": "PASS",
+      "liveEvidence": "Category filtering & textbook downloads verified",
+      "dbEvidence": "public.books_library in Neon"
+    },
+    {
+      "id": 20,
+      "name": "Weakness Detector & Analytics",
+      "status": "PASS",
+      "liveEvidence": "Diagnostic accuracy analysis verified",
+      "dbEvidence": "cbt_results in Neon"
+    },
+    {
+      "id": 21,
+      "name": "Educator / Teacher Portal",
+      "status": "PASS",
+      "liveEvidence": "GET /api/teachers returns faculty profiles",
+      "dbEvidence": "public.educators in Neon"
+    },
+    {
+      "id": 22,
+      "name": "Exam Eligibility Calculator",
+      "status": "PASS",
+      "liveEvidence": "Age, attempt limit, relaxation rules evaluated",
+      "dbEvidence": "Client/server deterministic rules"
+    },
+    {
+      "id": 23,
+      "name": "Feedback & Bug Reporter",
+      "status": "PASS",
+      "liveEvidence": "GET /api/feedback/mine isolated to authenticated student",
+      "dbEvidence": "public.feedback_reports in Neon"
+    },
+    {
+      "id": 24,
+      "name": "Editorial Blog & Articles",
+      "status": "PASS",
+      "liveEvidence": "Article listing & submission pipeline functional",
+      "dbEvidence": "public.blog_posts in Neon"
+    },
+    {
+      "id": 25,
+      "name": "Sponsorship & Partner Portal",
+      "status": "PASS",
+      "liveEvidence": "Tier tiers, applications, and sponsor inquiries verified",
+      "dbEvidence": "public.sponsorship_tiers in Neon"
+    },
+    {
+      "id": 26,
+      "name": "Global Search Indexer",
+      "status": "PASS",
+      "liveEvidence": "GET /api/search?q=polity returns posts, topics, questions",
+      "dbEvidence": "Precomputed repeat index & DB queries"
+    },
+    {
+      "id": 27,
+      "name": "Premium Subscriptions (UTR)",
+      "status": "PASS",
+      "liveEvidence": "UTR payment submission & admin approval ledger",
+      "dbEvidence": "public.utr_requests in Neon"
+    },
+    {
+      "id": 28,
+      "name": "Responsive UI & A11y",
+      "status": "PASS",
+      "liveEvidence": "0px mobile horizontal overflow; WCAG AA contrast",
+      "dbEvidence": "CSS design tokens & mobile drawer"
+    }
+  ],
+  "section10_apk": {
+    "apkExists": true,
+    "apkSizeBytes": 11300078,
+    "versionName": "2.4.2",
+    "versionCode": 3,
+    "capacitorWebDirDist": true,
+    "embeddedWebAssetsPresent": true,
+    "sha256Hash": "147DCDB11347524F380F1B7663653112A7B25F7C6313F58CF93E59F9AAA872BC",
+    "synchronizedCopies": [
+      "android/app/build/outputs/apk/release/app-release.apk",
+      "public/aspirantx.apk",
+      "public/AspirantX-v2.4.2.apk",
+      "dist/aspirantx.apk",
+      "dist/AspirantX-v2.4.2.apk"
+    ]
+  },
+  "verdict": "FINAL ACCEPTANCE BLOCKED"
+}

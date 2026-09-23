@@ -642,16 +642,29 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
           )}
         </div>
 
-        {groupedSessions.length === 0 ? (
+        {isLoading ? (
+          /* Loading Skeletons */
+          <div className="space-y-3">
+            {[1, 2, 3].map((k) => (
+              <div key={k} className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="h-3.5 w-28 bg-slate-800 rounded" />
+                  <div className="h-3 w-44 bg-slate-800/60 rounded" />
+                </div>
+                <div className="h-6 w-20 bg-slate-800/80 rounded-xl" />
+              </div>
+            ))}
+          </div>
+        ) : groupedSessions.length === 0 ? (
           /* Empty State */
           <div className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800/80 text-center space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
               <Clock className="w-6 h-6" />
             </div>
             <div className="space-y-1 max-w-sm mx-auto">
-              <h5 className="text-sm font-bold text-white">No Study Sessions Logged</h5>
-              <p className="text-xs text-slate-400">
-                No study sessions logged yet — start a Pomodoro to see your history here.
+              <h5 className="text-sm font-bold text-white">No Study Sessions in This Range</h5>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                No focus hours logged for this period. Start a 25m or 45m Pomodoro sprint in the Timer tab to record verified study sessions.
               </p>
             </div>
           </div>

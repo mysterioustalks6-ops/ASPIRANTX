@@ -1,0 +1,264 @@
+{
+  "flashcards": {
+    "passed": 11,
+    "failed": 0,
+    "details": [
+      {
+        "name": "Anonymous flashcards query returns seed cards",
+        "passed": true,
+        "details": {
+          "count": 3
+        }
+      },
+      {
+        "name": "User A creates custom flashcard with authoritative UUID",
+        "passed": true,
+        "details": {
+          "cardId": "fc_1790062770211_91a9f258",
+          "userId": "c1bf574e-b833-4e0c-9e8e-ba5f303c6b80"
+        }
+      },
+      {
+        "name": "User Isolation: User B cannot see User A custom flashcards",
+        "passed": true,
+        "details": {
+          "userBSeesUserACard": false
+        }
+      },
+      {
+        "name": "IDOR Protection: User B update of User A card rejected (403)",
+        "passed": true,
+        "details": {
+          "status": 403
+        }
+      },
+      {
+        "name": "IDOR Protection: User B deletion of User A card rejected (403)",
+        "passed": true,
+        "details": {
+          "status": 403
+        }
+      },
+      {
+        "name": "Leitner Calculation: \"easy\" rating advances card to Box 2",
+        "passed": true,
+        "details": {
+          "leitnerBox": 2,
+          "nextReviewAt": "2026-09-23T07:39:30.581Z"
+        }
+      },
+      {
+        "name": "Leitner Calculation: \"hard\" rating resets card to Box 1",
+        "passed": true,
+        "details": {
+          "leitnerBox": 1
+        }
+      },
+      {
+        "name": "Input Validation: Malformed rating string rejected (400)",
+        "passed": true,
+        "details": {
+          "status": 400
+        }
+      },
+      {
+        "name": "Authentication: Anonymous review rejected (401)",
+        "passed": true,
+        "details": {
+          "status": 401
+        }
+      },
+      {
+        "name": "Migration: Legacy localStorage data safely migrated to server",
+        "passed": true,
+        "details": {
+          "migratedCards": 0,
+          "migratedReviews": 0
+        }
+      },
+      {
+        "name": "Deletion: Owner can delete their own custom card (200)",
+        "passed": true,
+        "details": {
+          "status": 200
+        }
+      }
+    ]
+  },
+  "podcasts": {
+    "passed": 4,
+    "failed": 0,
+    "details": [
+      {
+        "name": "Podcast endpoint returns success with episode list",
+        "passed": true,
+        "details": {
+          "count": 3
+        }
+      },
+      {
+        "name": "Zero SoundHelix placeholder URLs in active database/API",
+        "passed": true,
+        "details": {
+          "hasSoundHelix": false
+        }
+      },
+      {
+        "name": "Truthful content model: valid faculty speakers, subject descriptions, exact durations",
+        "passed": true,
+        "details": {
+          "allPodcastsValid": true,
+          "sample": {
+            "id": "p1",
+            "rank": "Senior Faculty & Exam Strategist",
+            "subject": "Polity & GS Paper 2 Strategy Masterclass",
+            "audioUrl": "/audio/upsc_gs2_polity_masterclass.wav",
+            "booklist": [
+              "Indian Polity by M. Laxmikanth",
+              "Introduction to the Constitution of India by D.D. Basu",
+              "Second ARC Reports on Ethics in Governance"
+            ],
+            "duration": "00:51",
+            "topperName": "AspirantX Academic Faculty",
+            "description": "High-yield masterclass on GS Paper 2 answer writing frameworks: integrating constitutional articles, landmark Supreme Court judgments, and 2nd ARC governance recommendations."
+          }
+        }
+      },
+      {
+        "name": "Media playback integrity: all audio files return HTTP 200 with audio MIME type",
+        "passed": true,
+        "details": {
+          "allMediaFilesReachable": true
+        }
+      }
+    ]
+  },
+  "rewards": {
+    "passed": 12,
+    "failed": 0,
+    "details": [
+      {
+        "name": "Authentication: Anonymous rewards status query rejected (401)",
+        "passed": true,
+        "details": {
+          "status": 401
+        }
+      },
+      {
+        "name": "Authenticated rewards status query returns authoritative counts",
+        "passed": true,
+        "details": {
+          "viewsToday": 2,
+          "rewardActive": false
+        }
+      },
+      {
+        "name": "Cryptographic Ad Session: Server issues HMAC-signed challenge token",
+        "passed": "7b0c27ffa65be334f7cb9953422b6065cb53bcf69bdd78946383afa96d1ffa67",
+        "details": {
+          "sessionId": "adsess_1790062772147_b908fad6",
+          "minDuration": 15
+        }
+      },
+      {
+        "name": "Tamper-Proofing: Tampered cryptographic signature rejected (403)",
+        "passed": true,
+        "details": {
+          "status": 403
+        }
+      },
+      {
+        "name": "User Association: Cross-user session redemption rejected (403)",
+        "passed": true,
+        "details": {
+          "status": 403
+        }
+      },
+      {
+        "name": "Timing Enforcement: Premature ad completion rejected (< 15s elapsed) (400)",
+        "passed": true,
+        "details": {
+          "status": 400
+        }
+      },
+      {
+        "name": "Verified Ad Completion: Server records transaction and increments view count (200)",
+        "passed": true,
+        "details": {
+          "viewsToday": 3,
+          "rewardActive": false
+        }
+      },
+      {
+        "name": "Anti-Replay Protection: Replaying same ad session rejected with 409 Conflict",
+        "passed": true,
+        "details": {
+          "status": 409
+        }
+      },
+      {
+        "name": "Server-Authoritative Streak: Derived strictly from activity records on server",
+        "passed": true,
+        "details": {
+          "streakDays": 1,
+          "lastActiveDate": "2026-09-22"
+        }
+      },
+      {
+        "name": "Milestone Protection: Claiming unachieved milestone rejected (400)",
+        "passed": true,
+        "details": {
+          "status": 400
+        }
+      },
+      {
+        "name": "Milestone Claim: Legitimate achieved milestone claimed (200 or 409 if already claimed)",
+        "passed": true,
+        "details": {
+          "status": 200
+        }
+      },
+      {
+        "name": "Milestone Anti-Replay: Duplicate milestone claim rejected with 409 Conflict",
+        "passed": true,
+        "details": {
+          "status": 409
+        }
+      }
+    ]
+  },
+  "regressions": {
+    "passed": 4,
+    "failed": 0,
+    "details": [
+      {
+        "name": "Global Search API contract preserved",
+        "passed": true,
+        "details": {
+          "success": true
+        }
+      },
+      {
+        "name": "Community Comment IDOR Protection preserved (404/403/401)",
+        "passed": true,
+        "details": {
+          "status": 404
+        }
+      },
+      {
+        "name": "PYQ analytics route ordering preserved (200)",
+        "passed": true,
+        "details": {
+          "status": 200
+        }
+      },
+      {
+        "name": "User feedback isolation preserved (200)",
+        "passed": true,
+        "details": {
+          "status": 200
+        }
+      }
+    ]
+  }
+}

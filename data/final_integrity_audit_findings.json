@@ -1,0 +1,807 @@
+{
+  "totalRows": 77,
+  "syllabusCount": 54,
+  "pyqCount": 23,
+  "classifications": {
+    "OFFICIAL_VERIFIED": [],
+    "OFFICIAL_IDEMPOTENT": [
+      {
+        "examId": "CTET",
+        "sourceUrl": "https://ctet.nic.in/wp-content/uploads/2024/09/CTET-Dec-2024-Information-Bulletin.pdf",
+        "secCount": 4,
+        "topCount": 53,
+        "cHash": "41c290a0ad76ea96",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "Grounded pilot record independently structured from official notification."
+      },
+      {
+        "examId": "MAHARASHTRA_COMMON_ENTRAN",
+        "sourceUrl": "https://cetcell.mahacet.org/wp-content/uploads/2024/01/MHT-CET-2024-Information-Brochure.pdf",
+        "secCount": 3,
+        "topCount": 43,
+        "cHash": "580283a3b75a5264",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "Grounded pilot record independently structured from official notification."
+      },
+      {
+        "examId": "RRB_NTPC",
+        "sourceUrl": "https://www.rrbcdg.gov.in/uploads/CEN_NTPC_Detailed_Notification.pdf",
+        "secCount": 3,
+        "topCount": 42,
+        "cHash": "5a7b04a4cd250735",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "Grounded pilot record independently structured from official notification."
+      },
+      {
+        "examId": "SSC_CHSL",
+        "sourceUrl": "https://ssc.gov.in/api/attachment/uploads/masterData/NoticeBoards/Notice_of_CHSL_2024.pdf",
+        "secCount": 4,
+        "topCount": 46,
+        "cHash": "15a6eec78ec3852f",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "Grounded pilot record independently structured from official notification."
+      },
+      {
+        "examId": "UPPSC_PCS",
+        "sourceUrl": "https://uppsc.up.nic.in/Candidate_Corner/Syllabus.aspx",
+        "secCount": 2,
+        "topCount": 16,
+        "cHash": "32732e290368ccf4",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "Grounded pilot record independently structured from official notification."
+      }
+    ],
+    "LEGACY_FALLBACK": [
+      {
+        "examId": "AIR_FORCE_COMMON_ADMISSIO",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Air_Force_Common_Admission_Test",
+        "secCount": 12,
+        "topCount": 170,
+        "cHash": "526751016f065cd1",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "ALL_INDIA_BAR_EXAMINATION",
+        "sourceUrl": "https://en.wikipedia.org/wiki/All_India_Bar_Examination",
+        "secCount": 4,
+        "topCount": 77,
+        "cHash": "b9c36916026a4917",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "ANDHRA_PRADESH_AGRICULTUR",
+        "sourceUrl": "https://cets.apsche.ap.gov.in/EAPCET/Eapcet/EAPCET_Syllabus.aspx",
+        "secCount": 3,
+        "topCount": 7,
+        "cHash": "db74c3d8d4ba90ba",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "ASSAM_PUBLIC_SERVICE_COMM",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Assam_Public_Service_Commission",
+        "secCount": 15,
+        "topCount": 55,
+        "cHash": "df3754945987f710",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "BIHAR_BED",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Bachelor_of_Education",
+        "secCount": 12,
+        "topCount": 155,
+        "cHash": "ddbae04ff8a97b2f",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "BIHAR_DELED",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Bihar_School_Examination_Board",
+        "secCount": 10,
+        "topCount": 179,
+        "cHash": "a456bd05c4b29db6",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "BIHAR_POLICE_CONSTABLE",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Bihar_Police",
+        "secCount": 15,
+        "topCount": 214,
+        "cHash": "4e1b0d1905575eae",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "BIHAR_POLICE_SI",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Bihar_Police",
+        "secCount": 15,
+        "topCount": 214,
+        "cHash": "5cfebd5b0c00a817",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "BPSC_PCS",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Bihar_Public_Service_Commission",
+        "secCount": 15,
+        "topCount": 243,
+        "cHash": "bd8725dffd9e47fc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "CDS",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Combined_Defence_Services_Examination",
+        "secCount": 13,
+        "topCount": 221,
+        "cHash": "d76bd5362c6a892e",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "CHHATTISGARH_PUBLIC_SERVI",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Chhattisgarh_Public_Service_Commission",
+        "secCount": 15,
+        "topCount": 288,
+        "cHash": "6c827a28b941e4af",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "COMBINED_MEDICAL_SERVICES",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Combined_Medical_Services_Examination",
+        "secCount": 15,
+        "topCount": 70,
+        "cHash": "51a5378c480f83d4",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "COMMON_ADMISSION_TEST",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Common_Admission_Test",
+        "secCount": 15,
+        "topCount": 252,
+        "cHash": "83bd30b4b93bdcd6",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "COMMON_LAW_ADMISSION_TEST",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Common_Law_Admission_Test",
+        "secCount": 15,
+        "topCount": 164,
+        "cHash": "108cf6a47082965c",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "COMMON_UNIVERSITY_ENTRANC",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Common_University_Entrance_Test",
+        "secCount": 15,
+        "topCount": 158,
+        "cHash": "db844736e6b5a2d9",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "ENGINEERING_SERVICES_EXAM",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Engineering_Services_Examination",
+        "secCount": 15,
+        "topCount": 250,
+        "cHash": "3780f1abf4c2253f",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "GRADUATE_APTITUDE_TEST_IN",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Graduate_Aptitude_Test_in_Engineering",
+        "secCount": 15,
+        "topCount": 197,
+        "cHash": "34000a97f600c93b",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "GROUP_D",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Indian_Railways",
+        "secCount": 15,
+        "topCount": 112,
+        "cHash": "5d9cb2bbc3d545a2",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "IBPS_CLERK",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Institute_of_Banking_Personnel_Selection",
+        "secCount": 6,
+        "topCount": 91,
+        "cHash": "931350a478baf376",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "IBPS_PO",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Institute_of_Banking_Personnel_Selection",
+        "secCount": 6,
+        "topCount": 91,
+        "cHash": "931350a478baf376",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "INDIAN_FOREST_SERVICE_EXA",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Indian_Forest_Service",
+        "secCount": 15,
+        "topCount": 116,
+        "cHash": "b7e95ef201ca3274",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "KP_CONSTABLE",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Kolkata_Police",
+        "secCount": 15,
+        "topCount": 301,
+        "cHash": "d9cdafbd77916483",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "MP_CPCT",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Madhya_Pradesh",
+        "secCount": 15,
+        "topCount": 66,
+        "cHash": "3de1a75bc772159d",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "MP_POLICE_CONSTABLE",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Madhya_Pradesh_Police",
+        "secCount": 15,
+        "topCount": 281,
+        "cHash": "30d5d38cfd192294",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "NDA_NA",
+        "sourceUrl": "https://en.wikipedia.org/wiki/National_Defence_Academy_(India)",
+        "secCount": 15,
+        "topCount": 292,
+        "cHash": "45ca48bfd135750a",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "NEET_UG",
+        "sourceUrl": "https://en.wikipedia.org/wiki/National_Eligibility_cum_Entrance_Test_(Undergraduate)",
+        "secCount": 15,
+        "topCount": 99,
+        "cHash": "dce8b5238657bf5c",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "RAILWAY_PROTECTION_FORCE_",
+        "sourceUrl": "https://rpf.indianrailways.gov.in/",
+        "secCount": 14,
+        "topCount": 73,
+        "cHash": "d39aa797b65e65f7",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "RAJASTHAN_POLICE_CONSTABLE",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Rajasthan_Police",
+        "secCount": 15,
+        "topCount": 302,
+        "cHash": "c5949506b3121372",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "RRB_JE",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Railway_Recruitment_Control_Board",
+        "secCount": 15,
+        "topCount": 280,
+        "cHash": "55da625e83eff46e",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "SBI_PO",
+        "sourceUrl": "https://sbi.co.in/web/careers/current-openings",
+        "secCount": 15,
+        "topCount": 32,
+        "cHash": "fb1f49da28be77fb",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "SSC_MTS",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Staff_Selection_Commission",
+        "secCount": 8,
+        "topCount": 140,
+        "cHash": "bd8232d5236ccade",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "UPSC_CAPF",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Central_Armed_Police_Forces",
+        "secCount": 15,
+        "topCount": 168,
+        "cHash": "fe787ed0da2197b2",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "UPSC_CSE",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Civil_Services_Examination",
+        "secCount": 15,
+        "topCount": 291,
+        "cHash": "09c7e4b87facd587",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "UPSSSC_PET",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Uttar_Pradesh_Subordinate_Services_Selection_Commission",
+        "secCount": 11,
+        "topCount": 170,
+        "cHash": "5a45b4edf87b2638",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "UP_POLICE_CONSTABLE",
+        "sourceUrl": "http://uppbpb.gov.in/",
+        "secCount": 10,
+        "topCount": 26,
+        "cHash": "4801c817179819c7",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "UP_POLICE_SI",
+        "sourceUrl": "http://uppbpb.gov.in/",
+        "secCount": 10,
+        "topCount": 26,
+        "cHash": "d69296ce0603ca3d",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "UTTAR_PRADESH_TEACHER_ELI",
+        "sourceUrl": "https://updeled.gov.in/",
+        "secCount": 10,
+        "topCount": 31,
+        "cHash": "117c57d22181db89",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "WBCS",
+        "sourceUrl": "https://en.wikipedia.org/wiki/West_Bengal_Civil_Service",
+        "secCount": 15,
+        "topCount": 239,
+        "cHash": "847c88c9859f2c9c",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "WBPSC_FOOD_SI",
+        "sourceUrl": "https://en.wikipedia.org/wiki/West_Bengal_Civil_Service",
+        "secCount": 15,
+        "topCount": 239,
+        "cHash": "e333099091732d20",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      },
+      {
+        "examId": "WBP_CONSTABLE",
+        "sourceUrl": "https://en.wikipedia.org/wiki/West_Bengal_Police",
+        "secCount": 15,
+        "topCount": 195,
+        "cHash": "081233b6e459a5dd",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Legacy Wikipedia / heuristic line-split text containing web chrome and encyclopedia prose."
+      }
+    ],
+    "FAILED_OFFICIAL_FETCH": [],
+    "SUSPICIOUS_DEFAULT_PAYLOAD": [
+      {
+        "examId": "ANM_GNM",
+        "sourceUrl": "https://wbjeeb.nic.in/anm-gnm/",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      },
+      {
+        "examId": "CSIR_NATIONAL_ELIGIBILITY",
+        "sourceUrl": "https://csirnet.nta.ac.in/",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      },
+      {
+        "examId": "IMU_CET",
+        "sourceUrl": "https://www.imu.edu.in/imunew/admissions",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      },
+      {
+        "examId": "JEECUP",
+        "sourceUrl": "https://jeecup.admissions.nic.in/",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      },
+      {
+        "examId": "JENPAS_UG",
+        "sourceUrl": "https://wbjeeb.nic.in/jenpas-ug/",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      },
+      {
+        "examId": "KARNATAKA_COMMON_ENTRANCE",
+        "sourceUrl": "https://cetonline.karnataka.gov.in/kea/",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      },
+      {
+        "examId": "RAJASTHAN_PUBLIC_SERVICE_",
+        "sourceUrl": "https://rpsc.rajasthan.gov.in/syllabus",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      },
+      {
+        "examId": "UGC_NET",
+        "sourceUrl": "https://ugcnet.nta.ac.in/",
+        "secCount": 1,
+        "topCount": 3,
+        "cHash": "dc5130c7f10a0adc",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "verified",
+        "note": "BUG: Default placeholder payload (1 section / 3 generic topics) introduced by scale-up script."
+      }
+    ],
+    "OTHER": [
+      {
+        "examId": "RAJASTHAN_ELIGIBILITY_EXA",
+        "sourceUrl": "https://rajeduboard.rajasthan.gov.in/",
+        "secCount": 0,
+        "topCount": 0,
+        "cHash": "4f53cda18c2baa0c",
+        "status": "pending_review",
+        "content_usage": "structured_factual_information",
+        "verification_status": "needs_rights_review",
+        "note": "Other official/fallback candidate."
+      }
+    ]
+  },
+  "hashGroups": {
+    "526751016f065cd175135b295a338bab9fdcfad2c9cfe1bdf916f2046c3b3043": [
+      "AIR_FORCE_COMMON_ADMISSIO"
+    ],
+    "b9c36916026a4917bffceef53e3281539897fa8f9c80e6b7676e814ef8992120": [
+      "ALL_INDIA_BAR_EXAMINATION"
+    ],
+    "db74c3d8d4ba90ba3ced0aff2826394654dfbd705eade13291b291d53664358c": [
+      "ANDHRA_PRADESH_AGRICULTUR"
+    ],
+    "dc5130c7f10a0adca5acf3d2ed64b283226d4ef7235eb3138b18eeedbe35f1af": [
+      "ANM_GNM",
+      "CSIR_NATIONAL_ELIGIBILITY",
+      "IMU_CET",
+      "JEECUP",
+      "JENPAS_UG",
+      "KARNATAKA_COMMON_ENTRANCE",
+      "RAJASTHAN_PUBLIC_SERVICE_",
+      "UGC_NET"
+    ],
+    "df3754945987f710982e6baf90bb24969f7048b994b561c1f7d1a763ee104042": [
+      "ASSAM_PUBLIC_SERVICE_COMM"
+    ],
+    "ddbae04ff8a97b2f65fe9f36300bd67b94af93f9d83e8d7ab159ce39f28f9ea9": [
+      "BIHAR_BED"
+    ],
+    "a456bd05c4b29db62560b2b66c300f9709b9656f32e2bfcbbba4c938dd938a23": [
+      "BIHAR_DELED"
+    ],
+    "4e1b0d1905575eae98070b823b1ae0f45c9465a979e6e3a40f444d272d54a691": [
+      "BIHAR_POLICE_CONSTABLE"
+    ],
+    "5cfebd5b0c00a817de75b0693f5efb2a1a588625d1070f42ca722a115e8e3120": [
+      "BIHAR_POLICE_SI"
+    ],
+    "bd8725dffd9e47fc625fd73bc2e2a5543e63defa62a3767435caea0b04b3826a": [
+      "BPSC_PCS"
+    ],
+    "d76bd5362c6a892e596acd4a251299d742a417e8f9cb87fa9796287b0af4169d": [
+      "CDS"
+    ],
+    "6c827a28b941e4af32bcb9e704c3557ed95a3d9b555cfaf81e40a643aaf627fb": [
+      "CHHATTISGARH_PUBLIC_SERVI"
+    ],
+    "51a5378c480f83d4c69f4751973b0f058ac85e39abb95db91042dd1654f46ac4": [
+      "COMBINED_MEDICAL_SERVICES"
+    ],
+    "83bd30b4b93bdcd64011c943b19bc185e1653c49a6f648ed4e5eeb272603dee0": [
+      "COMMON_ADMISSION_TEST"
+    ],
+    "108cf6a47082965c771435c4ed7b616c1829a68f6fdce1057d6c84a4499c7060": [
+      "COMMON_LAW_ADMISSION_TEST"
+    ],
+    "db844736e6b5a2d99c44a20d539877cd50eca528a3bbbc061b742a883f347bf5": [
+      "COMMON_UNIVERSITY_ENTRANC"
+    ],
+    "41c290a0ad76ea96c42dd5815fbb15c13422a3de5cbaa9a6ec8f0eed64f6e097": [
+      "CTET"
+    ],
+    "3780f1abf4c2253fddc9b4f5725c78763f22d9c884c60de2ec137bf6cd3124dc": [
+      "ENGINEERING_SERVICES_EXAM"
+    ],
+    "34000a97f600c93baa21bc306d5f76cd98e536e297d700c6f1040b0d190d9c5e": [
+      "GRADUATE_APTITUDE_TEST_IN"
+    ],
+    "5d9cb2bbc3d545a216e35baa728a1b1a5ae5f168647c4726a71ad4ca76f075df": [
+      "GROUP_D"
+    ],
+    "931350a478baf37654affa07787ffecd4af07b23d4e0ea9af0ffe5346a946ba7": [
+      "IBPS_CLERK",
+      "IBPS_PO"
+    ],
+    "b7e95ef201ca327455ae47582775c71197a3a2d700b95613540814d4aaf069cb": [
+      "INDIAN_FOREST_SERVICE_EXA"
+    ],
+    "d9cdafbd77916483f6744c7ce365f473187f1b48aa1c3340dbc8dada025e5cf5": [
+      "KP_CONSTABLE"
+    ],
+    "580283a3b75a5264cef909dd14fccbb49d6ec376750df0a6aaaf17331907d362": [
+      "MAHARASHTRA_COMMON_ENTRAN"
+    ],
+    "3de1a75bc772159da9e7ba7b75682cb1a5a4f13783c290861dae7c91e8c82e05": [
+      "MP_CPCT"
+    ],
+    "30d5d38cfd192294582fc508abd1c123c6e4b4035751d08f04dd679aea31e22e": [
+      "MP_POLICE_CONSTABLE"
+    ],
+    "45ca48bfd135750acf0d3d97c6174e09989ba1c86d618466b218fe9950fed6f3": [
+      "NDA_NA"
+    ],
+    "dce8b5238657bf5cb0aeea74935bed178ebbef65f99459df7b260baf98b6ff3d": [
+      "NEET_UG"
+    ],
+    "d39aa797b65e65f7351b81c2fd4cd5abdc14846b6fbd03f856642b860791d9cd": [
+      "RAILWAY_PROTECTION_FORCE_"
+    ],
+    "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945": [
+      "RAJASTHAN_ELIGIBILITY_EXA"
+    ],
+    "c5949506b31213721e74b3bfea26793111802b54e502bc1b4ba78886bead6233": [
+      "RAJASTHAN_POLICE_CONSTABLE"
+    ],
+    "55da625e83eff46e9b23f64c2ad2abb6504dfdc1a8af68fd568ad0961edfc1a0": [
+      "RRB_JE"
+    ],
+    "5a7b04a4cd2507353cea3f5f84f8d0568ca29f4635dfad6828b54589dec5c0ff": [
+      "RRB_NTPC"
+    ],
+    "fb1f49da28be77fb2a96803de83b489a3ca91582843187e60c87720a99527153": [
+      "SBI_PO"
+    ],
+    "15a6eec78ec3852f7c080b7457d7b9cb9271f331101c103fb9bed2d9db2d6622": [
+      "SSC_CHSL"
+    ],
+    "bd8232d5236ccade3a4096703cf8ada693edc209838b2461425f33bc8366a805": [
+      "SSC_MTS"
+    ],
+    "32732e290368ccf40ec96be502d9cd0f2c6405c228c7bc8a897d9fc89402e7a5": [
+      "UPPSC_PCS"
+    ],
+    "fe787ed0da2197b2e2d24e45fef567aab5f7f0cc60ce25a96aaddc8a10fa22d0": [
+      "UPSC_CAPF"
+    ],
+    "09c7e4b87facd58716f7ad4b5051ec09ccb11886f7e8bdf07eb0be3b3afc27a8": [
+      "UPSC_CSE"
+    ],
+    "5a45b4edf87b2638fb902743601cab1431b8181ec1012f5810d781ca48aad7d0": [
+      "UPSSSC_PET"
+    ],
+    "4801c817179819c72455a13917266e1f587a25a161e676c3c6164bc771cb255b": [
+      "UP_POLICE_CONSTABLE"
+    ],
+    "d69296ce0603ca3d786c165e9f1157981eb55508a50b949dcc22f8cfeddf8a02": [
+      "UP_POLICE_SI"
+    ],
+    "117c57d22181db894279a6e79bb017c5dd5a02d7b57477b3df61d2e48cb6c450": [
+      "UTTAR_PRADESH_TEACHER_ELI"
+    ],
+    "847c88c9859f2c9c9a823d2e036aeccd19461ec9fb35176155f59b4351c8d425": [
+      "WBCS"
+    ],
+    "e333099091732d20b8da3fe23e9c39bbc1bd1096ff3f1ec836d9dc5c07ae9d93": [
+      "WBPSC_FOOD_SI"
+    ],
+    "081233b6e459a5dd4bd9edf3cf2f10778f9bd35b27ec97671900ad496445a18b": [
+      "WBP_CONSTABLE"
+    ]
+  },
+  "repeatedPatterns": [
+    [
+      "1 sections / 3 topics",
+      [
+        "ANM_GNM",
+        "CSIR_NATIONAL_ELIGIBILITY",
+        "IMU_CET",
+        "JEECUP",
+        "JENPAS_UG",
+        "KARNATAKA_COMMON_ENTRANCE",
+        "RAJASTHAN_PUBLIC_SERVICE_",
+        "UGC_NET"
+      ]
+    ],
+    [
+      "15 sections / 214 topics",
+      [
+        "BIHAR_POLICE_CONSTABLE",
+        "BIHAR_POLICE_SI"
+      ]
+    ],
+    [
+      "6 sections / 91 topics",
+      [
+        "IBPS_CLERK",
+        "IBPS_PO"
+      ]
+    ],
+    [
+      "10 sections / 26 topics",
+      [
+        "UP_POLICE_CONSTABLE",
+        "UP_POLICE_SI"
+      ]
+    ],
+    [
+      "15 sections / 239 topics",
+      [
+        "WBCS",
+        "WBPSC_FOOD_SI"
+      ]
+    ]
+  ],
+  "safetyCheck": {
+    "hasApprovedOnlyFilter": true,
+    "approvedCount": 0,
+    "pendingCount": 77
+  }
+}

@@ -7,6 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { RewardEngine } from '../src/lib/rewards/rewardEngine.js';
 import {
   type AdminAnnouncement,
   type AiConversationRecord,
@@ -837,6 +838,23 @@ router.post('/api/user/study-sessions/:id/complete', async (req, res) => {
       }
     }
 
+    // Trigger RewardEngine event processing
+    let rewardResult = null;
+    try {
+      rewardResult = await RewardEngine.processEvent({
+        userId,
+        eventType: 'POMODORO_COMPLETED',
+        referenceId: id,
+        payload: {
+          verifiedMinutes: validMinutes,
+          minutes: validMinutes,
+          sessionId: id
+        }
+      });
+    } catch (e) {
+      console.warn('[Study Sessions] RewardEngine processEvent warning:', e);
+    }
+
     return res.json({
       success: true,
       message: 'Study session completed and recorded to database.',
@@ -846,10 +864,11 @@ router.post('/api/user/study-sessions/:id/complete', async (req, res) => {
         minutes: validMinutes,
         date: sessionDate,
         status: 'COMPLETED',
-        xpEarned: xpAwarded
+        xpEarned: rewardResult ? rewardResult.xpGained : xpAwarded
       },
       streak: streakResult,
-      xpAwarded
+      xpAwarded: rewardResult ? rewardResult.xpGained : xpAwarded,
+      rewards: rewardResult
     });
   } catch (err: any) {
     console.error('[Study Sessions] Complete error:', err?.message || err);
@@ -4218,7 +4237,26 @@ router.put('/api/user/tasks/:id', async (req, res) => {
       updatedTask = { id, ...updates, updated_at: now };
     }
 
-    res.json({ success: true, task: updatedTask });
+    let taskRewards = null;
+    const isCompletedNow = updates.completed === true || updates.status === 'completed' || updates.status === 'DONE';
+    if (isCompletedNow && userId !== 'guest') {
+      try {
+        taskRewards = await RewardEngine.processEvent({
+          userId,
+          eventType: 'TASK_COMPLETED',
+          referenceId: `task_${id}`,
+          payload: {
+            taskId: id,
+            subject: updatedTask.subject,
+            priority: updatedTask.priority
+          }
+        });
+      } catch (e) {
+        console.warn('[Tasks] RewardEngine processEvent warning:', e);
+      }
+    }
+
+    res.json({ success: true, task: updatedTask, rewards: taskRewards });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SlideUp, PressFeedback, ErrorShake, Stagger, StaggerItem, FadeIn } from '../lib/animations';
+import { ContextualTour } from './ContextualTour';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -480,7 +481,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
 
   // Export Markdown
   const handleExportMarkdown = () => {
-    const mdContent = `# ProTrack AI Mentor Session: ${
+    const mdContent = `# AspirantX AI Mentor Session: ${
       conversations.find((c) => c.id === activeConvId)?.title || 'Study Session'
     }\n\nDate: ${new Date().toLocaleDateString()}\nExam Target: ${exam}\nMentor Mode: ${activeMode}\n\n---\n\n` +
       messages.map((m) => `### **${m.sender.toUpperCase()}** (${m.timestamp}):\n\n${m.text}\n\n`).join('---\n\n');
@@ -489,7 +490,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ProTrack_AI_Session_${Date.now()}.md`;
+    a.download = `AspirantX_AI_Session_${Date.now()}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -680,7 +681,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
 
             <div className="min-w-0">
               <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-2 truncate">
-                <span>ProTrack Enterprise AI Mentor</span>
+                <span>AspirantX Academic AI Mentor</span>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-widest hidden sm:inline-block">
                   Gemini 3.6 SSE
                 </span>
@@ -740,6 +741,29 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
               </button>
             );
           })}
+        </div>
+
+        <div className="px-4 pt-3">
+          <ContextualTour
+            featureKey="ai_mentor"
+            steps={[
+              {
+                title: 'Specialized Academic Mentors',
+                description: 'Select NCERT Master, PYQ Solver, Mains Evaluator, or Ethics Specialist to get exam-tailored depth.',
+                badge: 'Step 1 of 3'
+              },
+              {
+                title: 'Full LaTeX & Math Support',
+                description: 'Equations, reaction mechanisms, and constitutional articles format with crisp mathematical typography.',
+                badge: 'Step 2 of 3'
+              },
+              {
+                title: 'Pin & Export Workspaces',
+                description: 'Pin vital mentor answers to your drawer or export complete sessions to Markdown for your notes.',
+                badge: 'Step 3 of 3'
+              }
+            ]}
+          />
         </div>
 
         {/* 📜 MESSAGES STREAM VIEW */}

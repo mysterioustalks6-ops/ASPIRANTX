@@ -13,8 +13,8 @@ import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { AdSenseBanner } from './AdSenseBanner';
 import { DailyStudySummaryCard } from './DailyStudySummaryCard';
 import { CircularPerformanceHub } from './CircularPerformanceMeter';
-import { ExamWallpaperWidget } from './ExamWallpaperWidget';
 import { loadWorkspaceConfig, getActiveFeaturesInOrder, WorkspaceConfig, recordFeatureUsage } from '../lib/workspacePreferences';
+import { ContextualTour } from './ContextualTour';
 
 interface StudentDashboardProps {
   userProfile: UserProfile;
@@ -243,6 +243,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const primarySuggestion = data.aiSuggestions?.[0] || `Focus on ${examCfg2.subjects?.[0] || 'core topics'} today.`;
   const secondarySuggestion = data.aiSuggestions?.[1] || null;
   const [showAllShortcuts, setShowAllShortcuts] = useState<boolean>(false);
+  const [showTelemetryRings, setShowTelemetryRings] = useState<boolean>(false);
 
   if (loading || !data) {
     return (
@@ -270,10 +271,24 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   const recAction = getRecommendationAction();
   const allFeatures = getActiveFeaturesInOrder(workspaceConfig);
-  const displayedShortcuts = showAllShortcuts ? allFeatures : allFeatures.slice(0, 6);
+  const displayedShortcuts = showAllShortcuts ? allFeatures : allFeatures.slice(0, 4);
 
   return (
     <div id="student-dashboard" className="w-full space-y-5 pb-24 md:pb-8 font-sans">
+      {/* Contextual Product Tour (First-use guidance with Skip) */}
+      <ContextualTour
+        featureKey="dashboard"
+        steps={[
+          {
+            title: "Today's Study Focus",
+            description: "Pick up directly where you left off in your syllabus, or launch your recommended high-yield practice session.",
+          },
+          {
+            title: "Live Study Telemetry",
+            description: "Track your real daily quota, mock test accuracy, and real syllabus milestone progress in real time.",
+          },
+        ]}
+      />
 
       {/* ── 1. HEADER & GREETING (Above the Fold) ─────────────────────────── */}
       <SlideUp className="ax-card p-4 sm:p-6 border-slate-800 bg-slate-900/90">
@@ -471,51 +486,73 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
       </div>
 
-      {/* ── 3. PERFORMANCE TELEMETRY HUB ─────────────────────────────────── */}
-      <CircularPerformanceHub
-        syllabusPercent={data.overallProgressPercent}
-        revisionPercent={data.revisionProgressPercent || 35}
-        testAccuracyPercent={data.testAccuracyPercent}
-        dailyStudyMinutes={data.todayStudyMinutes}
-        dailyTargetMinutes={data.dailyTargetHours * 60}
-      />
+      {/* ── 3. PERFORMANCE TELEMETRY HUB (On-demand Progressive Disclosure) ── */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 overflow-hidden">
+        <button
+          onClick={() => setShowTelemetryRings(!showTelemetryRings)}
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-800/40 transition-colors"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 text-sky-400" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-white">Live Study Telemetry</h3>
+              <p className="text-[11px] text-slate-400">Multi-ring syllabus, accuracy & daily pace metrics</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-sky-400">
+              {showTelemetryRings ? 'Collapse' : 'Tap to View'}
+            </span>
+            <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${showTelemetryRings ? 'rotate-90' : ''}`} />
+          </div>
+        </button>
+
+        {showTelemetryRings && (
+          <div className="p-4 border-t border-slate-800 bg-slate-950/70">
+            <CircularPerformanceHub
+              syllabusPercent={data.overallProgressPercent}
+              revisionPercent={data.revisionProgressPercent || 0}
+              testAccuracyPercent={data.testAccuracyPercent}
+              dailyStudyMinutes={data.todayStudyMinutes}
+              dailyTargetMinutes={data.dailyTargetHours * 60}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Non-intrusive in-feed slot (suppressed for premium candidates) */}
       <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />
 
-      {/* ── 4. COMPACT QUICK LAUNCH (4–6 Primary Shortcuts by default) ─────── */}
-      <div className="ax-card p-5 border-slate-800 bg-slate-900">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+      {/* ── 4. ESSENTIAL QUICK LAUNCH (4 Primary Shortcuts by default) ─────── */}
+      <div className="ax-card p-4 sm:p-5 border-slate-800 bg-slate-900/90">
+        <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center">
               <LayoutGrid className="w-3.5 h-3.5 text-sky-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                Quick Launch
-                {workspaceConfig.preset && (
-                  <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase tracking-wider">
-                    {workspaceConfig.preset}
-                  </span>
-                )}
+              <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                Quick Shortcuts
               </h3>
-              <p className="text-[11px] text-slate-400">Direct shortcuts to primary study modules</p>
+              <p className="text-[10px] text-slate-400">Direct access to core study engines</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {allFeatures.length > 6 && (
+            {allFeatures.length > 4 && (
               <button
                 onClick={() => setShowAllShortcuts(!showAllShortcuts)}
-                className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[11px] font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
               >
-                {showAllShortcuts ? 'Show Top 6' : `Show All (${allFeatures.length})`}
+                {showAllShortcuts ? 'Show Top 4' : `All (${allFeatures.length})`}
               </button>
             )}
             {onOpenWorkspaceCustomizer && (
               <button
                 onClick={onOpenWorkspaceCustomizer}
-                className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[11px] font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-all cursor-pointer"
               >
                 <Sliders className="w-3 h-3 text-sky-400" />
                 <span>Customize</span>
@@ -525,7 +562,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
 
         {/* Grid of Compact Shortcuts with Stagger */}
-        <Stagger staggerDelay={0.04} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5">
+        <Stagger staggerDelay={0.03} className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {displayedShortcuts.map((item) => (
             <StaggerItem key={item.id}>
               <PressFeedback className="w-full h-full">
@@ -534,20 +571,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                     recordFeatureUsage(item.id, userProfile.id);
                     if (onNavigate) onNavigate(item.id as ActiveTab);
                   }}
-                  className="w-full h-full p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800 hover:border-sky-500/40 transition-all text-center group flex flex-col items-center gap-2 cursor-pointer shadow-sm"
+                  className="w-full h-full p-3 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800/90 hover:border-sky-500/40 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer shadow-sm"
                 >
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 group-hover:bg-sky-500/15 border border-slate-800 group-hover:border-sky-500/30 flex items-center justify-center text-sm font-black text-slate-400 group-hover:text-sky-400 transition-all">
+                  <div className="w-8 h-8 rounded-xl bg-slate-900 group-hover:bg-sky-500/15 border border-slate-800 group-hover:border-sky-500/30 flex items-center justify-center text-xs font-black text-slate-400 group-hover:text-sky-400 transition-all">
                     {item.label.charAt(0)}
                   </div>
                   <div className="min-w-0 w-full text-center">
                     <span className="text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors block truncate">
                       {item.label}
                     </span>
-                    {item.meta.badge && (
-                      <span className="inline-block mt-0.5 px-1.5 py-0.2 rounded text-[8px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 uppercase">
-                        {item.meta.badge}
-                      </span>
-                    )}
                   </div>
                 </button>
               </PressFeedback>
@@ -556,13 +588,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </Stagger>
       </div>
 
-      {/* ── 5. LOWER REGIONS (Secondary Information) ─────────────────────── */}
-      <ExamWallpaperWidget
-        user={userProfile}
-        selectedExam={activeExamTag}
-        onNavigateToSyllabus={() => onNavigate && onNavigate('syllabus')}
-      />
-
+      {/* ── 5. LOWER REGIONS: Daily Study Summary Card (Clean, Quiet) ──────── */}
       <DailyStudySummaryCard
         user={userProfile}
         selectedExam={selectedExam}

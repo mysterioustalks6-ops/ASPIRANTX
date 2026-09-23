@@ -17,7 +17,17 @@ import {
   Award
 } from 'lucide-react';
 import { awardXPAndCoins } from '../lib/gamification';
-import { triggerConfetti, ModalTransition, EmptyState, PressFeedback } from '../lib/animations';
+import { 
+  triggerConfetti, 
+  ModalTransition, 
+  EmptyState, 
+  PressFeedback,
+  CheckmarkPop,
+  FloatingRewardBadge,
+  CountUp,
+  ProgressAnimation
+} from '../lib/animations';
+import { ContextualTour } from './ContextualTour';
 
 interface TaskManagerProps {
   userId?: string;
@@ -80,6 +90,7 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
 
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const [recentlyCompletedTaskId, setRecentlyCompletedTaskId] = useState<string | null>(null);
 
   // Form Fields
   const [newTitle, setNewTitle] = useState<string>('');
@@ -127,7 +138,14 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
     } catch (_e) {}
 
     if (earnedReward) {
-      triggerConfetti();
+      setRecentlyCompletedTaskId(id);
+      // Check if ALL tasks are now completed
+      const totalTasks = tasks.length;
+      const willBeCompletedCount = tasks.filter((t) => t.id === id ? true : t.status === 'completed').length;
+      if (totalTasks > 0 && willBeCompletedCount === totalTasks) {
+        // Goal completed: 100% celebration
+        triggerConfetti({ particleCount: 35, spread: 50 });
+      }
       await awardXPAndCoins(20, 5, 'Completed Daily Task', userId);
       try {
         const res = await fetch('/api/user/streak/trigger', {
@@ -220,22 +238,61 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
+      <ContextualTour
+        featureKey="tasks"
+        steps={[
+          {
+            title: 'Daily Study Goals',
+            description: 'Break your syllabus into manageable micro-tasks with estimated completion minutes.',
+            badge: 'Step 1 of 3'
+          },
+          {
+            title: 'Kanban Progress Flow',
+            description: 'Drag cards or tap the directional arrows to move goals through To Do, In Progress, and Completed.',
+            badge: 'Step 2 of 3'
+          },
+          {
+            title: 'Study XP & Persistence',
+            description: 'Completed tasks award study XP and coins, building your daily productivity streak.',
+            badge: 'Step 3 of 3'
+          }
+        ]}
+      />
+
+      {/* Top Banner & Daily Progress */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl">
-        <div>
-          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-            <Kanban className="w-5 h-5 text-emerald-400" />
-            Aspirant Daily Kanban Board
-          </h3>
-          <p className="text-xs text-slate-400 mt-1">
-            Drag cards between columns or use quick action buttons. Earn <span className="text-amber-400 font-bold">+20 XP & +5 Coins</span> per finished task!
+        <div className="space-y-1.5 flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Kanban className="w-5 h-5 text-emerald-400" />
+              Aspirant Daily Kanban Board
+            </h3>
+            {tasks.length > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                <CountUp value={Math.round((completedCount / tasks.length) * 100)} suffix="%" /> Done
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-400">
+            {completedCount === tasks.length && tasks.length > 0
+              ? '✨ Outstanding! All planned goals completed for today.'
+              : `Completed ${completedCount} of ${tasks.length} goals. Earn +20 XP per finished task!`}
           </p>
+          {tasks.length > 0 && (
+            <div className="w-full max-w-xs pt-1">
+              <ProgressAnimation
+                percent={Math.round((completedCount / tasks.length) * 100)}
+                barClassName="bg-gradient-to-r from-emerald-500 to-cyan-500"
+                className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800"
+              />
+            </div>
+          )}
         </div>
 
         <button
           id="add-kanban-task-btn"
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all shrink-0"
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4 stroke-[3]" /> Add Study Goal
         </button>
@@ -298,9 +355,28 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
                         </span>
                       </div>
 
-                      <p className={`text-xs font-bold leading-relaxed ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-100'}`}>
-                        {task.title}
-                      </p>
+                      <div className="flex items-start gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => moveTaskStatus(task.id, task.status === 'completed' ? 'todo' : 'completed')}
+                          className="mt-0.5 text-slate-500 hover:text-emerald-400 transition-colors shrink-0 cursor-pointer relative"
+                          title={task.status === 'completed' ? 'Reopen Goal' : 'Mark Complete'}
+                        >
+                          <CheckmarkPop isChecked={task.status === 'completed'}>
+                            {task.status === 'completed' ? (
+                              <CheckSquare className="w-4 h-4 text-emerald-400 fill-emerald-400/20" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-600 hover:text-emerald-400" />
+                            )}
+                          </CheckmarkPop>
+                          {recentlyCompletedTaskId === task.id && (
+                            <FloatingRewardBadge text="+20 XP" onComplete={() => setRecentlyCompletedTaskId(null)} />
+                          )}
+                        </button>
+                        <p className={`text-xs font-bold leading-relaxed transition-all duration-200 ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-100'}`}>
+                          {task.title}
+                        </p>
+                      </div>
 
                       <div className="flex items-center justify-between pt-2 border-t border-slate-900 text-[11px] text-slate-400">
                         <span className="flex items-center gap-1">
@@ -344,8 +420,17 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
                 </AnimatePresence>
 
                 {colTasks.length === 0 && (
-                  <div className="p-6 text-center rounded-2xl border border-dashed border-slate-800 text-slate-500 text-xs my-auto">
-                    No tasks in {col.title.toLowerCase()}
+                  <div className="p-6 text-center rounded-2xl border border-dashed border-slate-800/80 bg-slate-950/40 text-slate-400 text-xs my-auto flex flex-col items-center justify-center space-y-1.5">
+                    <p className="font-semibold text-slate-300">
+                      {col.id === 'todo' && 'No pending goals'}
+                      {col.id === 'in_progress' && 'No active sprint'}
+                      {col.id === 'completed' && 'No completed goals yet'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 max-w-[200px] leading-relaxed">
+                      {col.id === 'todo' && 'Tap "+ Add Study Goal" above to schedule your next chapter or test practice.'}
+                      {col.id === 'in_progress' && 'Move a task here when you begin focused study.'}
+                      {col.id === 'completed' && 'Completed study blocks will log here and award your daily XP.'}
+                    </p>
                   </div>
                 )}
               </div>

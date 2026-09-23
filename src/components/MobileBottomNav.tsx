@@ -15,10 +15,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenMore,
 }) => {
   const isHomeActive = activeTab === 'student_dashboard' || activeTab === 'dashboard';
-  const isLearnActive = activeTab === 'syllabus' || activeTab === 'library' || activeTab === 'flashcards' || activeTab === 'podcasts' || activeTab === 'blog';
-  const isPracticeActive = activeTab === 'cbt' || activeTab === 'cbt_exam' || activeTab === 'pyq' || activeTab === 'question_bank';
-  const isProgressActive = activeTab === 'weakness' || activeTab === 'leaderboard' || activeTab === 'eligibility';
-  const isMoreActive = !isHomeActive && !isLearnActive && !isPracticeActive && !isProgressActive;
+  const isLearnActive = activeTab === 'syllabus' || activeTab === 'library' || activeTab === 'flashcards' || activeTab === 'podcasts';
+  const isPracticeActive = activeTab === 'practice_hub' || activeTab === 'cbt' || activeTab === 'cbt_exam' || activeTab === 'pyq' || activeTab === 'question_bank';
+  const isProgressActive = activeTab === 'progress_hub' || activeTab === 'weakness' || activeTab === 'leaderboard';
+  const isMoreActive = activeTab === 'more_hub' || (!isHomeActive && !isLearnActive && !isPracticeActive && !isProgressActive);
 
   return (
     <nav 
@@ -45,14 +45,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           </button>
         </PressFeedback>
 
-        {/* 2. Learn (Syllabus & Library) */}
+        {/* 2. Study (Syllabus & Curriculum) */}
         <PressFeedback className="flex-1">
           <button
-            onClick={() => {
-              if (activeTab === 'library') setActiveTab('library');
-              else setActiveTab('syllabus');
-            }}
-            aria-label="Learn Content"
+            onClick={() => setActiveTab('syllabus')}
+            aria-label="Study Curriculum & Syllabus"
             className={`w-full flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation ${
               isLearnActive
                 ? 'text-sky-400 font-bold'
@@ -62,19 +59,15 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <div className={`p-1.5 rounded-xl transition-all duration-200 ${isLearnActive ? 'bg-sky-500/20 shadow-[0_0_12px_rgba(2,132,199,0.35)]' : ''}`}>
               <BookOpen className="w-5 h-5" />
             </div>
-            <span className="text-[10px] mt-0.5 tracking-tight font-medium">Learn</span>
+            <span className="text-[10px] mt-0.5 tracking-tight font-medium">Study</span>
           </button>
         </PressFeedback>
 
-        {/* 3. Practice (CBT, PYQ, Question Bank) */}
+        {/* 3. Practice (PYQ, Question Bank, CBT Mocks) */}
         <PressFeedback className="flex-1">
           <button
-            onClick={() => {
-              if (activeTab === 'pyq') setActiveTab('pyq');
-              else if (activeTab === 'question_bank') setActiveTab('question_bank');
-              else setActiveTab('cbt');
-            }}
-            aria-label="Practice Engines"
+            onClick={() => setActiveTab('practice_hub')}
+            aria-label="Practice Mock Tests & PYQs"
             className={`w-full flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation ${
               isPracticeActive
                 ? 'text-sky-400 font-bold'
@@ -88,14 +81,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           </button>
         </PressFeedback>
 
-        {/* 4. Progress (Analytics & Rank) */}
+        {/* 4. Progress (Readiness, Hours, Accuracy & Leaderboard) */}
         <PressFeedback className="flex-1">
           <button
-            onClick={() => {
-              if (activeTab === 'leaderboard') setActiveTab('leaderboard');
-              else setActiveTab('weakness');
-            }}
-            aria-label="Progress and Accuracy"
+            onClick={() => setActiveTab('progress_hub')}
+            aria-label="Readiness & Analytics"
             className={`w-full flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation ${
               isProgressActive
                 ? 'text-sky-400 font-bold'
@@ -109,11 +99,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           </button>
         </PressFeedback>
 
-        {/* 5. More (Tools, AI Mentor, Community & Profile) */}
+        {/* 5. More (Tools, Productivity, Community & Settings) */}
         <PressFeedback className="flex-1">
           <button
-            onClick={onOpenMore}
-            aria-label="Open More Features Drawer"
+            onClick={() => setActiveTab('more_hub')}
+            aria-label="Open More Features & Tools"
             className={`w-full flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation ${
               isMoreActive
                 ? 'text-sky-400 font-bold'

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { AnimatePresence } from 'motion/react';
+import { PageTransition } from './lib/animations';
 import { UserProfile, ActiveTab } from './types';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { loadUserProfile, saveUserProfile } from './lib/gamification';
@@ -13,6 +15,10 @@ import { OnboardingWizard } from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { GamificationBar } from './components/GamificationBar';
+import { PracticeHub } from './components/PracticeHub';
+import { ProgressHub } from './components/ProgressHub';
+import { MoreHub } from './components/MoreHub';
+import { FigmaRedesignPreview } from './components/FigmaRedesignPreview';
 import { DailyQuoteCard } from './components/DailyQuote';
 import { SyllabusTracker } from './components/SyllabusTracker';
 import { PyqEngine } from './components/PyqEngine';
@@ -70,6 +76,11 @@ const SecurityWrapper = lazy(() => import('./components/SecurityWrapper').then(m
 const FeedbackEngine = lazy(() => import('./components/FeedbackEngine').then(m => ({ default: m.FeedbackEngine })));
 const BlogView = lazy(() => import('./components/BlogView').then(m => ({ default: m.BlogView })));
 const TeacherBlogSubmit = lazy(() => import('./components/TeacherBlogSubmit').then(m => ({ default: m.TeacherBlogSubmit })));
+const RewardsHub = lazy(() => import('./components/RewardsHub').then(m => ({ default: m.RewardsHub })));
+const FocusShieldView = lazy(() => import('./components/FocusShieldView').then(m => ({ default: m.FocusShieldView })));
+const DownloadPage = lazy(() => import('./components/DownloadPage').then(m => ({ default: m.DownloadPage })));
+import { AchievementUnlockModal } from './components/AchievementUnlockModal';
+import { TrophyUnlock } from './lib/rewards/rewardEngine';
 
 const EXAMS = EXAM_LIST;
 
@@ -192,14 +203,19 @@ function AppContent() {
     })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/download') {
+      return 'download';
+    }
     const hash = window.location.hash.replace('#', '');
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
-      'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper'];
+      'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
+      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub'];
     return (validTabs.includes(hash) ? hash : 'syllabus') as ActiveTab;
   });
+  const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
 
   useEffect(() => {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=') || window.location.hash.includes('refresh_token=')) {
@@ -226,8 +242,17 @@ function AppContent() {
         setActiveTab(hash as ActiveTab);
       }
     };
+    const onNavigateTab = (e: any) => {
+      if (e.detail?.tab) {
+        setActiveTab(e.detail.tab as ActiveTab);
+      }
+    };
     window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
+    window.addEventListener('aspirantx_navigate_tab', onNavigateTab);
+    return () => {
+      window.removeEventListener('hashchange', onHashChange);
+      window.removeEventListener('aspirantx_navigate_tab', onNavigateTab);
+    };
   }, []);
   const [initializing, setInitializing] = useState<boolean>(true);
   const [bannedMessage, setBannedMessage] = useState<string | null>(null);
@@ -237,7 +262,7 @@ function AppContent() {
   const [showWorkspaceCustomizer, setShowWorkspaceCustomizer] = useState<boolean>(false);
   const [showSearchModal, setShowSearchModal] = useState<boolean>(false);
   const [showCompanionWidget, setShowCompanionWidget] = useState<boolean>(true);
-  const [isCompanionMinimized, setIsCompanionMinimized] = useState<boolean>(false);
+  const [isCompanionMinimized, setIsCompanionMinimized] = useState<boolean>(true);
   const [showReminderSettingsModal, setShowReminderSettingsModal] = useState<boolean>(false);
   const [showWallpaperSetupModal, setShowWallpaperSetupModal] = useState<boolean>(false);
   const [customizer, setCustomizer] = useState<AppCustomizerSettings>(loadCustomizerSettings());
@@ -1253,11 +1278,13 @@ function AppContent() {
           isDemoExpired={isDemoExpired}
         />
 
-        {/* Gamification Level & Reward Redemption Bar */}
-        <GamificationBar 
-          onOpenPremiumTab={() => setActiveTab('premium')} 
-          onOpenReferralModal={() => setShowReferralModal(true)}
-        />
+        {/* Gamification Bar: Relocated from global header to dedicated Rewards & Milestones experience to eliminate cognitive clutter */}
+        {activeTab === 'reward_milestones' && (
+          <GamificationBar 
+            onOpenPremiumTab={() => setActiveTab('premium')} 
+            onOpenReferralModal={() => setShowReferralModal(true)}
+          />
+        )}
 
         {/* Dashboard Main Scroll Workspace */}
         <main className={`flex-1 p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8 w-full mx-auto transition-all duration-200 ${
@@ -1271,9 +1298,9 @@ function AppContent() {
                 onOpenProfileModal={() => setShowProfileModal(true)}
                 onToggleSidebar={handleToggleSidebarCollapse}
               />
-              {/* Top Announcement Ticker (Customizable) */}
+              {/* Top Announcement Ticker (Desktop only to prevent mobile clutter) */}
               {customizer.showAnnouncementTicker && (
-                <div className="w-full px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-xs shadow-md">
+                <div className="hidden md:flex w-full px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 border border-amber-500/30 items-center justify-between gap-3 text-xs shadow-md">
                   <div className="flex items-center gap-2 overflow-hidden">
                     <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black text-[10px] uppercase shrink-0">
                       Announcement
@@ -1294,9 +1321,9 @@ function AppContent() {
                 </div>
               )}
 
-              {/* Photo Hero Banner (Customizable Image, Headline, Subtitle) */}
+              {/* Photo Hero Banner (Desktop only to prevent mobile clutter) */}
               {customizer.showHeroBanner && (
-                <div className="relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl group">
+                <div className="hidden md:block relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl group">
                   {/* Background Photo Image with Overlay */}
                   <div className="absolute inset-0 z-0">
                     <img
@@ -1342,17 +1369,21 @@ function AppContent() {
                 </div>
               )}
 
-              {/* Google AdSense Header Slot (Only renders when enabled by Admin) */}
-              <AdSenseBanner slotType="header" isPremium={user?.isPremium} />
+              {/* Google AdSense Header Slot (Desktop only to prevent mobile clutter) */}
+              <div className="hidden md:block">
+                <AdSenseBanner slotType="header" isPremium={user?.isPremium} />
+              </div>
 
               {/* Daily Motivational Quote (Always Featured at top of Dashboard) */}
               <DailyQuoteCard />
             </>
           )}
 
-          {/* Active Tab View with PremiumGate Locks */}
+          {/* Active Tab View with PremiumGate Locks & Smooth Connected Transitions */}
           <section className="mt-6">
-            {activeTab === 'syllabus' && (
+            <AnimatePresence mode="wait">
+              <PageTransition key={activeTab}>
+                {activeTab === 'syllabus' && (
               <PremiumGate
                 featureName="syllabus"
                 featureTitle="Interactive Syllabus Tracker"
@@ -1466,7 +1497,7 @@ function AppContent() {
               {(activeTab === 'cbt' || activeTab === 'cbt_exam') && (
                 <PremiumGate
                   featureName="cbt"
-                  featureTitle="ProTrack All-India Mock Test & CBT Simulator"
+                  featureTitle="AspirantX All-India Mock Test & CBT Simulator"
                   isUserPremium={user.isPremium || isAdmin}
                   isAdmin={isAdmin}
                   isGuest={user.isGuest}
@@ -1501,8 +1532,30 @@ function AppContent() {
                 <EarnPremium user={{...user, exam: selectedExam}} onNavigate={(t) => setActiveTab(t)} />
               )}
 
-              {activeTab === 'reward_milestones' && (
-                <RewardMilestones user={{...user, exam: selectedExam}} featureFlags={featureFlagsMap} onOpenPremium={() => setActiveTab('premium')} />
+              {(activeTab === 'rewards' || activeTab === 'reward_milestones') && (
+                <Suspense fallback={<SuspenseFallback />}>
+                  <RewardsHub 
+                    user={{...user, exam: selectedExam}} 
+                    onOpenFocusShield={() => setActiveTab('focus_shield')}
+                    onOpenPractice={() => setActiveTab('practice_hub')}
+                    onOpenSyllabus={() => setActiveTab('syllabus')}
+                  />
+                </Suspense>
+              )}
+
+              {activeTab === 'focus_shield' && (
+                <Suspense fallback={<SuspenseFallback />}>
+                  <FocusShieldView 
+                    user={{...user, exam: selectedExam}} 
+                    onTrophyUnlock={(unlocked) => setTrophyQueue(prev => [...prev, unlocked])}
+                  />
+                </Suspense>
+              )}
+
+              {activeTab === 'download' && (
+                <Suspense fallback={<SuspenseFallback />}>
+                  <DownloadPage onOpenApp={() => setActiveTab('syllabus')} />
+                </Suspense>
               )}
 
               {activeTab === 'collaboration' && (
@@ -1611,7 +1664,45 @@ function AppContent() {
                   </div>
                 )
               )}
-            </Suspense>
+              {activeTab === 'practice_hub' && (
+                <PracticeHub
+                  userProfile={{...user, exam: selectedExam}}
+                  selectedExam={selectedExam}
+                  isAdmin={isAdmin}
+                  onNavigate={(t) => setActiveTab(t)}
+                />
+              )}
+
+              {activeTab === 'progress_hub' && (
+                <ProgressHub
+                  userProfile={{...user, exam: selectedExam}}
+                  selectedExam={selectedExam}
+                  onNavigate={(t) => setActiveTab(t)}
+                />
+              )}
+
+              {activeTab === 'more_hub' && (
+                <MoreHub
+                  user={{...user, exam: selectedExam}}
+                  selectedExam={selectedExam}
+                  onNavigate={(t) => setActiveTab(t)}
+                  onOpenProfileModal={() => setShowProfileModal(true)}
+                  onOpenReferralModal={() => setShowReferralModal(true)}
+                  onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+                  onOpenReminderSettings={() => setShowReminderSettingsModal(true)}
+                  isAdminUnlocked={isAdminUnlocked}
+                />
+              )}
+
+              {activeTab === 'figma_preview' && (
+                <FigmaRedesignPreview
+                  onClose={() => setActiveTab('dashboard')}
+                  onNavigateTab={(t) => setActiveTab(t as ActiveTab)}
+                />
+              )}
+              </Suspense>
+            </PageTransition>
+          </AnimatePresence>
           </section>
 
           {/* Google AdSense Footer Slot */}
@@ -1645,6 +1736,13 @@ function AppContent() {
           } : undefined}
         />
       )}
+
+      {/* Global Achievement Unlock Celebration Modal */}
+      <AchievementUnlockModal
+        queue={trophyQueue}
+        onDismiss={(id) => setTrophyQueue(prev => prev.filter(t => t.id !== id))}
+        onViewCollection={() => setActiveTab('rewards')}
+      />
 
       {/* Refer & Earn Program Modal */}
       {user && (

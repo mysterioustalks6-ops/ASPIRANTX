@@ -11,6 +11,7 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
+    "fetch:exams": "tsx scripts/examAutoFetchAgent.ts",
     "postinstall": "node scripts/patch_capacitor_plugins.js"
   },
   "dependencies": {

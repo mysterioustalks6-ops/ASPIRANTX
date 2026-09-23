@@ -90,6 +90,18 @@ export const ALL_WORKSPACE_FEATURES: WorkspaceFeatureMeta[] = [
     defaultActive: true,
     defaultOrder: 4,
   },
+  {
+    id: 'focus_shield',
+    defaultLabel: 'Focus Shield',
+    shortDescription: 'Block distracting apps (YouTube, Instagram) on-device during deep study.',
+    category: 'core',
+    categoryLabel: 'Core Daily Tools',
+    iconName: 'Shield',
+    badge: 'Hardware VPN',
+    suggestedReason: 'Enforces pure focus by preventing app access on device during study.',
+    defaultActive: true,
+    defaultOrder: 5,
+  },
 
   // Practice & Prep
   {
@@ -313,6 +325,30 @@ export const ALL_WORKSPACE_FEATURES: WorkspaceFeatureMeta[] = [
     suggestedReason: 'Report any issue or tell us what new tools you need.',
     defaultActive: false,
     defaultOrder: 22,
+  },
+  {
+    id: 'rewards',
+    defaultLabel: 'Rewards & Trophies',
+    shortDescription: 'Complete study challenges, earn XP, and unlock lifelong trophies.',
+    category: 'resources_perks',
+    categoryLabel: 'Perks & Membership',
+    iconName: 'Trophy',
+    badge: 'XP & Trophies',
+    suggestedReason: 'Turn daily study discipline into achievements, levels, and trophies.',
+    defaultActive: true,
+    defaultOrder: 23,
+  },
+  {
+    id: 'download',
+    defaultLabel: 'Download Android App',
+    shortDescription: 'Install ProTrack on your Android device for hardware-level focus shielding.',
+    category: 'resources_perks',
+    categoryLabel: 'Perks & Membership',
+    iconName: 'Download',
+    badge: 'APK',
+    suggestedReason: 'Get the full ProTrack mobile experience with background focus shield.',
+    defaultActive: false,
+    defaultOrder: 24,
   },
 ];
 

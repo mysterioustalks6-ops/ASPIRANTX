@@ -23,6 +23,7 @@ import { EXAM_LIST } from '../lib/examList';
 import { normalizeExamId } from '../lib/examRegistry';
 import { motion, AnimatePresence } from 'motion/react';
 import { PressFeedback, triggerConfetti, FadeIn, ScaleIn } from '../lib/animations';
+import { ContextualTour } from './ContextualTour';
 
 export interface Flashcard {
   id: string;
@@ -457,6 +458,27 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({
           </button>
         </div>
       </div>
+
+      <ContextualTour
+        featureKey="flashcards"
+        steps={[
+          {
+            title: 'Active Recall & Leitner Boxes',
+            description: 'Flashcards use the 5-box Leitner system. Click or tap any card to flip between question and answer.',
+            badge: 'Step 1 of 3'
+          },
+          {
+            title: 'Rate Your Recall Honestly',
+            description: 'Marking a card "Easy" advances it to longer review intervals. Marking "Hard" brings it back for daily review.',
+            badge: 'Step 2 of 3'
+          },
+          {
+            title: 'Subject Decks & Custom Cards',
+            description: 'Filter cards by syllabus topic, or tap "+ Add Custom Card" to capture tough formulas and exceptions.',
+            badge: 'Step 3 of 3'
+          }
+        ]}
+      />
 
       {/* "WHY USE FLASHCARDS?" SIDE INFORMATION PANEL */}
       {showInfoDrawer && (

@@ -1,0 +1,44 @@
+{
+  "testUser": {
+    "id": "usr_restart_test_1790077983641",
+    "email": "restart_1790077983641@aspirant.dev",
+    "role": "USER"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3JfcmVzdGFydF90ZXN0XzE3OTAwNzc5ODM2NDEiLCJlbWFpbCI6InJlc3RhcnRfMTc5MDA3Nzk4MzY0MUBhc3BpcmFudC5kZXYiLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc5MDA3Nzk4MywiZXhwIjoxNzkwMDgxNTgzfQ.xZSbwLBDCDta-zUbk8wkWNr-2veZJnNs1HGxfGphqa4",
+  "adminToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbl8xIiwiZW1haWwiOiJhZG1pbkBhc3BpcmFudC5kZXYiLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3OTAwNzc5ODMsImV4cCI6MTc5MDA4MTU4M30.FPGkMbZNxz4JvZBD3yfxpvOlEE1h_YE0Bi-hRUowK9c",
+  "testUtr": "RESTARTUTR9840013562",
+  "walletRow": {
+    "user_id": "usr_restart_test_1790077983641",
+    "data": {},
+    "updated_at": "2026-09-22T11:53:04.045Z",
+    "balance": "0.0",
+    "coins": 0,
+    "total_earned": "0.0",
+    "created_at": "2026-09-22T11:53:04.045Z"
+  },
+  "utrRow": {
+    "id": "utr_1790077984296_a9aaaeae",
+    "user_id": "usr_restart_test_1790077983641",
+    "email": "restart_1790077983641@aspirant.dev",
+    "data": {
+      "id": "utr_1790077984296_a9aaaeae",
+      "utr": "RESTARTUTR9840013562",
+      "plan": "monthly",
+      "amount": 499,
+      "status": "PENDING",
+      "userName": "Restart Test User",
+      "userEmail": "restart_1790077983641@aspirant.dev",
+      "submittedAt": "2026-09-22T11:53:04.296Z"
+    },
+    "created_at": "2026-09-22T11:53:04.296Z",
+    "updated_at": "2026-09-22T11:53:04.296Z",
+    "utr": "RESTARTUTR9840013562",
+    "plan": "monthly",
+    "amount": "499",
+    "status": "PENDING",
+    "user_email": "restart_1790077983641@aspirant.dev",
+    "user_name": "Restart Test User",
+    "processed_by": null,
+    "processed_at": null
+  }
+}

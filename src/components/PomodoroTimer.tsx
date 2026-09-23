@@ -36,6 +36,7 @@ import {
   Waves,
   Music,
   ShieldAlert,
+  Shield,
   WifiOff
 } from 'lucide-react';
 import { saveStudySessionLog, loadStudySessions, loadUserProfile } from '../lib/gamification';
@@ -47,7 +48,8 @@ import { ForestGardenView } from './ForestGardenView';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { getApiUrl } from '../lib/apiConfig';
-import { triggerConfetti, PressFeedback, SlideUp } from '../lib/animations';
+import { triggerConfetti, PressFeedback, SlideUp, ModalTransition, CountUp } from '../lib/animations';
+import { ContextualTour } from './ContextualTour';
 
 // --- FOREST MILESTONE TIERS (FEATURE C) ---
 interface ForestTier {
@@ -1373,6 +1375,27 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 text-slate-100">
+      <ContextualTour
+        featureKey="pomodoro"
+        steps={[
+          {
+            title: 'Deep Focus Sprints',
+            description: 'Choose your sprint duration (25m, 45m, or 60m). Your focus seedling grows as you concentrate.',
+            badge: 'Step 1 of 3'
+          },
+          {
+            title: 'Ambient Soundscapes',
+            description: 'Enable gentle binaural theta waves, rainfall, or sea swells to drown out ambient background noise.',
+            badge: 'Step 2 of 3'
+          },
+          {
+            title: 'Syllabus Time Logging',
+            description: 'Attach a subject and chapter to automatically log verified focus hours onto your syllabus tracker.',
+            badge: 'Step 3 of 3'
+          }
+        ]}
+      />
+
       {/* Feature B Alert: Tab Switching Distraction Warning */}
       {isDistracted && (
         <div className="p-4 rounded-2xl bg-amber-500/20 border border-amber-500/50 text-amber-200 flex items-center justify-between gap-3 animate-pulse shadow-lg">
@@ -1782,7 +1805,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
             {/* Timer Controls */}
             <div className="flex items-center justify-center gap-4 relative z-10">
               <PressFeedback>
-                <button
+                <motion.button
+                  animate={isPomoActive ? { scale: [1, 1.015, 1] } : {}}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
                   onClick={() => {
                     if (!isPomoActive && pomoMode === 'focus') {
                       sessionIdRef.current = 'session_' + Date.now();
@@ -1797,7 +1822,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                 >
                   {isPomoActive ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
                   {isPomoActive ? 'PAUSE SPRINT' : 'START POMODORO SPRINT'}
-                </button>
+                </motion.button>
               </PressFeedback>
 
               <PressFeedback>
@@ -1813,6 +1838,36 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                   <RotateCcw className="w-5 h-5" />
                 </button>
               </PressFeedback>
+            </div>
+
+            {/* Feature: Focus Shield Integration Callout */}
+            <div className="mt-6 p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white">Focus Shield Distraction Blocker</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-extrabold uppercase tracking-wider">
+                      Zero-Bypass VPN
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Locks out YouTube & Instagram at device network level during deep study.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: { tab: 'focus_shield' } }));
+                }}
+                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md shadow-purple-600/20 flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <span>Launch Shield</span>
+                <span>→</span>
+              </button>
             </div>
           </div>
         </div>
@@ -2136,10 +2191,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
         </div>
       )}
 
-      {/* --- COMPLETION SUMMARY MODAL --- */}
-      {completionSummary && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-lg flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 text-center space-y-5 shadow-2xl">
+      {/* --- COMPLETION SUMMARY MODAL WITH PROGRESSIVE DISCOVERY --- */}
+      <ModalTransition isOpen={Boolean(completionSummary)} onClose={() => setCompletionSummary(null)}>
+        {completionSummary && (
+          <div className="max-w-md w-full bg-slate-900 border border-emerald-500/40 rounded-3xl p-6 text-center space-y-5 shadow-2xl mx-auto">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto text-emerald-400">
               <CheckCircle className="w-8 h-8" />
             </div>
@@ -2176,8 +2231,23 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
               </div>
               <div className="p-3 rounded-2xl bg-slate-950 border border-slate-800">
                 <span className="text-slate-400 text-[10px] uppercase">XP Awarded</span>
-                <p className="text-amber-400 text-base mt-0.5">+{completionSummary.xpAwarded} XP</p>
+                <p className="text-amber-400 text-base mt-0.5">
+                  +<CountUp value={completionSummary.xpAwarded} suffix=" XP" />
+                </p>
               </div>
+            </div>
+
+            {/* Contextual Progressive Discovery: Next Recommended Action */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-sky-950/40 to-indigo-950/40 border border-sky-500/30 text-left space-y-1.5 shadow-sm">
+              <span className="text-[10px] font-black uppercase text-sky-400 tracking-wider flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" /> Next Recommended Action
+              </span>
+              <p className="text-xs font-bold text-white">
+                Reinforce {completionSummary.subject || 'this subject'} with 5 Practice PYQs
+              </p>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Active recall immediately following a focus sprint increases retention by up to 40%.
+              </p>
             </div>
 
             {completionSummary.questionsCount > 0 && (
@@ -2193,13 +2263,13 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
 
             <button
               onClick={() => setCompletionSummary(null)}
-              className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20"
+              className="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
             >
               Continue Preparation
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </ModalTransition>
     </div>
   );
 };
