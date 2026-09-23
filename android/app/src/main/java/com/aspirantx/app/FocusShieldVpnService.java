@@ -105,18 +105,15 @@ public class FocusShieldVpnService extends VpnService implements Runnable {
                 Log.w(TAG, "DNS configuration notice: " + e.getMessage());
             }
 
-            PackageManager pm = getPackageManager();
             int allowedCount = 0;
 
             for (String pkg : packages) {
                 try {
-                    // Verify that the application is installed before adding
-                    pm.getPackageInfo(pkg, 0);
                     builder.addAllowedApplication(pkg);
                     allowedCount++;
                     Log.i(TAG, "Added blocked app to local VPN: " + pkg);
                 } catch (PackageManager.NameNotFoundException ignored) {
-                    // App not installed on this specific device, ignore safely
+                    Log.d(TAG, "Package not installed on this device, skipping: " + pkg);
                 } catch (Exception e) {
                     Log.w(TAG, "Could not add allowed application: " + pkg + ": " + e.getMessage());
                 }

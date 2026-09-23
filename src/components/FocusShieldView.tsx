@@ -104,6 +104,46 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
   useEffect(() => {
     fetchStats();
+
+    // Check if there is an active session in localStorage or native plugin
+    const checkActiveSession = async () => {
+      const saved = localStorage.getItem('protrack_active_focus_session');
+      const nativeStatus = await callNativePlugin('getShieldStatus');
+      
+      if (saved) {
+        try {
+          const sess = JSON.parse(saved);
+          const elapsed = Math.floor((Date.now() - sess.startTimestamp) / 1000);
+          const remaining = Math.max(0, sess.totalSeconds - elapsed);
+          
+          if (remaining > 0) {
+            setActiveSessionId(sess.sessionId);
+            setTotalRequestedSeconds(sess.totalSeconds);
+            setRemainingSeconds(remaining);
+            if (sess.selectedApps) setSelectedApps(sess.selectedApps);
+            setSessionState('ACTIVE');
+            setIsVpnActive(nativeStatus?.isActive ?? true);
+          } else {
+            // Session expired while away
+            localStorage.removeItem('protrack_active_focus_session');
+            if (nativeStatus?.isActive) {
+              await callNativePlugin('stopShield');
+            }
+          }
+        } catch (e) {
+          localStorage.removeItem('protrack_active_focus_session');
+        }
+      } else if (nativeStatus?.isActive) {
+        // Native shield active but no local session saved, restore generic session
+        setIsVpnActive(true);
+        setSessionState('ACTIVE');
+        setActiveSessionId(`foc_active_${Date.now()}`);
+        setTotalRequestedSeconds(25 * 60);
+        setRemainingSeconds(20 * 60);
+      }
+    };
+
+    checkActiveSession();
   }, [user?.id]);
 
   // App toggle handler
@@ -155,24 +195,36 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         return;
       }
 
-      // 2. Start session on server
-      const sRes = await fetch(getApiUrl('/api/focus/session/start'), {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({
-          requestedMinutes: duration,
-          blockedApps: selectedApps
-        })
-      });
-      const sData = await sRes.json();
-      if (!sData.success) {
-        throw new Error(sData.error || 'Failed to start server focus session');
+      // 2. Start session on server with graceful fallback
+      let sessionId = `foc_local_${Date.now()}`;
+      try {
+        const sRes = await fetch(getApiUrl('/api/focus/session/start'), {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({
+            requestedMinutes: duration,
+            blockedApps: selectedApps
+          })
+        });
+        const sData = await sRes.json();
+        if (sData?.success && sData?.session?.id) {
+          sessionId = sData.session.id;
+        }
+      } catch (serverErr: any) {
+        console.warn('[FocusShield] Server sync warning, continuing in local mode:', serverErr?.message);
       }
 
-      const sessionId = sData.session.id;
       setActiveSessionId(sessionId);
       setTotalRequestedSeconds(durationSeconds);
       setRemainingSeconds(durationSeconds);
+
+      // Save to localStorage for persistence across tabs/backgrounding
+      localStorage.setItem('protrack_active_focus_session', JSON.stringify({
+        sessionId,
+        startTimestamp: Date.now(),
+        totalSeconds: durationSeconds,
+        selectedApps
+      }));
 
       // 3. Start native Android VPN black-hole
       await callNativePlugin('startShield', { apps: selectedApps });
@@ -253,6 +305,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const handleCompleteFocus = async () => {
     if (!activeSessionId) return;
     try {
+      localStorage.removeItem('protrack_active_focus_session');
       // Stop native VPN
       await callNativePlugin('stopShield');
       setIsVpnActive(false);
@@ -281,6 +334,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const handleCancelFocus = async () => {
     if (!activeSessionId) return;
     try {
+      localStorage.removeItem('protrack_active_focus_session');
       await callNativePlugin('stopShield');
       setIsVpnActive(false);
       await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/cancel`), {

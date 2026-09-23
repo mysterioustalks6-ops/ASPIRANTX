@@ -94,5 +94,12 @@
         </intent>
         <package android:name="com.android.wallpaper.livepicker" />
         <package android:name="com.google.android.apps.wallpaper" />
+        <!-- Focus Shield Target App Visibility for Android 11+ (API 30+) -->
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.snapchat.android" />
+        <package android:name="com.reddit.frontpage" />
+        <package android:name="com.twitter.android" />
     </queries>
 </manifest>
