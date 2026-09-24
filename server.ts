@@ -164,9 +164,11 @@ const apkDownloadHandler = (_req: express.Request, res: express.Response) => {
 
 app.get('/protrack.apk', apkDownloadHandler);
 app.get('/ProTrack.apk', apkDownloadHandler);
+app.get('/ProTrack-v2.4.3.apk', apkDownloadHandler);
 app.get('/ProTrack-v2.4.2.apk', apkDownloadHandler);
 app.get('/aspirantx.apk', apkDownloadHandler);
 app.get('/AspirantX.apk', apkDownloadHandler);
+app.get('/AspirantX-v2.4.3.apk', apkDownloadHandler);
 app.get('/AspirantX-v2.4.2.apk', apkDownloadHandler);
 app.get('/AspirantX-v2.4.1.apk', apkDownloadHandler);
 app.get('/api/download/apk', apkDownloadHandler);

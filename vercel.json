@@ -6,7 +6,11 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/((?!ads\\.txt|sitemap\\.xml|robots\\.txt|protrack\\.apk|ProTrack\\.apk|aspirantx\\.apk).*)",
+      "source": "/(ProTrack.*|AspirantX.*|aspirantx)\\.apk",
+      "destination": "/protrack.apk"
+    },
+    {
+      "source": "/((?!ads\\.txt|sitemap\\.xml|robots\\.txt|.*\\.apk).*)",
       "destination": "/index.html"
     }
   ]

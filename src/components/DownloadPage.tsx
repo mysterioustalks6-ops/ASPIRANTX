@@ -106,12 +106,12 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   </div>
                   <div>
                     <h2 className="text-2xl font-black text-white">ProTrack for Android</h2>
-                    <div className="text-xs text-slate-400">Version 2.4.2 • Updated September 2026</div>
+                    <div className="text-xs text-sky-400 font-semibold">Version 2.4.3 • Official Build (September 2026)</div>
                   </div>
                 </div>
 
                 <p className="text-sm text-slate-300 mb-6 leading-relaxed">
-                  Full-featured native Android app with local VpnService Focus Shield, cheat-proof CBT exam engine, and spaced-repetition flashcards.
+                  Full-featured native Android app with local Focus Shield, cheat-proof CBT exam engine, active recall flashcards, and live question banks.
                 </p>
 
                 {/* Feature Checklist */}
@@ -140,11 +140,11 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   className="w-full py-4 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-base shadow-xl shadow-sky-500/25 transition-all flex items-center justify-center gap-2"
                 >
                   <Download className="w-5 h-5" />
-                  <span>Download Android App (.apk)</span>
+                  <span>Download Android App (.apk v2.4.3)</span>
                 </a>
 
                 <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                  <span>File Size: ~11.3 MB</span>
+                  <span>File Size: ~11.4 MB</span>
                   <span>Requires Android 8.0+</span>
                   <button 
                     onClick={handleCopyLink}
@@ -152,6 +152,22 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   >
                     {copiedUrl ? 'Copied Link!' : 'Copy Direct URL'}
                   </button>
+                </div>
+
+                {/* Play Protect & Installation Notice Card */}
+                <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-left space-y-2">
+                  <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <span>Google Play Protect Warning? (आसानी से इंस्टॉल करें)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Direct APK download hone ke karan Google Play Protect warning dikha sakta hai. Install karne ke liye:
+                  </p>
+                  <ol className="text-[11px] text-slate-300 space-y-1 list-decimal list-inside">
+                    <li>Browser warning par <strong className="text-white">"Download anyway"</strong> par click karein.</li>
+                    <li>Play Protect warning aane par <strong className="text-amber-300">"More details"</strong> (अधिक विवरण) par click karein.</li>
+                    <li>Neeche <strong className="text-amber-300">"Install anyway"</strong> (फिर भी इंस्टॉल करें) select karein.</li>
+                  </ol>
                 </div>
               </div>
             </div>
