@@ -229,13 +229,18 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
     checkActiveSession();
 
-    // Check accessibility status for voluntary toggle display
+    // Check blocker permissions (UsageStats OR Accessibility)
     const checkAccessibility = async () => {
       if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
         try {
-          const res = await callNativePlugin('isAccessibilityEnabled');
-          setIsAccessibilityActive(res?.enabled === true);
-        } catch {}
+          const res = await callNativePlugin('checkBlockerPermissions');
+          setIsAccessibilityActive(res?.canBlock === true);
+        } catch {
+          try {
+            const res = await callNativePlugin('isAccessibilityEnabled');
+            setIsAccessibilityActive(res?.enabled === true);
+          } catch {}
+        }
       }
     };
     checkAccessibility();
@@ -343,15 +348,19 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     let canBlock = false;
     if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
       try {
-        const accessRes = await callNativePlugin('isAccessibilityEnabled');
-        canBlock = accessRes?.enabled === true;
+        const permRes = await callNativePlugin('checkBlockerPermissions');
+        canBlock = permRes?.canBlock === true;
         setIsAccessibilityActive(canBlock);
-      } catch (e) {
-        console.warn('Native accessibility check error:', e);
+      } catch {
+        try {
+          const accessRes = await callNativePlugin('isAccessibilityEnabled');
+          canBlock = accessRes?.enabled === true;
+          setIsAccessibilityActive(canBlock);
+        } catch {}
       }
     }
 
-    // Always start immediately: if accessibility is enabled, apps are blocked.
+    // Always start immediately: if permissions are enabled, apps are blocked.
     // If not enabled, study timer, streak, and audio run seamlessly with ZERO setup popups!
     await executeStartSession(!canBlock);
   };
@@ -891,11 +900,15 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
               <button
                 type="button"
                 onClick={async () => {
-                  await callNativePlugin('openAccessibilitySettings');
+                  try {
+                    await callNativePlugin('openUsageAccessSettings');
+                  } catch {
+                    await callNativePlugin('openAccessibilitySettings');
+                  }
                 }}
-                className="py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-bold text-xs border border-indigo-500/30 transition-all cursor-pointer whitespace-nowrap"
+                className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer whitespace-nowrap"
               >
-                Enable
+                Enable Blocker
               </button>
             )}
           </div>

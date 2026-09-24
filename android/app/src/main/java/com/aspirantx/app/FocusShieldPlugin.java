@@ -4,6 +4,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.app.AppOpsManager;
+import android.net.Uri;
+import android.os.Build;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
@@ -30,6 +33,27 @@ import java.util.Set;
 public class FocusShieldPlugin extends Plugin {
     private static final String TAG = "FocusShieldPlugin";
 
+    public static boolean hasUsageStatsPermission(Context context) {
+        try {
+            AppOpsManager appOps = (AppOpsManager) context.getSystemService(Context.APP_OPS_SERVICE);
+            int mode = appOps.checkOpNoThrow(
+                    AppOpsManager.OPSTR_GET_USAGE_STATS,
+                    android.os.Process.myUid(),
+                    context.getPackageName()
+            );
+            return mode == AppOpsManager.MODE_ALLOWED;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public static boolean hasOverlayPermission(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return Settings.canDrawOverlays(context);
+        }
+        return true;
+    }
+
     public static boolean isAccessibilityServiceEnabled(Context context) {
         ComponentName expectedComponentName = new ComponentName(context, FocusShieldAccessibilityService.class);
         String enabledServicesSetting = Settings.Secure.getString(
@@ -49,6 +73,65 @@ public class FocusShieldPlugin extends Plugin {
             }
         }
         return false;
+    }
+
+    @PluginMethod
+    public void checkBlockerPermissions(PluginCall call) {
+        Context context = getContext();
+        boolean hasUsage = hasUsageStatsPermission(context);
+        boolean hasOverlay = hasOverlayPermission(context);
+        boolean hasAccess = isAccessibilityServiceEnabled(context);
+        boolean canBlock = hasUsage || hasAccess;
+
+        JSObject res = new JSObject();
+        res.put("hasUsageStats", hasUsage);
+        res.put("hasOverlay", hasOverlay);
+        res.put("hasAccessibility", hasAccess);
+        res.put("canBlock", canBlock);
+        call.resolve(res);
+    }
+
+    @PluginMethod
+    public void openUsageAccessSettings(PluginCall call) {
+        try {
+            Context context = getContext();
+            Intent intent = new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS);
+            intent.setData(Uri.parse("package:" + context.getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            JSObject res = new JSObject();
+            res.put("success", true);
+            call.resolve(res);
+        } catch (Exception fallback) {
+            try {
+                Intent generic = new Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS);
+                generic.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(generic);
+                JSObject res = new JSObject();
+                res.put("success", true);
+                call.resolve(res);
+            } catch (Exception e) {
+                call.reject("Could not open Usage Access Settings: " + e.getMessage());
+            }
+        }
+    }
+
+    @PluginMethod
+    public void openOverlaySettings(PluginCall call) {
+        try {
+            Context context = getContext();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:" + context.getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            }
+            JSObject res = new JSObject();
+            res.put("success", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Could not open Overlay Settings: " + e.getMessage());
+        }
     }
 
     @PluginMethod
@@ -102,8 +185,24 @@ public class FocusShieldPlugin extends Plugin {
         int durationSeconds = call.getInt("durationSeconds", durationMinutes * 60);
         long endTimestamp = System.currentTimeMillis() + (durationSeconds * 1000L);
 
-        // Update Accessibility blocker state in SharedPreferences
+        // Update state in SharedPreferences for both Accessibility & UsageStats monitor
         FocusShieldAccessibilityService.setShieldState(context, true, endTimestamp, packages);
+
+        // Start UsageStats background monitor service if Usage Access permission is present
+        if (hasUsageStatsPermission(context)) {
+            try {
+                Intent monitorIntent = new Intent(context, FocusShieldMonitorService.class);
+                monitorIntent.setAction(FocusShieldMonitorService.ACTION_START);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(monitorIntent);
+                } else {
+                    context.startService(monitorIntent);
+                }
+                Log.i(TAG, "Started FocusShieldMonitorService for background distraction monitoring");
+            } catch (Exception e) {
+                Log.w(TAG, "Could not start FocusShieldMonitorService: " + e.getMessage());
+            }
+        }
 
         JSObject res = new JSObject();
         res.put("success", true);
@@ -111,6 +210,7 @@ public class FocusShieldPlugin extends Plugin {
         res.put("restrictedCount", packages.size());
         res.put("endTimestamp", endTimestamp);
         res.put("isAccessibilityEnabled", isAccessibilityServiceEnabled(context));
+        res.put("hasUsageStats", hasUsageStatsPermission(context));
         call.resolve(res);
     }
 
@@ -118,6 +218,12 @@ public class FocusShieldPlugin extends Plugin {
     public void stopShield(PluginCall call) {
         Context context = getContext();
         FocusShieldAccessibilityService.setShieldState(context, false, 0, null);
+
+        try {
+            Intent stopIntent = new Intent(context, FocusShieldMonitorService.class);
+            stopIntent.setAction(FocusShieldMonitorService.ACTION_STOP);
+            context.stopService(stopIntent);
+        } catch (Exception ignored) {}
 
         JSObject res = new JSObject();
         res.put("success", true);
