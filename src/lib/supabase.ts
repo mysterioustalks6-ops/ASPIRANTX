@@ -112,7 +112,7 @@ export async function signInWithGoogle(): Promise<{ data: any; error: any }> {
   try {
     const isNative = Capacitor.isNativePlatform();
     const redirectUrl = isNative 
-      ? 'https://aspirantx.vercel.app/auth-callback.html' 
+      ? 'https://studyride.in/auth-callback.html' 
       : `${window.location.origin}/`;
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + 
