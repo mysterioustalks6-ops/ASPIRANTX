@@ -9,6 +9,19 @@ Disallow: /dashboard/
 Disallow: /settings/
 Disallow: /private/
 
+# Allow AI Models & Search Agents
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 # Host and Sitemap
 Host: https://studyride.in
 Sitemap: https://studyride.in/sitemap.xml
