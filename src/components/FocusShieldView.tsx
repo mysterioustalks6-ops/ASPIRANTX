@@ -260,27 +260,15 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify([]));
   };
 
-  // Start Focus Session
-  const handleStartFocus = async () => {
-    if (!user) return;
-    setErrorMsg(null);
-
-    // 1. Accessibility permission check on Android native
-    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-      const accessRes = await callNativePlugin('isAccessibilityEnabled');
-      if (accessRes && accessRes.enabled === false) {
-        setShowAccessibilityGuide(true);
-        return;
-      }
-    }
-
+  // Internal session execution with optional native blocking
+  const executeStartSession = async (skipNativeBlocking: boolean = false) => {
     setSessionState('STARTING');
 
     const duration = selectedDuration === -1 ? Math.max(5, parseInt(customDuration, 10) || 45) : selectedDuration;
     const durationSeconds = duration * 60;
 
     try {
-      // 2. Start session on server with graceful fallback
+      // 1. Start session on server with graceful fallback
       let sessionId = `foc_local_${Date.now()}`;
       try {
         const sRes = await fetch(getApiUrl('/api/focus/session/start'), {
@@ -288,7 +276,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
           headers: getHeaders(),
           body: JSON.stringify({
             requestedMinutes: duration,
-            blockedApps: selectedApps
+            blockedApps: skipNativeBlocking ? [] : selectedApps
           })
         });
         const sData = await sRes.json();
@@ -308,22 +296,59 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         sessionId,
         startTimestamp: Date.now(),
         totalSeconds: durationSeconds,
-        selectedApps
+        selectedApps: skipNativeBlocking ? [] : selectedApps,
+        skipNativeBlocking
       }));
 
-      // 3. Start native Android Accessibility app blocker
-      await callNativePlugin('startShield', { 
-        apps: selectedApps,
-        durationMinutes: duration,
-        durationSeconds: durationSeconds
-      });
-      setIsVpnActive(true);
+      // 2. Start native Android Accessibility app blocker only if user permitted
+      if (!skipNativeBlocking) {
+        try {
+          await callNativePlugin('startShield', { 
+            apps: selectedApps,
+            durationMinutes: duration,
+            durationSeconds: durationSeconds
+          });
+          setIsVpnActive(true);
+        } catch (shieldErr) {
+          console.warn('[FocusShield] Native blocker start skipped:', shieldErr);
+          setIsVpnActive(false);
+        }
+      } else {
+        setIsVpnActive(false);
+      }
 
       setSessionState('ACTIVE');
     } catch (err: any) {
       setErrorMsg(err.message || 'Error starting focus session');
       setSessionState('IDLE');
     }
+  };
+
+  // Start Focus Session
+  const handleStartFocus = async () => {
+    if (!user) return;
+    setErrorMsg(null);
+
+    // Accessibility permission check on Android native (Optional - no force)
+    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+      try {
+        const accessRes = await callNativePlugin('isAccessibilityEnabled');
+        if (accessRes && accessRes.enabled === false) {
+          // If user previously chose to run timer without blocker, start immediately
+          const skipPref = localStorage.getItem('studyride_skip_shield_accessibility');
+          if (skipPref === 'true') {
+            await executeStartSession(true);
+            return;
+          }
+          setShowAccessibilityGuide(true);
+          return;
+        }
+      } catch (e) {
+        console.warn('Native accessibility check error:', e);
+      }
+    }
+
+    await executeStartSession(false);
   };
 
   // Strict Friction Trigger (Enforces anti-impulse delay on Pause, Early Finish, & Give Up)
@@ -860,52 +885,71 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         </div>
       )}
 
-      {/* ── ACCESSIBILITY SERVICE PERMISSION GUIDE MODAL ── */}
+      {/* ── ACCESSIBILITY SERVICE PERMISSION GUIDE MODAL (100% VOLUNTARY) ── */}
       {showAccessibilityGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
           <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-indigo-500/40 p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
-              <Lock className="w-6 h-6" />
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
+                <Lock className="w-6 h-6" />
+              </div>
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                100% Voluntary (Optional)
+              </span>
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">Enable Focus Shield Blocker</h3>
+              <h3 className="text-lg font-bold text-white">Focus Shield Blocker (Optional)</h3>
               <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider">
-                Android Accessibility Setup
+                Android App Blocker Permission
               </p>
             </div>
 
             <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
               <p>
-                To block distracting apps (YouTube, Instagram) from opening and display the <strong>StudyRide Lock Screen Overlay with Timer</strong>, Android requires the <strong>StudyRide Focus Shield</strong> accessibility permission.
+                Agar aap distracting apps (YouTube, Instagram) ko study session ke dauran block karwana chahte hain, toh Android ko <strong>StudyRide Focus Shield</strong> accessibility permission chahiye hoti hai.
               </p>
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="font-semibold text-white">Quick 3-Step Setup:</div>
-                <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
-                  <li>Tap <strong>Open Accessibility Settings</strong> below.</li>
-                  <li>Find and tap <strong>StudyRide Focus Shield</strong> (under Downloaded Apps).</li>
-                  <li>Toggle the switch to <strong>ON</strong> and tap Allow.</li>
-                </ol>
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1.5">
+                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <span>✓</span>
+                  <span>Koi Zabardasti Nahi:</span>
+                </div>
+                <p className="text-slate-400 leading-normal">
+                  Agar aap permission nahi dena chahte, koi baat nahi! Aapka <strong>Study Timer, Progress Tracking, Streaks, aur Focus Sounds</strong> bina kisi permission ke bilkul mast chalenge.
+                </p>
               </div>
             </div>
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col gap-2.5 pt-2">
               <button
-                onClick={() => setShowAccessibilityGuide(false)}
-                className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm transition-all"
-              >
-                Close
-              </button>
-              <button
-                onClick={async () => {
-                  await callNativePlugin('openAccessibilitySettings');
+                onClick={() => {
                   setShowAccessibilityGuide(false);
+                  executeStartSession(true);
                 }}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-black text-sm shadow-lg shadow-sky-500/20 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <ExternalLink className="w-4 h-4" />
-                <span>Open Settings</span>
+                <Play className="w-4 h-4 fill-current" />
+                <span>Timer Shuru Karein (Bina Blocker / No Permission)</span>
               </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAccessibilityGuide(false)}
+                  className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-medium text-xs transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    await callNativePlugin('openAccessibilitySettings');
+                    setShowAccessibilityGuide(false);
+                  }}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-indigo-500/30 text-indigo-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Permission Allow Karein (Open Settings)</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
