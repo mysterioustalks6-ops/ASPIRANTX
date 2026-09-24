@@ -15,7 +15,15 @@ import {
   Download,
   AlertCircle,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Clock,
+  BookOpen,
+  Target,
+  Brain,
+  Smartphone,
+  ChevronDown,
+  Layers,
+  Zap
 } from 'lucide-react';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
@@ -33,6 +41,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
   const [emailInput, setEmailInput] = useState<string>('');
   const [passwordInput, setPasswordInput] = useState<string>('');
   const [nameInput, setNameInput] = useState<string>('');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     // Check URL parameters for OAuth errors
@@ -451,9 +460,177 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         </motion.div>
       </main>
 
+      {/* SEO Powerhouse: Feature Showcase Section */}
+      <section className="w-full max-w-5xl mx-auto px-5 py-12 border-t border-white/[0.06] relative z-10 space-y-8">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
+            <Zap className="w-3.5 h-3.5" />
+            <span>Academic Performance Infrastructure</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Complete Study Tracking, Syllabus Tracker & Pomodoro Suite
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
+            Everything serious aspirants need to maintain high-rank discipline, master vast exam syllabi, and achieve peak focus.
+          </p>
+        </div>
+
+        {/* 6 Feature Pillars Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Feature 1: Study Tracking */}
+          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-sky-500/40 transition-colors space-y-3">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white">Precision Study Tracking</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Log daily study hours, monitor subject distribution percentages, track active study streaks, and visualize productivity heatmaps to build unstoppable study momentum.
+            </p>
+          </div>
+
+          {/* Feature 2: Syllabus Tracker */}
+          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-emerald-500/40 transition-colors space-y-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <Layers className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white">Interactive Syllabus Tracker</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Granular micro-topic checklists for UPSC CSE (Prelims & Mains), NEET UG, SSC CGL, JEE Main/Adv & State PSCs. Mark topics completed and track real-time completion percentage.
+            </p>
+          </div>
+
+          {/* Feature 3: Pomodoro Focus Timer */}
+          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-amber-500/40 transition-colors space-y-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+              <Target className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white">Scientific Pomodoro Technique</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Research-backed 25/5 and 50/10 deep focus intervals. Defeat procrastination and study exhaustion with customized study sprints, background soundscapes, and live wallpaper sync.
+            </p>
+          </div>
+
+          {/* Feature 4: Focus Shield */}
+          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-purple-500/40 transition-colors space-y-3">
+            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+              <Shield className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white">Distraction Focus Shield</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Built-in Android app blocker that restricts social media, short-video feeds, and notifications during active study intervals to maintain deep cognitive immersion.
+            </p>
+          </div>
+
+          {/* Feature 5: CBT Exam Simulator & PYQs */}
+          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-rose-500/40 transition-colors space-y-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white">Official CBT Simulator & PYQs</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Practice 35 years of past year question papers in a real NTA/UPSC examination interface with official question palettes, negative marking, and national percentile benchmarking.
+            </p>
+          </div>
+
+          {/* Feature 6: AI Study Mentor */}
+          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-cyan-500/40 transition-colors space-y-3">
+            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <Brain className="w-4 h-4" />
+            </div>
+            <h3 className="font-bold text-sm text-white">24/7 AI Study Mentor</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Instant doubt resolution, intelligent answer explanations, adaptive flashcards, and personalized revision schedules generated specifically for your target competitive exam.
+            </p>
+          </div>
+        </div>
+
+        {/* Interactive FAQ Section for Google Rich Snippets */}
+        <div className="pt-8 border-t border-white/[0.06] space-y-4">
+          <div className="text-center space-y-1">
+            <h3 className="text-lg sm:text-xl font-extrabold text-white">Frequently Asked Questions</h3>
+            <p className="text-xs text-slate-400">Everything you need to know about StudyRide and study tracking.</p>
+          </div>
+
+          <div className="max-w-3xl mx-auto space-y-2.5">
+            {[
+              {
+                q: "What is StudyRide and how does it help with study tracking?",
+                a: "StudyRide is an all-in-one study tracking and exam preparation platform designed for competitive exam aspirants (UPSC, NEET, SSC CGL, JEE). It provides real-time study hour logging, subject-wise distribution analytics, streak monitoring, and visual productivity insights so students can measure and optimize their daily study habits."
+              },
+              {
+                q: "How does the StudyRide Syllabus Tracker work for competitive exams?",
+                a: "The StudyRide Syllabus Tracker breaks down complex exam curricula (such as UPSC Prelims and Mains, NEET Physics, Chemistry and Biology, and SSC CGL Tiers) into granular micro-topics. As you complete each chapter or topic, you can mark it completed, log revisions, and instantly view your overall syllabus completion percentage."
+              },
+              {
+                q: "How does the Pomodoro Technique work in the StudyRide app?",
+                a: "StudyRide features a scientific Pomodoro Timer with default 25-minute deep focus intervals followed by 5-minute restorative breaks (or customizable 50/10 cycles). It combines with an Android Focus Shield to block distracting social media apps during study sessions and syncs active timers to live phone wallpapers."
+              },
+              {
+                q: "Does StudyRide provide official CBT mock tests and Previous Year Questions (PYQs)?",
+                a: "Yes! StudyRide features a high-fidelity Computer-Based Test (CBT) exam engine mimicking the exact NTA and UPSC exam interface, complete with a 35-year archive of past year question papers, negative marking calculation, national percentile benchmarking, and instant AI doubt explanations."
+              },
+              {
+                q: "Is StudyRide free to use for students?",
+                a: "Yes, StudyRide is completely free for all students to track their syllabus, practice previous year papers, use the Pomodoro timer, and log daily study hours. Students can also earn community coins and full PRO access by answering peer doubts."
+              },
+              {
+                q: "How can I download the StudyRide Android app APK?",
+                a: "You can download the official StudyRide Android APK directly from studyride.in/download or studyride.in/studyride.apk. The app is lightweight, battery-optimized, and supports offline study tracking."
+              }
+            ].map((faq, idx) => (
+              <div 
+                key={idx}
+                className="rounded-xl bg-[#0c1017] border border-white/[0.08] overflow-hidden transition-colors"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                  className="w-full p-4 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold text-slate-200 hover:text-white"
+                >
+                  <span>{faq.q}</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${openFaq === idx ? 'rotate-180 text-sky-400' : ''}`} />
+                </button>
+                {openFaq === idx && (
+                  <div className="px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-white/[0.04] pt-3">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Download & Web Access CTA Banner */}
+        <div className="p-6 rounded-2xl bg-gradient-to-r from-sky-950/40 via-indigo-950/40 to-slate-900 border border-sky-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+          <div className="space-y-1">
+            <h4 className="font-extrabold text-white text-sm sm:text-base">Ready to Supercharge Your Study Habits?</h4>
+            <p className="text-xs text-slate-300">Join thousands of UPSC, NEET, and SSC aspirants studying with StudyRide today.</p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <a
+              href={CANONICAL_APP_RELEASE.apkDownloadUrl}
+              download={CANONICAL_APP_RELEASE.apkFileName}
+              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/30 transition-colors"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Download Android App</span>
+            </a>
+            <button
+              onClick={handleGuestLogin}
+              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-white/[0.1] font-semibold text-xs transition-colors"
+            >
+              Try Web Demo
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Footer Minimalist Strip */}
-      <footer className="w-full max-w-5xl mx-auto px-5 py-4 text-center text-[11px] text-slate-600 relative z-10">
-        <p>© 2026 StudyRide. Academic Command Center for India's Competitive Exams.</p>
+      <footer className="w-full max-w-5xl mx-auto px-5 py-6 text-center text-[11px] text-slate-500 border-t border-white/[0.06] relative z-10 space-y-2">
+        <p className="font-medium text-slate-400">© 2026 StudyRide Technologies. India's #1 Study Tracking, Syllabus Tracker & Pomodoro Platform.</p>
+        <p className="text-[10px] text-slate-600 max-w-2xl mx-auto">
+          Optimized for UPSC Civil Services (IAS/IPS), NEET UG, SSC CGL/CHSL, JEE Main & Advanced, NDA, CDS, and State Public Service Commissions.
+        </p>
       </footer>
     </div>
   );
