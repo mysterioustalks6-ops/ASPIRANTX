@@ -312,24 +312,20 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         sessionId,
         startTimestamp: Date.now(),
         totalSeconds: durationSeconds,
-        selectedApps: skipNativeBlocking ? [] : selectedApps,
+        selectedApps: selectedApps,
         skipNativeBlocking
       }));
 
-      // 2. Start native Android Accessibility app blocker only if user permitted
-      if (!skipNativeBlocking) {
-        try {
-          await callNativePlugin('startShield', { 
-            apps: selectedApps,
-            durationMinutes: duration,
-            durationSeconds: durationSeconds
-          });
-          setIsVpnActive(true);
-        } catch (shieldErr) {
-          console.warn('[FocusShield] Native blocker start skipped:', shieldErr);
-          setIsVpnActive(false);
-        }
-      } else {
+      // 2. Start native Android UsageStats app blocker
+      try {
+        await callNativePlugin('startShield', { 
+          apps: selectedApps,
+          durationMinutes: duration,
+          durationSeconds: durationSeconds
+        });
+        setIsVpnActive(true);
+      } catch (shieldErr) {
+        console.warn('[FocusShield] Native blocker start skipped:', shieldErr);
         setIsVpnActive(false);
       }
 
@@ -872,24 +868,46 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             })()}
           </div>
 
-          {/* Privacy-First Badge */}
+          {/* Blocker Permission Status & 1-Tap Enable */}
           <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl flex-shrink-0 bg-emerald-500/20 text-emerald-400">
+              <div className={`p-2 rounded-xl flex-shrink-0 ${isAccessibilityActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white">100% Privacy-First Focus Mode</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                    Active & Safe
+                  <span className="text-xs font-bold text-white">App Blocker (YouTube/Insta)</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isAccessibilityActive 
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  }`}>
+                    {isAccessibilityActive ? 'Active' : 'Setup Required'}
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  Zero invasive permissions or surveillance. 100% on-device timer with strict anti-impulse pledge.
+                  {isAccessibilityActive 
+                    ? 'Selected apps will be blocked and locked during timer.' 
+                    : 'Turn on Usage Access to automatically block distracting apps.'}
                 </p>
               </div>
             </div>
+            {!isAccessibilityActive && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await callNativePlugin('openUsageAccessSettings');
+                  // Re-check permissions after returning
+                  setTimeout(async () => {
+                    const res = await callNativePlugin('checkBlockerPermissions');
+                    setIsAccessibilityActive(res?.canBlock === true);
+                  }, 1500);
+                }}
+                className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer whitespace-nowrap"
+              >
+                Allow Access
+              </button>
+            )}
           </div>
 
           {/* Launch Button - 1-Tap Instant Start */}
