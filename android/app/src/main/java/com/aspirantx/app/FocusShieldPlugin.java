@@ -112,6 +112,22 @@ public class FocusShieldPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void openAppDetailsSettings(PluginCall call) {
+        try {
+            Context context = getContext();
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + context.getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            JSObject res = new JSObject();
+            res.put("success", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Could not open App Details: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void isAccessibilityEnabled(PluginCall call) {
         JSObject res = new JSObject();
         res.put("enabled", false);

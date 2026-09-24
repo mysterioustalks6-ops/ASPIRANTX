@@ -110,6 +110,13 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const frictionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const STRICT_PLEDGE = "I AM GIVING UP MY STUDY GOAL";
 
+  // In-App Guardian & Android 13+ Guide State
+  const [distractionStrikes, setDistractionStrikes] = useState<number>(0);
+  const [showDistractionStrikeModal, setShowDistractionStrikeModal] = useState<boolean>(false);
+  const [lastAwayDurationSec, setLastAwayDurationSec] = useState<number>(0);
+  const [showRestrictedSettingsGuide, setShowRestrictedSettingsGuide] = useState<boolean>(false);
+  const awayTimestampRef = useRef<number | null>(null);
+
   // Stats
   const [stats, setStats] = useState<{
     todayMinutes: number;
@@ -427,6 +434,80 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
     };
   }, [sessionState, activeSessionId]);
+
+  // ── IN-APP GUARDIAN: Zero-Permission Distraction & Leave Detector ──────────
+  useEffect(() => {
+    if (sessionState !== 'ACTIVE') return;
+
+    const handleLeave = async () => {
+      awayTimestampRef.current = Date.now();
+      try {
+        if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+          const { LocalNotifications } = await import('@capacitor/local-notifications');
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                id: 991,
+                title: "🚨 DISTRACTION WARNING!",
+                body: "Study session is in progress! Return to StudyRide immediately to save your streak.",
+                schedule: { at: new Date(Date.now() + 500) }
+              }
+            ]
+          });
+        }
+      } catch (err) {}
+    };
+
+    const handleReturn = () => {
+      if (awayTimestampRef.current) {
+        const awaySec = Math.round((Date.now() - awayTimestampRef.current) / 1000);
+        awayTimestampRef.current = null;
+        if (awaySec >= 3) {
+          setLastAwayDurationSec(awaySec);
+          setDistractionStrikes(prev => prev + 1);
+          setShowDistractionStrikeModal(true);
+          try {
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              navigator.vibrate([200, 100, 200]);
+            }
+          } catch {}
+        }
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleLeave();
+      } else {
+        handleReturn();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    let appStateSub: any = null;
+    (async () => {
+      try {
+        if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+          const { App } = await import('@capacitor/app');
+          appStateSub = await App.addListener('appStateChange', (state) => {
+            if (!state.isActive) {
+              handleLeave();
+            } else {
+              handleReturn();
+            }
+          });
+        }
+      } catch {}
+    })();
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (appStateSub && typeof appStateSub.remove === 'function') {
+        appStateSub.remove();
+      }
+    };
+  }, [sessionState]);
 
   // Pause
   const handlePause = async () => {
@@ -869,44 +950,58 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
           </div>
 
           {/* Blocker Permission Status & 1-Tap Enable */}
-          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl flex-shrink-0 ${isAccessibilityActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white">App Blocker (YouTube/Insta)</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isAccessibilityActive 
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  }`}>
-                    {isAccessibilityActive ? 'Active' : 'Setup Required'}
-                  </span>
+          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl flex-shrink-0 ${isAccessibilityActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  {isAccessibilityActive 
-                    ? 'Selected apps will be blocked and locked during timer.' 
-                    : 'Turn on Usage Access to automatically block distracting apps.'}
-                </p>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white">Hard App Blocker (YouTube/Insta)</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      isAccessibilityActive 
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                    }`}>
+                      {isAccessibilityActive ? 'Active' : 'Optional'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {isAccessibilityActive 
+                      ? 'Distracting apps will be physically blocked and locked during timer.' 
+                      : 'Guardian Mode is ACTIVE! Timer and distraction strikes work 100% without any permission.'}
+                  </p>
+                </div>
               </div>
+              {!isAccessibilityActive && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await callNativePlugin('openUsageAccessSettings');
+                    setTimeout(async () => {
+                      const res = await callNativePlugin('checkBlockerPermissions');
+                      setIsAccessibilityActive(res?.canBlock === true);
+                    }, 1500);
+                  }}
+                  className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  Enable Blocker
+                </button>
+              )}
             </div>
+
             {!isAccessibilityActive && (
-              <button
-                type="button"
-                onClick={async () => {
-                  await callNativePlugin('openUsageAccessSettings');
-                  // Re-check permissions after returning
-                  setTimeout(async () => {
-                    const res = await callNativePlugin('checkBlockerPermissions');
-                    setIsAccessibilityActive(res?.canBlock === true);
-                  }, 1500);
-                }}
-                className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer whitespace-nowrap"
-              >
-                Allow Access
-              </button>
+              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Settings disabled on Android 13/14/15?</span>
+                <button
+                  type="button"
+                  onClick={() => setShowRestrictedSettingsGuide(true)}
+                  className="text-sky-400 hover:text-sky-300 font-semibold underline underline-offset-2 flex items-center gap-1 cursor-pointer"
+                >
+                  <span>Unlock in 10 seconds →</span>
+                </button>
+              </div>
             )}
           </div>
 
@@ -992,6 +1087,125 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                 }`}
               >
                 {frictionAction === 'PAUSE' ? 'Confirm Pause' : frictionAction === 'FINISH_EARLY' ? 'Confirm Finish' : 'Confirm Give Up'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DISTRACTION STRIKE / APP SWITCH DETECTED MODAL ── */}
+      {showDistractionStrikeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-amber-500/40 p-6 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-2xl">
+              ⚡
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">
+                Distraction Strike #{distractionStrikes} Detected!
+              </h3>
+              <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">
+                Focus Guardian Alert
+              </p>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              You left StudyRide for <span className="font-bold text-amber-400">{lastAwayDurationSec} seconds</span> to switch to other apps during active study. Your daily focus streak and syllabus mastery are at risk!
+            </p>
+
+            <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
+              <span>⚠️</span>
+              <span>Keep StudyRide open on screen to complete your 25-minute study target.</span>
+            </div>
+
+            <button
+              onClick={() => setShowDistractionStrikeModal(false)}
+              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+            >
+              Resume Study Focus Now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── ANDROID 13/14/15 RESTRICTED SETTINGS UNLOCK GUIDE ── */}
+      {showRestrictedSettingsGuide && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-sky-500/40 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">🔓</span>
+                <div>
+                  <h3 className="text-base font-bold text-white">Unlock Android 13/14/15 Settings</h3>
+                  <p className="text-[11px] text-sky-400">10-Second One-Time Quick Fix</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowRestrictedSettingsGuide(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
+              Google Android automatically displays <i>"Restricted setting" (प्रतिबंधित सेटिंग)</i> for apps downloaded from the web. Follow these 3 easy steps to unlock it:
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center flex-shrink-0">1</div>
+                <div>
+                  <div className="font-bold text-white">Open App Info</div>
+                  <div className="text-slate-400 mt-0.5">Go to Phone <b>Settings → Apps → StudyRide</b> (or long-press the StudyRide app icon on your home screen and tap <b>"App info" / ऐप जानकारी</b>).</div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center flex-shrink-0">2</div>
+                <div>
+                  <div className="font-bold text-white">Tap 3 Dots in Top-Right</div>
+                  <div className="text-slate-400 mt-0.5">In the top right corner of the screen, tap the <b>three vertical dots (⋮)</b>.</div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center flex-shrink-0">3</div>
+                <div>
+                  <div className="font-bold text-white">Tap "Allow restricted settings"</div>
+                  <div className="text-slate-400 mt-0.5">Tap <b>"Allow restricted settings" (प्रतिबंधित सेटिंग्स की अनुमति दें)</b> and enter your phone lock screen PIN or fingerprint.</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
+              ✓ Once unlocked, return here and tap <b>"Enable Blocker"</b>. It will turn on instantly!
+            </div>
+
+            <div className="text-[11px] text-slate-400 italic">
+              Note: Even without this setting, Focus Shield's In-App Guardian automatically tracks distraction strikes and protects your focus session!
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={async () => {
+                  await callNativePlugin('openAppDetailsSettings');
+                }}
+                className="py-3 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition-all shadow-md shadow-sky-500/20 text-center"
+              >
+                1. Open App Info (⋮)
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowRestrictedSettingsGuide(false);
+                  await callNativePlugin('openUsageAccessSettings');
+                }}
+                className="py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 font-bold text-xs transition-all text-center"
+              >
+                2. Open Permission
               </button>
             </div>
           </div>
