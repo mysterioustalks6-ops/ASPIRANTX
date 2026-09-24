@@ -1804,11 +1804,11 @@ function AppContent() {
             <button
               onClick={() => setIsCompanionMinimized(false)}
               className="p-2.5 rounded-full bg-[#090b11] border border-emerald-500/40 text-emerald-400 shadow-2xl flex items-center gap-1.5 hover:scale-110 transition-all cursor-pointer"
-              title="Expand AX Study Companion"
+              title="Expand StudyRide Companion"
             >
               <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
               <span className="text-sm">🤖</span>
-              <span className="text-[10px] font-extrabold text-emerald-300 pr-1">AX Companion</span>
+              <span className="text-[10px] font-extrabold text-emerald-300 pr-1">StudyRide AI</span>
             </button>
           ) : (() => {
             const summary = getDailyStudySummary(user, selectedExam || user.exam);

@@ -22,6 +22,8 @@ android {
             storePassword 'aspirantx2026'
             keyAlias 'aspirantx'
             keyPassword 'aspirantx2026'
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
     buildTypes {
