@@ -627,6 +627,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               badge: 'Tasks',
             })}
             {renderNavItem({
+              id: 'focus_shield',
+              label: 'Focus Shield & App Lock',
+              icon: ShieldCheck,
+              badge: 'Shield',
+            })}
+            {renderNavItem({
               id: 'timer',
               label: 'Pomodoro Focus Timer',
               icon: Timer,

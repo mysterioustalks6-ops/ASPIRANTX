@@ -349,7 +349,6 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
   // Start Focus Session - 1-Tap Instant Start (No Setup Modals)
   const handleStartFocus = async () => {
-    if (!user) return;
     setErrorMsg(null);
 
     let canBlock = false;

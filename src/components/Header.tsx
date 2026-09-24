@@ -84,6 +84,11 @@ export const Header: React.FC<HeaderProps> = ({
           title: 'Habit Wallpaper',
           subtitle: 'Lockscreen countdown generator',
         };
+      case 'focus_shield':
+        return {
+          title: 'Focus Shield',
+          subtitle: 'On-device app lock & distraction control',
+        };
       case 'cbt_exam':
       case 'cbt':
         return {

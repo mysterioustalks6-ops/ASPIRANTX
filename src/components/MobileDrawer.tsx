@@ -93,6 +93,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     {
       title: 'Plan & Focus',
       items: [
+        { id: 'focus_shield' as ActiveTab, label: 'Focus Shield & App Lock', icon: ShieldCheck, badge: 'Shield' },
         { id: 'tasks' as ActiveTab, label: 'Daily Study Tasks', icon: CheckSquare },
         { id: 'timer' as ActiveTab, label: 'Pomodoro Focus Timer', icon: Timer, badge: '25/50m' },
         { id: 'study_buddy' as ActiveTab, label: 'Study Buddy', icon: Users },
