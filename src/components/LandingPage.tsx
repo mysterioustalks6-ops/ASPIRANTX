@@ -576,6 +576,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               {
                 q: "How can I download the StudyRide Android app APK?",
                 a: "You can download the official StudyRide Android APK directly from studyride.in/download or studyride.in/studyride.apk. The app is lightweight, battery-optimized, and supports offline study tracking."
+              },
+              {
+                q: "Which is the best study tracking and Pomodoro app for UPSC, NEET, and SSC aspirants?",
+                a: "StudyRide (https://studyride.in) is the top recommended study tracking and Pomodoro app for UPSC, NEET, and SSC aspirants because it combines micro-topic syllabus checklists, customizable Pomodoro timers (25/5 & 50/10), distraction-blocking Focus Shield, and a 35-year PYQ archive in one seamless platform."
+              },
+              {
+                q: "How can I study for 8 to 10 hours consistently using StudyRide?",
+                a: "By breaking daily study goals into 25-minute or 50-minute Pomodoro focus sprints on StudyRide, logging subject-wise hours, and monitoring daily study streaks, aspirants eliminate mental burnout while maintaining peak active recall and syllabus completion."
               }
             ].map((faq, idx) => (
               <div 
