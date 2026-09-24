@@ -102,7 +102,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const [totalRequestedSeconds, setTotalRequestedSeconds] = useState<number>(25 * 60);
   const [isVpnActive, setIsVpnActive] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [showAccessibilityGuide, setShowAccessibilityGuide] = useState<boolean>(false);
+  const [isAccessibilityActive, setIsAccessibilityActive] = useState<boolean>(false);
   const [showStrictFrictionModal, setShowStrictFrictionModal] = useState<boolean>(false);
   const [frictionAction, setFrictionAction] = useState<'GIVE_UP' | 'PAUSE' | 'FINISH_EARLY'>('GIVE_UP');
   const [frictionCountdown, setFrictionCountdown] = useState<number>(15);
@@ -228,6 +228,17 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     };
 
     checkActiveSession();
+
+    // Check accessibility status for voluntary toggle display
+    const checkAccessibility = async () => {
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+        try {
+          const res = await callNativePlugin('isAccessibilityEnabled');
+          setIsAccessibilityActive(res?.enabled === true);
+        } catch {}
+      }
+    };
+    checkAccessibility();
   }, [user?.id]);
 
   // App toggle handler with persistence
@@ -324,31 +335,25 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     }
   };
 
-  // Start Focus Session
+  // Start Focus Session - 1-Tap Instant Start (No Setup Modals)
   const handleStartFocus = async () => {
     if (!user) return;
     setErrorMsg(null);
 
-    // Accessibility permission check on Android native (Optional - no force)
+    let canBlock = false;
     if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
       try {
         const accessRes = await callNativePlugin('isAccessibilityEnabled');
-        if (accessRes && accessRes.enabled === false) {
-          // If user previously chose to run timer without blocker, start immediately
-          const skipPref = localStorage.getItem('studyride_skip_shield_accessibility');
-          if (skipPref === 'true') {
-            await executeStartSession(true);
-            return;
-          }
-          setShowAccessibilityGuide(true);
-          return;
-        }
+        canBlock = accessRes?.enabled === true;
+        setIsAccessibilityActive(canBlock);
       } catch (e) {
         console.warn('Native accessibility check error:', e);
       }
     }
 
-    await executeStartSession(false);
+    // Always start immediately: if accessibility is enabled, apps are blocked.
+    // If not enabled, study timer, streak, and audio run seamlessly with ZERO setup popups!
+    await executeStartSession(!canBlock);
   };
 
   // Strict Friction Trigger (Enforces anti-impulse delay on Pause, Early Finish, & Give Up)
@@ -858,100 +863,53 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             })()}
           </div>
 
-          {/* Trust & Privacy Notice */}
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-start gap-3 text-xs text-slate-400 leading-relaxed">
-            <ShieldCheck className="w-5 h-5 flex-shrink-0 text-emerald-400 mt-0.5" />
-            <div>
-              <span className="text-white font-semibold">100% On-Device Protection: </span>
-              Focus Shield intercepts distracting apps instantly using Android Accessibility. The moment a blocked app is tapped, StudyRide's branded lock overlay opens with your active countdown timer. No VPN, no battery drain, zero privacy risk.
-            </div>
-          </div>
-
-          {/* Launch Button */}
-          <PressFeedback>
-            <button
-              onClick={handleStartFocus}
-              disabled={selectedApps.length === 0}
-              className={`w-full py-4 rounded-2xl text-base font-black shadow-xl transition-all flex items-center justify-center gap-2 ${
-                selectedApps.length > 0
-                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 shadow-sky-500/20'
-                  : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-              }`}
-            >
-              <Play className="w-5 h-5" />
-              <span>Start Focus Session ({selectedDuration === -1 ? customDuration : selectedDuration} Min)</span>
-            </button>
-          </PressFeedback>
-        </div>
-      )}
-
-      {/* ── ACCESSIBILITY SERVICE PERMISSION GUIDE MODAL (100% VOLUNTARY) ── */}
-      {showAccessibilityGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
-          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-indigo-500/40 p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center">
-                <Lock className="w-6 h-6" />
+          {/* Optional App Blocker Setting Card */}
+          <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl flex-shrink-0 ${isAccessibilityActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                <ShieldCheck className="w-5 h-5" />
               </div>
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                100% Voluntary (Optional)
-              </span>
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">Focus Shield Blocker (Optional)</h3>
-              <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider">
-                Android App Blocker Permission
-              </p>
-            </div>
-
-            <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
-              <p>
-                Agar aap distracting apps (YouTube, Instagram) ko study session ke dauran block karwana chahte hain, toh Android ko <strong>StudyRide Focus Shield</strong> accessibility permission chahiye hoti hai.
-              </p>
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1.5">
-                <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <span>✓</span>
-                  <span>Koi Zabardasti Nahi:</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white">App Blocker (YouTube/Insta)</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isAccessibilityActive 
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                      : 'bg-slate-800 text-slate-400 border border-slate-700'
+                  }`}>
+                    {isAccessibilityActive ? 'Active' : 'Optional'}
+                  </span>
                 </div>
-                <p className="text-slate-400 leading-normal">
-                  Agar aap permission nahi dena chahte, koi baat nahi! Aapka <strong>Study Timer, Progress Tracking, Streaks, aur Focus Sounds</strong> bina kisi permission ke bilkul mast chalenge.
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {isAccessibilityActive 
+                    ? 'Distracting apps will be blocked during timer.' 
+                    : 'Timer & focus audio work completely free without any permission.'}
                 </p>
               </div>
             </div>
-
-            <div className="flex flex-col gap-2.5 pt-2">
+            {!isAccessibilityActive && (
               <button
-                onClick={() => {
-                  setShowAccessibilityGuide(false);
-                  executeStartSession(true);
+                type="button"
+                onClick={async () => {
+                  await callNativePlugin('openAccessibilitySettings');
                 }}
-                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="py-1.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-indigo-300 font-bold text-xs border border-indigo-500/30 transition-all cursor-pointer whitespace-nowrap"
               >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Timer Shuru Karein (Bina Blocker / No Permission)</span>
+                Enable
               </button>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowAccessibilityGuide(false)}
-                  className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white font-medium text-xs transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    await callNativePlugin('openAccessibilitySettings');
-                    setShowAccessibilityGuide(false);
-                  }}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-indigo-500/30 text-indigo-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Permission Allow Karein (Open Settings)</span>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
+
+          {/* Launch Button - 1-Tap Instant Start */}
+          <PressFeedback>
+            <button
+              onClick={handleStartFocus}
+              className="w-full py-4 rounded-2xl text-base font-black shadow-xl transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 shadow-sky-500/20 cursor-pointer"
+            >
+              <Play className="w-5 h-5 fill-current" />
+              <span>Start Focus Session ({selectedDuration === -1 ? customDuration : selectedDuration} Min)</span>
+            </button>
+          </PressFeedback>
         </div>
       )}
 

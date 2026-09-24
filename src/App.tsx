@@ -267,20 +267,8 @@ function AppContent() {
   const [showWallpaperSetupModal, setShowWallpaperSetupModal] = useState<boolean>(false);
   const [customizer, setCustomizer] = useState<AppCustomizerSettings>(loadCustomizerSettings());
 
-  // Proactive non-intrusive setup prompt for Android live wallpaper
-  useEffect(() => {
-    if (user && isAndroidPlatform() && shouldPromptWallpaperSetup()) {
-      const timer = setTimeout(async () => {
-        try {
-          const wp = await fetchWallpaperStatus();
-          if (wp.isSupported && !wp.isActive) {
-            setShowWallpaperSetupModal(true);
-          }
-        } catch {}
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [user]);
+  // Non-intrusive: Wallpaper setup is only opened on explicit user action (e.g. from Wallpaper tab)
+  // Auto-popup removed so students can study immediately without setup interruptions
 
   // Global listener for opening wallpaper setup modal
   useEffect(() => {
