@@ -6,6 +6,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.usage.UsageEvents;
+import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
@@ -19,6 +20,7 @@ import android.util.Log;
 import androidx.core.app.NotificationCompat;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class FocusShieldMonitorService extends Service {
@@ -26,7 +28,9 @@ public class FocusShieldMonitorService extends Service {
     public static final String ACTION_START = "com.aspirantx.app.ACTION_START_FOCUS_MONITOR";
     public static final String ACTION_STOP = "com.aspirantx.app.ACTION_STOP_FOCUS_MONITOR";
     private static final String CHANNEL_ID = "studyride_focus_shield_channel";
+    private static final String ALERT_CHANNEL_ID = "studyride_focus_shield_alerts";
     private static final int NOTIFICATION_ID = 9021;
+    private static final int ALERT_NOTIFICATION_ID = 9022;
 
     private Handler monitorHandler;
     private Runnable monitorRunnable;
@@ -107,11 +111,19 @@ public class FocusShieldMonitorService extends Service {
             return;
         }
 
+        loadBlockedPackages(); // Keep synced with dynamic UI selection
+
         String currentPackage = getForegroundPackage();
         if (currentPackage != null && !currentPackage.isEmpty()) {
+            // Do not block StudyRide or Android launcher/system UI
+            String myPkg = getPackageName();
+            if (currentPackage.equals(myPkg) || currentPackage.equals("com.android.systemui") || currentPackage.equals("android")) {
+                return;
+            }
+
             if (blockedPackages.contains(currentPackage)) {
                 long timeSinceLastTrigger = now - lastBlockTriggerTime;
-                if (!currentPackage.equals(lastBlockedPackage) || timeSinceLastTrigger > 3000) {
+                if (!currentPackage.equals(lastBlockedPackage) || timeSinceLastTrigger > 2500) {
                     lastBlockedPackage = currentPackage;
                     lastBlockTriggerTime = now;
                     triggerBlock(currentPackage);
@@ -126,53 +138,114 @@ public class FocusShieldMonitorService extends Service {
             if (usm == null) return null;
 
             long end = System.currentTimeMillis();
-            long begin = end - 3000;
+            long begin = end - 10000; // 10-second inspection window
 
             UsageEvents events = usm.queryEvents(begin, end);
-            UsageEvents.Event event = new UsageEvents.Event();
             String latest = null;
 
-            while (events.hasNextEvent()) {
-                events.getNextEvent(event);
-                if (event.getEventType() == UsageEvents.Event.ACTIVITY_RESUMED) {
-                    latest = event.getPackageName();
+            if (events != null) {
+                UsageEvents.Event event = new UsageEvents.Event();
+                while (events.hasNextEvent()) {
+                    events.getNextEvent(event);
+                    int type = event.getEventType();
+                    if (type == UsageEvents.Event.ACTIVITY_RESUMED || type == 1) {
+                        latest = event.getPackageName();
+                    }
                 }
             }
-            return latest;
+
+            if (latest != null && !latest.isEmpty()) {
+                return latest;
+            }
+
+            // Fallback: queryUsageStats for devices that debounce or delay usage events
+            List<UsageStats> statsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, end - 30000, end);
+            if (statsList != null && !statsList.isEmpty()) {
+                UsageStats mostRecent = null;
+                for (UsageStats u : statsList) {
+                    if (mostRecent == null || u.getLastTimeUsed() > mostRecent.getLastTimeUsed()) {
+                        mostRecent = u;
+                    }
+                }
+                if (mostRecent != null && (end - mostRecent.getLastTimeUsed() < 5000)) {
+                    return mostRecent.getPackageName();
+                }
+            }
         } catch (Exception e) {
-            return null;
+            Log.e(TAG, "Error checking foreground package: " + e.getMessage());
         }
+        return null;
     }
 
     private void triggerBlock(String packageName) {
         try {
-            // 1. Send HOME intent to immediately collapse the blocked app
-            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
-            homeIntent.addCategory(Intent.CATEGORY_HOME);
-            homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(homeIntent);
-
-            // 2. Launch BlockOverlayActivity to display the study timer lock screen
+            // 1. Prepare intent for BlockOverlayActivity
             Intent blockIntent = new Intent(this, BlockOverlayActivity.class);
-            blockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            blockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             blockIntent.putExtra("blocked_package", packageName);
-            startActivity(blockIntent);
+
+            int pFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                pFlags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(this, 1001, blockIntent, pFlags);
+
+            // 2. Post heads-up high-priority full-screen intent notification
+            // Bypasses Android 10+ background activity restrictions across Samsung, Vivo, Xiaomi, Oppo, etc.
+            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationCompat.Builder alertBuilder = new NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle("StudyRide Focus Shield")
+                    .setContentText("Distracting app blocked! Return to your study session.")
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setFullScreenIntent(fullScreenPendingIntent, true)
+                    .setAutoCancel(true)
+                    .setVibrate(new long[]{0, 250, 150, 250});
+
+            if (nm != null) {
+                nm.notify(ALERT_NOTIFICATION_ID, alertBuilder.build());
+            }
+
+            // 3. Immediately send HOME intent to collapse the blocked app
+            try {
+                Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+                homeIntent.addCategory(Intent.CATEGORY_HOME);
+                homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(homeIntent);
+            } catch (Exception ignored) {}
+
+            // 4. Also launch BlockOverlayActivity directly (succeeds whenever overlay or task focus is granted)
+            try {
+                startActivity(blockIntent);
+            } catch (Exception ignored) {}
+
         } catch (Exception e) {
-            Log.e(TAG, "Failed to launch block overlay: " + e.getMessage());
+            Log.e(TAG, "Error triggering block overlay: " + e.getMessage());
         }
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "StudyRide Focus Shield",
-                    NotificationManager.IMPORTANCE_LOW
-            );
-            channel.setDescription("Shows active focus session status");
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
+                NotificationChannel channel = new NotificationChannel(
+                        CHANNEL_ID,
+                        "StudyRide Focus Session",
+                        NotificationManager.IMPORTANCE_LOW
+                );
+                channel.setDescription("Shows active focus session status");
                 manager.createNotificationChannel(channel);
+
+                NotificationChannel alertChannel = new NotificationChannel(
+                        ALERT_CHANNEL_ID,
+                        "StudyRide Distraction Alerts",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                alertChannel.setDescription("Alerts and blocks distracting apps");
+                alertChannel.enableVibration(true);
+                alertChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                manager.createNotificationChannel(alertChannel);
             }
         }
     }

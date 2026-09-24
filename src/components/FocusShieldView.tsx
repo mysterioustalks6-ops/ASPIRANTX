@@ -103,6 +103,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const [isVpnActive, setIsVpnActive] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isAccessibilityActive, setIsAccessibilityActive] = useState<boolean>(false);
+  const [permStatus, setPermStatus] = useState<{ hasUsageStats?: boolean; hasOverlay?: boolean; canBlock?: boolean }>({});
   const [showStrictFrictionModal, setShowStrictFrictionModal] = useState<boolean>(false);
   const [frictionAction, setFrictionAction] = useState<'GIVE_UP' | 'PAUSE' | 'FINISH_EARLY'>('GIVE_UP');
   const [frictionCountdown, setFrictionCountdown] = useState<number>(15);
@@ -236,12 +237,15 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
     checkActiveSession();
 
-    // Check blocker permissions (UsageStats OR Accessibility)
+    // Check blocker permissions (UsageStats and Overlay)
     const checkAccessibility = async () => {
       if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
         try {
           const res = await callNativePlugin('checkBlockerPermissions');
-          setIsAccessibilityActive(res?.canBlock === true);
+          if (res) {
+            setPermStatus(res);
+            setIsAccessibilityActive(res.hasUsageStats === true && res.hasOverlay === true);
+          }
         } catch {
           try {
             const res = await callNativePlugin('isAccessibilityEnabled');
@@ -978,15 +982,22 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                 <button
                   type="button"
                   onClick={async () => {
-                    await callNativePlugin('openUsageAccessSettings');
+                    if (!permStatus.hasUsageStats) {
+                      await callNativePlugin('openUsageAccessSettings');
+                    } else {
+                      await callNativePlugin('openOverlaySettings');
+                    }
                     setTimeout(async () => {
                       const res = await callNativePlugin('checkBlockerPermissions');
-                      setIsAccessibilityActive(res?.canBlock === true);
+                      if (res) {
+                        setPermStatus(res);
+                        setIsAccessibilityActive(res.hasUsageStats === true && res.hasOverlay === true);
+                      }
                     }, 1500);
                   }}
                   className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer whitespace-nowrap"
                 >
-                  Enable Blocker
+                  {!permStatus.hasUsageStats ? '1. Allow Usage Access' : '2. Allow Appear on Top'}
                 </button>
               )}
             </div>
@@ -1187,25 +1198,34 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
               Note: Even without this setting, Focus Shield's In-App Guardian automatically tracks distraction strikes and protects your focus session!
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="grid grid-cols-3 gap-2 pt-1">
               <button
                 type="button"
                 onClick={async () => {
                   await callNativePlugin('openAppDetailsSettings');
                 }}
-                className="py-3 px-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition-all shadow-md shadow-sky-500/20 text-center"
+                className="py-2.5 px-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[11px] transition-all shadow-md shadow-sky-500/20 text-center"
               >
-                1. Open App Info (⋮)
+                1. App Info (⋮)
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await callNativePlugin('openUsageAccessSettings');
+                }}
+                className="py-2.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 font-bold text-[11px] transition-all text-center"
+              >
+                2. Usage Access
               </button>
               <button
                 type="button"
                 onClick={async () => {
                   setShowRestrictedSettingsGuide(false);
-                  await callNativePlugin('openUsageAccessSettings');
+                  await callNativePlugin('openOverlaySettings');
                 }}
-                className="py-3 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 font-bold text-xs transition-all text-center"
+                className="py-2.5 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] transition-all text-center"
               >
-                2. Open Permission
+                3. Appear on Top
               </button>
             </div>
           </div>
