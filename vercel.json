@@ -6,7 +6,23 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/(StudyRide.*|studyride|ProTrack.*|protrack|AspirantX.*|aspirantx)\\.apk",
+      "source": "/protrack.apk",
+      "destination": "/studyride.apk"
+    },
+    {
+      "source": "/aspirantx.apk",
+      "destination": "/studyride.apk"
+    },
+    {
+      "source": "/ProTrack.apk",
+      "destination": "/studyride.apk"
+    },
+    {
+      "source": "/AspirantX.apk",
+      "destination": "/studyride.apk"
+    },
+    {
+      "source": "/StudyRide.apk",
       "destination": "/studyride.apk"
     },
     {
