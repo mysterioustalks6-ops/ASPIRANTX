@@ -25,7 +25,7 @@ interface DownloadPageProps {
 
 export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
   const [copiedUrl, setCopiedUrl] = useState(false);
-  const downloadUrl = 'https://aspirantx.vercel.app/protrack.apk';
+  const downloadUrl = 'https://studyride.in/protrack.apk';
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(downloadUrl);

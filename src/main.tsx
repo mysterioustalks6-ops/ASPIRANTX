@@ -13,7 +13,7 @@ import { API_BASE_URL } from './lib/apiConfig';
 // In standalone native APK build, WebView origin is https://localhost.
 // Intercept relative `/api/*` and localhost `/api/*` fetch calls and route them directly to the configured production backend origin.
 // Never intercept local files, assets (JS/CSS/images/fonts), UI routing, or root document.
-const BACKEND_API_ROOT = API_BASE_URL || 'https://aspirantx.vercel.app';
+const BACKEND_API_ROOT = API_BASE_URL || 'https://studyride.in';
 
 if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
   const originalFetch = window.fetch;

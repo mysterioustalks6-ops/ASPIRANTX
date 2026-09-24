@@ -28,7 +28,7 @@ export function getApiBaseUrl(): string {
       window.location.origin.includes('localhost')
     );
     if (isNativeCapacitor || isLocalContainer) {
-      return 'https://aspirantx.vercel.app';
+      return 'https://studyride.in';
     }
   }
   return '';

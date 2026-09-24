@@ -46,6 +46,7 @@ const ALLOWED_ORIGIN_PATTERNS = [
   /^https:\/\/[a-z0-9-]+\.vercel\.app$/,
   /^https:\/\/(www\.)?aspirantx\.com$/,
   /^https:\/\/(www\.)?protrack\.app$/,
+  /^https:\/\/(www\.)?studyride\.in$/,
 ];
 
 const customOrigins = (process.env.ALLOWED_ORIGINS || '')
