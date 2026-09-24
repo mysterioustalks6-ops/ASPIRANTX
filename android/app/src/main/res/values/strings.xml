@@ -6,6 +6,4 @@
     <string name="custom_url_scheme">com.aspirantx.app</string>
     <string name="wallpaper_name">StudyRide Exam Progress Wallpaper</string>
     <string name="wallpaper_description">Dynamic habit countdown and exam preparation tracker powered by StudyRide.</string>
-    <string name="accessibility_service_name">StudyRide Focus Shield</string>
-    <string name="accessibility_service_description">Enables Focus Shield to detect and block selected distracting apps (YouTube, Instagram) during active study sessions, keeping you focused on your exam goals.</string>
 </resources>

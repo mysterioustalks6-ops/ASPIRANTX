@@ -872,45 +872,24 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             })()}
           </div>
 
-          {/* Optional App Blocker Setting Card */}
+          {/* Privacy-First Badge */}
           <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl flex-shrink-0 ${isAccessibilityActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+              <div className="p-2 rounded-xl flex-shrink-0 bg-emerald-500/20 text-emerald-400">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white">App Blocker (YouTube/Insta)</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    isAccessibilityActive 
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                      : 'bg-slate-800 text-slate-400 border border-slate-700'
-                  }`}>
-                    {isAccessibilityActive ? 'Active' : 'Optional'}
+                  <span className="text-xs font-bold text-white">100% Privacy-First Focus Mode</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    Active & Safe
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 mt-0.5">
-                  {isAccessibilityActive 
-                    ? 'Distracting apps will be blocked during timer.' 
-                    : 'Timer & focus audio work completely free without any permission.'}
+                  Zero invasive permissions or surveillance. 100% on-device timer with strict anti-impulse pledge.
                 </p>
               </div>
             </div>
-            {!isAccessibilityActive && (
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    await callNativePlugin('openUsageAccessSettings');
-                  } catch {
-                    await callNativePlugin('openAccessibilitySettings');
-                  }
-                }}
-                className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer whitespace-nowrap"
-              >
-                Enable Blocker
-              </button>
-            )}
           </div>
 
           {/* Launch Button - 1-Tap Instant Start */}
