@@ -518,10 +518,10 @@ export let globalAdminSettings = {
     ]
   },
   customizer: {
-    brandName: 'PROTRACK',
+    brandName: 'StudyRide',
     brandTagline: 'Precision Exam Prep & Progress Suite',
     brandBadge: 'PRO',
-    logoIconText: 'PT',
+    logoIconText: 'SR',
     logoUrl: '',
     themePalette: 'CYBER_EMERALD',
     fontFamily: 'PLUS_JAKARTA',
@@ -1036,7 +1036,7 @@ if (rewardMilestonesStore.size === 0) {
     {
       id: 'ms_kit_01',
       title: 'UPSC/SSC Elite Aspirant Study Kit & T-Shirt',
-      description: 'Receive an official ProTrack premium cotton hoodie, highlighters, notebook set, and success planner delivered to your home.',
+      description: 'Receive an official StudyRide premium cotton hoodie, highlighters, notebook set, and success planner delivered to your home.',
       rewardType: 'merch',
       rewardLabel: 'Deluxe Study Kit & T-Shirt',
       requiredVerifiedMinutes: 3000,
@@ -1131,32 +1131,32 @@ export interface TopperPodcastRecord {
 export const DEFAULT_PODCASTS_LIST: TopperPodcastRecord[] = [
   {
     id: 'p1',
-    topperName: 'AspirantX Editorial Desk',
+    topperName: 'StudyRide Editorial Desk',
     rank: 'Synthesized Voice Audio Guide',
     subject: 'Polity & GS Paper 2 Strategy Masterclass',
     audioUrl: '/audio/upsc_gs2_polity_masterclass.wav',
     duration: '00:51',
-    description: 'High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the AspirantX academic editorial desk and delivered via synthetic voice narration for study revision.',
+    description: 'High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the StudyRide academic editorial desk and delivered via synthetic voice narration for study revision.',
     booklist: ['Indian Polity by M. Laxmikanth', 'Introduction to the Constitution of India by D.D. Basu', 'Second ARC Reports on Ethics in Governance']
   },
   {
     id: 'p2',
-    topperName: 'AspirantX Editorial Desk',
+    topperName: 'StudyRide Editorial Desk',
     rank: 'Synthesized Voice Audio Guide',
     subject: 'Geography Optional & Mapping Technique Guide',
     audioUrl: '/audio/geography_answer_writing_guide.wav',
     duration: '00:42',
-    description: 'Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
-    booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by D.R. Khullar', 'ProTrack Cartography Reference Sheets']
+    description: 'Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the StudyRide editorial desk and delivered via synthetic voice narration.',
+    booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by D.R. Khullar', 'StudyRide Cartography Reference Sheets']
   },
   {
     id: 'p3',
-    topperName: 'AspirantX Editorial Desk',
+    topperName: 'StudyRide Editorial Desk',
     rank: 'Synthesized Voice Audio Guide',
     subject: 'NEET UG High-Yield Physics & Diagrammatic Biology',
     audioUrl: '/audio/neet_physics_problem_solving.wav',
     duration: '00:39',
-    description: 'Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
+    description: 'Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the StudyRide editorial desk and delivered via synthetic voice narration.',
     booklist: ['NCERT Biology Class 11 & 12', 'Concepts of Physics by H.C. Verma', 'Physical Chemistry by O.P. Tandon']
   }
 ];
@@ -1352,7 +1352,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-2',
     name: 'Priya Sharma',
-    email: 'priya.content@protrack.app',
+    email: 'priya.content@studyride.in',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
     title: 'Academic Director & Chief Content Officer',
     role: 'ACADEMIC_LEAD',
@@ -1372,7 +1372,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-3',
     name: 'Vikram Malhotra',
-    email: 'vikram.finance@protrack.app',
+    email: 'vikram.finance@studyride.in',
     avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
     title: 'Head of Billing & Payment Operations',
     role: 'FINANCE_MANAGER',
@@ -1392,7 +1392,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-4',
     name: 'Sneha Verma',
-    email: 'sneha.community@protrack.app',
+    email: 'sneha.community@studyride.in',
     avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80',
     title: 'Community Lead & Student Support Specialist',
     role: 'COMMUNITY_LEAD',
@@ -1412,7 +1412,7 @@ export let adminTeamStore: any[] = [
   {
     id: 'tm-5',
     name: 'Rohan Mehta',
-    email: 'rohan.tech@protrack.app',
+    email: 'rohan.tech@studyride.in',
     avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80',
     title: 'Lead Systems Architect & DevOps',
     role: 'TECH_LEAD',
@@ -1436,7 +1436,7 @@ export let adminTasksStore: any[] = [
     id: 'task-1',
     title: 'Review 12 Pending UTR Bank Transfers',
     description: 'Verify screenshot attachments and approve manual PRO Pass upgrades for pending UPI transactions.',
-    assignedTo: 'vikram.finance@protrack.app',
+    assignedTo: 'vikram.finance@studyride.in',
     assignedToName: 'Vikram Malhotra',
     module: 'FINANCE',
     priority: 'HIGH',
@@ -1448,7 +1448,7 @@ export let adminTasksStore: any[] = [
     id: 'task-2',
     title: 'Moderate Reported Answer Key Discussion #101',
     description: 'Check flagged polity comment regarding Article 226 vs Article 32 writ jurisdiction in Community Forum.',
-    assignedTo: 'sneha.community@protrack.app',
+    assignedTo: 'sneha.community@studyride.in',
     assignedToName: 'Sneha Verma',
     module: 'COMMUNITY',
     priority: 'MEDIUM',
@@ -1460,7 +1460,7 @@ export let adminTasksStore: any[] = [
     id: 'task-3',
     title: 'Upload UPSC Prelims 2026 Mock Test #5 Question Paper',
     description: 'Format and review 100 GS-1 questions with detailed explanations and syllabus mappings.',
-    assignedTo: 'priya.content@protrack.app',
+    assignedTo: 'priya.content@studyride.in',
     assignedToName: 'Priya Sharma',
     module: 'CONTENT',
     priority: 'HIGH',
@@ -1472,7 +1472,7 @@ export let adminTasksStore: any[] = [
     id: 'task-4',
     title: 'Audit System Health Logs & Rate Limiting Thresholds',
     description: 'Run full Watchdog vulnerability scan and check Razorpay webhook SSL certificate validation.',
-    assignedTo: 'rohan.tech@protrack.app',
+    assignedTo: 'rohan.tech@studyride.in',
     assignedToName: 'Rohan Mehta',
     module: 'TECH',
     priority: 'LOW',
@@ -1878,11 +1878,11 @@ export function loadAdminStoreFromDisk() {
         if (store.globalAdminSettings) {
           globalAdminSettings = mergeAdminSettings(globalAdminSettings, store.globalAdminSettings);
           if (globalAdminSettings?.customizer) {
-            if (!globalAdminSettings.customizer.brandName || globalAdminSettings.customizer.brandName.toUpperCase() === 'ASPIRANTX') {
-              globalAdminSettings.customizer.brandName = 'PROTRACK';
+            if (!globalAdminSettings.customizer.brandName || globalAdminSettings.customizer.brandName.toUpperCase() === 'ASPIRANTX' || globalAdminSettings.customizer.brandName.toUpperCase() === 'PROTRACK') {
+              globalAdminSettings.customizer.brandName = 'StudyRide';
             }
-            if (!globalAdminSettings.customizer.logoIconText || globalAdminSettings.customizer.logoIconText.toUpperCase() === 'AX') {
-              globalAdminSettings.customizer.logoIconText = 'PT';
+            if (!globalAdminSettings.customizer.logoIconText || globalAdminSettings.customizer.logoIconText.toUpperCase() === 'AX' || globalAdminSettings.customizer.logoIconText.toUpperCase() === 'PT') {
+              globalAdminSettings.customizer.logoIconText = 'SR';
             }
           }
         }
@@ -2056,7 +2056,7 @@ export function seedDefaultSponsorshipTiers() {
         id: 'tier_title',
         name: 'Title Sponsor',
         priceRange: 'INR 75,000 / month',
-        benefits: ['Exclusive Title Branding across ProTrack', 'Custom Sponsored CBT Mock Test Series', 'Direct Internship & Hiring Channel for Aspirants', 'Primary Logo on All Exam Engine Banners'],
+        benefits: ['Exclusive Title Branding across StudyRide', 'Custom Sponsored CBT Mock Test Series', 'Direct Internship & Hiring Channel for Aspirants', 'Primary Logo on All Exam Engine Banners'],
         sortOrder: 3,
         isActive: true,
         createdAt: new Date().toISOString()
@@ -2075,7 +2075,7 @@ export function seedDefaultSponsorshipTiers() {
         logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80',
         websiteUrl: 'https://example.com/edutech',
         tierName: 'Education Champion',
-        testimonial: 'Partnering with ProTrack empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.',
+        testimonial: 'Partnering with StudyRide empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.',
         createdAt: new Date().toISOString()
       }
     ];
@@ -2304,7 +2304,7 @@ export function getSystemInstructionForMode(mode: string, exam: string, summary?
       modeSpecificPrompt = `You are a former Civil Service Board Member for UPSC Personality Test. Ask realistic, probing DAF (Detailed Application Form) and current affairs questions. Guide the candidate on balanced stance, articulate tone, administrative diplomacy, and body language presentation.`;
       break;
     default:
-      modeSpecificPrompt = `You are ProTrack AI Mentor, an elite, encouraging, high-precision study assistant for ${exam}. Provide ultra-structured, concise, exam-focused answers using bullet points, markdown formatting, LaTeX formulas, and key constitutional articles where applicable.`;
+      modeSpecificPrompt = `You are StudyRide AI Mentor, an elite, encouraging, high-precision study assistant for ${exam}. Provide ultra-structured, concise, exam-focused answers using bullet points, markdown formatting, LaTeX formulas, and key constitutional articles where applicable.`;
   }
 
   let fullPrompt = `${modeSpecificPrompt}\n\nMaintain a disciplined, encouraging, clear, and highly structured tone. Format answers using clean Markdown with headers, lists, code blocks, or KaTeX math expressions (e.g. \\alpha, \\frac{a}{b}) where appropriate.`;

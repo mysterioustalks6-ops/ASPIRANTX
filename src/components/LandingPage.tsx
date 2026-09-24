@@ -136,7 +136,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
     const demoUser: UserProfile = {
       id: 'demo-guest-123',
       name: '',
-      email: 'guest@aspirantx.in',
+      email: 'guest@studyride.in',
       avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
       exam: '',
       targetYear: 2026,
@@ -150,7 +150,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       role: 'USER',
       isProfileComplete: false,
     };
-    document.cookie = `user_email=guest@aspirantx.in; path=/; max-age=86400; SameSite=Lax`;
+    document.cookie = `user_email=guest@studyride.in; path=/; max-age=86400; SameSite=Lax`;
     document.cookie = `user_role=USER; path=/; max-age=86400; SameSite=Lax`;
     onLoginSuccess(demoUser);
   };
@@ -185,11 +185,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       <header className="w-full max-w-5xl mx-auto px-5 py-4 sm:py-6 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-2.5">
           <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-black text-white text-base shadow-sm">
-            AX
+            SR
           </div>
           <div>
             <h1 className="font-extrabold text-sm sm:text-base tracking-wider text-white">
-              ASPIRANT<span className="text-sky-400">X</span>
+              STUDY<span className="text-sky-400">RIDE</span>
             </h1>
             <p className="text-[10px] text-slate-400 font-medium">Precision Exam Suite</p>
           </div>
@@ -453,7 +453,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
 
       {/* Footer Minimalist Strip */}
       <footer className="w-full max-w-5xl mx-auto px-5 py-4 text-center text-[11px] text-slate-600 relative z-10">
-        <p>© 2026 AspirantX. Academic Command Center for India's Competitive Exams.</p>
+        <p>© 2026 StudyRide. Academic Command Center for India's Competitive Exams.</p>
       </footer>
     </div>
   );

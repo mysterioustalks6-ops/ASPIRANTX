@@ -487,7 +487,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
           </h1>
           <p className="text-slate-300 text-sm sm:text-base mt-1.5 max-w-2xl leading-relaxed">
             Protect your study time by restricting network access to distracting apps (YouTube, Instagram) while you focus.
-            ProTrack stays local, private, and server-verified.
+            StudyRide stays local, private, and server-verified.
           </p>
 
           {/* Quick Stats Pill */}
@@ -670,7 +670,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                   <span>2. Select Distracting Apps to Lock ({selectedApps.length} Selected)</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Opening any selected app will immediately show the ProTrack Lock Screen until your timer completes.
+                  Opening any selected app will immediately show the StudyRide Lock Screen until your timer completes.
                 </p>
               </div>
 
@@ -838,7 +838,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             <ShieldCheck className="w-5 h-5 flex-shrink-0 text-emerald-400 mt-0.5" />
             <div>
               <span className="text-white font-semibold">100% On-Device Protection: </span>
-              Focus Shield intercepts distracting apps instantly using Android Accessibility. The moment a blocked app is tapped, ProTrack's branded lock overlay opens with your active countdown timer. No VPN, no battery drain, zero privacy risk.
+              Focus Shield intercepts distracting apps instantly using Android Accessibility. The moment a blocked app is tapped, StudyRide's branded lock overlay opens with your active countdown timer. No VPN, no battery drain, zero privacy risk.
             </div>
           </div>
 
@@ -877,13 +877,13 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
             <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
               <p>
-                To block distracting apps (YouTube, Instagram) from opening and display the <strong>ProTrack Lock Screen Overlay with Timer</strong>, Android requires the <strong>ProTrack Focus Shield</strong> accessibility permission.
+                To block distracting apps (YouTube, Instagram) from opening and display the <strong>StudyRide Lock Screen Overlay with Timer</strong>, Android requires the <strong>StudyRide Focus Shield</strong> accessibility permission.
               </p>
               <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                 <div className="font-semibold text-white">Quick 3-Step Setup:</div>
                 <ol className="list-decimal list-inside space-y-1.5 text-slate-300">
                   <li>Tap <strong>Open Accessibility Settings</strong> below.</li>
-                  <li>Find and tap <strong>ProTrack Focus Shield</strong> (under Downloaded Apps).</li>
+                  <li>Find and tap <strong>StudyRide Focus Shield</strong> (under Downloaded Apps).</li>
                   <li>Toggle the switch to <strong>ON</strong> and tap Allow.</li>
                 </ol>
               </div>

@@ -347,7 +347,7 @@ function AppContent() {
         signal: abortController.signal,
         body: JSON.stringify({
           userId: user?.id || 'guest_' + Math.random().toString(36).substring(2, 8),
-          email: user?.email || 'guest@protrack.app',
+          email: user?.email || 'guest@studyride.in',
           name: user?.name || 'Guest User',
           exam: user?.exam || 'UPSC CSE'
         })
@@ -402,34 +402,34 @@ function AppContent() {
     if (!user) return;
     
     const examLabel = user.exam || 'Competitive Exams';
-    let title = `ProTrack - Prep Suite for ${examLabel}`;
-    let description = `Prepare for ${examLabel} on ProTrack. Practice custom CBT test series, mock exams, previous year question papers (PYQs), track syllabus, and study with an interactive AI Mentor.`;
+    let title = `StudyRide - Prep Suite for ${examLabel}`;
+    let description = `Prepare for ${examLabel} on StudyRide. Practice custom CBT test series, mock exams, previous year question papers (PYQs), track syllabus, and study with an interactive AI Mentor.`;
     
     switch (activeTab) {
       case 'syllabus':
-        title = `Syllabus Tracker & Progress Chart for ${examLabel} - ProTrack`;
+        title = `Syllabus Tracker & Progress Chart for ${examLabel} - StudyRide`;
         description = `Track your ${examLabel} syllabus topics, subtopics, and preparation logs in real-time. Optimize your speed and accuracy.`;
         break;
       case 'pyq':
-        title = `${examLabel} Previous Year Questions (PYQs) Engine - ProTrack`;
+        title = `${examLabel} Previous Year Questions (PYQs) Engine - StudyRide`;
         description = `Browse, filter, and practice past year questions (PYQ papers) for ${examLabel} with deep explanation solutions.`;
         break;
       case 'cbt':
       case 'cbt_exam':
-        title = `CBT Mock Exams & Practice Tests for ${examLabel} - ProTrack`;
+        title = `CBT Mock Exams & Practice Tests for ${examLabel} - StudyRide`;
         description = `Attempt online computer-based test series, full mocks, and section-wise papers for ${examLabel} in a simulated CBT interface.`;
         break;
       case 'leaderboard':
-        title = `${examLabel} Student Leaderboard & Ranks - ProTrack`;
+        title = `${examLabel} Student Leaderboard & Ranks - StudyRide`;
         description = `See where you stand in the state and national rankings for ${examLabel} preparation. Earn badges, coins, and levels.`;
         break;
       case 'chat':
       case 'study_buddy':
-        title = `AI Study Buddy & Mentor for ${examLabel} - ProTrack`;
+        title = `AI Study Buddy & Mentor for ${examLabel} - StudyRide`;
         description = `Resolve doubts instantly, generate tailored quizzes, and analyze difficult syllabus topics for ${examLabel} with our AI study buddy.`;
         break;
       default:
-        title = `${examLabel} Prep Dashboard & Curriculum - ProTrack`;
+        title = `${examLabel} Prep Dashboard & Curriculum - StudyRide`;
         break;
     }
     
@@ -1083,9 +1083,9 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-slate-100">
         <div className="w-12 h-12 rounded-2xl bg-[#00FF94]/10 border border-[#00FF94]/30 flex items-center justify-center font-black text-[#00FF94] animate-pulse text-lg mb-4 shadow-[0_0_20px_rgba(0,255,148,0.3)]">
-          PT
+          SR
         </div>
-        <p className="text-xs text-slate-400 font-medium">Initializing ProTrack Platform...</p>
+        <p className="text-xs text-slate-400 font-medium">Initializing StudyRide Platform...</p>
       </div>
     );
   }
@@ -1497,7 +1497,7 @@ function AppContent() {
               {(activeTab === 'cbt' || activeTab === 'cbt_exam') && (
                 <PremiumGate
                   featureName="cbt"
-                  featureTitle="AspirantX All-India Mock Test & CBT Simulator"
+                  featureTitle="StudyRide All-India Mock Test & CBT Simulator"
                   isUserPremium={user.isPremium || isAdmin}
                   isAdmin={isAdmin}
                   isGuest={user.isGuest}

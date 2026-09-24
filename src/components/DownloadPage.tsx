@@ -25,7 +25,7 @@ interface DownloadPageProps {
 
 export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
   const [copiedUrl, setCopiedUrl] = useState(false);
-  const downloadUrl = 'https://studyride.in/protrack.apk';
+  const downloadUrl = 'https://studyride.in/studyride.apk';
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(downloadUrl);
@@ -43,9 +43,9 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-black text-slate-950 text-lg shadow-lg shadow-sky-500/25">
-              P
+              S
             </div>
-            <span className="font-black text-xl text-white tracking-tight">ProTrack</span>
+            <span className="font-black text-xl text-white tracking-tight">StudyRide</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -58,8 +58,8 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
               </button>
             )}
             <a
-              href="/protrack.apk"
-              download="ProTrack.apk"
+              href="/studyride.apk"
+              download="StudyRide.apk"
               className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-sm font-bold shadow-md shadow-sky-500/20 transition-all flex items-center gap-1.5"
             >
               <Download className="w-4 h-4" />
@@ -80,7 +80,7 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
-            Take ProTrack <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-teal-300 bg-clip-text text-transparent">With You</span>
+            Take StudyRide <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-teal-300 bg-clip-text text-transparent">With You</span>
           </h1>
 
           <p className="text-base sm:text-xl text-slate-300 max-w-2xl mx-auto font-normal leading-relaxed">
@@ -105,7 +105,7 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                     <Smartphone className="w-6 h-6" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-black text-white">ProTrack for Android</h2>
+                    <h2 className="text-2xl font-black text-white">StudyRide for Android</h2>
                     <div className="text-xs text-sky-400 font-semibold">Version 2.4.3 • Official Build (September 2026)</div>
                   </div>
                 </div>
@@ -135,8 +135,8 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
               {/* Action Area */}
               <div className="pt-6 border-t border-slate-800 space-y-3">
                 <a
-                  href="/protrack.apk"
-                  download="ProTrack.apk"
+                  href="/studyride.apk"
+                  download="StudyRide.apk"
                   className="w-full py-4 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-base shadow-xl shadow-sky-500/25 transition-all flex items-center justify-center gap-2"
                 >
                   <Download className="w-5 h-5" />
@@ -196,7 +196,7 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   <div className="p-4 rounded-3xl bg-slate-950 border-2 border-slate-800 shadow-xl inline-block">
                     <img 
                       src={qrCodeUrl} 
-                      alt="Scan to download ProTrack APK"
+                      alt="Scan to download StudyRide APK"
                       className="w-48 h-48 rounded-xl object-contain"
                     />
                   </div>
@@ -267,7 +267,7 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
 
       {/* ── FOOTER ───────────────────────────────────────────────────── */}
       <footer className="border-t border-slate-900 py-8 px-4 text-center text-xs text-slate-400">
-        <p>© 2026 ProTrack Technologies. All rights reserved.</p>
+        <p>© 2026 StudyRide Technologies. All rights reserved.</p>
         <p className="mt-1">Designed for UPSC, NEET, SSC CGL & Competitive Exam Aspirants.</p>
       </footer>
     </div>

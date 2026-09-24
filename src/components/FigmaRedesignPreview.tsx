@@ -96,11 +96,11 @@ export const FigmaRedesignPreview: React.FC<FigmaRedesignPreviewProps> = ({
       <header className="h-14 border-b border-slate-800/80 bg-[#0B0F17]/90 backdrop-blur-md px-4 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-sky-600/20 text-xs tracking-wider">
-            AX
+            SR
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm tracking-tight text-white">AspirantX Mobile App</span>
+              <span className="font-bold text-sm tracking-tight text-white">StudyRide Mobile App</span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20 font-medium">
                 Figma Design System v2.0
               </span>
@@ -495,9 +495,9 @@ export const FigmaRedesignPreview: React.FC<FigmaRedesignPreviewProps> = ({
                 <div className="px-4 py-2 flex items-center justify-between border-b border-slate-900 bg-[#080B11]/95">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-sky-600/30 border border-sky-500/40 flex items-center justify-center font-bold text-sky-400 text-xs">
-                      AX
+                      SR
                     </div>
-                    <span className="font-bold text-sm text-white tracking-tight">AspirantX</span>
+                    <span className="font-bold text-sm text-white tracking-tight">StudyRide</span>
                     <button className="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-[10px] text-sky-400 font-medium flex items-center gap-1">
                       UPSC ▾
                     </button>

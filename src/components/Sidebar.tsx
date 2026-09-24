@@ -282,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex flex-col items-center gap-2 pb-3 border-b border-slate-800/80">
             <div
               onDoubleClick={handleLogoSecretClick}
-              title={`${customizer?.brandName || 'PROTRACK'} - Double-tap logo for secret Admin Mode`}
+              title={`${customizer?.brandName || 'StudyRide'} - Double-tap logo for secret Admin Mode`}
               className="cursor-pointer select-none group"
             >
               {customizer?.logoUrl ? (
@@ -333,13 +333,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
               ) : (
                 <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-sky-600/25 group-hover:scale-105 transition-transform shrink-0">
-                  {customizer?.logoIconText || 'AX'}
+                  {customizer?.logoIconText || 'SR'}
                 </div>
               )}
               <div className="truncate">
                 <div className="flex items-center gap-1.5">
                   <h1 className="font-bold text-slate-100 tracking-wide text-sm truncate">
-                    {customizer?.brandName || 'ASPIRANTX'}
+                    {customizer?.brandName || 'StudyRide'}
                   </h1>
                   <span className="px-1.5 py-0.5 text-[9px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20 rounded-md uppercase shrink-0">
                     {customizer?.brandBadge || 'PRO'}

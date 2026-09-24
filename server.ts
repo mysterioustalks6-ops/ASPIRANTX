@@ -150,19 +150,22 @@ app.get('/api/version', (_req, res) => {
 
 // Canonical Release APK Endpoints with strict anti-stale cache headers
 const apkDownloadHandler = (_req: express.Request, res: express.Response) => {
+  const studyridePath = path.join(__dirname, 'public', 'studyride.apk');
   const protrackPath = path.join(__dirname, 'public', 'protrack.apk');
   const aspirantxPath = path.join(__dirname, 'public', 'aspirantx.apk');
-  const apkPath = fs.existsSync(protrackPath) ? protrackPath : aspirantxPath;
+  const apkPath = fs.existsSync(studyridePath) ? studyridePath : (fs.existsSync(protrackPath) ? protrackPath : aspirantxPath);
   if (fs.existsSync(apkPath)) {
     res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     res.setHeader('Content-Type', 'application/vnd.android.package-archive');
-    res.setHeader('Content-Disposition', 'attachment; filename="ProTrack.apk"');
+    res.setHeader('Content-Disposition', 'attachment; filename="StudyRide.apk"');
     res.sendFile(apkPath);
   } else {
     res.status(404).send('Release APK Not Found');
   }
 };
 
+app.get('/studyride.apk', apkDownloadHandler);
+app.get('/StudyRide.apk', apkDownloadHandler);
 app.get('/protrack.apk', apkDownloadHandler);
 app.get('/ProTrack.apk', apkDownloadHandler);
 app.get('/ProTrack-v2.4.3.apk', apkDownloadHandler);
@@ -195,13 +198,13 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
       }).then((vite) => {
         app.use(vite.middlewares);
         app.listen(PORT, '0.0.0.0', () => {
-          console.log(`[SERVER] ProTrack Enterprise Backend listening at http://0.0.0.0:${PORT}`);
+          console.log(`[SERVER] StudyRide Enterprise Backend listening at http://0.0.0.0:${PORT}`);
         });
       });
     }).catch(err => {
       console.error('[SERVER] Vite dev server error:', err);
       app.listen(PORT, '0.0.0.0', () => {
-        console.log(`[SERVER] ProTrack Enterprise Backend fallback listening at http://0.0.0.0:${PORT}`);
+        console.log(`[SERVER] StudyRide Enterprise Backend fallback listening at http://0.0.0.0:${PORT}`);
       });
     });
   } else {
@@ -224,7 +227,7 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
       res.sendFile(path.join(distPath, 'index.html'));
     });
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`[SERVER] ProTrack Enterprise Backend listening at http://0.0.0.0:${PORT}`);
+      console.log(`[SERVER] StudyRide Enterprise Backend listening at http://0.0.0.0:${PORT}`);
     });
   }
 }

@@ -2265,7 +2265,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                           <div className="bg-purple-50/60 border border-purple-200 rounded-2xl p-4 space-y-3 animate-in fade-in duration-150">
                             <div className="flex items-center space-x-2 text-purple-900 font-bold text-xs">
                               <Sparkles className="w-4 h-4 text-purple-600" />
-                              <span>AspirantX AI Exam Mentor (Instant Doubt Clarification)</span>
+                              <span>StudyRide AI Exam Mentor (Instant Doubt Clarification)</span>
                             </div>
 
                             {/* Quick Prompt Chips */}

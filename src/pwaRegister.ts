@@ -4,10 +4,10 @@ export function registerServiceWorker() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((reg) => {
-          console.log('[ProTrack PWA] Service Worker registered successfully:', reg.scope);
+          console.log('[StudyRide PWA] Service Worker registered successfully:', reg.scope);
         })
         .catch((err) => {
-          console.error('[ProTrack PWA] Service Worker registration failed:', err);
+          console.error('[StudyRide PWA] Service Worker registration failed:', err);
         });
     });
   }

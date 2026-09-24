@@ -67,32 +67,32 @@ export const PodcastSeries: React.FC = () => {
       setPodcasts([
         {
           id: 'p1',
-          topperName: 'AspirantX Editorial Desk',
+          topperName: 'StudyRide Editorial Desk',
           rank: 'Synthesized Voice Audio Guide',
           subject: 'Polity & GS Paper 2 Strategy Masterclass',
           audioUrl: '/audio/upsc_gs2_polity_masterclass.wav',
           duration: '00:51',
-          description: 'High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the AspirantX academic editorial desk and delivered via synthetic voice narration for study revision.',
+          description: 'High-yield masterclass on GS Paper 2 answer writing frameworks. Note: Scripted by the StudyRide academic editorial desk and delivered via synthetic voice narration for study revision.',
           booklist: ['Indian Polity by M. Laxmikanth', 'Introduction to the Constitution of India by D.D. Basu', 'Second ARC Reports on Ethics in Governance']
         },
         {
           id: 'p2',
-          topperName: 'AspirantX Editorial Desk',
+          topperName: 'StudyRide Editorial Desk',
           rank: 'Synthesized Voice Audio Guide',
           subject: 'Geography Optional & Mapping Technique Guide',
           audioUrl: '/audio/geography_answer_writing_guide.wav',
           duration: '00:42',
-          description: 'Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
-          booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by D.R. Khullar', 'ProTrack Cartography Reference Sheets']
+          description: 'Spatial visualization strategy for Geography: connecting physical theory with regional planning. Note: Scripted by the StudyRide editorial desk and delivered via synthetic voice narration.',
+          booklist: ['Physical Geography by Savindra Singh', 'India: A Comprehensive Geography by D.R. Khullar', 'StudyRide Cartography Reference Sheets']
         },
         {
           id: 'p3',
-          topperName: 'AspirantX Editorial Desk',
+          topperName: 'StudyRide Editorial Desk',
           rank: 'Synthesized Voice Audio Guide',
           subject: 'NEET UG High-Yield Physics & Diagrammatic Biology',
           audioUrl: '/audio/neet_physics_problem_solving.wav',
           duration: '00:39',
-          description: 'Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the AspirantX editorial desk and delivered via synthetic voice narration.',
+          description: 'Essential guidance for NEET 700+ target: rapid numerical techniques and NCERT retention. Note: Scripted by the StudyRide editorial desk and delivered via synthetic voice narration.',
           booklist: ['NCERT Biology Class 11 & 12', 'Concepts of Physics by H.C. Verma', 'Physical Chemistry by O.P. Tandon']
         }
       ]);
@@ -230,7 +230,7 @@ export const PodcastSeries: React.FC = () => {
             </span>
           </h1>
           <p className="text-xs text-slate-400">
-            High-yield audio strategy lectures and answer-writing frameworks. Masterclasses are scripted by the AspirantX academic editorial desk and rendered via synthetic narration for rapid audio revision.
+            High-yield audio strategy lectures and answer-writing frameworks. Masterclasses are scripted by the StudyRide academic editorial desk and rendered via synthetic narration for rapid audio revision.
           </p>
         </div>
       </div>

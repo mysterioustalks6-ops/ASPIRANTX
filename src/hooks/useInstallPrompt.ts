@@ -111,7 +111,7 @@ export function useInstallPrompt(): UseInstallPromptReturn {
       setDeferredPrompt(null);
     } else {
       // Safety fallback if triggerInstall is called without captured beforeinstallprompt
-      setToastMessage("Install isn't available right now — you can still use ProTrack in your browser");
+      setToastMessage("Install isn't available right now — you can still use StudyRide in your browser");
       setTimeout(() => setToastMessage(null), 4000);
     }
   };

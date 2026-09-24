@@ -116,7 +116,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     {
       title: 'Account & Perks',
       items: [
-        { id: 'premium' as ActiveTab, label: 'AspirantX PRO Access', icon: Crown, badge: 'PRO' },
+        { id: 'premium' as ActiveTab, label: 'StudyRide PRO Access', icon: Crown, badge: 'PRO' },
         { id: 'reward_milestones' as ActiveTab, label: 'Study Milestones', icon: Gift },
         { id: 'wallpaper' as ActiveTab, label: 'Habit Wallpaper', icon: Smartphone, badge: 'HD' },
       ]

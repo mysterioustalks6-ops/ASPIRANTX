@@ -6,8 +6,8 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/(ProTrack.*|AspirantX.*|aspirantx)\\.apk",
-      "destination": "/protrack.apk"
+      "source": "/(StudyRide.*|studyride|ProTrack.*|protrack|AspirantX.*|aspirantx)\\.apk",
+      "destination": "/studyride.apk"
     },
     {
       "source": "/((?!ads\\.txt|sitemap\\.xml|robots\\.txt|.*\\.apk).*)",

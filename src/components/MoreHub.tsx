@@ -332,7 +332,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
                 <Crown className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-bold text-white group-hover:text-amber-300">AspirantX Pro Membership</div>
+                <div className="text-xs font-bold text-white group-hover:text-amber-300">StudyRide Pro Membership</div>
                 <div className="text-[11px] text-slate-400">Unlimited mock tests & full archive</div>
               </div>
             </div>

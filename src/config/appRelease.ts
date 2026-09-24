@@ -17,10 +17,10 @@ export interface AppReleaseConfig {
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
   version: '2.4.3',
   versionCode: 4,
-  apkDownloadUrl: '/protrack.apk',
-  apkFileName: 'ProTrack.apk',
+  apkDownloadUrl: '/studyride.apk',
+  apkFileName: 'StudyRide.apk',
   releaseDate: 'September 24, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'Rebranded to ProTrack: Streamlined secure login flow, 26k+ PYQ & Question Bank live connection, Native Dynamic Streak Wallpaper, CBT Mock Simulator, and AI Study Mentor.',
+  releaseNotes: 'Welcome to StudyRide: Streamlined secure login flow, 26k+ PYQ & Question Bank live connection, Native Dynamic Streak Wallpaper, CBT Mock Simulator, and AI Study Mentor.',
 };

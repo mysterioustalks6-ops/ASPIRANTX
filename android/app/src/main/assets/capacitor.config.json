@@ -1,6 +1,6 @@
 {
 	"appId": "com.aspirantx.app",
-	"appName": "ProTrack",
+	"appName": "StudyRide",
 	"webDir": "dist",
 	"bundledWebRuntime": false,
 	"server": {
