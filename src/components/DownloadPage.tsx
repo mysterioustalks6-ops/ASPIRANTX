@@ -18,6 +18,7 @@ import {
   Trophy
 } from 'lucide-react';
 import { SlideUp, PressFeedback } from '../lib/animations';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 interface DownloadPageProps {
   onOpenApp?: () => void;
@@ -110,7 +111,7 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   />
                   <div>
                     <h2 className="text-2xl font-black text-white">StudyRide for Android</h2>
-                    <div className="text-xs text-emerald-400 font-semibold">Version 2.5.0 • Official Build (September 2026)</div>
+                    <div className="text-xs text-emerald-400 font-semibold">Version {CANONICAL_APP_RELEASE.version} • Official Build (September 2026)</div>
                   </div>
                 </div>
 
@@ -144,11 +145,11 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   className="w-full py-4 px-6 rounded-2xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-base shadow-xl shadow-sky-500/25 transition-all flex items-center justify-center gap-2"
                 >
                   <Download className="w-5 h-5" />
-                  <span>Download Android App (.apk v2.4.3)</span>
+                  <span>Download Android App (.apk v{CANONICAL_APP_RELEASE.version})</span>
                 </a>
 
                 <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                  <span>File Size: ~11.4 MB</span>
+                  <span>File Size: ~12.6 MB</span>
                   <span>Requires Android 8.0+</span>
                   <button 
                     onClick={handleCopyLink}

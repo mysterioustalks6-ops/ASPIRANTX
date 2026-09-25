@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2.4.3';
+const CACHE_VERSION = 'v2.5.1';
 const CACHE_NAME = `protrack-static-${CACHE_VERSION}`;
 const API_CACHE_NAME = `protrack-api-${CACHE_VERSION}`;
 
