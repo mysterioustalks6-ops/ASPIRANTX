@@ -298,6 +298,12 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
       if (p) setPermStatus(p);
       return;
     }
+    if (!permStatus.hasOverlay) {
+      await callNativePlugin('openOverlaySettings');
+      const p = await callNativePlugin('checkBlockerPermissions');
+      if (p) setPermStatus(p);
+      return;
+    }
     const nextVal = !blockShorts;
     setBlockShorts(nextVal);
     await callNativePlugin('setGranularBlockRules', {
@@ -310,6 +316,12 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const handleToggleReels = async () => {
     if (!permStatus.hasUsageStats) {
       await callNativePlugin('openUsageAccessSettings');
+      const p = await callNativePlugin('checkBlockerPermissions');
+      if (p) setPermStatus(p);
+      return;
+    }
+    if (!permStatus.hasOverlay) {
+      await callNativePlugin('openOverlaySettings');
       const p = await callNativePlugin('checkBlockerPermissions');
       if (p) setPermStatus(p);
       return;
@@ -441,6 +453,19 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
   // Timer Session Execution
   const handleStartSession = async () => {
+    if (!permStatus.hasUsageStats) {
+      await callNativePlugin('openUsageAccessSettings');
+      const p = await callNativePlugin('checkBlockerPermissions');
+      if (p) setPermStatus(p);
+      return;
+    }
+    if (!permStatus.hasOverlay) {
+      await callNativePlugin('openOverlaySettings');
+      const p = await callNativePlugin('checkBlockerPermissions');
+      if (p) setPermStatus(p);
+      return;
+    }
+
     const durMins = selectedDuration === -1 ? Math.max(5, parseInt(customDuration, 10) || 45) : selectedDuration;
     const durSecs = durMins * 60;
 

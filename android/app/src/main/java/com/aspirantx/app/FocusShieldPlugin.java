@@ -145,10 +145,16 @@ public class FocusShieldPlugin extends Plugin {
         try {
             Context context = getContext();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:" + context.getPackageName()));
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
+                try {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:" + context.getPackageName()));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                } catch (Exception fallback) {
+                    Intent generic = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+                    generic.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(generic);
+                }
             }
             JSObject res = new JSObject();
             res.put("success", true);
@@ -204,12 +210,37 @@ public class FocusShieldPlugin extends Plugin {
         boolean blockReels = call.getBoolean("blockReels", true);
         boolean youtubeStudyMode = call.getBoolean("youtubeStudyMode", false);
 
-        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        Context context = getContext();
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+
+        Set<String> currentBlocked = prefs.getStringSet("blocked_packages", new HashSet<>());
+        Set<String> updated = new HashSet<>(currentBlocked);
+        if (blockReels) {
+            updated.add("com.instagram.android");
+        }
+        if (blockShorts && !youtubeStudyMode) {
+            updated.add("com.google.android.youtube");
+        }
+
         prefs.edit()
                 .putBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, blockShorts)
                 .putBoolean(FocusShieldAccessibilityService.PREF_BLOCK_REELS, blockReels)
                 .putBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, youtubeStudyMode)
+                .putStringSet("blocked_packages", updated)
                 .apply();
+
+        // If either reels or shorts is enabled and usage permission exists, ensure monitor is active
+        if ((blockReels || blockShorts) && hasUsageStatsPermission(context)) {
+            try {
+                Intent serviceIntent = new Intent(context, FocusShieldMonitorService.class);
+                serviceIntent.setAction(FocusShieldMonitorService.ACTION_START);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent);
+                } else {
+                    context.startService(serviceIntent);
+                }
+            } catch (Exception ignored) {}
+        }
 
         JSObject res = new JSObject();
         res.put("success", true);

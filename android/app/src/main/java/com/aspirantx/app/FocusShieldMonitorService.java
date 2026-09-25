@@ -11,11 +11,21 @@ import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
+import android.provider.Settings;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.core.app.NotificationCompat;
 
@@ -34,9 +44,14 @@ public class FocusShieldMonitorService extends Service {
 
     private Handler monitorHandler;
     private Runnable monitorRunnable;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private Set<String> blockedPackages = new HashSet<>();
-    private String lastBlockedPackage = "";
-    private long lastBlockTriggerTime = 0;
+    private String lastForegroundPackage = "";
+
+    // WindowManager Overlay
+    private WindowManager windowManager;
+    private View activeOverlayView = null;
+    private String currentlyDisplayedOverlayPkg = "";
 
     @Override
     public void onCreate() {
@@ -52,7 +67,13 @@ public class FocusShieldMonitorService extends Service {
             return START_NOT_STICKY;
         }
 
-        startForeground(NOTIFICATION_ID, buildNotification("Focus Shield Active", "Protecting your study session"));
+        Notification notification = buildNotification("Focus Shield Active", "Protecting your study session");
+        if (Build.VERSION.SDK_INT >= 34) { // Android 14+ requires explicit service type
+            startForeground(NOTIFICATION_ID, notification, android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+        } else {
+            startForeground(NOTIFICATION_ID, notification);
+        }
+
         loadBlockedPackages();
         startMonitoring();
 
@@ -86,7 +107,9 @@ public class FocusShieldMonitorService extends Service {
             @Override
             public void run() {
                 checkForegroundApp();
-                monitorHandler.postDelayed(this, 1000);
+                if (monitorHandler != null) {
+                    monitorHandler.postDelayed(this, 1000);
+                }
             }
         };
         monitorHandler.post(monitorRunnable);
@@ -96,10 +119,20 @@ public class FocusShieldMonitorService extends Service {
         if (monitorHandler != null && monitorRunnable != null) {
             monitorHandler.removeCallbacks(monitorRunnable);
         }
+        hideBlockOverlay();
         stopForeground(true);
     }
 
     private void checkForegroundApp() {
+        // If screen is off, hide overlay and return
+        try {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null && !pm.isInteractive()) {
+                hideBlockOverlay();
+                return;
+            }
+        } catch (Exception ignored) {}
+
         SharedPreferences prefs = getSharedPreferences(FocusShieldPlugin.PREFS_NAME, Context.MODE_PRIVATE);
         boolean manualActive = prefs.getBoolean(FocusShieldPlugin.PREF_ACTIVE, false);
         long endTimestamp = prefs.getLong(FocusShieldPlugin.PREF_END_TIME, 0);
@@ -108,9 +141,11 @@ public class FocusShieldMonitorService extends Service {
         boolean hasActiveSchedule = isAnyScheduleActive(prefs);
         boolean hasDailyLimits = hasConfiguredDailyLimits(prefs);
         boolean hasAppGroups = hasConfiguredAppGroups(prefs);
+        boolean blockShorts = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, false);
+        boolean blockReels = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_REELS, false);
 
         // If nothing is active and no limits configured, shut down monitor
-        if (!manualActive && !hasActiveSchedule && !hasDailyLimits && !hasAppGroups) {
+        if (!manualActive && !hasActiveSchedule && !hasDailyLimits && !hasAppGroups && !blockShorts && !blockReels) {
             stopMonitoring();
             stopSelf();
             return;
@@ -126,15 +161,20 @@ public class FocusShieldMonitorService extends Service {
 
         String currentPackage = getForegroundPackage();
         if (currentPackage != null && !currentPackage.isEmpty()) {
-            // Do not block StudyRide or Android launcher/system UI/settings
+            // Do not block StudyRide, Android system UI, launcher or settings
             String myPkg = getPackageName();
-            if (currentPackage.equals(myPkg) || currentPackage.equals("com.android.systemui") 
-                    || currentPackage.equals("android") || currentPackage.equals("com.android.settings")) {
+            if (currentPackage.equals(myPkg) 
+                    || currentPackage.equals("com.android.systemui") 
+                    || currentPackage.equals("android") 
+                    || currentPackage.equals("com.android.settings")
+                    || currentPackage.contains("launcher")) {
+                hideBlockOverlay();
                 return;
             }
 
             // Check emergency grace pass
             if (isEmergencyPassActive(prefs, currentPackage, now)) {
+                hideBlockOverlay();
                 return;
             }
 
@@ -144,11 +184,25 @@ public class FocusShieldMonitorService extends Service {
             int limitMins = 0;
             int usedMins = 0;
 
-            // Priority 1: Manual Focus Session Active
-            if (manualActive && now < endTimestamp && blockedPackages.contains(currentPackage)) {
+            // Rule 1: Reels Protection (Instagram)
+            if (blockReels && "com.instagram.android".equals(currentPackage)) {
+                shouldBlock = true;
+                blockReason = "REELS_BLOCKED";
+            }
+
+            // Rule 2: Shorts Protection (YouTube)
+            if (!shouldBlock && blockShorts && "com.google.android.youtube".equals(currentPackage)) {
+                boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
+                if (!ytStudyMode) {
+                    shouldBlock = true;
+                    blockReason = "SHORTS_BLOCKED";
+                }
+            }
+
+            // Rule 3: Manual Focus Session Active
+            if (!shouldBlock && manualActive && now < endTimestamp && blockedPackages.contains(currentPackage)) {
                 boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
                 if (currentPackage.equals("com.google.android.youtube") && ytStudyMode) {
-                    // Allow YouTube only when student explicitly enables Lecture Mode
                     shouldBlock = false;
                 } else {
                     shouldBlock = true;
@@ -156,7 +210,7 @@ public class FocusShieldMonitorService extends Service {
                 }
             }
 
-            // Priority 2: Automated Study Schedule Active
+            // Rule 4: Automated Study Schedule Active
             if (!shouldBlock && isPackageBlockedBySchedule(prefs, currentPackage)) {
                 boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
                 if (currentPackage.equals("com.google.android.youtube") && ytStudyMode) {
@@ -167,7 +221,7 @@ public class FocusShieldMonitorService extends Service {
                 }
             }
 
-            // Priority 3: Daily Quota Limit Reached (Individual App)
+            // Rule 5: Daily Quota Limit Reached (Individual App)
             if (!shouldBlock) {
                 int[] quotaCheck = checkDailyLimitExceeded(prefs, currentPackage);
                 if (quotaCheck[0] == 1) {
@@ -178,7 +232,7 @@ public class FocusShieldMonitorService extends Service {
                 }
             }
 
-            // Priority 4: Regain-Style App Group Lock or Shared Limit
+            // Rule 6: App Group Lock or Shared Limit
             if (!shouldBlock) {
                 Object[] groupCheck = checkAppGroupBlocked(prefs, currentPackage);
                 if ((Boolean) groupCheck[0]) {
@@ -191,14 +245,229 @@ public class FocusShieldMonitorService extends Service {
             }
 
             if (shouldBlock) {
-                long timeSinceLastTrigger = now - lastBlockTriggerTime;
-                if (!currentPackage.equals(lastBlockedPackage) || timeSinceLastTrigger > 2500) {
-                    lastBlockedPackage = currentPackage;
-                    lastBlockTriggerTime = now;
-                    triggerBlock(currentPackage, blockReason, limitMins, usedMins, groupName);
+                showBlockOverlay(currentPackage, blockReason, limitMins, usedMins, groupName);
+            } else {
+                hideBlockOverlay();
+            }
+        } else {
+            hideBlockOverlay();
+        }
+    }
+
+    private void showBlockOverlay(final String packageName, final String reason, final int limitMins, final int usedMins, final String groupName) {
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Check if Display Over Other Apps permission is granted
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(FocusShieldMonitorService.this)) {
+                        triggerAlertNotification(packageName, reason, limitMins, usedMins, groupName);
+                        return;
+                    }
+
+                    if (activeOverlayView != null && packageName.equals(currentlyDisplayedOverlayPkg)) {
+                        return; // Already actively showing for this package
+                    }
+
+                    if (windowManager == null) {
+                        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+                    }
+
+                    if (activeOverlayView != null) {
+                        try {
+                            windowManager.removeView(activeOverlayView);
+                        } catch (Exception ignored) {}
+                        activeOverlayView = null;
+                    }
+
+                    int layoutType = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                            ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                            : WindowManager.LayoutParams.TYPE_PHONE;
+
+                    WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                            WindowManager.LayoutParams.MATCH_PARENT,
+                            WindowManager.LayoutParams.MATCH_PARENT,
+                            layoutType,
+                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                                    | WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                            PixelFormat.TRANSLUCENT
+                    );
+                    params.gravity = Gravity.CENTER;
+
+                    activeOverlayView = createOverlayView(packageName, reason, limitMins, usedMins, groupName);
+                    currentlyDisplayedOverlayPkg = packageName;
+                    windowManager.addView(activeOverlayView, params);
+                    Log.i(TAG, "Attached Focus Shield WindowManager overlay for " + packageName);
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error displaying WindowManager overlay: " + e.getMessage());
                 }
             }
+        });
+    }
+
+    private void hideBlockOverlay() {
+        if (activeOverlayView != null) {
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (activeOverlayView != null && windowManager != null) {
+                            windowManager.removeView(activeOverlayView);
+                            activeOverlayView = null;
+                            currentlyDisplayedOverlayPkg = "";
+                            Log.i(TAG, "Dismissed Focus Shield WindowManager overlay");
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
         }
+    }
+
+    private View createOverlayView(final String packageName, String reason, int limitMins, int usedMins, String groupName) {
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View view = inflater.inflate(R.layout.activity_block_overlay, null);
+
+        TextView tvBlockedApp = view.findViewById(R.id.tvBlockedApp);
+        TextView tvRemainingTime = view.findViewById(R.id.tvRemainingTime);
+        TextView tvMotivationalQuote = view.findViewById(R.id.tvMotivationalQuote);
+        Button btnReturn = view.findViewById(R.id.btnReturnToApp);
+        Button btnHome = view.findViewById(R.id.btnGoHome);
+
+        String appLabel = getFriendlyName(packageName);
+        if (tvBlockedApp != null) {
+            if ("REELS_BLOCKED".equals(reason)) {
+                tvBlockedApp.setText("Instagram Reels Blocked");
+            } else if ("SHORTS_BLOCKED".equals(reason)) {
+                tvBlockedApp.setText("YouTube Shorts Restricted");
+            } else if ("GROUP_BLOCKED".equals(reason)) {
+                tvBlockedApp.setText((groupName.isEmpty() ? "App Group" : groupName) + " is Locked");
+            } else if ("DAILY_LIMIT_EXCEEDED".equals(reason)) {
+                tvBlockedApp.setText(appLabel + " Limit Reached");
+            } else if ("SCHEDULE_ACTIVE".equals(reason)) {
+                tvBlockedApp.setText("Study Slot Active: " + appLabel + " Blocked");
+            } else {
+                tvBlockedApp.setText(appLabel + " is Blocked");
+            }
+        }
+
+        if (tvRemainingTime != null) {
+            if ("DAILY_LIMIT_EXCEEDED".equals(reason)) {
+                tvRemainingTime.setText(usedMins + "m / " + limitMins + "m Used");
+                tvRemainingTime.setTextSize(26f);
+            } else if ("REELS_BLOCKED".equals(reason)) {
+                tvRemainingTime.setText("NO REELS MODE");
+                tvRemainingTime.setTextSize(26f);
+            } else if ("SHORTS_BLOCKED".equals(reason)) {
+                tvRemainingTime.setText("NO SHORTS MODE");
+                tvRemainingTime.setTextSize(26f);
+            } else {
+                tvRemainingTime.setText("SHIELD ACTIVE");
+            }
+        }
+
+        if (tvMotivationalQuote != null) {
+            tvMotivationalQuote.setText("“Padhai par dhyan do! Selection tumhara intazaar kar raha hai. Har minute keemti hai.”");
+        }
+
+        if (btnReturn != null) {
+            btnReturn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    hideBlockOverlay();
+                    try {
+                        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                        if (launchIntent != null) {
+                            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            startActivity(launchIntent);
+                        } else {
+                            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+                            homeIntent.addCategory(Intent.CATEGORY_HOME);
+                            homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(homeIntent);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        if (btnHome != null) {
+            btnHome.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    hideBlockOverlay();
+                    try {
+                        Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+                        homeIntent.addCategory(Intent.CATEGORY_HOME);
+                        homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(homeIntent);
+                    } catch (Exception ignored) {}
+                }
+            });
+        }
+
+        return view;
+    }
+
+    private String getFriendlyName(String pkg) {
+        if ("com.google.android.youtube".equals(pkg)) return "YouTube";
+        if ("com.instagram.android".equals(pkg)) return "Instagram";
+        if ("com.facebook.katana".equals(pkg)) return "Facebook";
+        if ("com.snapchat.android".equals(pkg)) return "Snapchat";
+        if ("com.twitter.android".equals(pkg)) return "X (Twitter)";
+        try {
+            PackageManager pm = getPackageManager();
+            return pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString();
+        } catch (Exception ignored) {}
+        return pkg;
+    }
+
+    private String getForegroundPackage() {
+        try {
+            UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
+            if (usm == null) return lastForegroundPackage;
+
+            long end = System.currentTimeMillis();
+            long begin = end - 60000; // 60-second inspection window
+
+            UsageEvents events = usm.queryEvents(begin, end);
+            String latest = null;
+
+            if (events != null) {
+                UsageEvents.Event event = new UsageEvents.Event();
+                while (events.hasNextEvent()) {
+                    events.getNextEvent(event);
+                    int type = event.getEventType();
+                    if (type == UsageEvents.Event.ACTIVITY_RESUMED || type == 1) {
+                        latest = event.getPackageName();
+                    }
+                }
+            }
+
+            if (latest != null && !latest.isEmpty()) {
+                lastForegroundPackage = latest;
+                return latest;
+            }
+
+            // Fallback: check queryUsageStats for devices that debounce usage events
+            List<UsageStats> statsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, end - 60000, end);
+            if (statsList != null && !statsList.isEmpty()) {
+                UsageStats mostRecent = null;
+                for (UsageStats u : statsList) {
+                    if (mostRecent == null || u.getLastTimeUsed() > mostRecent.getLastTimeUsed()) {
+                        mostRecent = u;
+                    }
+                }
+                if (mostRecent != null && (end - mostRecent.getLastTimeUsed() < 60000)) {
+                    lastForegroundPackage = mostRecent.getPackageName();
+                    return mostRecent.getPackageName();
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking foreground package: " + e.getMessage());
+        }
+        return lastForegroundPackage;
     }
 
     private boolean isEmergencyPassActive(SharedPreferences prefs, String pkg, long now) {
@@ -341,51 +610,6 @@ public class FocusShieldMonitorService extends Service {
         return false;
     }
 
-    private String getForegroundPackage() {
-        try {
-            UsageStatsManager usm = (UsageStatsManager) getSystemService(Context.USAGE_STATS_SERVICE);
-            if (usm == null) return null;
-
-            long end = System.currentTimeMillis();
-            long begin = end - 10000; // 10-second inspection window
-
-            UsageEvents events = usm.queryEvents(begin, end);
-            String latest = null;
-
-            if (events != null) {
-                UsageEvents.Event event = new UsageEvents.Event();
-                while (events.hasNextEvent()) {
-                    events.getNextEvent(event);
-                    int type = event.getEventType();
-                    if (type == UsageEvents.Event.ACTIVITY_RESUMED || type == 1) {
-                        latest = event.getPackageName();
-                    }
-                }
-            }
-
-            if (latest != null && !latest.isEmpty()) {
-                return latest;
-            }
-
-            // Fallback: queryUsageStats for devices that debounce or delay usage events
-            List<UsageStats> statsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, end - 30000, end);
-            if (statsList != null && !statsList.isEmpty()) {
-                UsageStats mostRecent = null;
-                for (UsageStats u : statsList) {
-                    if (mostRecent == null || u.getLastTimeUsed() > mostRecent.getLastTimeUsed()) {
-                        mostRecent = u;
-                    }
-                }
-                if (mostRecent != null && (end - mostRecent.getLastTimeUsed() < 5000)) {
-                    return mostRecent.getPackageName();
-                }
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Error checking foreground package: " + e.getMessage());
-        }
-        return null;
-    }
-
     private boolean hasConfiguredAppGroups(SharedPreferences prefs) {
         try {
             String groupsJson = prefs.getString(FocusShieldPlugin.PREF_APP_GROUPS, "[]");
@@ -460,10 +684,9 @@ public class FocusShieldMonitorService extends Service {
                                 }
                             }
                         }
-
-                        int totalGroupUsedMins = (int) (totalGroupTimeMs / 60000L);
-                        if (totalGroupUsedMins >= groupLimitMins) {
-                            return new Object[]{true, "GROUP_LIMIT_EXCEEDED", groupLimitMins, totalGroupUsedMins, groupName};
+                        int usedGroupMins = (int) (totalGroupTimeMs / 60000L);
+                        if (usedGroupMins >= groupLimitMins) {
+                            return new Object[]{true, "GROUP_LIMIT_EXCEEDED", groupLimitMins, usedGroupMins, groupName};
                         }
                     }
                 }
@@ -472,24 +695,8 @@ public class FocusShieldMonitorService extends Service {
         return new Object[]{false, "", 0, 0, ""};
     }
 
-    private void triggerBlock(String packageName, String reason, int limitMins, int usedMins, String groupName) {
+    private void triggerAlertNotification(String packageName, String reason, int limitMins, int usedMins, String groupName) {
         try {
-            // 1. Prepare intent for BlockOverlayActivity
-            Intent blockIntent = new Intent(this, BlockOverlayActivity.class);
-            blockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            blockIntent.putExtra("blocked_package", packageName);
-            blockIntent.putExtra("block_reason", reason);
-            blockIntent.putExtra("limit_mins", limitMins);
-            blockIntent.putExtra("used_mins", usedMins);
-            blockIntent.putExtra("group_name", groupName);
-
-            int pFlags = PendingIntent.FLAG_UPDATE_CURRENT;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                pFlags |= PendingIntent.FLAG_IMMUTABLE;
-            }
-            PendingIntent fullScreenPendingIntent = PendingIntent.getActivity(this, 1001, blockIntent, pFlags);
-
-            // 2. Post heads-up high-priority full-screen intent notification
             NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             String title = "Focus Shield: App Blocked";
             String content = "Padhai par dhyan do! Selection tumhara intazaar kar raha hai.";
@@ -502,10 +709,15 @@ public class FocusShieldMonitorService extends Service {
             } else if ("GROUP_BLOCKED".equals(reason)) {
                 title = (groupName.isEmpty() ? "App Group" : groupName) + " is Locked";
                 content = "This app is in " + (groupName.isEmpty() ? "a restricted group" : groupName) + ". Focus on your study!";
-            } else if ("GROUP_LIMIT_EXCEEDED".equals(reason)) {
-                title = (groupName.isEmpty() ? "Group" : groupName) + " Limit Reached";
-                content = "Aaj ka " + groupName + " quota pura ho gaya (" + usedMins + "m / " + limitMins + "m). Back to studies!";
             }
+
+            Intent notificationIntent = new Intent(this, MainActivity.class);
+            notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            int pFlags = PendingIntent.FLAG_UPDATE_CURRENT;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                pFlags |= PendingIntent.FLAG_IMMUTABLE;
+            }
+            PendingIntent pendingIntent = PendingIntent.getActivity(this, 1001, notificationIntent, pFlags);
 
             NotificationCompat.Builder alertBuilder = new NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
                     .setSmallIcon(R.mipmap.ic_launcher)
@@ -513,29 +725,15 @@ public class FocusShieldMonitorService extends Service {
                     .setContentText(content)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_ALARM)
-                    .setFullScreenIntent(fullScreenPendingIntent, true)
+                    .setContentIntent(pendingIntent)
                     .setAutoCancel(true)
                     .setVibrate(new long[]{0, 250, 150, 250});
 
             if (nm != null) {
                 nm.notify(ALERT_NOTIFICATION_ID, alertBuilder.build());
             }
-
-            // 3. Immediately send HOME intent to collapse the blocked app
-            try {
-                Intent homeIntent = new Intent(Intent.ACTION_MAIN);
-                homeIntent.addCategory(Intent.CATEGORY_HOME);
-                homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(homeIntent);
-            } catch (Exception ignored) {}
-
-            // 4. Also launch BlockOverlayActivity directly
-            try {
-                startActivity(blockIntent);
-            } catch (Exception ignored) {}
-
         } catch (Exception e) {
-            Log.e(TAG, "Error triggering block overlay: " + e.getMessage());
+            Log.e(TAG, "Error posting alert notification: " + e.getMessage());
         }
     }
 

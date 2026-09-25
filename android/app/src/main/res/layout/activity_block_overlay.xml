@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#090D16"
+    android:background="#0B0F0D"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="32dp">
@@ -10,8 +10,8 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="🛑"
-        android:textSize="64sp" />
+        android:text="🛡️"
+        android:textSize="72sp" />
 
     <TextView
         android:id="@+id/tvBlockedApp"
@@ -19,15 +19,15 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="App Blocked"
-        android:textColor="#F43F5E"
-        android:textSize="24sp"
+        android:textColor="#34D399"
+        android:textSize="26sp"
         android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="StudyRide Focus Session Active"
+        android:text="StudyRide • Focus Shield Active"
         android:textColor="#94A3B8"
         android:textSize="14sp" />
 
@@ -35,33 +35,46 @@
         android:id="@+id/tvRemainingTime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="24dp"
         android:fontFamily="monospace"
-        android:text="25:00"
+        android:text="SHIELD ACTIVE"
         android:textColor="#FFFFFF"
-        android:textSize="48sp"
+        android:textSize="32sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tvMotivationalQuote"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="20dp"
         android:gravity="center"
-        android:text="“Every minute spent disciplined now is a step closer to your final selection.”"
-        android:textColor="#38BDF8"
-        android:textSize="13sp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="“Padhai par dhyan do! Selection tumhara intazaar kar raha hai. Har minute keemti hai.”"
+        android:textColor="#6EE7B7"
+        android:textSize="14sp"
         android:textStyle="italic" />
 
     <Button
         android:id="@+id/btnReturnToApp"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="40dp"
-        android:background="#38BDF8"
-        android:text="Return to Study Session"
+        android:layout_height="54dp"
+        android:layout_marginTop="36dp"
+        android:background="#10B981"
+        android:text="Back to Studies (StudyRide)"
         android:textColor="#090D16"
         android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/btnGoHome"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="12dp"
+        android:background="#1A231E"
+        android:text="Exit to Home Screen"
+        android:textColor="#A7F3D0"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
 </LinearLayout>
