@@ -13,6 +13,12 @@
   "description": "Enterprise Exam Preparation App for UPSC, NEET, NDA, and SSC Aspirants with AI Mentorship and Live CBT Engine.",
   "icons": [
     {
+      "src": "logo.png",
+      "type": "image/png",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
       "src": "pwa-192x192.png",
       "type": "image/png",
       "sizes": "192x192",
