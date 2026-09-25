@@ -147,9 +147,8 @@ public class FocusShieldMonitorService extends Service {
             // Priority 1: Manual Focus Session Active
             if (manualActive && now < endTimestamp && blockedPackages.contains(currentPackage)) {
                 boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
-                boolean blockShorts = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, true);
-                if (currentPackage.equals("com.google.android.youtube") && (ytStudyMode || blockShorts)) {
-                    // Allow YouTube app for lectures; FocusShieldAccessibilityService blocks Shorts!
+                if (currentPackage.equals("com.google.android.youtube") && ytStudyMode) {
+                    // Allow YouTube only when student explicitly enables Lecture Mode
                     shouldBlock = false;
                 } else {
                     shouldBlock = true;
@@ -160,8 +159,7 @@ public class FocusShieldMonitorService extends Service {
             // Priority 2: Automated Study Schedule Active
             if (!shouldBlock && isPackageBlockedBySchedule(prefs, currentPackage)) {
                 boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
-                boolean blockShorts = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, true);
-                if (currentPackage.equals("com.google.android.youtube") && (ytStudyMode || blockShorts)) {
+                if (currentPackage.equals("com.google.android.youtube") && ytStudyMode) {
                     shouldBlock = false;
                 } else {
                     shouldBlock = true;
