@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.5.2',
-  versionCode: 13,
+  version: '2.5.3',
+  versionCode: 14,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
   releaseDate: 'September 25, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'Official Modern Glowing Emblem Logo, Focus Shield Pro (Regain-inspired), OLED Dark theme, App Limits, and Avatar Studio.',
+  releaseNotes: 'v2.5.3: Blocking engine overhaul — Shorts & Reels toggles start OFF by default, 2x faster foreground detection (3s window, 500ms poll), YouTube Study Mode fixed, toggle OFF now correctly unblocks apps. Plus OLED Dark theme, Focus Shield Pro, App Limits & Avatar Studio.',
 };

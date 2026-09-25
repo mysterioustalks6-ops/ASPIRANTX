@@ -203,7 +203,7 @@ export const AppSplashScreen: React.FC<AppSplashScreenProps> = ({
               transition={{ delay: 0.7, duration: 0.4 }}
               className="text-[10px] text-slate-500 font-mono mt-2"
             >
-              Tap to skip • v2.5.1
+              Tap to skip • v2.5.3
             </motion.span>
           </div>
         </motion.div>
