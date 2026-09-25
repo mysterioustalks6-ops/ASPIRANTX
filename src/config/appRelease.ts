@@ -15,8 +15,8 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.5.1',
-  versionCode: 12,
+  version: '2.5.2',
+  versionCode: 13,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
   releaseDate: 'September 25, 2026',
