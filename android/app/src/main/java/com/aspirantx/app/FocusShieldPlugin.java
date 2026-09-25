@@ -206,8 +206,8 @@ public class FocusShieldPlugin extends Plugin {
 
     @PluginMethod
     public void setGranularBlockRules(PluginCall call) {
-        boolean blockShorts = call.getBoolean("blockShorts", true);
-        boolean blockReels = call.getBoolean("blockReels", true);
+        boolean blockShorts = call.getBoolean("blockShorts", false);
+        boolean blockReels = call.getBoolean("blockReels", false);
         boolean youtubeStudyMode = call.getBoolean("youtubeStudyMode", false);
 
         Context context = getContext();
@@ -215,11 +215,21 @@ public class FocusShieldPlugin extends Plugin {
 
         Set<String> currentBlocked = prefs.getStringSet("blocked_packages", new HashSet<>());
         Set<String> updated = new HashSet<>(currentBlocked);
+
+        // Add or REMOVE packages based on toggle state
         if (blockReels) {
             updated.add("com.instagram.android");
+        } else {
+            updated.remove("com.instagram.android"); // Remove when toggle OFF
         }
         if (blockShorts && !youtubeStudyMode) {
             updated.add("com.google.android.youtube");
+        } else if (!blockShorts || youtubeStudyMode) {
+            // Only remove YouTube from blocked list if no active focus session
+            boolean manualActive = prefs.getBoolean(FocusShieldPlugin.PREF_ACTIVE, false);
+            if (!manualActive) {
+                updated.remove("com.google.android.youtube"); // Remove when toggle OFF
+            }
         }
 
         prefs.edit()
@@ -229,7 +239,7 @@ public class FocusShieldPlugin extends Plugin {
                 .putStringSet("blocked_packages", updated)
                 .apply();
 
-        // If either reels or shorts is enabled and usage permission exists, ensure monitor is active
+        // Start monitor if either reels or shorts blocking is enabled
         if ((blockReels || blockShorts) && hasUsageStatsPermission(context)) {
             try {
                 Intent serviceIntent = new Intent(context, FocusShieldMonitorService.class);
@@ -250,8 +260,9 @@ public class FocusShieldPlugin extends Plugin {
     @PluginMethod
     public void getGranularBlockRules(PluginCall call) {
         SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        boolean blockShorts = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, true);
-        boolean blockReels = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_REELS, true);
+        // Default false = toggles start OFF on fresh install (user must explicitly enable)
+        boolean blockShorts = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, false);
+        boolean blockReels = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_REELS, false);
         boolean youtubeStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
 
         JSObject res = new JSObject();

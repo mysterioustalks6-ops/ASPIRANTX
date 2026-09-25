@@ -31,8 +31,8 @@ public class FocusShieldAccessibilityService extends AccessibilityService {
         String packageName = pkgChar.toString();
 
         SharedPreferences prefs = getSharedPreferences(FocusShieldPlugin.PREFS_NAME, Context.MODE_PRIVATE);
-        boolean blockShorts = prefs.getBoolean(PREF_BLOCK_SHORTS, true);
-        boolean blockReels = prefs.getBoolean(PREF_BLOCK_REELS, true);
+        boolean blockShorts = prefs.getBoolean(PREF_BLOCK_SHORTS, false);
+        boolean blockReels = prefs.getBoolean(PREF_BLOCK_REELS, false);
         boolean ytStudyMode = prefs.getBoolean(PREF_YT_STUDY_MODE, false);
 
         long now = System.currentTimeMillis();
@@ -40,8 +40,8 @@ public class FocusShieldAccessibilityService extends AccessibilityService {
             return; // Debounce to prevent rapid firing
         }
 
-        // 1. YouTube Shorts Inspection
-        if ("com.google.android.youtube".equals(packageName) && (blockShorts || ytStudyMode)) {
+        // 1. YouTube Shorts Inspection — only block if blockShorts is ON AND study mode is OFF
+        if ("com.google.android.youtube".equals(packageName) && blockShorts && !ytStudyMode) {
             if (isYouTubeShortsPresent(event)) {
                 lastTriggerTime = now;
                 performGlobalAction(GLOBAL_ACTION_BACK);
