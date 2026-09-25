@@ -41,7 +41,6 @@ import { PressFeedback, triggerConfetti } from '../lib/animations';
 import { getApiUrl } from '../lib/apiConfig';
 import { AvatarStudioModal, AvatarConfig, DEFAULT_AVATAR_CONFIG } from './AvatarStudioModal';
 import { AspirantAvatar } from './AspirantAvatar';
-import { AccessibilityGuideModal } from './AccessibilityGuideModal';
 import { AppPickerModal, DistractingApp, FALLBACK_DEVICE_APPS } from './AppPickerModal';
 import { AppGroupModal, AppGroup } from './AppGroupModal';
 
@@ -98,7 +97,7 @@ export const DEFAULT_APP_GROUPS: AppGroup[] = [
     ],
     dailyLimitMinutes: 30,
     blockMode: 'LIMIT',
-    enabled: true,
+    enabled: false,
     isCustom: false
   },
   {
@@ -115,7 +114,7 @@ export const DEFAULT_APP_GROUPS: AppGroup[] = [
     ],
     dailyLimitMinutes: 45,
     blockMode: 'LIMIT',
-    enabled: true,
+    enabled: false,
     isCustom: false
   },
   {
@@ -132,7 +131,7 @@ export const DEFAULT_APP_GROUPS: AppGroup[] = [
     ],
     dailyLimitMinutes: 20,
     blockMode: 'LIMIT',
-    enabled: true,
+    enabled: false,
     isCustom: false
   },
   {
@@ -149,55 +148,12 @@ export const DEFAULT_APP_GROUPS: AppGroup[] = [
     ],
     dailyLimitMinutes: 20,
     blockMode: 'LIMIT',
-    enabled: true,
+    enabled: false,
     isCustom: false
   }
 ];
 
-const DEFAULT_SCHEDULES: StudySchedule[] = [
-  {
-    id: 'morning_slot',
-    name: 'Morning GS Revision',
-    tag: 'Polity & GS-1',
-    startHour: 6,
-    startMinute: 0,
-    endHour: 8,
-    endMinute: 30,
-    days: [2, 3, 4, 5, 6, 7], // Mon-Sat
-    enabled: true,
-    streakDays: 11,
-    blockedPackages: ['com.google.android.youtube', 'com.instagram.android', 'com.facebook.katana'],
-    muteNotifications: true
-  },
-  {
-    id: 'afternoon_slot',
-    name: 'Afternoon Mock Test',
-    tag: 'CSAT & Mock Practice',
-    startHour: 14,
-    startMinute: 0,
-    endHour: 16,
-    endMinute: 30,
-    days: [2, 4, 6], // Tue, Thu, Sat
-    enabled: true,
-    streakDays: 5,
-    blockedPackages: ['com.google.android.youtube', 'com.instagram.android'],
-    muteNotifications: true
-  },
-  {
-    id: 'night_slot',
-    name: 'Night Current Affairs',
-    tag: 'The Hindu & Editorial',
-    startHour: 20,
-    startMinute: 0,
-    endHour: 22,
-    endMinute: 0,
-    days: [1, 2, 3, 4, 5, 6, 7],
-    enabled: false,
-    streakDays: 3,
-    blockedPackages: ['com.instagram.android', 'com.facebook.katana'],
-    muteNotifications: false
-  }
-];
+const DEFAULT_SCHEDULES: StudySchedule[] = [];
 
 export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophyUnlock }) => {
   // Navigation Tabs: 'FOCUS' | 'PLANNER' | 'BLOCKS' | 'PROFILE'
@@ -210,9 +166,9 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     productiveMinutes: number;
     distractionMinutes: number;
   }>({
-    totalScreenTimeMinutes: 135,
-    productiveMinutes: 90,
-    distractionMinutes: 45
+    totalScreenTimeMinutes: 0,
+    productiveMinutes: 0,
+    distractionMinutes: 0
   });
 
   // Timer & Session
@@ -226,25 +182,18 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   // Installed & Blocked Apps
   const [installedApps, setInstalledApps] = useState<DistractingApp[]>([]);
   const [selectedApps, setSelectedApps] = useState<string[]>([
-    'com.google.android.youtube',
     'com.instagram.android',
-    'com.facebook.katana',
-    'com.snapchat.android'
+    'com.google.android.youtube'
   ]);
 
   // App Daily Limits Quotas (package -> limitMinutes)
-  const [appDailyLimits, setAppDailyLimits] = useState<Record<string, number>>({
-    'com.google.android.youtube': 40,
-    'com.instagram.android': 20
-  });
+  const [appDailyLimits, setAppDailyLimits] = useState<Record<string, number>>({});
 
   // Shorts & Reels Granular Block
-  const [blockShorts, setBlockShorts] = useState<boolean>(true);
-  const [blockReels, setBlockReels] = useState<boolean>(true);
+  const [blockShorts, setBlockShorts] = useState<boolean>(false);
+  const [blockReels, setBlockReels] = useState<boolean>(false);
   const [allowFirstShort, setAllowFirstShort] = useState<boolean>(false);
   const [youtubeStudyMode, setYoutubeStudyMode] = useState<boolean>(false);
-  const [showA11yGuideModal, setShowA11yGuideModal] = useState<boolean>(false);
-  const [a11yFeatureTarget, setA11yFeatureTarget] = useState<string>('Shorts & Reels Shield');
 
   // App Groups (Regain Feature)
   const [appGroups, setAppGroups] = useState<AppGroup[]>(() => {
@@ -343,16 +292,10 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   }, []);
 
   const handleToggleShorts = async () => {
-    let hasA11y = permStatus.hasAccessibility;
-    const perms = await callNativePlugin('checkBlockerPermissions');
-    if (perms) {
-      setPermStatus(perms);
-      hasA11y = perms.hasAccessibility;
-    }
-
-    if (!blockShorts && !hasA11y) {
-      setA11yFeatureTarget('YouTube Shorts Blocker');
-      setShowA11yGuideModal(true);
+    if (!permStatus.hasUsageStats) {
+      await callNativePlugin('openUsageAccessSettings');
+      const p = await callNativePlugin('checkBlockerPermissions');
+      if (p) setPermStatus(p);
       return;
     }
     const nextVal = !blockShorts;
@@ -365,16 +308,10 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   };
 
   const handleToggleReels = async () => {
-    let hasA11y = permStatus.hasAccessibility;
-    const perms = await callNativePlugin('checkBlockerPermissions');
-    if (perms) {
-      setPermStatus(perms);
-      hasA11y = perms.hasAccessibility;
-    }
-
-    if (!blockReels && !hasA11y) {
-      setA11yFeatureTarget('Instagram Reels Blocker');
-      setShowA11yGuideModal(true);
+    if (!permStatus.hasUsageStats) {
+      await callNativePlugin('openUsageAccessSettings');
+      const p = await callNativePlugin('checkBlockerPermissions');
+      if (p) setPermStatus(p);
       return;
     }
     const nextVal = !blockReels;
@@ -387,18 +324,6 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   };
 
   const handleToggleStudyMode = async () => {
-    let hasA11y = permStatus.hasAccessibility;
-    const perms = await callNativePlugin('checkBlockerPermissions');
-    if (perms) {
-      setPermStatus(perms);
-      hasA11y = perms.hasAccessibility;
-    }
-
-    if (!youtubeStudyMode && !hasA11y) {
-      setA11yFeatureTarget('YouTube Educational Video Shield');
-      setShowA11yGuideModal(true);
-      return;
-    }
     const nextVal = !youtubeStudyMode;
     setYoutubeStudyMode(nextVal);
     await callNativePlugin('setGranularBlockRules', {
@@ -585,14 +510,14 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             {/* Streak Flame Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#161B18] border border-[#1E2520]">
               <span className="text-amber-400 font-bold text-xs flex items-center gap-1">
-                🔥 11d
+                🔥 {user?.streakDays || 0}d
               </span>
             </div>
 
             {/* Coins Balance */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#161B18] border border-[#1E2520]">
               <Coins className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-xs font-bold text-white">240</span>
+              <span className="text-xs font-bold text-white">{user?.coins || 0}</span>
             </div>
           </div>
         </div>
@@ -634,6 +559,61 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
            ══════════════════════════════════════════════ */}
         {activeTab === 'FOCUS' && (
           <div className="space-y-4 animate-in fade-in duration-300">
+            {/* 0. 1-Tap Permission Setup Banner */}
+            {!permStatus.hasUsageStats ? (
+              <div className="p-4 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl shrink-0">
+                    🛡️
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Enable Focus Shield (1-Tap Setup)</h4>
+                    <p className="text-[11px] text-amber-200/80">Allow Usage Access to detect & block distracting apps.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    await callNativePlugin('openUsageAccessSettings');
+                    const p = await callNativePlugin('checkBlockerPermissions');
+                    if (p) setPermStatus(p);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md transition-all active:scale-95"
+                >
+                  Allow Access
+                </button>
+              </div>
+            ) : !permStatus.hasOverlay ? (
+              <div className="p-4 rounded-3xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-xl shrink-0">
+                    ⚡
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Enable Fullscreen Blocker (Step 2)</h4>
+                    <p className="text-[11px] text-sky-200/80">Allow "Display over other apps" so the shield covers distractions.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    await callNativePlugin('openOverlaySettings');
+                    const p = await callNativePlugin('checkBlockerPermissions');
+                    if (p) setPermStatus(p);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md transition-all active:scale-95"
+                >
+                  Allow Overlay
+                </button>
+              </div>
+            ) : (
+              <div className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Protection Engine Ready • Zero Setup Needed</span>
+                </div>
+                <span className="text-[11px] text-emerald-300/80 font-mono">100% Protected</span>
+              </div>
+            )}
+
             {/* 1. Large Focus Goal Ring */}
             <div className="p-6 rounded-3xl bg-[#161B18] border border-[#1E2520] relative overflow-hidden flex flex-col items-center justify-center text-center">
               <div className="relative w-44 h-44 flex items-center justify-center my-2">
@@ -783,6 +763,28 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                     </button>
                   ))}
                 </div>
+
+                {/* Primary Start Shield Button */}
+                <div className="pt-2 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between text-xs px-1">
+                    <span className="text-slate-400">Guarding:</span>
+                    <button
+                      onClick={() => setShowAppPickerModal(true)}
+                      className="text-emerald-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>{selectedApps.length} Apps Selected</span>
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleStartSession}
+                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm tracking-wide uppercase flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/25 transition-all cursor-pointer active:scale-98"
+                  >
+                    <Shield className="w-5 h-5 fill-current" />
+                    <span>START FOCUS SHIELD ({selectedDuration} MIN)</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -837,31 +839,52 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
             {/* Schedules Timeline List */}
             <div className="space-y-3">
-              {schedules.map(schedule => (
-                <div
-                  key={schedule.id}
-                  className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between gap-3 transition-all hover:border-slate-700"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-[#121614] border border-[#1E2520] flex items-center justify-center text-2xl">
-                      {schedule.name.toLowerCase().includes('morning') ? '🌅' : schedule.name.toLowerCase().includes('night') ? '🌙' : '☀️'}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-bold text-white">{schedule.name}</h4>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                          🔥 {schedule.streakDays}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
-                        <span className="font-mono text-emerald-400">
-                          {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')} - {String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
-                        </span>
-                        <span>•</span>
-                        <span className="text-slate-300">{schedule.tag}</span>
-                      </div>
-                    </div>
+              {schedules.length === 0 ? (
+                <div className="p-8 rounded-3xl bg-[#161B18] border border-dashed border-[#1E2520] text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl mx-auto">
+                    📅
                   </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">No Automated Schedules</h4>
+                    <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                      Schedule daily study slots (e.g. 6:00 AM - 8:00 AM) to automatically block distractions during study hours.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowAddScheduleModal(true)}
+                    className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    + Add Study Schedule
+                  </button>
+                </div>
+              ) : (
+                schedules.map(schedule => (
+                  <div
+                    key={schedule.id}
+                    className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between gap-3 transition-all hover:border-slate-700"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#121614] border border-[#1E2520] flex items-center justify-center text-2xl">
+                        {schedule.name.toLowerCase().includes('morning') ? '🌅' : schedule.name.toLowerCase().includes('night') ? '🌙' : '☀️'}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white">{schedule.name}</h4>
+                          {schedule.streakDays > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                              🔥 {schedule.streakDays}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                          <span className="font-mono text-emerald-400">
+                            {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')} - {String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
+                          </span>
+                          <span>•</span>
+                          <span className="text-slate-300">{schedule.tag}</span>
+                        </div>
+                      </div>
+                    </div>
 
                   <div className="flex items-center gap-2">
                     {/* Toggle Switch */}
@@ -885,7 +908,8 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                     </button>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
         )}
@@ -1122,15 +1146,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white">Block Shorts & Reels</h3>
-                <button
-                  onClick={() => {
-                    setA11yFeatureTarget('Shorts & Reels Blocker');
-                    setShowA11yGuideModal(true);
-                  }}
-                  className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span>🎬 Video Guide</span>
-                </button>
+                <span className="text-[11px] text-emerald-400 font-semibold">1-Tap Control</span>
               </div>
               <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3">
                 <div className="flex items-center justify-between">
@@ -1185,15 +1201,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white">YouTube Study Mode</h3>
-                <button
-                  onClick={() => {
-                    setA11yFeatureTarget('Educational Shield');
-                    setShowA11yGuideModal(true);
-                  }}
-                  className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <span>🎬 Video Guide</span>
-                </button>
+                <span className="text-[11px] text-emerald-400 font-semibold">Lecture Mode</span>
               </div>
               <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1484,25 +1492,6 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         onSave={cfg => {
           setAvatarConfig(cfg);
           localStorage.setItem('studyride_user_avatar', JSON.stringify(cfg));
-        }}
-      />
-
-      {/* 5. Accessibility Instruction Guide Modal (Regain Style) */}
-      <AccessibilityGuideModal
-        isOpen={showA11yGuideModal}
-        onClose={() => setShowA11yGuideModal(false)}
-        featureName={a11yFeatureTarget}
-        onPermissionGranted={async () => {
-          const perms = await callNativePlugin('checkBlockerPermissions');
-          if (perms) setPermStatus(perms);
-          if (a11yFeatureTarget.includes('Shorts')) setBlockShorts(true);
-          if (a11yFeatureTarget.includes('Reels')) setBlockReels(true);
-          if (a11yFeatureTarget.includes('Educational')) setYoutubeStudyMode(true);
-          await callNativePlugin('setGranularBlockRules', {
-            blockShorts: true,
-            blockReels: true,
-            youtubeStudyMode: true
-          });
         }}
       />
 

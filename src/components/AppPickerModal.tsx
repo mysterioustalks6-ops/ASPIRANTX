@@ -26,29 +26,29 @@ interface AppPickerModalProps {
 
 // Popular default apps fallback if device query is empty
 export const FALLBACK_DEVICE_APPS: DistractingApp[] = [
-  { id: 'com.google.android.youtube', name: 'YouTube', package: 'com.google.android.youtube', icon: '▶️', category: 'Entertainment', usageMinutes: 38 },
-  { id: 'com.instagram.android', name: 'Instagram', package: 'com.instagram.android', icon: '📸', category: 'Social', usageMinutes: 24 },
-  { id: 'com.facebook.katana', name: 'Facebook', package: 'com.facebook.katana', icon: '👥', category: 'Social', usageMinutes: 15 },
-  { id: 'com.snapchat.android', name: 'Snapchat', package: 'com.snapchat.android', icon: '👻', category: 'Social', usageMinutes: 12 },
-  { id: 'com.twitter.android', name: 'X / Twitter', package: 'com.twitter.android', icon: '🐦', category: 'Social', usageMinutes: 18 },
-  { id: 'com.reddit.frontpage', name: 'Reddit', package: 'com.reddit.frontpage', icon: '🤖', category: 'Social', usageMinutes: 20 },
+  { id: 'com.instagram.android', name: 'Instagram (Reels)', package: 'com.instagram.android', icon: '📸', category: 'Social', usageMinutes: 0 },
+  { id: 'com.google.android.youtube', name: 'YouTube (Shorts)', package: 'com.google.android.youtube', icon: '▶️', category: 'Entertainment', usageMinutes: 0 },
+  { id: 'com.facebook.katana', name: 'Facebook', package: 'com.facebook.katana', icon: '👥', category: 'Social', usageMinutes: 0 },
+  { id: 'com.snapchat.android', name: 'Snapchat', package: 'com.snapchat.android', icon: '👻', category: 'Social', usageMinutes: 0 },
+  { id: 'com.whatsapp', name: 'WhatsApp', package: 'com.whatsapp', icon: '💬', category: 'Social', usageMinutes: 0 },
+  { id: 'org.telegram.messenger', name: 'Telegram', package: 'org.telegram.messenger', icon: '✈️', category: 'Social', usageMinutes: 0 },
+  { id: 'com.twitter.android', name: 'X / Twitter', package: 'com.twitter.android', icon: '🐦', category: 'Social', usageMinutes: 0 },
+  { id: 'com.reddit.frontpage', name: 'Reddit', package: 'com.reddit.frontpage', icon: '🤖', category: 'Social', usageMinutes: 0 },
   { id: 'com.netflix.mediaclient', name: 'Netflix', package: 'com.netflix.mediaclient', icon: '🎬', category: 'Entertainment', usageMinutes: 0 },
   { id: 'in.startv.hotstar', name: 'Disney+ Hotstar', package: 'in.startv.hotstar', icon: '⭐', category: 'Entertainment', usageMinutes: 0 },
   { id: 'com.amazon.avod.thirdpartyclient', name: 'Prime Video', package: 'com.amazon.avod.thirdpartyclient', icon: '🍿', category: 'Entertainment', usageMinutes: 0 },
-  { id: 'com.spotify.music', name: 'Spotify', package: 'com.spotify.music', icon: '🎵', category: 'Entertainment', usageMinutes: 45 },
+  { id: 'com.spotify.music', name: 'Spotify', package: 'com.spotify.music', icon: '🎵', category: 'Entertainment', usageMinutes: 0 },
   { id: 'com.pubg.imobile', name: 'BGMI / PUBG', package: 'com.pubg.imobile', icon: '🎮', category: 'Gaming', usageMinutes: 0 },
   { id: 'com.dts.freefireth', name: 'Free Fire MAX', package: 'com.dts.freefireth', icon: '🔥', category: 'Gaming', usageMinutes: 0 },
-  { id: 'com.king.candycrushsaga', name: 'Candy Crush', package: 'com.king.candycrushsaga', icon: '🍬', category: 'Gaming', usageMinutes: 5 },
+  { id: 'com.king.candycrushsaga', name: 'Candy Crush', package: 'com.king.candycrushsaga', icon: '🍬', category: 'Gaming', usageMinutes: 0 },
   { id: 'com.roblox.client', name: 'Roblox', package: 'com.roblox.client', icon: '🧱', category: 'Gaming', usageMinutes: 0 },
   { id: 'com.ludo.king', name: 'Ludo King', package: 'com.ludo.king', icon: '🎲', category: 'Gaming', usageMinutes: 0 },
-  { id: 'com.flipkart.android', name: 'Flipkart', package: 'com.flipkart.android', icon: '🛍️', category: 'Shopping', usageMinutes: 8 },
-  { id: 'com.amazon.mShop.android.shopping', name: 'Amazon Shopping', package: 'com.amazon.mShop.android.shopping', icon: '📦', category: 'Shopping', usageMinutes: 14 },
+  { id: 'com.flipkart.android', name: 'Flipkart', package: 'com.flipkart.android', icon: '🛍️', category: 'Shopping', usageMinutes: 0 },
+  { id: 'com.amazon.mShop.android.shopping', name: 'Amazon Shopping', package: 'com.amazon.mShop.android.shopping', icon: '📦', category: 'Shopping', usageMinutes: 0 },
   { id: 'com.myntra.android', name: 'Myntra', package: 'com.myntra.android', icon: '👗', category: 'Shopping', usageMinutes: 0 },
-  { id: 'in.swiggy.android', name: 'Swiggy', package: 'in.swiggy.android', icon: '🍔', category: 'Shopping', usageMinutes: 6 },
-  { id: 'com.application.zomato', name: 'Zomato', package: 'com.application.zomato', icon: '🍕', category: 'Shopping', usageMinutes: 4 },
-  { id: 'com.android.chrome', name: 'Chrome Browser', package: 'com.android.chrome', icon: '🌐', category: 'Other', usageMinutes: 32 },
-  { id: 'com.whatsapp', name: 'WhatsApp', package: 'com.whatsapp', icon: '💬', category: 'Social', usageMinutes: 50 },
-  { id: 'org.telegram.messenger', name: 'Telegram', package: 'org.telegram.messenger', icon: '✈️', category: 'Social', usageMinutes: 22 }
+  { id: 'in.swiggy.android', name: 'Swiggy', package: 'in.swiggy.android', icon: '🍔', category: 'Shopping', usageMinutes: 0 },
+  { id: 'com.application.zomato', name: 'Zomato', package: 'com.application.zomato', icon: '🍕', category: 'Shopping', usageMinutes: 0 },
+  { id: 'com.android.chrome', name: 'Chrome Browser', package: 'com.android.chrome', icon: '🌐', category: 'Other', usageMinutes: 0 }
 ];
 
 export const AppPickerModal: React.FC<AppPickerModalProps> = ({

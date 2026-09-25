@@ -344,42 +344,79 @@ public class FocusShieldPlugin extends Plugin {
         try {
             Context context = getContext();
             PackageManager pm = context.getPackageManager();
-            Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-            mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-
-            List<ResolveInfo> resolvedList = pm.queryIntentActivities(mainIntent, 0);
             JSArray appsArray = new JSArray();
             Set<String> seenPackages = new HashSet<>();
             String myPackage = context.getPackageName();
 
-            for (ResolveInfo ri : resolvedList) {
-                if (ri.activityInfo == null || ri.activityInfo.packageName == null) continue;
-                String pkg = ri.activityInfo.packageName;
+            Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+            mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
 
-                if (pkg.equals(myPackage) || seenPackages.contains(pkg)) continue;
-                seenPackages.add(pkg);
+            List<ResolveInfo> resolvedList = pm.queryIntentActivities(mainIntent, 0);
+            if (resolvedList != null) {
+                for (ResolveInfo ri : resolvedList) {
+                    if (ri.activityInfo == null || ri.activityInfo.packageName == null) continue;
+                    String pkg = ri.activityInfo.packageName;
 
-                if (pkg.equals("android") || pkg.equals("com.android.systemui") || pkg.equals("com.android.settings")) continue;
+                    if (pkg.equals(myPackage) || seenPackages.contains(pkg)) continue;
+                    seenPackages.add(pkg);
 
-                String label = "";
-                try {
-                    CharSequence cs = ri.loadLabel(pm);
-                    if (cs != null) label = cs.toString().trim();
-                } catch (Exception ignored) {}
-                if (label.isEmpty()) label = pkg;
+                    if (pkg.equals("android") || pkg.equals("com.android.systemui") || pkg.equals("com.android.settings")) continue;
 
-                String category = categorizeApp(pkg, label);
-                boolean isDistraction = isDistractionApp(pkg, label, category);
+                    String label = "";
+                    try {
+                        CharSequence cs = ri.loadLabel(pm);
+                        if (cs != null) label = cs.toString().trim();
+                    } catch (Exception ignored) {}
+                    if (label.isEmpty()) label = pkg;
 
-                JSObject appObj = new JSObject();
-                appObj.put("id", pkg);
-                appObj.put("name", label);
-                appObj.put("package", pkg);
-                appObj.put("category", category);
-                appObj.put("isDistraction", isDistraction);
-                appObj.put("icon", getAppEmoji(category, pkg));
-                appsArray.put(appObj);
+                    String category = categorizeApp(pkg, label);
+                    boolean isDistraction = isDistractionApp(pkg, label, category);
+
+                    JSObject appObj = new JSObject();
+                    appObj.put("id", pkg);
+                    appObj.put("name", label);
+                    appObj.put("package", pkg);
+                    appObj.put("category", category);
+                    appObj.put("isDistraction", isDistraction);
+                    appObj.put("icon", getAppEmoji(category, pkg));
+                    appsArray.put(appObj);
+                }
             }
+
+            // Fallback for Android 11+ OEM devices: also check getInstalledApplications
+            try {
+                List<android.content.pm.ApplicationInfo> appList = pm.getInstalledApplications(0);
+                if (appList != null) {
+                    for (android.content.pm.ApplicationInfo ai : appList) {
+                        String pkg = ai.packageName;
+                        if (pkg == null || pkg.equals(myPackage) || seenPackages.contains(pkg)) continue;
+                        
+                        boolean isSystem = (ai.flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0;
+                        Intent launchIntent = pm.getLaunchIntentForPackage(pkg);
+                        if (launchIntent != null || !isSystem) {
+                            seenPackages.add(pkg);
+                            String label = "";
+                            try {
+                                CharSequence cs = ai.loadLabel(pm);
+                                if (cs != null) label = cs.toString().trim();
+                            } catch (Exception ignored) {}
+                            if (label.isEmpty()) label = pkg;
+
+                            String category = categorizeApp(pkg, label);
+                            boolean isDistraction = isDistractionApp(pkg, label, category);
+
+                            JSObject appObj = new JSObject();
+                            appObj.put("id", pkg);
+                            appObj.put("name", label);
+                            appObj.put("package", pkg);
+                            appObj.put("category", category);
+                            appObj.put("isDistraction", isDistraction);
+                            appObj.put("icon", getAppEmoji(category, pkg));
+                            appsArray.put(appObj);
+                        }
+                    }
+                }
+            } catch (Exception ignored) {}
 
             JSObject res = new JSObject();
             res.put("apps", appsArray);
