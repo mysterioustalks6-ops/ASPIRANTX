@@ -43,6 +43,9 @@ public class BlockOverlayActivity extends Activity {
 
         String blockedPackage = getIntent().getStringExtra("blocked_package");
         if (blockedPackage == null) blockedPackage = "Distracting App";
+        String reason = getIntent().getStringExtra("block_reason");
+        int limitMins = getIntent().getIntExtra("limit_mins", 0);
+        int usedMins = getIntent().getIntExtra("used_mins", 0);
 
         String appLabel = getFriendlyName(blockedPackage);
         if (tvAppName != null) {
@@ -58,15 +61,58 @@ public class BlockOverlayActivity extends Activity {
             });
         }
 
-        timerHandler = new Handler(Looper.getMainLooper());
-        timerRunnable = new Runnable() {
-            @Override
-            public void run() {
-                updateTimer();
-                timerHandler.postDelayed(this, 1000);
+        String groupName = getIntent().getStringExtra("group_name");
+        if (groupName == null || groupName.isEmpty()) groupName = "App Group";
+
+        if ("GROUP_BLOCKED".equals(reason)) {
+            if (tvAppName != null) {
+                tvAppName.setText(groupName + " is Locked");
             }
-        };
-        timerHandler.post(timerRunnable);
+            if (tvTimer != null) {
+                tvTimer.setText("Locked");
+                tvTimer.setTextSize(32f);
+            }
+            if (tvQuote != null) {
+                tvQuote.setText("“" + appLabel + " is restricted under " + groupName + ". Time to refocus on your study goals!”");
+            }
+        } else if ("GROUP_LIMIT_EXCEEDED".equals(reason)) {
+            if (tvAppName != null) {
+                tvAppName.setText(groupName + " Limit Reached");
+            }
+            if (tvTimer != null) {
+                tvTimer.setText(usedMins + "m / " + limitMins + "m Limit");
+                tvTimer.setTextSize(28f);
+            }
+            if (tvQuote != null) {
+                tvQuote.setText("“Daily combined quota for " + groupName + " has expired. Let's make every remaining minute count towards your rank.”");
+            }
+        } else if ("DAILY_LIMIT_EXCEEDED".equals(reason)) {
+            if (tvTimer != null) {
+                tvTimer.setText(usedMins + "m / " + limitMins + "m Limit");
+                tvTimer.setTextSize(28f);
+            }
+            if (tvQuote != null) {
+                tvQuote.setText("“Aaj ka distract hone ka samay samapt! Ab selection par focus karein.”");
+            }
+        } else if ("SCHEDULE_ACTIVE".equals(reason)) {
+            if (tvTimer != null) {
+                tvTimer.setText("Study Slot");
+                tvTimer.setTextSize(32f);
+            }
+            if (tvQuote != null) {
+                tvQuote.setText("“Scheduled study time is running. Discipline is the bridge between goals and achievement.”");
+            }
+        } else {
+            timerHandler = new Handler(Looper.getMainLooper());
+            timerRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    updateTimer();
+                    timerHandler.postDelayed(this, 1000);
+                }
+            };
+            timerHandler.post(timerRunnable);
+        }
     }
 
     private void updateTimer() {

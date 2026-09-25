@@ -6,4 +6,6 @@
     <string name="custom_url_scheme">com.aspirantx.app</string>
     <string name="wallpaper_name">StudyRide Exam Progress Wallpaper</string>
     <string name="wallpaper_description">Dynamic habit countdown and exam preparation tracker powered by StudyRide.</string>
+    <string name="accessibility_service_name">StudyRide Focus Shield</string>
+    <string name="accessibility_service_description">Focus Shield uses this service exclusively to detect and block YouTube Shorts and Instagram Reels so UPSC aspirants can watch lectures without doomscrolling.</string>
 </resources>

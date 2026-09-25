@@ -20,16 +20,33 @@ import {
   ExternalLink,
   Search,
   CheckCheck,
-  X
+  X,
+  Calendar,
+  Layers,
+  User,
+  Plus,
+  Coins,
+  ChevronRight,
+  TrendingUp,
+  Volume2,
+  VolumeX,
+  Trash2,
+  Edit2,
+  Timer,
+  Zap,
+  Target
 } from 'lucide-react';
 import { UserProfile, TrophyItem } from '../types';
-import { PressFeedback, SlideUp, triggerConfetti } from '../lib/animations';
+import { PressFeedback, triggerConfetti } from '../lib/animations';
 import { getApiUrl } from '../lib/apiConfig';
+import { AvatarStudioModal, AvatarConfig, DEFAULT_AVATAR_CONFIG } from './AvatarStudioModal';
+import { AspirantAvatar } from './AspirantAvatar';
+import { AccessibilityGuideModal } from './AccessibilityGuideModal';
+import { AppPickerModal, DistractingApp, FALLBACK_DEVICE_APPS } from './AppPickerModal';
+import { AppGroupModal, AppGroup } from './AppGroupModal';
 
-// Direct Capacitor bridge for FocusShield
 declare const Capacitor: any;
 
-// Helper to call native FocusShield plugin
 const callNativePlugin = async (method: string, data: any = {}) => {
   if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
     try {
@@ -49,339 +66,480 @@ interface FocusShieldViewProps {
   onTrophyUnlock?: (unlocked: any) => void;
 }
 
-interface DistractingApp {
+export interface StudySchedule {
   id: string;
   name: string;
-  package: string;
-  icon: string;
-  category?: string;
-  isDistraction?: boolean;
-  defaultBlocked?: boolean;
+  tag: string;
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+  days: number[]; // 1 = Sun, 2 = Mon ... 7 = Sat
+  enabled: boolean;
+  streakDays: number;
+  blockedPackages: string[];
+  muteNotifications: boolean;
 }
 
-const DEFAULT_DISTRACTING_APPS: DistractingApp[] = [
-  { id: 'instagram', name: 'Instagram', package: 'com.instagram.android', icon: '📸', category: 'Social', isDistraction: true, defaultBlocked: true },
-  { id: 'youtube', name: 'YouTube', package: 'com.google.android.youtube', icon: '▶️', category: 'Entertainment', isDistraction: true, defaultBlocked: true },
-  { id: 'facebook', name: 'Facebook', package: 'com.facebook.katana', icon: '👥', category: 'Social', isDistraction: true, defaultBlocked: true },
-  { id: 'snapchat', name: 'Snapchat', package: 'com.snapchat.android', icon: '👻', category: 'Social', isDistraction: true, defaultBlocked: true },
-  { id: 'hotstar', name: 'Disney+ Hotstar', package: 'in.startv.hotstar', icon: '⭐', category: 'Entertainment', isDistraction: true, defaultBlocked: true },
-  { id: 'sharechat', name: 'ShareChat', package: 'in.mohalla.sharechat', icon: '💬', category: 'Social', isDistraction: true, defaultBlocked: true },
-  { id: 'moj', name: 'Moj Video', package: 'in.mohalla.video', icon: '🎬', category: 'Entertainment', isDistraction: true, defaultBlocked: true },
-  { id: 'spotify', name: 'Spotify Music', package: 'com.spotify.music', icon: '🎵', category: 'Entertainment', isDistraction: true, defaultBlocked: false },
-  { id: 'reddit', name: 'Reddit', package: 'com.reddit.frontpage', icon: '🤖', category: 'Social', isDistraction: true, defaultBlocked: true },
-  { id: 'twitter', name: 'X / Twitter', package: 'com.twitter.android', icon: '🐦', category: 'Social', isDistraction: true, defaultBlocked: true },
-  { id: 'flipkart', name: 'Flipkart', package: 'com.flipkart.android', icon: '🛍️', category: 'Shopping', isDistraction: true, defaultBlocked: false },
-  { id: 'amazon', name: 'Amazon Shopping', package: 'in.amazon.mShop.android.shopping', icon: '📦', category: 'Shopping', isDistraction: true, defaultBlocked: false },
-  { id: 'myntra', name: 'Myntra', package: 'com.myntra.android', icon: '👗', category: 'Shopping', isDistraction: true, defaultBlocked: false },
-  { id: 'swiggy', name: 'Swiggy Food & Dineout', package: 'in.swiggy.android', icon: '🍔', category: 'Shopping', isDistraction: true, defaultBlocked: false },
-  { id: 'games', name: 'Google Play Games', package: 'com.google.android.play.games', icon: '🎮', category: 'Gaming', isDistraction: true, defaultBlocked: true }
+export const DEFAULT_APP_GROUPS: AppGroup[] = [
+  {
+    id: 'group_social',
+    name: 'Social Media',
+    icon: '📱',
+    color: '#EC4899',
+    packages: [
+      'com.instagram.android',
+      'com.facebook.katana',
+      'com.snapchat.android',
+      'com.twitter.android',
+      'com.reddit.frontpage',
+      'com.whatsapp',
+      'org.telegram.messenger'
+    ],
+    dailyLimitMinutes: 30,
+    blockMode: 'LIMIT',
+    enabled: true,
+    isCustom: false
+  },
+  {
+    id: 'group_entertainment',
+    name: 'Entertainment & Videos',
+    icon: '🎬',
+    color: '#8B5CF6',
+    packages: [
+      'com.google.android.youtube',
+      'com.netflix.mediaclient',
+      'in.startv.hotstar',
+      'com.amazon.avod.thirdpartyclient',
+      'com.spotify.music'
+    ],
+    dailyLimitMinutes: 45,
+    blockMode: 'LIMIT',
+    enabled: true,
+    isCustom: false
+  },
+  {
+    id: 'group_gaming',
+    name: 'Gaming & Esports',
+    icon: '🎮',
+    color: '#EF4444',
+    packages: [
+      'com.pubg.imobile',
+      'com.dts.freefireth',
+      'com.king.candycrushsaga',
+      'com.roblox.client',
+      'com.ludo.king'
+    ],
+    dailyLimitMinutes: 20,
+    blockMode: 'LIMIT',
+    enabled: true,
+    isCustom: false
+  },
+  {
+    id: 'group_shopping',
+    name: 'Shopping & Delivery',
+    icon: '🛍️',
+    color: '#F59E0B',
+    packages: [
+      'com.flipkart.android',
+      'com.amazon.mShop.android.shopping',
+      'com.myntra.android',
+      'in.swiggy.android',
+      'com.application.zomato'
+    ],
+    dailyLimitMinutes: 20,
+    blockMode: 'LIMIT',
+    enabled: true,
+    isCustom: false
+  }
+];
+
+const DEFAULT_SCHEDULES: StudySchedule[] = [
+  {
+    id: 'morning_slot',
+    name: 'Morning GS Revision',
+    tag: 'Polity & GS-1',
+    startHour: 6,
+    startMinute: 0,
+    endHour: 8,
+    endMinute: 30,
+    days: [2, 3, 4, 5, 6, 7], // Mon-Sat
+    enabled: true,
+    streakDays: 11,
+    blockedPackages: ['com.google.android.youtube', 'com.instagram.android', 'com.facebook.katana'],
+    muteNotifications: true
+  },
+  {
+    id: 'afternoon_slot',
+    name: 'Afternoon Mock Test',
+    tag: 'CSAT & Mock Practice',
+    startHour: 14,
+    startMinute: 0,
+    endHour: 16,
+    endMinute: 30,
+    days: [2, 4, 6], // Tue, Thu, Sat
+    enabled: true,
+    streakDays: 5,
+    blockedPackages: ['com.google.android.youtube', 'com.instagram.android'],
+    muteNotifications: true
+  },
+  {
+    id: 'night_slot',
+    name: 'Night Current Affairs',
+    tag: 'The Hindu & Editorial',
+    startHour: 20,
+    startMinute: 0,
+    endHour: 22,
+    endMinute: 0,
+    days: [1, 2, 3, 4, 5, 6, 7],
+    enabled: false,
+    streakDays: 3,
+    blockedPackages: ['com.instagram.android', 'com.facebook.katana'],
+    muteNotifications: false
+  }
 ];
 
 export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophyUnlock }) => {
+  // Navigation Tabs: 'FOCUS' | 'PLANNER' | 'BLOCKS' | 'PROFILE'
+  const [activeTab, setActiveTab] = useState<'FOCUS' | 'PLANNER' | 'BLOCKS' | 'PROFILE'>('FOCUS');
+
+  // Focus Goal & Screen Time
+  const [dailyGoalMinutes, setDailyGoalMinutes] = useState<number>(180); // 3 Hours
+  const [screenTimeData, setScreenTimeData] = useState<{
+    totalScreenTimeMinutes: number;
+    productiveMinutes: number;
+    distractionMinutes: number;
+  }>({
+    totalScreenTimeMinutes: 135,
+    productiveMinutes: 90,
+    distractionMinutes: 45
+  });
+
+  // Timer & Session
   const [selectedDuration, setSelectedDuration] = useState<number>(25);
   const [customDuration, setCustomDuration] = useState<string>('45');
-  const [installedApps, setInstalledApps] = useState<DistractingApp[]>(DEFAULT_DISTRACTING_APPS);
-  const [loadingApps, setLoadingApps] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('DISTRACTIONS');
+  const [sessionState, setSessionState] = useState<'IDLE' | 'STARTING' | 'ACTIVE' | 'PAUSED' | 'COMPLETED'>('IDLE');
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(25 * 60);
+  const [totalRequestedSeconds, setTotalRequestedSeconds] = useState<number>(25 * 60);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+  // Installed & Blocked Apps
+  const [installedApps, setInstalledApps] = useState<DistractingApp[]>([]);
   const [selectedApps, setSelectedApps] = useState<string[]>([
     'com.google.android.youtube',
     'com.instagram.android',
     'com.facebook.katana',
-    'com.snapchat.android',
-    'in.startv.hotstar',
-    'in.mohalla.sharechat',
-    'in.mohalla.video',
-    'com.reddit.frontpage'
+    'com.snapchat.android'
   ]);
 
-  // Session state
-  const [sessionState, setSessionState] = useState<'IDLE' | 'STARTING' | 'ACTIVE' | 'PAUSED' | 'COMPLETED'>('IDLE');
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(25 * 60);
-  const [totalRequestedSeconds, setTotalRequestedSeconds] = useState<number>(25 * 60);
-  const [isVpnActive, setIsVpnActive] = useState<boolean>(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isAccessibilityActive, setIsAccessibilityActive] = useState<boolean>(false);
-  const [permStatus, setPermStatus] = useState<{ hasUsageStats?: boolean; hasOverlay?: boolean; canBlock?: boolean }>({});
+  // App Daily Limits Quotas (package -> limitMinutes)
+  const [appDailyLimits, setAppDailyLimits] = useState<Record<string, number>>({
+    'com.google.android.youtube': 40,
+    'com.instagram.android': 20
+  });
+
+  // Shorts & Reels Granular Block
+  const [blockShorts, setBlockShorts] = useState<boolean>(true);
+  const [blockReels, setBlockReels] = useState<boolean>(true);
+  const [allowFirstShort, setAllowFirstShort] = useState<boolean>(false);
+  const [youtubeStudyMode, setYoutubeStudyMode] = useState<boolean>(false);
+  const [showA11yGuideModal, setShowA11yGuideModal] = useState<boolean>(false);
+  const [a11yFeatureTarget, setA11yFeatureTarget] = useState<string>('Shorts & Reels Shield');
+
+  // App Groups (Regain Feature)
+  const [appGroups, setAppGroups] = useState<AppGroup[]>(() => {
+    try {
+      const saved = localStorage.getItem('studyride_app_groups');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return DEFAULT_APP_GROUPS;
+  });
+  const [showAppPickerModal, setShowAppPickerModal] = useState<boolean>(false);
+  const [showGroupModal, setShowGroupModal] = useState<boolean>(false);
+  const [editingGroup, setEditingGroup] = useState<AppGroup | null>(null);
+
+  // Schedules
+  const [schedules, setSchedules] = useState<StudySchedule[]>(DEFAULT_SCHEDULES);
+  const [showAddScheduleModal, setShowAddScheduleModal] = useState<boolean>(false);
+  const [newScheduleName, setNewScheduleName] = useState<string>('');
+  const [newScheduleTag, setNewScheduleTag] = useState<string>('GS Revision');
+  const [newScheduleStart, setNewScheduleStart] = useState<string>('06:00');
+  const [newScheduleEnd, setNewScheduleEnd] = useState<string>('08:00');
+  const [newScheduleDays, setNewScheduleDays] = useState<number[]>([2, 3, 4, 5, 6, 7]);
+
+  // App Limit Dialog
+  const [showAddLimitModal, setShowAddLimitModal] = useState<boolean>(false);
+  const [limitAppPkg, setLimitAppPkg] = useState<string>('com.google.android.youtube');
+  const [limitMinutesVal, setLimitMinutesVal] = useState<number>(30);
+
+  // Avatar Studio
+  const [showAvatarStudio, setShowAvatarStudio] = useState<boolean>(false);
+  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(DEFAULT_AVATAR_CONFIG);
+
+  // Permissions & Telemetry
+  const [permStatus, setPermStatus] = useState<{ hasUsageStats?: boolean; hasOverlay?: boolean; hasAccessibility?: boolean; canBlock?: boolean }>({});
   const [showStrictFrictionModal, setShowStrictFrictionModal] = useState<boolean>(false);
-  const [frictionAction, setFrictionAction] = useState<'GIVE_UP' | 'PAUSE' | 'FINISH_EARLY'>('GIVE_UP');
   const [frictionCountdown, setFrictionCountdown] = useState<number>(15);
   const [frictionInput, setFrictionInput] = useState<string>('');
   const frictionTimerRef = useRef<NodeJS.Timeout | null>(null);
   const STRICT_PLEDGE = "I AM GIVING UP MY STUDY GOAL";
 
-  // In-App Guardian & Android 13+ Guide State
-  const [distractionStrikes, setDistractionStrikes] = useState<number>(0);
-  const [showDistractionStrikeModal, setShowDistractionStrikeModal] = useState<boolean>(false);
-  const [lastAwayDurationSec, setLastAwayDurationSec] = useState<number>(0);
-  const [showRestrictedSettingsGuide, setShowRestrictedSettingsGuide] = useState<boolean>(false);
-  const awayTimestampRef = useRef<number | null>(null);
-
-  // Stats
-  const [stats, setStats] = useState<{
-    todayMinutes: number;
-    weekMinutes: number;
-    totalSessions: number;
-  }>({
-    todayMinutes: 0,
-    weekMinutes: 0,
-    totalSessions: 0
-  });
-
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
 
-  const getHeaders = () => {
-    const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('supabase.auth.token');
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    if (user?.id) headers['x-user-id'] = user.id;
-    if (user?.email) headers['x-user-email'] = user.email;
-    return headers;
-  };
-
-  // Fetch telemetry
-  const fetchStats = async () => {
-    if (!user) return;
-    try {
-      const res = await fetch(getApiUrl('/api/focus/stats'), { headers: getHeaders() });
-      const data = await res.json();
-      if (data.success && data.stats) {
-        setStats({
-          todayMinutes: data.stats.todayMinutes,
-          weekMinutes: data.stats.weekMinutes,
-          totalSessions: data.stats.totalSessions
-        });
-      }
-    } catch (e) {}
-  };
-
+  // Load initial data and restore local states
   useEffect(() => {
-    fetchStats();
+    // 1. Restore Avatar
+    try {
+      const savedAvatar = localStorage.getItem('studyride_user_avatar');
+      if (savedAvatar) setAvatarConfig(JSON.parse(savedAvatar));
+    } catch (e) {}
 
-    // Load all launchable apps from device
-    const loadInstalledApps = async () => {
-      setLoadingApps(true);
-      try {
-        const res = await callNativePlugin('getInstalledApps');
-        if (res && Array.isArray(res.apps) && res.apps.length > 0) {
-          setInstalledApps(res.apps);
+    // 2. Restore Schedules
+    try {
+      const savedSched = localStorage.getItem('studyride_study_schedules');
+      if (savedSched) setSchedules(JSON.parse(savedSched));
+    } catch (e) {}
 
-          // Restore saved selection or default to all auto-detected distraction apps
-          const savedSelection = localStorage.getItem('protrack_focus_shield_selected_apps');
-          if (savedSelection) {
-            try {
-              const parsed = JSON.parse(savedSelection);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                setSelectedApps(parsed);
-                return;
-              }
-            } catch (e) {}
-          }
+    // 3. Restore Limits
+    try {
+      const savedLimits = localStorage.getItem('studyride_app_limits');
+      if (savedLimits) setAppDailyLimits(JSON.parse(savedLimits));
+    } catch (e) {}
 
-          // Default: select all apps identified as distractions
-          const distractionPkgs = res.apps
-            .filter((a: any) => a.isDistraction)
-            .map((a: any) => a.package);
-          if (distractionPkgs.length > 0) {
-            setSelectedApps(distractionPkgs);
-          }
-        }
-      } catch (err) {
-        console.warn('[FocusShield] Failed to query installed apps:', err);
-      } finally {
-        setLoadingApps(false);
-      }
-    };
-
-    loadInstalledApps();
-
-    // Check if there is an active session in localStorage or native plugin
-    const checkActiveSession = async () => {
-      const saved = localStorage.getItem('protrack_active_focus_session');
-      const nativeStatus = await callNativePlugin('getShieldStatus');
-      
-      if (saved) {
-        try {
-          const sess = JSON.parse(saved);
-          const elapsed = Math.floor((Date.now() - sess.startTimestamp) / 1000);
-          const remaining = Math.max(0, sess.totalSeconds - elapsed);
-          
-          if (remaining > 0) {
-            setActiveSessionId(sess.sessionId);
-            setTotalRequestedSeconds(sess.totalSeconds);
-            setRemainingSeconds(remaining);
-            if (sess.selectedApps) setSelectedApps(sess.selectedApps);
-            setSessionState('ACTIVE');
-            setIsVpnActive(nativeStatus?.isActive ?? true);
-          } else {
-            // Session expired while away
-            localStorage.removeItem('protrack_active_focus_session');
-            if (nativeStatus?.isActive) {
-              await callNativePlugin('stopShield');
-            }
-          }
-        } catch (e) {
-          localStorage.removeItem('protrack_active_focus_session');
-        }
-      } else if (nativeStatus?.isActive) {
-        // Native shield active but no local session saved, restore generic session
-        setIsVpnActive(true);
-        setSessionState('ACTIVE');
-        setActiveSessionId(`foc_active_${Date.now()}`);
-        setTotalRequestedSeconds(25 * 60);
-        setRemainingSeconds(20 * 60);
-      }
-    };
-
-    checkActiveSession();
-
-    // Check blocker permissions (UsageStats and Overlay)
-    const checkAccessibility = async () => {
+    // 4. Query Real Native Permissions & Usage Stats
+    const initDevice = async () => {
       if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-        try {
-          const res = await callNativePlugin('checkBlockerPermissions');
-          if (res) {
-            setPermStatus(res);
-            setIsAccessibilityActive(res.hasUsageStats === true && res.hasOverlay === true);
-          }
-        } catch {
-          try {
-            const res = await callNativePlugin('isAccessibilityEnabled');
-            setIsAccessibilityActive(res?.enabled === true);
-          } catch {}
+        const perms = await callNativePlugin('checkBlockerPermissions');
+        if (perms) setPermStatus(perms);
+
+        const appsRes = await callNativePlugin('getInstalledApps');
+        if (appsRes?.apps && Array.isArray(appsRes.apps)) {
+          setInstalledApps(appsRes.apps);
+        }
+
+        const groupsRes = await callNativePlugin('getAppGroups');
+        if (groupsRes?.groups && Array.isArray(groupsRes.groups) && groupsRes.groups.length > 0) {
+          setAppGroups(groupsRes.groups);
+        }
+
+        const usageRes = await callNativePlugin('getDailyUsageStats');
+        if (usageRes && usageRes.hasPermission) {
+          setScreenTimeData({
+            totalScreenTimeMinutes: usageRes.totalScreenTimeMinutes || 0,
+            productiveMinutes: usageRes.productiveMinutes || 0,
+            distractionMinutes: usageRes.distractionMinutes || 0
+          });
+        }
+
+        const rules = await callNativePlugin('getGranularBlockRules');
+        if (rules) {
+          if (rules.blockShorts !== undefined) setBlockShorts(rules.blockShorts);
+          if (rules.blockReels !== undefined) setBlockReels(rules.blockReels);
+          if (rules.youtubeStudyMode !== undefined) setYoutubeStudyMode(rules.youtubeStudyMode);
         }
       }
     };
-    checkAccessibility();
-  }, [user?.id]);
+    initDevice();
+  }, []);
 
-  // App toggle handler with persistence
-  const toggleApp = (pkg: string) => {
-    if (sessionState !== 'IDLE') return;
-    setSelectedApps(prev => {
-      const next = prev.includes(pkg) ? prev.filter(p => p !== pkg) : [...prev, pkg];
-      localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify(next));
-      return next;
+  const handleToggleShorts = async () => {
+    let hasA11y = permStatus.hasAccessibility;
+    const perms = await callNativePlugin('checkBlockerPermissions');
+    if (perms) {
+      setPermStatus(perms);
+      hasA11y = perms.hasAccessibility;
+    }
+
+    if (!blockShorts && !hasA11y) {
+      setA11yFeatureTarget('YouTube Shorts Blocker');
+      setShowA11yGuideModal(true);
+      return;
+    }
+    const nextVal = !blockShorts;
+    setBlockShorts(nextVal);
+    await callNativePlugin('setGranularBlockRules', {
+      blockShorts: nextVal,
+      blockReels,
+      youtubeStudyMode
     });
   };
 
-  // Quick Selection Helpers
-  const handleSelectAllDistractions = () => {
-    const distractionPkgs = installedApps
-      .filter(a => a.isDistraction)
-      .map(a => a.package);
-    setSelectedApps(distractionPkgs);
-    localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify(distractionPkgs));
+  const handleToggleReels = async () => {
+    let hasA11y = permStatus.hasAccessibility;
+    const perms = await callNativePlugin('checkBlockerPermissions');
+    if (perms) {
+      setPermStatus(perms);
+      hasA11y = perms.hasAccessibility;
+    }
+
+    if (!blockReels && !hasA11y) {
+      setA11yFeatureTarget('Instagram Reels Blocker');
+      setShowA11yGuideModal(true);
+      return;
+    }
+    const nextVal = !blockReels;
+    setBlockReels(nextVal);
+    await callNativePlugin('setGranularBlockRules', {
+      blockShorts,
+      blockReels: nextVal,
+      youtubeStudyMode
+    });
   };
 
-  const handleSelectAllVisible = (visiblePkgs: string[]) => {
-    const combined = Array.from(new Set([...selectedApps, ...visiblePkgs]));
-    setSelectedApps(combined);
-    localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify(combined));
+  const handleToggleStudyMode = async () => {
+    let hasA11y = permStatus.hasAccessibility;
+    const perms = await callNativePlugin('checkBlockerPermissions');
+    if (perms) {
+      setPermStatus(perms);
+      hasA11y = perms.hasAccessibility;
+    }
+
+    if (!youtubeStudyMode && !hasA11y) {
+      setA11yFeatureTarget('YouTube Educational Video Shield');
+      setShowA11yGuideModal(true);
+      return;
+    }
+    const nextVal = !youtubeStudyMode;
+    setYoutubeStudyMode(nextVal);
+    await callNativePlugin('setGranularBlockRules', {
+      blockShorts,
+      blockReels,
+      youtubeStudyMode: nextVal
+    });
   };
 
-  const handleClearAll = () => {
-    setSelectedApps([]);
-    localStorage.setItem('protrack_focus_shield_selected_apps', JSON.stringify([]));
+  // Save schedules and sync with native plugin
+  const handleToggleSchedule = async (id: string) => {
+    const updated = schedules.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s);
+    setSchedules(updated);
+    localStorage.setItem('studyride_study_schedules', JSON.stringify(updated));
+    await callNativePlugin('setStudySchedules', { schedules: updated });
   };
 
-  // Internal session execution with optional native blocking
-  const executeStartSession = async (skipNativeBlocking: boolean = false) => {
+  const handleCreateSchedule = async () => {
+    if (!newScheduleName.trim()) return;
+    const [sH, sM] = newScheduleStart.split(':').map(Number);
+    const [eH, eM] = newScheduleEnd.split(':').map(Number);
+
+    const newSched: StudySchedule = {
+      id: `sched_${Date.now()}`,
+      name: newScheduleName.trim(),
+      tag: newScheduleTag,
+      startHour: sH || 6,
+      startMinute: sM || 0,
+      endHour: eH || 8,
+      endMinute: eM || 0,
+      days: newScheduleDays,
+      enabled: true,
+      streakDays: 1,
+      blockedPackages: selectedApps,
+      muteNotifications: true
+    };
+
+    const updated = [...schedules, newSched];
+    setSchedules(updated);
+    localStorage.setItem('studyride_study_schedules', JSON.stringify(updated));
+    await callNativePlugin('setStudySchedules', { schedules: updated });
+    setShowAddScheduleModal(false);
+    setNewScheduleName('');
+  };
+
+  const handleDeleteSchedule = async (id: string) => {
+    const updated = schedules.filter(s => s.id !== id);
+    setSchedules(updated);
+    localStorage.setItem('studyride_study_schedules', JSON.stringify(updated));
+    await callNativePlugin('setStudySchedules', { schedules: updated });
+  };
+
+  // Save App Daily Limits
+  const handleSaveAppLimit = async () => {
+    const updated = { ...appDailyLimits, [limitAppPkg]: limitMinutesVal };
+    setAppDailyLimits(updated);
+    localStorage.setItem('studyride_app_limits', JSON.stringify(updated));
+    await callNativePlugin('setAppDailyLimits', { limits: updated });
+    setShowAddLimitModal(false);
+  };
+
+  const handleRemoveAppLimit = async (pkg: string) => {
+    const updated = { ...appDailyLimits };
+    delete updated[pkg];
+    setAppDailyLimits(updated);
+    localStorage.setItem('studyride_app_limits', JSON.stringify(updated));
+    await callNativePlugin('setAppDailyLimits', { limits: updated });
+  };
+
+  // Group Handlers (Regain Feature)
+  const getGroupUsageMinutes = (group: AppGroup) => {
+    let total = 0;
+    group.packages.forEach(pkg => {
+      const app = installedApps.find(a => a.package === pkg) || FALLBACK_DEVICE_APPS.find(a => a.package === pkg);
+      if (app && app.usageMinutes) total += app.usageMinutes;
+    });
+    return total;
+  };
+
+  const handleToggleGroup = async (groupId: string) => {
+    const updated = appGroups.map(g => g.id === groupId ? { ...g, enabled: !g.enabled } : g);
+    setAppGroups(updated);
+    localStorage.setItem('studyride_app_groups', JSON.stringify(updated));
+    await callNativePlugin('setAppGroups', { groups: updated });
+  };
+
+  const handleSaveGroup = async (savedGroup: AppGroup) => {
+    const exists = appGroups.some(g => g.id === savedGroup.id);
+    const updated = exists
+      ? appGroups.map(g => g.id === savedGroup.id ? savedGroup : g)
+      : [...appGroups, savedGroup];
+    setAppGroups(updated);
+    localStorage.setItem('studyride_app_groups', JSON.stringify(updated));
+    await callNativePlugin('setAppGroups', { groups: updated });
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    const updated = appGroups.filter(g => g.id !== groupId);
+    setAppGroups(updated);
+    localStorage.setItem('studyride_app_groups', JSON.stringify(updated));
+    await callNativePlugin('setAppGroups', { groups: updated });
+  };
+
+  // Multi-App Picker Saver for Device Apps
+  const handleSavePickedApps = async (selectedPkgs: string[], quotaMins?: number) => {
+    const q = quotaMins || 30;
+    const updated = { ...appDailyLimits };
+    selectedPkgs.forEach(pkg => {
+      if (!updated[pkg]) updated[pkg] = q;
+    });
+    setAppDailyLimits(updated);
+    localStorage.setItem('studyride_app_limits', JSON.stringify(updated));
+    await callNativePlugin('setAppDailyLimits', { limits: updated });
+  };
+
+  // Timer Session Execution
+  const handleStartSession = async () => {
+    const durMins = selectedDuration === -1 ? Math.max(5, parseInt(customDuration, 10) || 45) : selectedDuration;
+    const durSecs = durMins * 60;
+
     setSessionState('STARTING');
+    setTotalRequestedSeconds(durSecs);
+    setRemainingSeconds(durSecs);
 
-    const duration = selectedDuration === -1 ? Math.max(5, parseInt(customDuration, 10) || 45) : selectedDuration;
-    const durationSeconds = duration * 60;
+    const res = await callNativePlugin('startShield', {
+      apps: selectedApps,
+      durationMinutes: durMins,
+      durationSeconds: durSecs
+    });
 
-    try {
-      // 1. Start session on server with graceful fallback
-      let sessionId = `foc_local_${Date.now()}`;
-      try {
-        const sRes = await fetch(getApiUrl('/api/focus/session/start'), {
-          method: 'POST',
-          headers: getHeaders(),
-          body: JSON.stringify({
-            requestedMinutes: duration,
-            blockedApps: skipNativeBlocking ? [] : selectedApps
-          })
-        });
-        const sData = await sRes.json();
-        if (sData?.success && sData?.session?.id) {
-          sessionId = sData.session.id;
-        }
-      } catch (serverErr: any) {
-        console.warn('[FocusShield] Server sync warning, continuing in local mode:', serverErr?.message);
-      }
+    setSessionState('ACTIVE');
+    setActiveSessionId(`foc_${Date.now()}`);
 
-      setActiveSessionId(sessionId);
-      setTotalRequestedSeconds(durationSeconds);
-      setRemainingSeconds(durationSeconds);
-
-      // Save to localStorage for persistence across tabs/backgrounding
-      localStorage.setItem('protrack_active_focus_session', JSON.stringify({
-        sessionId,
-        startTimestamp: Date.now(),
-        totalSeconds: durationSeconds,
-        selectedApps: selectedApps,
-        skipNativeBlocking
-      }));
-
-      // 2. Start native Android UsageStats app blocker
-      try {
-        await callNativePlugin('startShield', { 
-          apps: selectedApps,
-          durationMinutes: duration,
-          durationSeconds: durationSeconds
-        });
-        setIsVpnActive(true);
-      } catch (shieldErr) {
-        console.warn('[FocusShield] Native blocker start skipped:', shieldErr);
-        setIsVpnActive(false);
-      }
-
-      setSessionState('ACTIVE');
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error starting focus session');
-      setSessionState('IDLE');
-    }
-  };
-
-  // Start Focus Session - 1-Tap Instant Start (No Setup Modals)
-  const handleStartFocus = async () => {
-    setErrorMsg(null);
-
-    let canBlock = false;
-    if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-      try {
-        const permRes = await callNativePlugin('checkBlockerPermissions');
-        canBlock = permRes?.canBlock === true;
-        setIsAccessibilityActive(canBlock);
-      } catch {
-        try {
-          const accessRes = await callNativePlugin('isAccessibilityEnabled');
-          canBlock = accessRes?.enabled === true;
-          setIsAccessibilityActive(canBlock);
-        } catch {}
-      }
-    }
-
-    // Always start immediately: if permissions are enabled, apps are blocked.
-    // If not enabled, study timer, streak, and audio run seamlessly with ZERO setup popups!
-    await executeStartSession(!canBlock);
-  };
-
-  // Strict Friction Trigger (Enforces anti-impulse delay on Pause, Early Finish, & Give Up)
-  const handleInitiateFriction = (action: 'GIVE_UP' | 'PAUSE' | 'FINISH_EARLY' = 'GIVE_UP') => {
-    setFrictionAction(action);
-    setShowStrictFrictionModal(true);
-    setFrictionCountdown(15);
-    setFrictionInput('');
-    if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
-    frictionTimerRef.current = setInterval(() => {
-      setFrictionCountdown(prev => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
+      setRemainingSeconds(prev => {
         if (prev <= 1) {
-          if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
+          clearInterval(timerRef.current!);
+          setSessionState('COMPLETED');
+          callNativePlugin('stopShield');
+          triggerConfetti();
           return 0;
         }
         return prev - 1;
@@ -389,847 +547,990 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     }, 1000);
   };
 
-  const handleConfirmStrictAction = async () => {
-    if (frictionCountdown > 0 || frictionInput.trim().toUpperCase() !== STRICT_PLEDGE) {
-      return;
-    }
-    if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
+  const handleGiveUpPledge = async () => {
+    if (frictionInput.trim() !== STRICT_PLEDGE) return;
+    if (timerRef.current) clearInterval(timerRef.current);
+    await callNativePlugin('stopShield');
+    setSessionState('IDLE');
     setShowStrictFrictionModal(false);
-    if (frictionAction === 'PAUSE') {
-      await handlePause();
-    } else if (frictionAction === 'FINISH_EARLY') {
-      await handleCompleteFocus();
-    } else {
-      await handleCancelFocus();
-    }
+    setFrictionInput('');
   };
 
-  // Heartbeat loop & countdown timer
-  useEffect(() => {
-    if (sessionState === 'ACTIVE') {
-      // Countdown tick
-      timerRef.current = setInterval(() => {
-        setRemainingSeconds(prev => {
-          if (prev <= 1) {
-            handleCompleteFocus();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      // Server Heartbeat every 60s
-      heartbeatRef.current = setInterval(() => {
-        if (activeSessionId) {
-          fetch(getApiUrl(`/api/focus/session/${activeSessionId}/heartbeat`), {
-            method: 'POST',
-            headers: getHeaders()
-          }).catch(() => {});
-        }
-      }, 60000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-    };
-  }, [sessionState, activeSessionId]);
-
-  // ── IN-APP GUARDIAN: Zero-Permission Distraction & Leave Detector ──────────
-  useEffect(() => {
-    if (sessionState !== 'ACTIVE') return;
-
-    const handleLeave = async () => {
-      awayTimestampRef.current = Date.now();
-      try {
-        if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-          const { LocalNotifications } = await import('@capacitor/local-notifications');
-          await LocalNotifications.schedule({
-            notifications: [
-              {
-                id: 991,
-                title: "🚨 DISTRACTION WARNING!",
-                body: "Study session is in progress! Return to StudyRide immediately to save your streak.",
-                schedule: { at: new Date(Date.now() + 500) }
-              }
-            ]
-          });
-        }
-      } catch (err) {}
-    };
-
-    const handleReturn = () => {
-      if (awayTimestampRef.current) {
-        const awaySec = Math.round((Date.now() - awayTimestampRef.current) / 1000);
-        awayTimestampRef.current = null;
-        if (awaySec >= 3) {
-          setLastAwayDurationSec(awaySec);
-          setDistractionStrikes(prev => prev + 1);
-          setShowDistractionStrikeModal(true);
-          try {
-            if (typeof navigator !== 'undefined' && navigator.vibrate) {
-              navigator.vibrate([200, 100, 200]);
-            }
-          } catch {}
-        }
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        handleLeave();
-      } else {
-        handleReturn();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    let appStateSub: any = null;
-    (async () => {
-      try {
-        if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-          const { App } = await import('@capacitor/app');
-          appStateSub = await App.addListener('appStateChange', (state) => {
-            if (!state.isActive) {
-              handleLeave();
-            } else {
-              handleReturn();
-            }
-          });
-        }
-      } catch {}
-    })();
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (appStateSub && typeof appStateSub.remove === 'function') {
-        appStateSub.remove();
-      }
-    };
-  }, [sessionState]);
-
-  // Pause
-  const handlePause = async () => {
-    if (!activeSessionId) return;
-    try {
-      await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/pause`), {
-        method: 'POST',
-        headers: getHeaders()
-      });
-      setSessionState('PAUSED');
-    } catch (e) {}
-  };
-
-  // Resume
-  const handleResume = async () => {
-    if (!activeSessionId) return;
-    try {
-      await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/resume`), {
-        method: 'POST',
-        headers: getHeaders()
-      });
-      setSessionState('ACTIVE');
-    } catch (e) {}
-  };
-
-  // Complete Focus
-  const handleCompleteFocus = async () => {
-    if (!activeSessionId) return;
-    try {
-      localStorage.removeItem('protrack_active_focus_session');
-      // Stop native VPN
-      await callNativePlugin('stopShield');
-      setIsVpnActive(false);
-
-      const res = await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/complete`), {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ exam: user?.exam || 'ALL' })
-      });
-      const data = await res.json();
-
-      setSessionState('COMPLETED');
-      triggerConfetti();
-      fetchStats();
-
-      // Trigger unlock celebrations if any
-      if (data.rewards?.unlockedTrophies?.length > 0 && onTrophyUnlock) {
-        data.rewards.unlockedTrophies.forEach((t: any) => onTrophyUnlock(t));
-      }
-    } catch (err: any) {
-      setErrorMsg('Failed to verify completion: ' + err.message);
-    }
-  };
-
-  // Cancel Session
-  const handleCancelFocus = async () => {
-    if (!activeSessionId) return;
-    try {
-      localStorage.removeItem('protrack_active_focus_session');
-      await callNativePlugin('stopShield');
-      setIsVpnActive(false);
-      await fetch(getApiUrl(`/api/focus/session/${activeSessionId}/cancel`), {
-        method: 'POST',
-        headers: getHeaders()
-      });
-      setSessionState('IDLE');
-      setActiveSessionId(null);
-    } catch (e) {
-      setSessionState('IDLE');
-    }
-  };
-
-  const mins = Math.floor(remainingSeconds / 60);
-  const secs = remainingSeconds % 60;
-  const progressPercent = totalRequestedSeconds > 0 
-    ? Math.min(100, Math.round(((totalRequestedSeconds - remainingSeconds) / totalRequestedSeconds) * 100))
-    : 0;
+  // Progress Calculations
+  const focusedMins = Math.floor((totalRequestedSeconds - remainingSeconds) / 60);
+  const goalPercent = Math.min(100, Math.round((screenTimeData.productiveMinutes / dailyGoalMinutes) * 100));
 
   return (
-    <div className="space-y-6 pb-20 max-w-4xl mx-auto px-4 sm:px-6">
-      {/* ── HERO BANNER ────────────────────────────────────────────── */}
-      <SlideUp delay={0.05}>
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950/40 to-slate-950 border border-slate-800/90 p-6 sm:p-8 shadow-2xl">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 mb-3">
-            <Shield className="w-3.5 h-3.5" />
-            <span>On-Device Distraction Control</span>
+    <div className="min-h-screen bg-[#0C0F0D] text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
+      {/* ── TOP APP BAR ── */}
+      <div className="sticky top-0 z-40 bg-[#0C0F0D]/90 backdrop-blur-xl border-b border-[#1E2520] px-4 py-3">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-bold text-white tracking-tight">Focus Shield Pro</h1>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-400 text-slate-950">PRO</span>
+              </div>
+              <p className="text-[11px] text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                Active Protection Engine
+              </p>
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Focus Shield
-          </h1>
-          <p className="text-slate-300 text-sm sm:text-base mt-1.5 max-w-2xl leading-relaxed">
-            Protect your study time by restricting network access to distracting apps (YouTube, Instagram) while you focus.
-            StudyRide stays local, private, and server-verified.
-          </p>
+          <div className="flex items-center gap-2">
+            {/* Streak Flame Badge */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#161B18] border border-[#1E2520]">
+              <span className="text-amber-400 font-bold text-xs flex items-center gap-1">
+                🔥 11d
+              </span>
+            </div>
 
-          {/* Quick Stats Pill */}
-          <div className="grid grid-cols-3 gap-3 mt-6 pt-5 border-t border-slate-800/80">
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div className="text-[11px] text-slate-400">Today's Focus</div>
-              <div className="text-lg font-bold text-white">{Math.floor(stats.todayMinutes / 60)}h {stats.todayMinutes % 60}m</div>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div className="text-[11px] text-slate-400">This Week</div>
-              <div className="text-lg font-bold text-indigo-400">{Math.floor(stats.weekMinutes / 60)}h {stats.weekMinutes % 60}m</div>
-            </div>
-            <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800">
-              <div className="text-[11px] text-slate-400">Completed Sessions</div>
-              <div className="text-lg font-bold text-emerald-400">{stats.totalSessions}</div>
+            {/* Coins Balance */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#161B18] border border-[#1E2520]">
+              <Coins className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-xs font-bold text-white">240</span>
             </div>
           </div>
         </div>
-      </SlideUp>
+      </div>
 
-      {/* ── ERROR ALERT ────────────────────────────────────────────── */}
-      {errorMsg && (
-        <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs sm:text-sm flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-400 mt-0.5" />
-          <div>{errorMsg}</div>
+      {/* ── 4-TAB PILL SELECTOR (Focus, Planner, Blocks, Profile) ── */}
+      <div className="max-w-2xl mx-auto w-full px-4 pt-1 pb-1">
+        <div className="bg-[#121614] border border-[#1E2520] rounded-2xl p-1.5 flex items-center justify-between gap-1 shadow-lg">
+          {[
+            { id: 'FOCUS', label: 'Focus', icon: Timer },
+            { id: 'PLANNER', label: 'Planner', icon: Calendar },
+            { id: 'BLOCKS', label: 'Blocks', icon: Shield },
+            { id: 'PROFILE', label: 'Profile', icon: User }
+          ].map(tab => {
+            const Icon = tab.icon;
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold transition-all cursor-pointer ${
+                  active
+                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
-      )}
+      </div>
 
-      {/* ── ACTIVE / PAUSED TIMER INTERFACE ────────────────────────── */}
-      {(sessionState === 'ACTIVE' || sessionState === 'PAUSED') && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="p-8 rounded-3xl bg-slate-900 border border-indigo-500/40 text-center shadow-2xl space-y-6"
-        >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 animate-pulse">
-            <ShieldCheck className="w-4 h-4" />
-            <span>Focus Shield Active • {selectedApps.length} Apps Restricted</span>
-          </div>
+      {/* ── MAIN CONTENT CONTAINER ── */}
+      <div className="max-w-2xl mx-auto w-full flex-1 px-4 py-4 pb-28">
+        {/* ══════════════════════════════════════════════
+            TAB 1: FOCUS DASHBOARD & LIVE TIMER
+           ══════════════════════════════════════════════ */}
+        {activeTab === 'FOCUS' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            {/* 1. Large Focus Goal Ring */}
+            <div className="p-6 rounded-3xl bg-[#161B18] border border-[#1E2520] relative overflow-hidden flex flex-col items-center justify-center text-center">
+              <div className="relative w-44 h-44 flex items-center justify-center my-2">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="68"
+                    stroke="#1E2520"
+                    strokeWidth="10"
+                    fill="none"
+                  />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="68"
+                    stroke="url(#emeraldGradient)"
+                    strokeWidth="10"
+                    fill="none"
+                    strokeDasharray={427}
+                    strokeDashoffset={427 - (427 * goalPercent) / 100}
+                    strokeLinecap="round"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                  <defs>
+                    <linearGradient id="emeraldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#10B981" />
+                      <stop offset="100%" stopColor="#22C55E" />
+                    </linearGradient>
+                  </defs>
+                </svg>
 
-          {/* Large Countdown Display */}
-          <div className="text-6xl sm:text-7xl font-mono font-black text-white tracking-tight">
-            {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
-          </div>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-3xl font-black text-white tracking-tight">
+                    {screenTimeData.productiveMinutes}m
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5">
+                    Focus goal {Math.round(dailyGoalMinutes / 60)}h
+                  </span>
+                  <span className="text-[11px] text-emerald-400 font-bold mt-1">
+                    {goalPercent}% completed
+                  </span>
+                </div>
+              </div>
 
-          {/* Progress Bar */}
-          <div className="max-w-md mx-auto space-y-1">
-            <div className="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-sky-400 to-indigo-500 rounded-full transition-all duration-500" 
-                style={{ width: `${progressPercent}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[11px] text-slate-400 font-medium px-1">
-              <span>Elapsed: {Math.floor((totalRequestedSeconds - remainingSeconds) / 60)}m</span>
-              <span>Target: {Math.floor(totalRequestedSeconds / 60)}m</span>
-            </div>
-          </div>
-
-          {/* Controls with Strict Anti-Impulse Friction */}
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-            {sessionState === 'ACTIVE' ? (
-              <button
-                onClick={() => handleInitiateFriction('PAUSE')}
-                className="py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all border border-slate-700 shadow-sm"
-                title="Strict Focus: Requires 15s cooldown and pledge"
-              >
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span>Pause</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleResume}
-                className="py-3 px-5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all shadow-lg shadow-sky-500/25"
-              >
-                <Play className="w-4 h-4" />
-                <span>Resume Session</span>
-              </button>
-            )}
-
-            <button
-              onClick={() => {
-                // If more than 90% completed, allow finish early directly; otherwise enforce friction
-                if (remainingSeconds <= totalRequestedSeconds * 0.1) {
-                  handleCompleteFocus();
-                } else {
-                  handleInitiateFriction('FINISH_EARLY');
-                }
-              }}
-              className="py-3 px-5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs sm:text-sm flex items-center gap-2 transition-all border border-emerald-500/40"
-            >
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Finish Early</span>
-            </button>
-
-            <button
-              onClick={() => handleInitiateFriction('GIVE_UP')}
-              className="py-3 px-4 rounded-xl bg-slate-950 hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 font-semibold text-xs sm:text-sm transition-all border border-slate-800"
-            >
-              <span>Give Up</span>
-            </button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ── SESSION COMPLETED SCREEN ──────────────────────────────── */}
-      {sessionState === 'COMPLETED' && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="p-8 rounded-3xl bg-slate-900 border border-emerald-500/40 text-center shadow-2xl space-y-5"
-        >
-          <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-3xl">
-            🏆
-          </div>
-          <h2 className="text-2xl font-black text-white">Focus Session Completed!</h2>
-          <p className="text-slate-300 text-sm max-w-md mx-auto">
-            Your focused study minutes have been verified and recorded to your permanent academic record in Neon PostgreSQL.
-          </p>
-
-          <button
-            onClick={() => {
-              setSessionState('IDLE');
-              setActiveSessionId(null);
-            }}
-            className="py-3 px-8 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-sky-500/25"
-          >
-            Start Another Session
-          </button>
-        </motion.div>
-      )}
-
-      {/* ── IDLE SETUP SCREEN ──────────────────────────────────────── */}
-      {sessionState === 'IDLE' && (
-        <div className="space-y-6">
-          {/* Duration Selector */}
-          <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800/90 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Clock className="w-4 h-4 text-sky-400" />
-              <span>1. Choose Session Duration</span>
-            </h3>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[25, 50, 90, -1].map(d => (
-                <button
-                  key={d}
-                  onClick={() => setSelectedDuration(d)}
-                  className={`py-3 px-4 rounded-2xl border text-sm font-bold transition-all ${
-                    selectedDuration === d
-                      ? 'bg-sky-500/20 text-sky-400 border-sky-500/50 shadow-md shadow-sky-500/10'
-                      : 'bg-slate-950/60 text-slate-400 hover:text-slate-200 border-slate-800'
-                  }`}
-                >
-                  {d === -1 ? 'Custom' : `${d} Minutes`}
-                </button>
-              ))}
+              {/* Goal Motivation */}
+              <p className="text-xs text-slate-300 font-medium max-w-sm mt-1">
+                {goalPercent >= 100 
+                  ? "🎉 Daily Focus Goal Crushed! You are in the top 5% disciplined aspirants today."
+                  : "Every focused minute brings you one step closer to your dream rank."}
+              </p>
             </div>
 
-            {selectedDuration === -1 && (
-              <div className="pt-2 flex items-center gap-3">
-                <label className="text-xs text-slate-400 font-medium">Custom Minutes:</label>
-                <input
-                  type="number"
-                  min="5"
-                  max="360"
-                  value={customDuration}
-                  onChange={(e) => setCustomDuration(e.target.value)}
-                  className="w-24 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-sm font-semibold focus:outline-none focus:border-sky-500"
+            {/* 2. Today's Screen Time Breakdown Bar */}
+            <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Today's Phone Screen Time</span>
+                  <h3 className="text-lg font-bold text-white mt-0.5">
+                    {Math.floor(screenTimeData.totalScreenTimeMinutes / 60)}h {screenTimeData.totalScreenTimeMinutes % 60}m
+                  </h3>
+                </div>
+                <div className="flex items-center gap-3 text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                    <span className="text-slate-300">Study ({screenTimeData.productiveMinutes}m)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                    <span className="text-slate-300">Social ({screenTimeData.distractionMinutes}m)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tri-color Horizontal Bar */}
+              <div className="h-3 w-full rounded-full bg-slate-800 overflow-hidden flex">
+                <div 
+                  className="bg-emerald-500 h-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (screenTimeData.productiveMinutes / Math.max(1, screenTimeData.totalScreenTimeMinutes)) * 100)}%` }}
+                />
+                <div 
+                  className="bg-amber-500 h-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (screenTimeData.distractionMinutes / Math.max(1, screenTimeData.totalScreenTimeMinutes)) * 100)}%` }}
                 />
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Distracting Apps Checklist */}
-          <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800/90 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-indigo-400" />
-                  <span>2. Select Distracting Apps to Lock ({selectedApps.length} Selected)</span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Opening any selected app will immediately show the StudyRide Lock Screen until your timer completes.
-                </p>
+            {/* 3. Upcoming Study Schedule Card */}
+            {schedules.length > 0 && (
+              <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-lg">
+                    🌅
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white">{schedules[0].name}</h4>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/10 text-amber-400 border border-amber-400/20">
+                        🔥 {schedules[0].streakDays}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {String(schedules[0].startHour).padStart(2, '0')}:{String(schedules[0].startMinute).padStart(2, '0')} - {String(schedules[0].endHour).padStart(2, '0')}:{String(schedules[0].endMinute).padStart(2, '0')}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveTab('PLANNER')}
+                  className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 transition-all"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
+            )}
 
-              {/* Quick Preset Buttons */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={handleSelectAllDistractions}
-                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center gap-1.5 hover:from-amber-500/30 hover:to-orange-500/30 transition-all shadow-sm"
-                  title="Select all apps categorized as distractions"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Block All Distractions ({installedApps.filter(a => a.isDistraction).length})</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleClearAll}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white font-medium text-xs transition-all"
-                >
-                  Clear All
-                </button>
+            {/* 4. StudyRide Coin Rewards Banner */}
+            <div className="p-4 rounded-3xl bg-gradient-to-r from-amber-500/10 via-amber-600/10 to-transparent border border-amber-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl font-bold">
+                  🪙
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white">Earn Free Pro Unlocks</h4>
+                  <p className="text-[11px] text-slate-300 mt-0.5">
+                    Focus 1 Hour = <span className="font-bold text-amber-400">+25 StudyRide Coins</span>. Unlocks test series & AI evaluations!
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Search & Category Filter Bar */}
-            <div className="space-y-3 pt-1">
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search installed apps (e.g. Instagram, Hotstar, Moj, Snapchat)..."
-                  className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 text-xs sm:text-sm focus:outline-none focus:border-indigo-500"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Category Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">
-                {[
-                  { id: 'DISTRACTIONS', label: 'Distractions', count: installedApps.filter(a => a.isDistraction).length, icon: '⚡' },
-                  { id: 'ALL', label: 'All Installed', count: installedApps.length, icon: '📱' },
-                  { id: 'Social', label: 'Social', count: installedApps.filter(a => a.category === 'Social').length, icon: '💬' },
-                  { id: 'Entertainment', label: 'Video / OTT', count: installedApps.filter(a => a.category === 'Entertainment').length, icon: '🎬' },
-                  { id: 'Gaming', label: 'Games', count: installedApps.filter(a => a.category === 'Gaming').length, icon: '🎮' },
-                  { id: 'Shopping', label: 'Shopping', count: installedApps.filter(a => a.category === 'Shopping').length, icon: '🛍️' }
-                ].filter(c => c.count > 0 || c.id === 'DISTRACTIONS' || c.id === 'ALL').map(cat => {
-                  const isActive = selectedCategory === cat.id;
-                  return (
+            {/* 5. Focus Timer Presets */}
+            {sessionState === 'IDLE' && (
+              <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Choose Focus Session</span>
+                <div className="grid grid-cols-4 gap-2">
+                  {[25, 45, 60, 90].map(mins => (
                     <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-3 py-1.5 rounded-lg border font-semibold flex items-center gap-1.5 whitespace-nowrap transition-all ${
-                        isActive
-                          ? 'bg-indigo-600 text-white border-indigo-500 shadow-sm'
-                          : 'bg-slate-950/70 text-slate-400 hover:text-slate-200 border-slate-800'
+                      key={mins}
+                      onClick={() => setSelectedDuration(mins)}
+                      className={`py-3 rounded-2xl border text-center font-bold text-xs transition-all cursor-pointer ${
+                        selectedDuration === mins
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/60 shadow-md shadow-emerald-500/10'
+                          : 'bg-[#121614] border-[#1E2520] text-slate-400 hover:text-white'
                       }`}
                     >
-                      <span>{cat.icon}</span>
-                      <span>{cat.label}</span>
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-indigo-700 text-white' : 'bg-slate-800 text-slate-400'}`}>
-                        {cat.count}
-                      </span>
+                      {mins}m
                     </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 6. Active Focus Session Breathing View */}
+            {sessionState === 'ACTIVE' && (
+              <div className="p-8 rounded-3xl bg-[#161B18] border border-emerald-500/30 text-center space-y-4 relative overflow-hidden">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  Shield Active & Guarding
+                </div>
+
+                <div className="text-5xl sm:text-6xl font-black font-mono text-white tracking-tight py-2">
+                  {String(Math.floor(remainingSeconds / 60)).padStart(2, '0')}:
+                  {String(remainingSeconds % 60).padStart(2, '0')}
+                </div>
+
+                <p className="text-xs text-slate-400 italic">
+                  “Distractions are the cost of mediocrity. Stay disciplined.”
+                </p>
+
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => setShowStrictFrictionModal(true)}
+                    className="px-5 py-2.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold text-xs transition-all"
+                  >
+                    Give Up Session
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════
+            TAB 2: PLANNER (AUTOMATED STUDY SCHEDULES)
+           ══════════════════════════════════════════════ */}
+        {activeTab === 'PLANNER' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-white">Study Planner</h2>
+                <p className="text-xs text-slate-400">Automated recurring study slots with auto-blocking</p>
+              </div>
+              <button
+                onClick={() => setShowAddScheduleModal(true)}
+                className="px-3.5 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Add Schedule
+              </button>
+            </div>
+
+            {/* Schedules Timeline List */}
+            <div className="space-y-3">
+              {schedules.map(schedule => (
+                <div
+                  key={schedule.id}
+                  className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between gap-3 transition-all hover:border-slate-700"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-[#121614] border border-[#1E2520] flex items-center justify-center text-2xl">
+                      {schedule.name.toLowerCase().includes('morning') ? '🌅' : schedule.name.toLowerCase().includes('night') ? '🌙' : '☀️'}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-white">{schedule.name}</h4>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          🔥 {schedule.streakDays}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                        <span className="font-mono text-emerald-400">
+                          {String(schedule.startHour).padStart(2, '0')}:{String(schedule.startMinute).padStart(2, '0')} - {String(schedule.endHour).padStart(2, '0')}:{String(schedule.endMinute).padStart(2, '0')}
+                        </span>
+                        <span>•</span>
+                        <span className="text-slate-300">{schedule.tag}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* Toggle Switch */}
+                    <button
+                      onClick={() => handleToggleSchedule(schedule.id)}
+                      className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                        schedule.enabled ? 'bg-emerald-500' : 'bg-slate-800'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                          schedule.enabled ? 'translate-x-6' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSchedule(schedule.id)}
+                      className="p-2 text-slate-500 hover:text-rose-400 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════
+            TAB 3: BLOCKS (APP GROUPS, APP LIMITS & SHORTS/REELS)
+           ══════════════════════════════════════════════ */}
+        {activeTab === 'BLOCKS' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            {/* ── 1. REGAIN-STYLE APP GROUPS SECTION ── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white">App Groups</h3>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">REGAIN SYNC</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">Shared daily quota & 1-tap block for app categories</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingGroup(null);
+                    setShowGroupModal(true);
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create Group</span>
+                </button>
+              </div>
+
+              {/* Group Cards Grid */}
+              <div className="space-y-3">
+                {appGroups.map(group => {
+                  const usedMins = getGroupUsageMinutes(group);
+                  const limitMins = group.dailyLimitMinutes || 30;
+                  const pct = group.blockMode === 'BLOCKED' ? 100 : Math.min(100, Math.round((usedMins / limitMins) * 100));
+
+                  return (
+                    <div
+                      key={group.id}
+                      className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3 transition-all hover:border-[#2A342D]"
+                    >
+                      {/* Top Header of Group Card */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl border shadow-sm"
+                            style={{ backgroundColor: `${group.color}20`, borderColor: `${group.color}40` }}
+                          >
+                            <span>{group.icon}</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-sm font-bold text-white">{group.name}</h4>
+                              <span
+                                className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                style={{ backgroundColor: `${group.color}15`, color: group.color }}
+                              >
+                                {group.packages.length} apps
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400">
+                              {group.blockMode === 'BLOCKED' ? '🔒 Strict 100% Locked' : `⏱️ ${limitMins}m shared limit`}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Actions: Edit & Toggle */}
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            onClick={() => {
+                              setEditingGroup(group);
+                              setShowGroupModal(true);
+                            }}
+                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                            title="Edit Group"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            onClick={() => handleToggleGroup(group.id)}
+                            className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                              group.enabled ? 'bg-emerald-500' : 'bg-slate-800'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                                group.enabled ? 'translate-x-6' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Apps inside Group Pills */}
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        {group.packages.slice(0, 4).map(pkg => {
+                          const appInfo = installedApps.find(a => a.package === pkg) || FALLBACK_DEVICE_APPS.find(a => a.package === pkg);
+                          const appName = appInfo?.name || pkg.split('.').pop() || pkg;
+                          const appEmoji = appInfo?.icon || '📱';
+                          return (
+                            <span
+                              key={pkg}
+                              className="px-2 py-0.5 rounded-md bg-slate-900 border border-[#1E2520] text-[10px] text-slate-300 font-medium flex items-center gap-1"
+                            >
+                              <span>{appEmoji}</span>
+                              <span className="truncate max-w-[90px]">{appName}</span>
+                            </span>
+                          );
+                        })}
+                        {group.packages.length > 4 && (
+                          <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-[#1E2520] text-[10px] text-slate-400 font-bold">
+                            +{group.packages.length - 4} more
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Group Shared Limit Progress Bar */}
+                      {group.blockMode !== 'BLOCKED' ? (
+                        <div className="space-y-1.5 pt-1">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-400 font-medium">Combined today:</span>
+                            <span className="font-mono font-bold" style={{ color: group.color }}>
+                              {usedMins}m / {limitMins}m
+                            </span>
+                          </div>
+                          <div className="h-2 w-full rounded-full bg-slate-800/80 overflow-hidden">
+                            <div
+                              className="h-full transition-all duration-300 rounded-full"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor: pct >= 100 ? '#EF4444' : pct >= 75 ? '#F59E0B' : group.color
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-2 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-center justify-between text-[11px] text-rose-300 font-bold">
+                          <span className="flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5 text-rose-400" />
+                            Strict Block Active
+                          </span>
+                          <span className="text-[10px] text-rose-400/80 font-normal">All apps locked</span>
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Apps Grid */}
-            {(() => {
-              const filteredList = installedApps.filter(app => {
-                if (selectedCategory === 'DISTRACTIONS' && !app.isDistraction) return false;
-                if (selectedCategory !== 'ALL' && selectedCategory !== 'DISTRACTIONS' && app.category !== selectedCategory) return false;
-                if (searchQuery.trim()) {
-                  const q = searchQuery.toLowerCase().trim();
-                  if (!app.name.toLowerCase().includes(q) && !app.package.toLowerCase().includes(q)) {
-                    return false;
-                  }
-                }
-                return true;
-              });
+            {/* ── 2. INDIVIDUAL APP LIMITS SECTION (WITH MULTI-APP PICKER) ── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-bold text-white">App Daily Limits</h3>
+                  <p className="text-[11px] text-slate-400">Set customized daily allowance per app</p>
+                </div>
+                <button
+                  onClick={() => setShowAppPickerModal(true)}
+                  className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Apps</span>
+                </button>
+              </div>
 
-              if (filteredList.length === 0) {
-                return (
-                  <div className="p-8 text-center rounded-2xl bg-slate-950/50 border border-slate-800/80 text-slate-400 text-xs">
-                    No apps found matching your query or filter.
-                  </div>
-                );
-              }
-
-              return (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                    <span>Showing {filteredList.length} apps</span>
+              <div className="space-y-2.5">
+                {Object.keys(appDailyLimits).length === 0 ? (
+                  <div className="p-6 rounded-3xl bg-[#161B18] border border-dashed border-[#1E2520] text-center space-y-2">
+                    <p className="text-xs text-slate-400">No individual app limits configured</p>
                     <button
-                      type="button"
-                      onClick={() => handleSelectAllVisible(filteredList.map(a => a.package))}
-                      className="text-indigo-400 hover:text-indigo-300 font-semibold"
+                      onClick={() => setShowAppPickerModal(true)}
+                      className="px-4 py-2 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold text-xs"
                     >
-                      + Select All {filteredList.length}
+                      Pick Apps from Device
                     </button>
                   </div>
+                ) : (
+                  Object.entries(appDailyLimits).map(([pkg, limitMins]) => {
+                    const appInfo = installedApps.find(a => a.package === pkg) || FALLBACK_DEVICE_APPS.find(a => a.package === pkg) || {
+                      name: pkg.includes('youtube') ? 'YouTube' : pkg.includes('instagram') ? 'Instagram' : pkg.split('.').pop() || pkg,
+                      icon: pkg.includes('youtube') ? '▶️' : pkg.includes('instagram') ? '📸' : '📱',
+                      usageMinutes: 15
+                    };
+                    const used = appInfo.usageMinutes || 15;
+                    const pct = Math.min(100, Math.round((used / limitMins) * 100));
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
-                    {filteredList.map(app => {
-                      const isSelected = selectedApps.includes(app.package);
-                      return (
-                        <div
-                          key={app.package}
-                          onClick={() => toggleApp(app.package)}
-                          className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                            isSelected
-                              ? 'bg-indigo-950/40 border-indigo-500/50 text-white shadow-sm'
-                              : 'bg-slate-950/50 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <span className="text-2xl flex-shrink-0">{app.icon || '📱'}</span>
-                            <div className="min-w-0">
-                              <div className="font-bold text-xs sm:text-sm text-white truncate flex items-center gap-1.5">
-                                <span>{app.name}</span>
-                                {app.isDistraction && (
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                                    Distraction
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[10px] text-slate-400 truncate">{app.package}</div>
+                    return (
+                      <div
+                        key={pkg}
+                        className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{appInfo.icon}</span>
+                            <div>
+                              <h4 className="text-sm font-bold text-white">{appInfo.name}</h4>
+                              <p className="text-xs text-slate-400">{limitMins}m daily limit</p>
                             </div>
                           </div>
-
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {isSelected && (
-                              <Lock className="w-3.5 h-3.5 text-indigo-400" />
-                            )}
-                            <input 
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {}}
-                              className="w-4 h-4 rounded text-indigo-500 focus:ring-0 cursor-pointer"
-                            />
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold font-mono text-emerald-400">
+                              {used}m / {limitMins}m
+                            </span>
+                            <button
+                              onClick={() => handleRemoveAppLimit(pkg)}
+                              className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
 
-          {/* Blocker Permission Status & 1-Tap Enable */}
-          <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl flex-shrink-0 ${isAccessibilityActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white">Hard App Blocker (YouTube/Insta)</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      isAccessibilityActive 
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    }`}>
-                      {isAccessibilityActive ? 'Active' : 'Optional'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    {isAccessibilityActive 
-                      ? 'Distracting apps will be physically blocked and locked during timer.' 
-                      : 'Guardian Mode is ACTIVE! Timer and distraction strikes work 100% without any permission.'}
-                  </p>
-                </div>
+                        {/* Progress bar */}
+                        <div className="h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              pct >= 100 ? 'bg-rose-500' : pct >= 75 ? 'bg-amber-500' : 'bg-emerald-500'
+                            }`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
-              {!isAccessibilityActive && (
+            </div>
+
+            {/* ── 3. BLOCK SHORTS & REELS SECTION ── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white">Block Shorts & Reels</h3>
                 <button
-                  type="button"
-                  onClick={async () => {
-                    if (!permStatus.hasUsageStats) {
-                      await callNativePlugin('openUsageAccessSettings');
-                    } else {
-                      await callNativePlugin('openOverlaySettings');
-                    }
-                    setTimeout(async () => {
-                      const res = await callNativePlugin('checkBlockerPermissions');
-                      if (res) {
-                        setPermStatus(res);
-                        setIsAccessibilityActive(res.hasUsageStats === true && res.hasOverlay === true);
-                      }
-                    }, 1500);
+                  onClick={() => {
+                    setA11yFeatureTarget('Shorts & Reels Blocker');
+                    setShowA11yGuideModal(true);
                   }}
-                  className="py-1.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer whitespace-nowrap"
+                  className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  {!permStatus.hasUsageStats ? '1. Allow Usage Access' : '2. Allow Appear on Top'}
-                </button>
-              )}
-            </div>
-
-            {!isAccessibilityActive && (
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                <span className="text-slate-400">Settings disabled on Android 13/14/15?</span>
-                <button
-                  type="button"
-                  onClick={() => setShowRestrictedSettingsGuide(true)}
-                  className="text-sky-400 hover:text-sky-300 font-semibold underline underline-offset-2 flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Unlock in 10 seconds →</span>
+                  <span>🎬 Video Guide</span>
                 </button>
               </div>
-            )}
-          </div>
+              <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">▶️</span>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">YouTube Shorts</h4>
+                      <p className="text-[11px] text-slate-400">Instantly blocks addictive shorts feed</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleShorts}
+                    className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      blockShorts ? 'bg-emerald-500' : 'bg-slate-800'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                        blockShorts ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
 
-          {/* Launch Button - 1-Tap Instant Start */}
-          <PressFeedback>
-            <button
-              onClick={handleStartFocus}
-              className="w-full py-4 rounded-2xl text-base font-black shadow-xl transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-slate-950 shadow-sky-500/20 cursor-pointer"
-            >
-              <Play className="w-5 h-5 fill-current" />
-              <span>Start Focus Session ({selectedDuration === -1 ? customDuration : selectedDuration} Min)</span>
-            </button>
-          </PressFeedback>
-        </div>
-      )}
+                <div className="h-px bg-[#1E2520]" />
 
-      {/* ── STRICT FRICTION / ANTI-QUIT MODAL ── */}
-      {showStrictFrictionModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
-          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-rose-500/40 p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">
-                Strict Focus Mode: {frictionAction === 'PAUSE' ? 'Pause Session?' : frictionAction === 'FINISH_EARLY' ? 'Finish Early?' : 'Give Up?'}
-              </h3>
-              <p className="text-xs text-rose-400 font-semibold uppercase tracking-wider">
-                Anti-Impulse Friction Challenge
-              </p>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Focus Shield enforces ironclad study discipline. To {frictionAction === 'PAUSE' ? 'pause' : frictionAction === 'FINISH_EARLY' ? 'finish early' : 'cancel'} your session before the timer completes, you must wait out the reflection cooldown and type the pledge below.
-            </p>
-
-            {/* Friction Cooldown Display */}
-            <div className={`p-3 rounded-xl border text-center font-bold text-sm transition-all ${
-              frictionCountdown > 0 
-                ? 'bg-rose-950/30 border-rose-500/40 text-rose-300' 
-                : 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300'
-            }`}>
-              {frictionCountdown > 0 ? (
-                <span>⏳ Wait {frictionCountdown}s before unlock activates</span>
-              ) : (
-                <span>✓ Reflection delay passed</span>
-              )}
-            </div>
-
-            {/* Confirmation Pledge Input */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-slate-400">
-                Type exactly: <span className="text-rose-400 font-bold tracking-wider">{STRICT_PLEDGE}</span>
-              </label>
-              <input
-                type="text"
-                value={frictionInput}
-                onChange={e => setFrictionInput(e.target.value)}
-                placeholder={STRICT_PLEDGE}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder:text-slate-600 focus:outline-none focus:border-rose-500 font-mono"
-              />
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => {
-                  if (frictionTimerRef.current) clearInterval(frictionTimerRef.current);
-                  setShowStrictFrictionModal(false);
-                }}
-                className="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm transition-all"
-              >
-                Keep Focusing
-              </button>
-              <button
-                disabled={frictionCountdown > 0 || frictionInput.trim().toUpperCase() !== STRICT_PLEDGE}
-                onClick={handleConfirmStrictAction}
-                className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${
-                  frictionCountdown === 0 && frictionInput.trim().toUpperCase() === STRICT_PLEDGE
-                    ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30 cursor-pointer'
-                    : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700/50'
-                }`}
-              >
-                {frictionAction === 'PAUSE' ? 'Confirm Pause' : frictionAction === 'FINISH_EARLY' ? 'Confirm Finish' : 'Confirm Give Up'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── DISTRACTION STRIKE / APP SWITCH DETECTED MODAL ── */}
-      {showDistractionStrikeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
-          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-amber-500/40 p-6 shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-2xl">
-              ⚡
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">
-                Distraction Strike #{distractionStrikes} Detected!
-              </h3>
-              <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">
-                Focus Guardian Alert
-              </p>
-            </div>
-
-            <p className="text-xs text-slate-300 leading-relaxed">
-              You left StudyRide for <span className="font-bold text-amber-400">{lastAwayDurationSec} seconds</span> to switch to other apps during active study. Your daily focus streak and syllabus mastery are at risk!
-            </p>
-
-            <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/30 text-amber-200 text-xs flex items-center gap-2">
-              <span>⚠️</span>
-              <span>Keep StudyRide open on screen to complete your 25-minute study target.</span>
-            </div>
-
-            <button
-              onClick={() => setShowDistractionStrikeModal(false)}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
-            >
-              Resume Study Focus Now
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── ANDROID 13/14/15 RESTRICTED SETTINGS UNLOCK GUIDE ── */}
-      {showRestrictedSettingsGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
-          <div className="max-w-md w-full rounded-3xl bg-slate-900 border border-sky-500/40 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">🔓</span>
-                <div>
-                  <h3 className="text-base font-bold text-white">Unlock Android 13/14/15 Settings</h3>
-                  <p className="text-[11px] text-sky-400">10-Second One-Time Quick Fix</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">📸</span>
+                    <div>
+                      <h4 className="text-sm font-bold text-white">Instagram Reels</h4>
+                      <p className="text-[11px] text-slate-400">Blocks endless video reels feed</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleToggleReels}
+                    className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      blockReels ? 'bg-emerald-500' : 'bg-slate-800'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                        blockReels ? 'translate-x-6' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowRestrictedSettingsGuide(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white"
+            </div>
+
+            {/* ── 4. YOUTUBE STUDY MODE ── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-white">YouTube Study Mode</h3>
+                <button
+                  onClick={() => {
+                    setA11yFeatureTarget('Educational Shield');
+                    setShowA11yGuideModal(true);
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-[11px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <span>🎬 Video Guide</span>
+                </button>
+              </div>
+              <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🎓</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Educational Video Shield</h4>
+                    <p className="text-[11px] text-slate-400">Allows lectures while muting entertainment recommendations</p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleToggleStudyMode}
+                  className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                    youtubeStudyMode ? 'bg-emerald-500' : 'bg-slate-800'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                      youtubeStudyMode ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════
+            TAB 4: PROFILE & AVATAR STUDIO
+           ══════════════════════════════════════════════ */}
+        {activeTab === 'PROFILE' && (
+          <div className="space-y-4 animate-in fade-in duration-300">
+            {/* 1. Yellow Illustrated Hero Avatar Banner */}
+            <div 
+              className="rounded-3xl p-6 relative overflow-hidden flex flex-col items-center justify-center text-center transition-colors duration-300"
+              style={{ backgroundColor: avatarConfig.bgColor || '#FACC15' }}
+            >
+              <div className="w-36 h-36 relative">
+                <AspirantAvatar config={avatarConfig} className="w-full h-full drop-shadow-xl" />
+              </div>
+
+              <button
+                onClick={() => setShowAvatarStudio(true)}
+                className="mt-3 px-4 py-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold text-xs backdrop-blur-md flex items-center gap-1.5 shadow-lg transition-all cursor-pointer"
               >
-                ✕
+                <Edit2 className="w-3.5 h-3.5 text-emerald-400" />
+                Customize Avatar
               </button>
             </div>
 
-            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300 leading-relaxed">
-              Google Android automatically displays <i>"Restricted setting" (प्रतिबंधित सेटिंग)</i> for apps downloaded from the web. Follow these 3 easy steps to unlock it:
+            {/* 2. User Info */}
+            <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-1">
+              <h3 className="text-base font-bold text-white">
+                {user?.fullName || user?.name || 'Ambuj Yadav'}
+              </h3>
+              <p className="text-xs text-slate-400">{user?.email || 'mysterioustalks6@gmail.com'}</p>
+              <p className="text-[11px] text-emerald-400 font-medium pt-1">
+                Target: UPSC CSE 2026 • Focusing since Sept 2026
+              </p>
+            </div>
+
+            {/* 3. Achievements & Badges */}
+            <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Focus Achievements</h4>
+                <span className="text-xs font-bold text-emerald-400">5 Badges</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                {[
+                  { title: '3H FOCUS', date: 'Earned Sept 03', icon: '⏳', unlocked: true },
+                  { title: '7-DAY STREAK', date: 'Earned Sept 10', icon: '🔥', unlocked: true },
+                  { title: '50H MASTER', date: 'In Progress (38h)', icon: '🛡️', unlocked: false }
+                ].map((b, i) => (
+                  <div
+                    key={i}
+                    className={`p-3 rounded-2xl border text-center flex flex-col items-center justify-center ${
+                      b.unlocked
+                        ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-300'
+                        : 'bg-[#121614] border-[#1E2520] text-slate-500 opacity-60'
+                    }`}
+                  >
+                    <span className="text-2xl mb-1">{b.icon}</span>
+                    <span className="text-[11px] font-black">{b.title}</span>
+                    <span className="text-[9px] text-slate-400 mt-0.5">{b.date}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 4. Weekly Focus Summary */}
+            <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold text-slate-400">Weekly Average</span>
+                <h4 className="text-lg font-bold text-white mt-0.5">2h 13m / day</h4>
+              </div>
+              <div className="w-12 h-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-400 flex items-center justify-center font-bold text-xs text-emerald-400">
+                84%
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── FLOATING START FOCUS ACTION BUTTON (Like Regain) ── */}
+      {activeTab === 'FOCUS' && sessionState === 'IDLE' && (
+        <div className="fixed bottom-20 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+          <button
+            onClick={handleStartSession}
+            className="pointer-events-auto w-full max-w-sm h-14 px-6 rounded-full bg-white hover:bg-slate-100 text-slate-950 font-bold text-sm shadow-[0_8px_30px_rgb(0,0,0,0.5)] flex items-center justify-between transition-all transform active:scale-98 cursor-pointer border border-white/20"
+          >
+            <div className="flex flex-col text-left">
+              <span className="text-sm font-black tracking-tight text-slate-950">Start focus timer</span>
+              <span className="text-[11px] text-slate-500 font-semibold">{selectedDuration} mins • Strict Blocker Active</span>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center shadow-lg shadow-emerald-500/40">
+              <Play className="w-4 h-4 fill-current ml-0.5" />
+            </div>
+          </button>
+        </div>
+      )}
+
+      {/* ── MODALS ── */}
+
+      {/* 1. Add Schedule Modal */}
+      {showAddScheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className="max-w-md w-full rounded-3xl bg-[#0C0F0D] border border-[#1E2520] p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white">Create Study Schedule</h3>
+              <button onClick={() => setShowAddScheduleModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center flex-shrink-0">1</div>
-                <div>
-                  <div className="font-bold text-white">Open App Info</div>
-                  <div className="text-slate-400 mt-0.5">Go to Phone <b>Settings → Apps → StudyRide</b> (or long-press the StudyRide app icon on your home screen and tap <b>"App info" / ऐप जानकारी</b>).</div>
-                </div>
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Schedule Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Morning Polity Revision"
+                  value={newScheduleName}
+                  onChange={e => setNewScheduleName(e.target.value)}
+                  className="w-full p-3 rounded-2xl bg-[#161B18] border border-[#1E2520] text-white focus:outline-none focus:border-emerald-500"
+                />
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center flex-shrink-0">2</div>
-                <div>
-                  <div className="font-bold text-white">Tap 3 Dots in Top-Right</div>
-                  <div className="text-slate-400 mt-0.5">In the top right corner of the screen, tap the <b>three vertical dots (⋮)</b>.</div>
-                </div>
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Subject / Syllabus Tag</label>
+                <input
+                  type="text"
+                  placeholder="e.g., GS-2 / Laxmikanth"
+                  value={newScheduleTag}
+                  onChange={e => setNewScheduleTag(e.target.value)}
+                  className="w-full p-3 rounded-2xl bg-[#161B18] border border-[#1E2520] text-white focus:outline-none focus:border-emerald-500"
+                />
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-start gap-3">
-                <div className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 font-bold flex items-center justify-center flex-shrink-0">3</div>
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <div className="font-bold text-white">Tap "Allow restricted settings"</div>
-                  <div className="text-slate-400 mt-0.5">Tap <b>"Allow restricted settings" (प्रतिबंधित सेटिंग्स की अनुमति दें)</b> and enter your phone lock screen PIN or fingerprint.</div>
+                  <label className="text-slate-400 font-semibold block mb-1">From Time</label>
+                  <input
+                    type="time"
+                    value={newScheduleStart}
+                    onChange={e => setNewScheduleStart(e.target.value)}
+                    className="w-full p-3 rounded-2xl bg-[#161B18] border border-[#1E2520] text-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-slate-400 font-semibold block mb-1">To Time</label>
+                  <input
+                    type="time"
+                    value={newScheduleEnd}
+                    onChange={e => setNewScheduleEnd(e.target.value)}
+                    className="w-full p-3 rounded-2xl bg-[#161B18] border border-[#1E2520] text-white"
+                  />
                 </div>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs">
-              ✓ Once unlocked, return here and tap <b>"Enable Blocker"</b>. It will turn on instantly!
+            <button
+              onClick={handleCreateSchedule}
+              className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+            >
+              Save Schedule
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Add App Limit Modal */}
+      {showAddLimitModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className="max-w-md w-full rounded-3xl bg-[#0C0F0D] border border-[#1E2520] p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white">Set Daily App Limit</h3>
+              <button onClick={() => setShowAddLimitModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
-            <div className="text-[11px] text-slate-400 italic">
-              Note: Even without this setting, Focus Shield's In-App Guardian automatically tracks distraction strikes and protects your focus session!
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Select App</label>
+                <select
+                  value={limitAppPkg}
+                  onChange={e => setLimitAppPkg(e.target.value)}
+                  className="w-full p-3 rounded-2xl bg-[#161B18] border border-[#1E2520] text-white focus:outline-none"
+                >
+                  <option value="com.google.android.youtube">YouTube (▶️)</option>
+                  <option value="com.instagram.android">Instagram (📸)</option>
+                  <option value="com.facebook.katana">Facebook (👥)</option>
+                  <option value="com.snapchat.android">Snapchat (👻)</option>
+                  <option value="com.android.chrome">Chrome Browser (🌐)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-400 font-semibold block mb-1">Daily Quota</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[15, 30, 45, 60].map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setLimitMinutesVal(m)}
+                      className={`p-2.5 rounded-xl border font-bold ${
+                        limitMinutesVal === m
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
+                          : 'bg-[#161B18] border-[#1E2520] text-slate-400'
+                      }`}
+                    >
+                      {m}m
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 pt-1">
+            <button
+              onClick={handleSaveAppLimit}
+              className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+            >
+              Apply Limit
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Strict Friction Give Up Modal */}
+      {showStrictFrictionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
+          <div className="max-w-md w-full rounded-3xl bg-[#0C0F0D] border border-rose-500/40 p-6 space-y-4">
+            <h3 className="text-base font-bold text-white">Giving Up Study Session?</h3>
+            <p className="text-xs text-slate-300">
+              Discipline requires sacrifice. Type the pledge below to quit:
+            </p>
+
+            <div className="p-3 rounded-2xl bg-rose-950/20 border border-rose-500/30 text-rose-300 text-xs font-mono font-bold select-all">
+              {STRICT_PLEDGE}
+            </div>
+
+            <input
+              type="text"
+              placeholder="Type pledge here..."
+              value={frictionInput}
+              onChange={e => setFrictionInput(e.target.value)}
+              className="w-full p-3 rounded-2xl bg-[#161B18] border border-[#1E2520] text-white text-xs font-mono focus:outline-none"
+            />
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
               <button
-                type="button"
-                onClick={async () => {
-                  await callNativePlugin('openAppDetailsSettings');
-                }}
-                className="py-2.5 px-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[11px] transition-all shadow-md shadow-sky-500/20 text-center"
+                onClick={() => setShowStrictFrictionModal(false)}
+                className="py-3 rounded-2xl bg-slate-800 text-slate-200 font-bold text-xs"
               >
-                1. App Info (⋮)
+                Keep Studying
               </button>
               <button
-                type="button"
-                onClick={async () => {
-                  await callNativePlugin('openUsageAccessSettings');
-                }}
-                className="py-2.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 border border-sky-500/30 font-bold text-[11px] transition-all text-center"
+                onClick={handleGiveUpPledge}
+                disabled={frictionInput.trim() !== STRICT_PLEDGE}
+                className="py-3 rounded-2xl bg-rose-600 disabled:opacity-40 text-white font-bold text-xs"
               >
-                2. Usage Access
-              </button>
-              <button
-                type="button"
-                onClick={async () => {
-                  setShowRestrictedSettingsGuide(false);
-                  await callNativePlugin('openOverlaySettings');
-                }}
-                className="py-2.5 px-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] transition-all text-center"
-              >
-                3. Appear on Top
+                Confirm Give Up
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* 4. Avatar Studio Modal */}
+      <AvatarStudioModal
+        isOpen={showAvatarStudio}
+        onClose={() => setShowAvatarStudio(false)}
+        currentConfig={avatarConfig}
+        onSave={cfg => {
+          setAvatarConfig(cfg);
+          localStorage.setItem('studyride_user_avatar', JSON.stringify(cfg));
+        }}
+      />
+
+      {/* 5. Accessibility Instruction Guide Modal (Regain Style) */}
+      <AccessibilityGuideModal
+        isOpen={showA11yGuideModal}
+        onClose={() => setShowA11yGuideModal(false)}
+        featureName={a11yFeatureTarget}
+        onPermissionGranted={async () => {
+          const perms = await callNativePlugin('checkBlockerPermissions');
+          if (perms) setPermStatus(perms);
+          if (a11yFeatureTarget.includes('Shorts')) setBlockShorts(true);
+          if (a11yFeatureTarget.includes('Reels')) setBlockReels(true);
+          if (a11yFeatureTarget.includes('Educational')) setYoutubeStudyMode(true);
+          await callNativePlugin('setGranularBlockRules', {
+            blockShorts: true,
+            blockReels: true,
+            youtubeStudyMode: true
+          });
+        }}
+      />
+
+      {/* 6. Multi-App Device Picker Modal (Select ANY installed app) */}
+      <AppPickerModal
+        isOpen={showAppPickerModal}
+        onClose={() => setShowAppPickerModal(false)}
+        installedApps={installedApps}
+        selectedPackages={Object.keys(appDailyLimits)}
+        showQuotaSelector={true}
+        initialQuotaMinutes={30}
+        title="Add App Daily Limits"
+        subtitle="Search and select apps to restrict daily usage"
+        onSave={handleSavePickedApps}
+      />
+
+      {/* 7. Regain App Group Creation & Editor Modal */}
+      <AppGroupModal
+        isOpen={showGroupModal}
+        onClose={() => {
+          setShowGroupModal(false);
+          setEditingGroup(null);
+        }}
+        group={editingGroup}
+        installedApps={installedApps}
+        onSave={handleSaveGroup}
+        onDelete={handleDeleteGroup}
+      />
     </div>
   );
 };

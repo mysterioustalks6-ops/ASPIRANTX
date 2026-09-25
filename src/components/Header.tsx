@@ -11,7 +11,8 @@ import {
   Maximize, 
   Minimize, 
   LayoutGrid, 
-  Menu
+  Menu,
+  ShieldCheck
 } from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
 
@@ -334,6 +335,26 @@ export const Header: React.FC<HeaderProps> = ({
         >
           {isFullscreen ? <Minimize className="w-4 h-4 text-sky-400" /> : <Maximize className="w-4 h-4 text-slate-400" />}
         </button>
+
+        {/* Quick Focus Shield Access */}
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('focus_shield')}
+            className={`w-9 h-9 sm:w-auto sm:px-2.5 sm:py-1.5 rounded-xl border transition-all flex items-center justify-center gap-1.5 text-xs font-semibold ${
+              activeTab === 'focus_shield'
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50 shadow-[0_0_12px_rgba(16,185,129,0.35)]'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 border-slate-800'
+            }`}
+            title="Focus Shield & App Lock (PRO)"
+            aria-label="Focus Shield Pro"
+          >
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <span className="hidden sm:inline">Focus</span>
+            <span className="hidden sm:inline-block px-1 py-0.2 rounded text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              PRO
+            </span>
+          </button>
+        )}
 
         {/* Notification Bell */}
         <NotificationCenter 

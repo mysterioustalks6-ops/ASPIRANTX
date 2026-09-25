@@ -93,6 +93,30 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           Productivity & Focus Tools
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* Hero Highlight: Focus Shield Pro */}
+          <button
+            onClick={() => onNavigate('focus_shield')}
+            className="col-span-full p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/40 hover:border-emerald-400 transition-all text-left flex items-center justify-between group shadow-md shadow-emerald-950/20"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+                <Shield className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-sm font-black text-white group-hover:text-emerald-300 flex items-center gap-2">
+                  <span>Focus Shield Pro</span>
+                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    APP LOCK & SCREEN TIME
+                  </span>
+                </div>
+                <div className="text-xs text-slate-300 mt-0.5">
+                  Block YouTube, Instagram Reels & set daily app limits (Inspired by Regain)
+                </div>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-emerald-400 group-hover:translate-x-1 transition-all shrink-0 ml-2" />
+          </button>
+
           <button
             onClick={() => onNavigate('timer')}
             className="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-sky-500/40 transition-all text-left flex items-center justify-between group"
@@ -120,25 +144,6 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <div>
                 <div className="text-xs font-bold text-white group-hover:text-indigo-300">Daily Study Planner & Kanban</div>
                 <div className="text-[11px] text-slate-400">Manage daily micro-goals & routines</div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-all" />
-          </button>
-
-          <button
-            onClick={() => onNavigate('focus_shield')}
-            className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-950/40 to-slate-900 border border-indigo-500/30 hover:border-indigo-400/60 transition-all text-left flex items-center justify-between group shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
-                <Shield className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white group-hover:text-indigo-300 flex items-center gap-1.5">
-                  <span>Focus Shield</span>
-                  <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">DISTRACTION BLOCKER</span>
-                </div>
-                <div className="text-[11px] text-slate-400">Restrict YouTube/Instagram on-device</div>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-400 transition-all" />

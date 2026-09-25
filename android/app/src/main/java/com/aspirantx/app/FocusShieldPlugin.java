@@ -26,12 +26,23 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import android.app.usage.UsageStats;
+import android.app.usage.UsageStatsManager;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 @CapacitorPlugin(name = "FocusShield")
 public class FocusShieldPlugin extends Plugin {
     private static final String TAG = "FocusShieldPlugin";
     public static final String PREFS_NAME = "studyride_focus_shield_clean_prefs";
     public static final String PREF_ACTIVE = "shield_active";
     public static final String PREF_END_TIME = "end_timestamp";
+    public static final String PREF_DAILY_LIMITS = "app_daily_limits";
+    public static final String PREF_SCHEDULES = "study_schedules";
+    public static final String PREF_EMERGENCY_PASSES = "emergency_passes";
+    public static final String PREF_APP_GROUPS = "studyride_app_groups";
 
     public static boolean hasUsageStatsPermission(Context context) {
         try {
@@ -54,16 +65,52 @@ public class FocusShieldPlugin extends Plugin {
         return true;
     }
 
+    public static boolean hasAccessibilityPermission(Context context) {
+        try {
+            android.view.accessibility.AccessibilityManager am =
+                    (android.view.accessibility.AccessibilityManager) context.getSystemService(Context.ACCESSIBILITY_SERVICE);
+            if (am != null) {
+                java.util.List<android.accessibilityservice.AccessibilityServiceInfo> services =
+                        am.getEnabledAccessibilityServiceList(android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK);
+                if (services != null) {
+                    for (android.accessibilityservice.AccessibilityServiceInfo s : services) {
+                        if (s.getId() != null && s.getId().contains(context.getPackageName())) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            int accessibilityEnabled = Settings.Secure.getInt(
+                    context.getContentResolver(),
+                    Settings.Secure.ACCESSIBILITY_ENABLED
+            );
+            if (accessibilityEnabled == 1) {
+                String settingValue = Settings.Secure.getString(
+                        context.getContentResolver(),
+                        Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                );
+                if (settingValue != null) {
+                    return settingValue.contains("FocusShieldAccessibilityService");
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     @PluginMethod
     public void checkBlockerPermissions(PluginCall call) {
         Context context = getContext();
         boolean hasUsage = hasUsageStatsPermission(context);
         boolean hasOverlay = hasOverlayPermission(context);
+        boolean hasAccessibility = hasAccessibilityPermission(context);
 
         JSObject res = new JSObject();
         res.put("hasUsageStats", hasUsage);
         res.put("hasOverlay", hasOverlay);
-        res.put("hasAccessibility", false);
+        res.put("hasAccessibility", hasAccessibility);
         res.put("canBlock", hasUsage);
         call.resolve(res);
     }
@@ -129,15 +176,58 @@ public class FocusShieldPlugin extends Plugin {
 
     @PluginMethod
     public void isAccessibilityEnabled(PluginCall call) {
+        boolean enabled = hasAccessibilityPermission(getContext());
         JSObject res = new JSObject();
-        res.put("enabled", false);
-        res.put("connected", false);
+        res.put("enabled", enabled);
+        res.put("connected", enabled);
         call.resolve(res);
     }
 
     @PluginMethod
     public void openAccessibilitySettings(PluginCall call) {
-        openUsageAccessSettings(call);
+        try {
+            Context context = getContext();
+            Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            JSObject res = new JSObject();
+            res.put("success", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Could not open Accessibility Settings: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void setGranularBlockRules(PluginCall call) {
+        boolean blockShorts = call.getBoolean("blockShorts", true);
+        boolean blockReels = call.getBoolean("blockReels", true);
+        boolean youtubeStudyMode = call.getBoolean("youtubeStudyMode", false);
+
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        prefs.edit()
+                .putBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, blockShorts)
+                .putBoolean(FocusShieldAccessibilityService.PREF_BLOCK_REELS, blockReels)
+                .putBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, youtubeStudyMode)
+                .apply();
+
+        JSObject res = new JSObject();
+        res.put("success", true);
+        call.resolve(res);
+    }
+
+    @PluginMethod
+    public void getGranularBlockRules(PluginCall call) {
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        boolean blockShorts = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_SHORTS, true);
+        boolean blockReels = prefs.getBoolean(FocusShieldAccessibilityService.PREF_BLOCK_REELS, true);
+        boolean youtubeStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
+
+        JSObject res = new JSObject();
+        res.put("blockShorts", blockShorts);
+        res.put("blockReels", blockReels);
+        res.put("youtubeStudyMode", youtubeStudyMode);
+        call.resolve(res);
     }
 
     @PluginMethod
@@ -346,6 +436,261 @@ public class FocusShieldPlugin extends Plugin {
             case "Gaming": return "🎮";
             case "Shopping": return "🛍️";
             default: return "📱";
+        }
+    }
+
+    @PluginMethod
+    public void getDailyUsageStats(PluginCall call) {
+        try {
+            Context context = getContext();
+            if (!hasUsageStatsPermission(context)) {
+                JSObject err = new JSObject();
+                err.put("hasPermission", false);
+                err.put("apps", new JSArray());
+                err.put("totalScreenTimeMinutes", 0);
+                call.resolve(err);
+                return;
+            }
+
+            UsageStatsManager usm = (UsageStatsManager) context.getSystemService(Context.USAGE_STATS_SERVICE);
+            if (usm == null) {
+                call.reject("UsageStatsManager not available");
+                return;
+            }
+
+            Calendar c = Calendar.getInstance();
+            long now = c.getTimeInMillis();
+            c.set(Calendar.HOUR_OF_DAY, 0);
+            c.set(Calendar.MINUTE, 0);
+            c.set(Calendar.SECOND, 0);
+            c.set(Calendar.MILLISECOND, 0);
+            long startOfDay = c.getTimeInMillis();
+
+            Map<String, UsageStats> aggregated = usm.queryAndAggregateUsageStats(startOfDay, now);
+            PackageManager pm = context.getPackageManager();
+
+            Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+            mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+            List<ResolveInfo> resolvedList = pm.queryIntentActivities(mainIntent, 0);
+
+            JSArray appsArray = new JSArray();
+            Set<String> seen = new HashSet<>();
+            String myPkg = context.getPackageName();
+
+            long totalTimeMs = 0;
+            long productiveTimeMs = 0;
+            long distractionTimeMs = 0;
+
+            for (ResolveInfo ri : resolvedList) {
+                if (ri.activityInfo == null || ri.activityInfo.packageName == null) continue;
+                String pkg = ri.activityInfo.packageName;
+                if (pkg.equals(myPkg) || seen.contains(pkg)) continue;
+                seen.add(pkg);
+
+                if (pkg.equals("android") || pkg.equals("com.android.systemui") || pkg.equals("com.android.settings")) continue;
+
+                long usageMs = 0;
+                long lastUsed = 0;
+                if (aggregated != null && aggregated.containsKey(pkg)) {
+                    UsageStats u = aggregated.get(pkg);
+                    if (u != null) {
+                        usageMs = u.getTotalTimeInForeground();
+                        lastUsed = u.getLastTimeUsed();
+                    }
+                }
+
+                String label = "";
+                try {
+                    CharSequence cs = ri.loadLabel(pm);
+                    if (cs != null) label = cs.toString().trim();
+                } catch (Exception ignored) {}
+                if (label.isEmpty()) label = pkg;
+
+                String category = categorizeApp(pkg, label);
+                boolean isDistraction = isDistractionApp(pkg, label, category);
+
+                if (usageMs > 0) {
+                    totalTimeMs += usageMs;
+                    if (isDistraction) {
+                        distractionTimeMs += usageMs;
+                    } else {
+                        productiveTimeMs += usageMs;
+                    }
+                }
+
+                JSObject item = new JSObject();
+                item.put("package", pkg);
+                item.put("name", label);
+                item.put("category", category);
+                item.put("isDistraction", isDistraction);
+                item.put("icon", getAppEmoji(category, pkg));
+                item.put("usageMinutes", (int) (usageMs / 60000L));
+                item.put("usageSeconds", (int) (usageMs / 1000L));
+                item.put("lastUsed", lastUsed);
+                appsArray.put(item);
+            }
+
+            JSObject res = new JSObject();
+            res.put("hasPermission", true);
+            res.put("totalScreenTimeMinutes", (int) (totalTimeMs / 60000L));
+            res.put("productiveMinutes", (int) (productiveTimeMs / 60000L));
+            res.put("distractionMinutes", (int) (distractionTimeMs / 60000L));
+            res.put("apps", appsArray);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to query daily usage: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void setAppDailyLimits(PluginCall call) {
+        try {
+            Context context = getContext();
+            JSObject limitsObj = call.getObject("limits");
+            String limitsJson = limitsObj != null ? limitsObj.toString() : "{}";
+
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            prefs.edit().putString(PREF_DAILY_LIMITS, limitsJson).apply();
+
+            ensureProtectionService();
+
+            JSObject res = new JSObject();
+            res.put("success", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to set app daily limits: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getAppDailyLimits(PluginCall call) {
+        try {
+            Context context = getContext();
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            String limitsJson = prefs.getString(PREF_DAILY_LIMITS, "{}");
+
+            JSObject res = new JSObject();
+            res.put("limits", new JSObject(limitsJson));
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to get app daily limits: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void setStudySchedules(PluginCall call) {
+        try {
+            Context context = getContext();
+            JSArray schedulesArr = call.getArray("schedules");
+            String schedulesJson = schedulesArr != null ? schedulesArr.toString() : "[]";
+
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            prefs.edit().putString(PREF_SCHEDULES, schedulesJson).apply();
+
+            ensureProtectionService();
+
+            JSObject res = new JSObject();
+            res.put("success", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to set study schedules: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getStudySchedules(PluginCall call) {
+        try {
+            Context context = getContext();
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            String schedulesJson = prefs.getString(PREF_SCHEDULES, "[]");
+
+            JSObject res = new JSObject();
+            res.put("schedules", new JSArray(schedulesJson));
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to get study schedules: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void grantEmergencyPass(PluginCall call) {
+        try {
+            String pkg = call.getString("package");
+            int passMinutes = call.getInt("minutes", 5);
+            if (pkg == null || pkg.isEmpty()) {
+                call.reject("Package name required");
+                return;
+            }
+
+            Context context = getContext();
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            long expiry = System.currentTimeMillis() + (passMinutes * 60000L);
+
+            String currentPassesJson = prefs.getString(PREF_EMERGENCY_PASSES, "{}");
+            JSObject passesObj = new JSObject(currentPassesJson);
+            passesObj.put(pkg, expiry);
+
+            prefs.edit().putString(PREF_EMERGENCY_PASSES, passesObj.toString()).apply();
+
+            JSObject res = new JSObject();
+            res.put("success", true);
+            res.put("package", pkg);
+            res.put("expiry", expiry);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to grant emergency pass: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void setAppGroups(PluginCall call) {
+        try {
+            Context context = getContext();
+            JSArray groupsArr = call.getArray("groups");
+            String groupsJson = groupsArr != null ? groupsArr.toString() : "[]";
+
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            prefs.edit().putString(PREF_APP_GROUPS, groupsJson).apply();
+
+            ensureProtectionService();
+
+            JSObject res = new JSObject();
+            res.put("success", true);
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to set app groups: " + e.getMessage());
+        }
+    }
+
+    @PluginMethod
+    public void getAppGroups(PluginCall call) {
+        try {
+            Context context = getContext();
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            String groupsJson = prefs.getString(PREF_APP_GROUPS, "[]");
+
+            JSObject res = new JSObject();
+            res.put("groups", new JSArray(groupsJson));
+            call.resolve(res);
+        } catch (Exception e) {
+            call.reject("Failed to get app groups: " + e.getMessage());
+        }
+    }
+
+    private void ensureProtectionService() {
+        try {
+            Context context = getContext();
+            if (hasUsageStatsPermission(context)) {
+                Intent serviceIntent = new Intent(context, FocusShieldMonitorService.class);
+                serviceIntent.setAction(FocusShieldMonitorService.ACTION_START);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent);
+                } else {
+                    context.startService(serviceIntent);
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "ensureProtectionService: " + e.getMessage());
         }
     }
 }
