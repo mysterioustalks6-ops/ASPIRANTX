@@ -149,9 +149,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
             {/* Drawer Header */}
             <div className="p-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/20 text-white font-black text-xl">
-                  {customizer?.brandName ? customizer.brandName[0] : 'A'}
-                </div>
+                <img 
+                  src={customizer?.logoUrl || '/logo.png'} 
+                  alt="App Logo" 
+                  className="w-10 h-10 rounded-2xl object-cover border border-slate-800 shadow-lg shadow-emerald-500/20"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png'; }}
+                />
                 <div>
                   <h2 className="text-sm font-bold text-slate-100">{customizer?.brandName || 'ASPIRANTX'}</h2>
                   <p className="text-[11px] text-slate-400">Complete Mobile Navigation</p>

@@ -285,17 +285,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title={`${customizer?.brandName || 'StudyRide'} - Double-tap logo for secret Admin Mode`}
               className="cursor-pointer select-none group"
             >
-              {customizer?.logoUrl ? (
-                <img 
-                  src={customizer.logoUrl} 
-                  alt="Brand Logo" 
-                  className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-sm group-hover:scale-105 transition-transform" 
-                />
-              ) : (
-                <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-sky-600/25 group-hover:scale-105 transition-transform shrink-0">
-                  {customizer?.logoIconText || 'PT'}
-                </div>
-              )}
+              <img 
+                src={customizer?.logoUrl || '/logo.png'} 
+                alt="Brand Logo" 
+                className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-sm group-hover:scale-105 transition-transform" 
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png'; }}
+              />
             </div>
 
             {onOpenWorkspaceCustomizer && (
@@ -325,17 +320,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title="Double-tap logo for secret Admin Mode"
               className="flex items-center gap-3 cursor-pointer select-none group flex-1 min-w-0"
             >
-              {customizer?.logoUrl ? (
-                <img 
-                  src={customizer.logoUrl} 
-                  alt="Brand Logo" 
-                  className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-sm group-hover:scale-105 transition-transform shrink-0" 
-                />
-              ) : (
-                <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-white text-sm shadow-md shadow-sky-600/25 group-hover:scale-105 transition-transform shrink-0">
-                  {customizer?.logoIconText || 'SR'}
-                </div>
-              )}
+              <img 
+                src={customizer?.logoUrl || '/logo.png'} 
+                alt="Brand Logo" 
+                className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-sm group-hover:scale-105 transition-transform shrink-0" 
+                onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png'; }}
+              />
               <div className="truncate">
                 <div className="flex items-center gap-1.5">
                   <h1 className="font-bold text-slate-100 tracking-wide text-sm truncate">

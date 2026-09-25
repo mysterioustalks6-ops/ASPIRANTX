@@ -30,7 +30,7 @@ export const DEFAULT_CUSTOMIZER_SETTINGS: AppCustomizerSettings = {
   brandTagline: 'Precision Exam Prep & Progress Suite',
   brandBadge: 'PRO',
   logoIconText: 'SR',
-  logoUrl: '',
+  logoUrl: '/logo.png',
   
   themePalette: 'CYBER_EMERALD',
   fontFamily: 'PLUS_JAKARTA',
@@ -58,6 +58,9 @@ function normalizeSettings(data: any): AppCustomizerSettings {
   }
   if (!merged.logoIconText || merged.logoIconText.toUpperCase() === 'PT' || merged.logoIconText.toUpperCase() === 'AX') {
     merged.logoIconText = 'SR';
+  }
+  if (!merged.logoUrl) {
+    merged.logoUrl = '/logo.png';
   }
   return merged;
 }

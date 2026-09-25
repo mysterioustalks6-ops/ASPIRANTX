@@ -193,9 +193,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       {/* Top Header Navigation */}
       <header className="w-full max-w-5xl mx-auto px-5 py-4 sm:py-6 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-black text-white text-base shadow-sm">
-            SR
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="App Logo" 
+            className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-md shadow-emerald-500/20 shrink-0" 
+          />
           <div>
             <h1 className="font-extrabold text-sm sm:text-base tracking-wider text-white">
               STUDY<span className="text-sky-400">RIDE</span>

@@ -42,9 +42,11 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
       <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-black text-slate-950 text-lg shadow-lg shadow-sky-500/25">
-              S
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="StudyRide Logo" 
+              className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-lg shadow-emerald-500/20" 
+            />
             <span className="font-black text-xl text-white tracking-tight">StudyRide</span>
           </div>
 
@@ -101,12 +103,14 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
 
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-2xl bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-400 text-2xl">
-                    <Smartphone className="w-6 h-6" />
-                  </div>
+                  <img 
+                    src="/logo.png" 
+                    alt="StudyRide Logo" 
+                    className="w-12 h-12 rounded-2xl object-cover border border-emerald-500/40 shadow-lg shadow-emerald-500/20 shrink-0" 
+                  />
                   <div>
                     <h2 className="text-2xl font-black text-white">StudyRide for Android</h2>
-                    <div className="text-xs text-sky-400 font-semibold">Version 2.4.3 • Official Build (September 2026)</div>
+                    <div className="text-xs text-emerald-400 font-semibold">Version 2.5.0 • Official Build (September 2026)</div>
                   </div>
                 </div>
 

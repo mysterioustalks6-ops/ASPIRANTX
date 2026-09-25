@@ -226,6 +226,12 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
+        <img 
+          src="/logo.png" 
+          alt="App Logo" 
+          className="md:hidden w-8 h-8 rounded-xl object-cover border border-slate-800 shadow-sm shrink-0" 
+        />
+
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="text-sm sm:text-base md:text-lg font-bold text-slate-100 tracking-tight truncate">
