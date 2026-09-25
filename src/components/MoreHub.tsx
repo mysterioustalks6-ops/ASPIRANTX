@@ -24,9 +24,11 @@ import {
   Calendar,
   Shield,
   Trophy,
-  Download
+  Download,
+  RotateCcw
 } from 'lucide-react';
 import { UserProfile, ExamType, ActiveTab } from '../types';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 interface MoreHubProps {
   user: UserProfile;
@@ -453,6 +455,36 @@ export const MoreHub: React.FC<MoreHubProps> = ({
             </button>
           )}
         </div>
+      </div>
+
+      {/* SECTION 4: APP RELEASE & LIVE UPDATE CHECKER */}
+      <div className="p-4 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900/90 to-emerald-950/20 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3 min-w-0">
+          <img 
+            src="/logo.png" 
+            alt="StudyRide Logo" 
+            className="w-10 h-10 rounded-2xl object-cover border border-emerald-500/40 shadow-sm shrink-0" 
+          />
+          <div className="min-w-0">
+            <div className="text-xs font-black text-white flex items-center gap-2 flex-wrap">
+              <span>StudyRide v{CANONICAL_APP_RELEASE.version}</span>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                LATEST
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400 truncate mt-0.5">
+              Live updates • New logo & Focus Shield Pro
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('studyride:check-update'))}
+          className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-emerald-500/20 shrink-0 cursor-pointer active:scale-95"
+        >
+          <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+          <span>Check Update</span>
+        </button>
       </div>
     </div>
   );

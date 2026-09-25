@@ -141,9 +141,14 @@ app.get('/api/ping', (_req, res) => {
 });
 
 app.get('/api/version', (_req, res) => {
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.json({
     version: APP_VERSION,
+    versionCode: Shared.APP_VERSION_CODE || 12,
+    apkDownloadUrl: 'https://studyride.in/studyride.apk',
+    directApkUrl: 'https://aspirantx.vercel.app/studyride.apk',
+    releaseDate: 'September 25, 2026',
+    releaseNotes: 'Official Modern Glowing Emblem Logo, Focus Shield Pro (Regain-inspired), OLED Dark theme, App Limits, and Avatar Studio.',
     timestamp: new Date().toISOString()
   });
 });

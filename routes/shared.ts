@@ -640,7 +640,8 @@ export async function updateGlobalAdminSettings(body: any, updatedBy = 'Admin') 
   return globalAdminSettings;
 }
 
-export const APP_VERSION = process.env.APP_VERSION || process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || process.env.COMMIT_REF?.slice(0, 7) || '2.4.3';
+export const APP_VERSION = process.env.APP_VERSION || '2.5.1';
+export const APP_VERSION_CODE = 12;
 
 export function isValidUUID(str: string | null | undefined): boolean {
   if (!str) return false;

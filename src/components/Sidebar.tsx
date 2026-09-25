@@ -34,10 +34,12 @@ import {
   Smartphone,
   Shield,
   Trophy,
-  Download
+  Download,
+  RotateCcw
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
 import { AdSenseBanner } from './AdSenseBanner';
 import { 
@@ -885,6 +887,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )
         ) : null}
+
+        {/* Live Version & In-App Update Trigger */}
+        {!isCollapsed && (
+          <div className="flex items-center justify-between px-2 pt-1 text-[11px] text-slate-400 font-medium">
+            <span>StudyRide v{CANONICAL_APP_RELEASE.version}</span>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('studyride:check-update'))}
+              className="hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer text-slate-400 hover:underline"
+              title="Check for newest updates"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Check updates</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

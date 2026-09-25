@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.4.3',
-  versionCode: 4,
+  version: '2.5.1',
+  versionCode: 12,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
-  releaseDate: 'September 24, 2026',
+  releaseDate: 'September 25, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'Welcome to StudyRide: Streamlined secure login flow, 26k+ PYQ & Question Bank live connection, Native Dynamic Streak Wallpaper, CBT Mock Simulator, and AI Study Mentor.',
+  releaseNotes: 'Official Modern Glowing Emblem Logo, Focus Shield Pro (Regain-inspired), OLED Dark theme, App Limits, and Avatar Studio.',
 };
