@@ -87,12 +87,9 @@ public class FocusShieldMonitorService extends Service {
         if (saved != null) {
             blockedPackages.addAll(saved);
         }
-        if (blockedPackages.isEmpty()) {
-            blockedPackages.add("com.google.android.youtube");
-            blockedPackages.add("com.instagram.android");
-            blockedPackages.add("com.facebook.katana");
-            blockedPackages.add("com.snapchat.android");
-        }
+        // NOTE: Do NOT add default packages here — blocked list is controlled by user toggles only.
+        // An empty blockedPackages means no app-group/focus-session blocking (Shorts/Reels are
+        // handled via separate blockShorts/blockReels flags, not via blockedPackages set).
     }
 
     private void startMonitoring() {
@@ -108,7 +105,8 @@ public class FocusShieldMonitorService extends Service {
             public void run() {
                 checkForegroundApp();
                 if (monitorHandler != null) {
-                    monitorHandler.postDelayed(this, 1000);
+                    // Poll every 500ms for near-real-time detection on Android 12-14
+                    monitorHandler.postDelayed(this, 500);
                 }
             }
         };
@@ -436,7 +434,9 @@ public class FocusShieldMonitorService extends Service {
             if (usm == null) return lastForegroundPackage;
 
             long end = System.currentTimeMillis();
-            long begin = end - 60000; // 60-second inspection window
+            // Use 3-second window for near-real-time detection on Android 12/13/14
+            // (60s window is too stale and returns wrong results on newer Android versions)
+            long begin = end - 3000;
 
             UsageEvents events = usm.queryEvents(begin, end);
             String latest = null;
@@ -446,8 +446,12 @@ public class FocusShieldMonitorService extends Service {
                 while (events.hasNextEvent()) {
                     events.getNextEvent(event);
                     int type = event.getEventType();
+                    // ACTIVITY_RESUMED = 1 (API 29+), MOVE_TO_FOREGROUND = 1 (older)
                     if (type == UsageEvents.Event.ACTIVITY_RESUMED || type == 1) {
-                        latest = event.getPackageName();
+                        String pkg = event.getPackageName();
+                        if (pkg != null && !pkg.isEmpty()) {
+                            latest = pkg;
+                        }
                     }
                 }
             }
@@ -457,8 +461,30 @@ public class FocusShieldMonitorService extends Service {
                 return latest;
             }
 
-            // Fallback: check queryUsageStats for devices that debounce usage events
-            List<UsageStats> statsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, end - 60000, end);
+            // Fallback: extend window to 10s if 3s window returned nothing
+            begin = end - 10000;
+            events = usm.queryEvents(begin, end);
+            if (events != null) {
+                UsageEvents.Event event = new UsageEvents.Event();
+                while (events.hasNextEvent()) {
+                    events.getNextEvent(event);
+                    int type = event.getEventType();
+                    if (type == UsageEvents.Event.ACTIVITY_RESUMED || type == 1) {
+                        String pkg = event.getPackageName();
+                        if (pkg != null && !pkg.isEmpty()) {
+                            latest = pkg;
+                        }
+                    }
+                }
+            }
+
+            if (latest != null && !latest.isEmpty()) {
+                lastForegroundPackage = latest;
+                return latest;
+            }
+
+            // Last fallback: queryUsageStats aggregated (slowest but most compatible)
+            List<UsageStats> statsList = usm.queryUsageStats(UsageStatsManager.INTERVAL_BEST, end - 5000, end);
             if (statsList != null && !statsList.isEmpty()) {
                 UsageStats mostRecent = null;
                 for (UsageStats u : statsList) {
@@ -466,7 +492,7 @@ public class FocusShieldMonitorService extends Service {
                         mostRecent = u;
                     }
                 }
-                if (mostRecent != null && (end - mostRecent.getLastTimeUsed() < 60000)) {
+                if (mostRecent != null && (end - mostRecent.getLastTimeUsed() < 5000)) {
                     lastForegroundPackage = mostRecent.getPackageName();
                     return mostRecent.getPackageName();
                 }

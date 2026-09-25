@@ -1171,15 +1171,21 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-bold text-white">Block Shorts & Reels</h3>
-                <span className="text-[11px] text-emerald-400 font-semibold">1-Tap Control</span>
+                <span className="text-[11px] text-emerald-400 font-semibold">24×7 Habit Shield</span>
               </div>
               <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">▶️</span>
                     <div>
-                      <h4 className="text-sm font-bold text-white">YouTube Shorts</h4>
-                      <p className="text-[11px] text-slate-400">Instantly blocks addictive shorts feed</p>
+                      <h4 className="text-sm font-bold text-white">YouTube Shorts Block</h4>
+                      <p className="text-[11px] text-slate-400">
+                        {youtubeStudyMode
+                          ? '🎓 Study Mode ON — YouTube lectures allowed'
+                          : blockShorts
+                          ? '🚫 YouTube blocked • Toggle Study Mode to allow lectures'
+                          : 'Blocks YouTube app when ON (enable Study Mode for lectures)'}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -1202,8 +1208,12 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                   <div className="flex items-center gap-3">
                     <span className="text-2xl">📸</span>
                     <div>
-                      <h4 className="text-sm font-bold text-white">Instagram Reels</h4>
-                      <p className="text-[11px] text-slate-400">Blocks endless video reels feed</p>
+                      <h4 className="text-sm font-bold text-white">Instagram Reels Block</h4>
+                      <p className="text-[11px] text-slate-400">
+                        {blockReels
+                          ? '🚫 Instagram blocked — scroll addiction stopped'
+                          : 'Blocks entire Instagram app when ON'}
+                      </p>
                     </div>
                   </div>
                   <button
@@ -1233,7 +1243,13 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                   <span className="text-2xl">🎓</span>
                   <div>
                     <h4 className="text-sm font-bold text-white">Educational Video Shield</h4>
-                    <p className="text-[11px] text-slate-400">Allows lectures while muting entertainment recommendations</p>
+                    <p className="text-[11px] text-slate-400">
+                      {youtubeStudyMode
+                        ? '✅ Active — YouTube allowed for lectures even if Shorts block is ON'
+                        : blockShorts
+                        ? '⚠️ OFF — Enable to allow YouTube lectures while blocking Shorts'
+                        : 'Enable with Shorts Block to allow lectures but block Shorts'}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -1249,6 +1265,18 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                   />
                 </button>
               </div>
+              {/* Explain how study mode works */}
+              {blockShorts && (
+                <div className={`px-4 py-3 rounded-2xl text-[11px] ${
+                  youtubeStudyMode
+                    ? 'bg-emerald-950/50 border border-emerald-800/40 text-emerald-300'
+                    : 'bg-amber-950/50 border border-amber-800/40 text-amber-300'
+                }`}>
+                  {youtubeStudyMode
+                    ? '🎓 Study Mode Active: YouTube khul sakti hai lectures ke liye. Jab YouTube use karein to Shorts tab se door rahein — app automatically monitor karti hai.'
+                    : '⚠️ Study Mode OFF: Abhi YouTube completely block hai. Lectures dekhne ke liye Study Mode ON karo.'}
+                </div>
+              )}
             </div>
           </div>
         )}
