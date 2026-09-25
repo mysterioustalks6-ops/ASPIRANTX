@@ -205,18 +205,17 @@ public class FocusShieldMonitorService extends Service {
                 }
             }
 
-            // Priority 3: 24x7 Reels & Shorts Habit Shield (Blocks Tab)
+            // Priority 3: 24x7 Habit Shield
+            // Instagram: Fully block when Reels toggle ON (no in-app detection possible)
             if (!shouldBlock && blockReels && "com.instagram.android".equals(currentPackage)) {
                 shouldBlock = true;
                 blockReason = "REELS_BLOCKED";
             }
-            if (!shouldBlock && blockShorts && "com.google.android.youtube".equals(currentPackage)) {
-                boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
-                if (!ytStudyMode) {
-                    shouldBlock = true;
-                    blockReason = "SHORTS_BLOCKED";
-                }
-            }
+            // YouTube: Do NOT block entire app here.
+            // FocusShieldAccessibilityService handles YouTube Shorts detection GRANULARLY:
+            // it detects reel_time_bar/reel_player_page/shorts_container view IDs and
+            // presses BACK only when user is on Shorts tab. Lectures are unaffected.
+            // MonitorService overlay on YouTube would ruin the lecture experience.
 
             // Priority 4: Daily Quota Limit Reached (Individual App)
             if (!shouldBlock) {

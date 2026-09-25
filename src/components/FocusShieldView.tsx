@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Shield, 
@@ -1180,11 +1180,9 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                     <div>
                       <h4 className="text-sm font-bold text-white">YouTube Shorts Block</h4>
                       <p className="text-[11px] text-slate-400">
-                        {youtubeStudyMode
-                          ? '🎓 Study Mode ON — YouTube lectures allowed'
-                          : blockShorts
-                          ? '🚫 YouTube blocked • Toggle Study Mode to allow lectures'
-                          : 'Blocks YouTube app when ON (enable Study Mode for lectures)'}
+                        {blockShorts
+                          ? 'Shorts tab blocked - Lectures and videos work fine'
+                          : 'Blocks only Shorts tab (lectures and videos unaffected)'}
                       </p>
                     </div>
                   </div>
