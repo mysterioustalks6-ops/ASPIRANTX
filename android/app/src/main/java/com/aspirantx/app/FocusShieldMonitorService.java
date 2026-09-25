@@ -184,33 +184,19 @@ public class FocusShieldMonitorService extends Service {
             int limitMins = 0;
             int usedMins = 0;
 
-            // Rule 1: Reels Protection (Instagram)
-            if (blockReels && "com.instagram.android".equals(currentPackage)) {
-                shouldBlock = true;
-                blockReason = "REELS_BLOCKED";
-            }
-
-            // Rule 2: Shorts Protection (YouTube)
-            if (!shouldBlock && blockShorts && "com.google.android.youtube".equals(currentPackage)) {
-                boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
-                if (!ytStudyMode) {
-                    shouldBlock = true;
-                    blockReason = "SHORTS_BLOCKED";
-                }
-            }
-
-            // Rule 3: Manual Focus Session Active
-            if (!shouldBlock && manualActive && now < endTimestamp && blockedPackages.contains(currentPackage)) {
+            // Priority 1: Manual Focus Timer Active (Pomodoro / Deep Work Session)
+            if (manualActive && now < endTimestamp && blockedPackages.contains(currentPackage)) {
                 boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
                 if (currentPackage.equals("com.google.android.youtube") && ytStudyMode) {
                     shouldBlock = false;
                 } else {
                     shouldBlock = true;
                     blockReason = "FOCUS_SESSION";
+                    limitMins = (int) Math.max(1, (endTimestamp - now) / 60000L);
                 }
             }
 
-            // Rule 4: Automated Study Schedule Active
+            // Priority 2: Automated Study Schedule Active (Planner Slot)
             if (!shouldBlock && isPackageBlockedBySchedule(prefs, currentPackage)) {
                 boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
                 if (currentPackage.equals("com.google.android.youtube") && ytStudyMode) {
@@ -221,7 +207,20 @@ public class FocusShieldMonitorService extends Service {
                 }
             }
 
-            // Rule 5: Daily Quota Limit Reached (Individual App)
+            // Priority 3: 24x7 Reels & Shorts Habit Shield (Blocks Tab)
+            if (!shouldBlock && blockReels && "com.instagram.android".equals(currentPackage)) {
+                shouldBlock = true;
+                blockReason = "REELS_BLOCKED";
+            }
+            if (!shouldBlock && blockShorts && "com.google.android.youtube".equals(currentPackage)) {
+                boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
+                if (!ytStudyMode) {
+                    shouldBlock = true;
+                    blockReason = "SHORTS_BLOCKED";
+                }
+            }
+
+            // Priority 4: Daily Quota Limit Reached (Individual App)
             if (!shouldBlock) {
                 int[] quotaCheck = checkDailyLimitExceeded(prefs, currentPackage);
                 if (quotaCheck[0] == 1) {
@@ -232,7 +231,7 @@ public class FocusShieldMonitorService extends Service {
                 }
             }
 
-            // Rule 6: App Group Lock or Shared Limit
+            // Priority 5: App Group Lock or Shared Limit
             if (!shouldBlock) {
                 Object[] groupCheck = checkAppGroupBlocked(prefs, currentPackage);
                 if ((Boolean) groupCheck[0]) {
@@ -337,7 +336,9 @@ public class FocusShieldMonitorService extends Service {
 
         String appLabel = getFriendlyName(packageName);
         if (tvBlockedApp != null) {
-            if ("REELS_BLOCKED".equals(reason)) {
+            if ("FOCUS_SESSION".equals(reason)) {
+                tvBlockedApp.setText("Focus Session • " + appLabel + " Blocked");
+            } else if ("REELS_BLOCKED".equals(reason)) {
                 tvBlockedApp.setText("Instagram Reels Blocked");
             } else if ("SHORTS_BLOCKED".equals(reason)) {
                 tvBlockedApp.setText("YouTube Shorts Restricted");
@@ -353,7 +354,10 @@ public class FocusShieldMonitorService extends Service {
         }
 
         if (tvRemainingTime != null) {
-            if ("DAILY_LIMIT_EXCEEDED".equals(reason)) {
+            if ("FOCUS_SESSION".equals(reason)) {
+                tvRemainingTime.setText(limitMins + "m Left in Session");
+                tvRemainingTime.setTextSize(26f);
+            } else if ("DAILY_LIMIT_EXCEEDED".equals(reason)) {
                 tvRemainingTime.setText(usedMins + "m / " + limitMins + "m Used");
                 tvRemainingTime.setTextSize(26f);
             } else if ("REELS_BLOCKED".equals(reason)) {
@@ -362,6 +366,9 @@ public class FocusShieldMonitorService extends Service {
             } else if ("SHORTS_BLOCKED".equals(reason)) {
                 tvRemainingTime.setText("NO SHORTS MODE");
                 tvRemainingTime.setTextSize(26f);
+            } else if ("SCHEDULE_ACTIVE".equals(reason)) {
+                tvRemainingTime.setText("SCHEDULED STUDY SLOT");
+                tvRemainingTime.setTextSize(22f);
             } else {
                 tvRemainingTime.setText("SHIELD ACTIVE");
             }
