@@ -273,6 +273,38 @@
   <body class="bg-slate-950 text-slate-100 antialiased">
     <!-- Root Container: Contains pre-rendered crawlable semantic HTML that Googlebot indexes instantly -->
     <div id="root">
+      <!-- Instant Cold Boot Animated Logo Preloader (Pure CSS, replaced seamlessly when React mounts) -->
+      <div id="initial-splash-preloader" style="position: fixed; inset: 0; background: #030712; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9998; font-family: system-ui, -apple-system, sans-serif;">
+        <style>
+          @keyframes srPulseRing {
+            0% { transform: scale(0.96); box-shadow: 0 0 25px rgba(16, 185, 129, 0.35), 0 0 50px rgba(6, 182, 212, 0.2); }
+            50% { transform: scale(1.03); box-shadow: 0 0 45px rgba(16, 185, 129, 0.7), 0 0 85px rgba(6, 182, 212, 0.38); }
+            100% { transform: scale(0.96); box-shadow: 0 0 25px rgba(16, 185, 129, 0.35), 0 0 50px rgba(6, 182, 212, 0.2); }
+          }
+          @keyframes srShimmer {
+            0% { transform: translateX(-150%) skewX(-20deg); }
+            100% { transform: translateX(250%) skewX(-20deg); }
+          }
+          @keyframes srProgress {
+            0% { width: 10%; }
+            50% { width: 65%; }
+            100% { width: 95%; }
+          }
+        </style>
+        <div style="position: relative; width: 108px; height: 108px; border-radius: 28px; padding: 2px; background: linear-gradient(135deg, #10b981, #06b6d4, #2dd4bf); animation: srPulseRing 2.4s ease-in-out infinite;">
+          <div style="width: 100%; height: 100%; border-radius: 26px; overflow: hidden; background: #060D17; position: relative; display: flex; align-items: center; justify-content: center;">
+            <img src="/logo.png" alt="StudyRide" style="width: 100%; height: 100%; object-fit: cover;" />
+            <div style="position: absolute; inset: 0; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent); animation: srShimmer 2s infinite ease-in-out;"></div>
+          </div>
+        </div>
+        <div style="margin-top: 22px; font-weight: 900; letter-spacing: 0.2em; font-size: 20px; color: #ffffff; text-transform: uppercase;">
+          STUDY<span style="color: #34d399; text-shadow: 0 0 12px rgba(52, 211, 153, 0.8);">RIDE</span>
+        </div>
+        <div style="margin-top: 18px; width: 130px; height: 3px; border-radius: 9999px; background: #1e293b; overflow: hidden; position: relative;">
+          <div style="height: 100%; background: linear-gradient(90deg, #06b6d4, #10b981); border-radius: 9999px; animation: srProgress 1.6s ease-in-out infinite;"></div>
+        </div>
+      </div>
+
       <noscript>
         <div style="padding: 2rem; max-width: 800px; margin: 0 auto; font-family: sans-serif; color: #e2e8f0; background: #06080d;">
           <h1>StudyRide - Complete Study Tracking, Syllabus Tracker & Pomodoro Timer App</h1>

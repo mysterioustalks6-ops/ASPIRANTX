@@ -48,6 +48,7 @@ import { MobileDrawer } from './components/MobileDrawer';
 import { ReminderSettingsModal } from './components/ReminderSettingsModal';
 import { ExamWallpaperWidget } from './components/ExamWallpaperWidget';
 import { LiveWallpaperSetupModal } from './components/LiveWallpaperSetupModal';
+import { AppSplashScreen } from './components/AppSplashScreen';
 import { shouldPromptWallpaperSetup, fetchWallpaperStatus, isAndroidPlatform } from './lib/nativeWallpaperBridge';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
@@ -255,6 +256,7 @@ function AppContent() {
     };
   }, []);
   const [initializing, setInitializing] = useState<boolean>(true);
+  const [splashFinished, setSplashFinished] = useState<boolean>(false);
   const [bannedMessage, setBannedMessage] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showReferralModal, setShowReferralModal] = useState<boolean>(false);
@@ -1067,14 +1069,13 @@ function AppContent() {
     );
   }
 
-  if (initializing) {
+  if (!splashFinished || initializing) {
     return (
-      <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center text-slate-100">
-        <div className="w-12 h-12 rounded-2xl bg-[#00FF94]/10 border border-[#00FF94]/30 flex items-center justify-center font-black text-[#00FF94] animate-pulse text-lg mb-4 shadow-[0_0_20px_rgba(0,255,148,0.3)]">
-          SR
-        </div>
-        <p className="text-xs text-slate-400 font-medium">Initializing StudyRide Platform...</p>
-      </div>
+      <AppSplashScreen
+        minDuration={1600}
+        isReady={!initializing}
+        onFinish={() => setSplashFinished(true)}
+      />
     );
   }
 
