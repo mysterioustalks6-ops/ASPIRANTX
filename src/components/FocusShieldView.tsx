@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Shield, 
@@ -584,60 +584,113 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
            ══════════════════════════════════════════════ */}
         {activeTab === 'FOCUS' && (
           <div className="space-y-4 animate-in fade-in duration-300">
-            {/* 0. 1-Tap Permission Setup Banner */}
-            {!permStatus.hasUsageStats ? (
-              <div className="p-4 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl shrink-0">
-                    🛡️
+            {/* ══ PERMISSION SETUP WIZARD ══ */}
+            {(() => {
+              const step = !permStatus.hasUsageStats ? 1 : !permStatus.hasOverlay ? 2 : !permStatus.hasAccessibility ? 3 : 0;
+              if (step === 0) return (
+                <div className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Focus Shield Ready — Full Protection Active</span>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Enable Focus Shield (1-Tap Setup)</h4>
-                    <p className="text-[11px] text-amber-200/80">Allow Usage Access to detect & block distracting apps.</p>
-                  </div>
+                  <span className="text-[11px] text-emerald-300/80 font-mono">3/3 ✓</span>
                 </div>
-                <button
-                  onClick={async () => {
+              );
+
+              const steps = [
+                {
+                  num: 1, icon: '📊', color: 'amber',
+                  title: 'Step 1 of 3 — App Detection',
+                  desc: 'Ek baar "Allow" karo — app detect karega ki YouTube ya Instagram khula hai',
+                  btnText: 'Allow Now →',
+                  action: async () => {
                     await callNativePlugin('openUsageAccessSettings');
-                    const p = await callNativePlugin('checkBlockerPermissions');
-                    if (p) setPermStatus(p);
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md transition-all active:scale-95"
-                >
-                  Allow Access
-                </button>
-              </div>
-            ) : !permStatus.hasOverlay ? (
-              <div className="p-4 rounded-3xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-between gap-3 shadow-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-sky-500/20 text-sky-400 flex items-center justify-center text-xl shrink-0">
-                    ⚡
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-white">Enable Fullscreen Blocker (Step 2)</h4>
-                    <p className="text-[11px] text-sky-200/80">Allow "Display over other apps" so the shield covers distractions.</p>
-                  </div>
-                </div>
-                <button
-                  onClick={async () => {
+                    // Auto-poll every 1.5s so wizard advances automatically
+                    const poll = setInterval(async () => {
+                      const p = await callNativePlugin('checkBlockerPermissions');
+                      if (p) { setPermStatus(p); if (p.hasUsageStats) clearInterval(poll); }
+                    }, 1500);
+                    setTimeout(() => clearInterval(poll), 30000);
+                  }
+                },
+                {
+                  num: 2, icon: '🛡️', color: 'sky',
+                  title: 'Step 2 of 3 — Block Screen',
+                  desc: 'Ek baar "Allow" karo — blocking screen distracting apps ke upar aayegi',
+                  btnText: 'Allow Now →',
+                  action: async () => {
                     await callNativePlugin('openOverlaySettings');
-                    const p = await callNativePlugin('checkBlockerPermissions');
-                    if (p) setPermStatus(p);
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-sky-400 hover:bg-sky-300 text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md transition-all active:scale-95"
-                >
-                  Allow Overlay
-                </button>
-              </div>
-            ) : (
-              <div className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Protection Engine Ready • Zero Setup Needed</span>
+                    const poll = setInterval(async () => {
+                      const p = await callNativePlugin('checkBlockerPermissions');
+                      if (p) { setPermStatus(p); if (p.hasOverlay) clearInterval(poll); }
+                    }, 1500);
+                    setTimeout(() => clearInterval(poll), 30000);
+                  }
+                },
+                {
+                  num: 3, icon: '✂️', color: 'violet',
+                  title: 'Step 3 of 3 — Shorts Detector',
+                  desc: 'Sirf Shorts tab block karne ke liye chahiye — YouTube lectures bilkul safe rahenge',
+                  btnText: 'Allow Now →',
+                  action: async () => {
+                    await callNativePlugin('openAccessibilitySettings');
+                    const poll = setInterval(async () => {
+                      const p = await callNativePlugin('checkBlockerPermissions');
+                      if (p) { setPermStatus(p); if (p.hasAccessibility) clearInterval(poll); }
+                    }, 1500);
+                    setTimeout(() => clearInterval(poll), 30000);
+                  }
+                }
+              ];
+
+              const s = steps[step - 1];
+              const colorMap: Record<string, string> = {
+                amber: 'bg-amber-500/10 border-amber-500/30',
+                sky:   'bg-sky-500/10 border-sky-500/30',
+                violet:'bg-violet-500/10 border-violet-500/30',
+              };
+              const btnMap: Record<string, string> = {
+                amber: 'bg-amber-400 hover:bg-amber-300',
+                sky:   'bg-sky-400 hover:bg-sky-300',
+                violet:'bg-violet-400 hover:bg-violet-300',
+              };
+              const iconBgMap: Record<string, string> = {
+                amber: 'bg-amber-500/20',
+                sky:   'bg-sky-500/20',
+                violet:'bg-violet-500/20',
+              };
+
+              return (
+                <div className={`p-4 rounded-3xl border ${colorMap[s.color]} shadow-lg`}>
+                  {/* Progress dots */}
+                  <div className="flex items-center gap-1.5 mb-3">
+                    {[1,2,3].map(n => (
+                      <div key={n} className={`h-1 rounded-full flex-1 transition-all ${n <= step ? (s.color === 'amber' ? 'bg-amber-400' : s.color === 'sky' ? 'bg-sky-400' : 'bg-violet-400') : 'bg-slate-700'}`} />
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-2xl ${iconBgMap[s.color]} flex items-center justify-center text-xl shrink-0`}>
+                        {s.icon}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-white">{s.title}</h4>
+                        <p className="text-[11px] text-slate-300 mt-0.5 leading-tight">{s.desc}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={s.action}
+                      className={`px-4 py-2 rounded-xl ${btnMap[s.color]} text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md transition-all active:scale-95`}
+                    >
+                      {s.btnText}
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2 text-center">
+                    Settings khulegi → StudyRide dhundho → Enable karo → wapas aao — auto detect hoga ✓
+                  </p>
                 </div>
-                <span className="text-[11px] text-emerald-300/80 font-mono">100% Protected</span>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 1. Large Focus Goal Ring */}
             <div className="p-6 rounded-3xl bg-[#161B18] border border-[#1E2520] relative overflow-hidden flex flex-col items-center justify-center text-center">
