@@ -26,6 +26,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.core.app.NotificationCompat;
 
@@ -206,16 +207,23 @@ public class FocusShieldMonitorService extends Service {
             }
 
             // Priority 3: 24x7 Habit Shield
-            // Instagram: Fully block when Reels toggle ON (no in-app detection possible)
+            // Instagram: Fully block when Reels toggle ON
             if (!shouldBlock && blockReels && "com.instagram.android".equals(currentPackage)) {
                 shouldBlock = true;
                 blockReason = "REELS_BLOCKED";
             }
-            // YouTube: Do NOT block entire app here.
-            // FocusShieldAccessibilityService handles YouTube Shorts detection GRANULARLY:
-            // it detects reel_time_bar/reel_player_page/shorts_container view IDs and
-            // presses BACK only when user is on Shorts tab. Lectures are unaffected.
-            // MonitorService overlay on YouTube would ruin the lecture experience.
+            // YouTube: Block when Shorts toggle ON.
+            // If user granted "Watch Lecture" bypass (stored as youtube_lecture_bypass_until),
+            // allow YouTube until that timestamp expires.
+            if (!shouldBlock && blockShorts && "com.google.android.youtube".equals(currentPackage)) {
+                boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
+                long lectureBypassUntil = prefs.getLong("youtube_lecture_bypass_until", 0);
+                boolean bypassActive = System.currentTimeMillis() < lectureBypassUntil;
+                if (!ytStudyMode && !bypassActive) {
+                    shouldBlock = true;
+                    blockReason = "SHORTS_BLOCKED";
+                }
+            }
 
             // Priority 4: Daily Quota Limit Reached (Individual App)
             if (!shouldBlock) {
@@ -376,24 +384,42 @@ public class FocusShieldMonitorService extends Service {
         }
 
         if (btnReturn != null) {
-            btnReturn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    hideBlockOverlay();
-                    try {
-                        Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-                        if (launchIntent != null) {
-                            launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                            startActivity(launchIntent);
-                        } else {
-                            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
-                            homeIntent.addCategory(Intent.CATEGORY_HOME);
-                            homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                            startActivity(homeIntent);
-                        }
-                    } catch (Exception ignored) {}
-                }
-            });
+            if ("SHORTS_BLOCKED".equals(reason)) {
+                // For Shorts block: show "Watch Lecture" bypass button
+                btnReturn.setText("Watch Lecture ✅ (10 min)");
+                btnReturn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Grant 10-minute lecture bypass
+                        getSharedPreferences(FocusShieldPlugin.PREFS_NAME, Context.MODE_PRIVATE)
+                            .edit()
+                            .putLong("youtube_lecture_bypass_until", System.currentTimeMillis() + 10 * 60 * 1000L)
+                            .apply();
+                        hideBlockOverlay();
+                        Toast.makeText(FocusShieldMonitorService.this,
+                            "✅ Lecture mode: 10 min YouTube access granted", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } else {
+                btnReturn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        hideBlockOverlay();
+                        try {
+                            Intent launchIntent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+                            if (launchIntent != null) {
+                                launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                startActivity(launchIntent);
+                            } else {
+                                Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+                                homeIntent.addCategory(Intent.CATEGORY_HOME);
+                                homeIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                startActivity(homeIntent);
+                            }
+                        } catch (Exception ignored) {}
+                    }
+                });
+            }
         }
 
         if (btnHome != null) {
