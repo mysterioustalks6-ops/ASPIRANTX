@@ -26,7 +26,7 @@
       "destination": "/studyride.apk"
     },
     {
-      "source": "/((?!ads\\.txt|sitemap\\.xml|robots\\.txt|llms\\.txt|.*\\.apk).*)",
+      "source": "/((?!api|landing-pages|assets|audio|auth-callback\\.html|favicon|logo|manifest\\.json|pwa-|apple-touch-icon|version\\.json|ads\\.txt|sitemap\\.xml|robots\\.txt|llms\\.txt|.*\\.apk|.*\\.(?:css|js|webp|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|mp3|wav|ogg)).*)",
       "destination": "/index.html"
     }
   ]
