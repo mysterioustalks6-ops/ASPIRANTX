@@ -51331,9 +51331,7 @@ if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
   }
 }
 var server_default = app;
-
-// api/index.ts
-var index_default = server_default;
 export {
-  index_default as default
+  app,
+  server_default as default
 };
