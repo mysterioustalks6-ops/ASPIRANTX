@@ -1,0 +1,587 @@
+[
+  {
+    "title": "UPSC CSE",
+    "fullName": "Civil Services Examination",
+    "location": "Uttar Pradesh",
+    "category": "Civil Services & General",
+    "description": "India's premier civil services exam conducted by UPSC for IAS, IPS, IFS and other Group A & B services.",
+    "searchTerms": "UPSC CSE UPSC Civil Services Examination Central Government Graduate",
+    "link": "/syllabus/upsc-cse/",
+    "tags": [
+      "National",
+      "Highest"
+    ]
+  },
+  {
+    "title": "SSC CGL",
+    "fullName": "Combined Graduate Level",
+    "location": "Central / National",
+    "category": "Civil Services & General",
+    "description": "Most popular SSC exam for Group B and C posts in various central government departments.",
+    "searchTerms": "SSC CGL CGL Combined Graduate Level Central Government Graduate",
+    "link": "/syllabus/ssc-cgl/",
+    "tags": [
+      "National",
+      "High"
+    ]
+  },
+  {
+    "title": "SSC CHSL",
+    "fullName": "Combined Higher Secondary Level",
+    "location": "Central / National",
+    "category": "Civil Services & General",
+    "description": "SSC exam for LDC, JSA, Postal Assistant, Sorting Assistant and DEO posts in central ministries.",
+    "searchTerms": "SSC CHSL CHSL Combined Higher Secondary Level Central Government 12th Pass",
+    "link": "/syllabus/chsl/",
+    "tags": [
+      "National",
+      "Medium"
+    ]
+  },
+  {
+    "title": "SSC MTS",
+    "fullName": "Multi Tasking Staff",
+    "location": "Central / National",
+    "category": "Civil Services & General",
+    "description": "SSC exam for Multi Tasking Staff and Havaldar posts in various central government offices.",
+    "searchTerms": "SSC MTS MTS Multi Tasking Staff Central Government 10th Pass",
+    "link": "/syllabus/mts/",
+    "tags": [
+      "National",
+      "Low-Medium"
+    ]
+  },
+  {
+    "title": "SSC GD",
+    "fullName": "General Duty Constable",
+    "location": "Central / National",
+    "category": "Civil Services & General",
+    "description": "SSC exam for GD Constable posts in BSF, CISF, CRPF, SSB, ITBP, AR, SSF and NIA.",
+    "searchTerms": "SSC GD GD General Duty Constable Central Government 10th Pass",
+    "link": "/syllabus/gd-constable/",
+    "tags": [
+      "National",
+      "Low-Medium"
+    ]
+  },
+  {
+    "title": "UPSC CAPF",
+    "fullName": "Central Armed Police Forces AC",
+    "location": "Central / National",
+    "category": "Civil Services & General",
+    "description": "UPSC exam for Assistant Commandant posts in BSF, CISF, CRPF, ITBP and SSB forces.",
+    "searchTerms": "UPSC CAPF CAPF Central Armed Police Forces AC Central Government Graduate",
+    "link": "/syllabus/capf/",
+    "tags": [
+      "National",
+      "High"
+    ]
+  },
+  {
+    "title": "UPPSC PCS",
+    "fullName": "UP Provincial Civil Services",
+    "location": "Uttar Pradesh",
+    "category": "Civil Services & General",
+    "description": "UP state civil services exam for SDM, DSP, BDO and other Group A & B posts.",
+    "searchTerms": "UPPSC PCS UPPSC UP Provincial Civil Services State Government Graduate",
+    "link": "/syllabus/uppsc/",
+    "tags": [
+      "State",
+      "High"
+    ]
+  },
+  {
+    "title": "WBCS",
+    "fullName": "West Bengal Civil Service",
+    "location": "West Bengal",
+    "category": "Civil Services & General",
+    "description": "West Bengal state civil services exam for WBCS (Exe), Deputy Magistrate and other Group A, B, C, D posts.",
+    "searchTerms": "WBCS WBCS West Bengal Civil Service State Government Graduate",
+    "link": "/syllabus/wbcs/",
+    "tags": [
+      "State",
+      "High"
+    ]
+  },
+  {
+    "title": "BPSC PCS",
+    "fullName": "Bihar Combined Competitive Examination",
+    "location": "Bihar",
+    "category": "Civil Services & General",
+    "description": "Bihar state civil services exam for DSP, CDPO, Naib Tehsildar and other Group A, B, C posts.",
+    "searchTerms": "BPSC PCS BPSC Bihar Combined Competitive Examination State Government Graduate",
+    "link": "/syllabus/bpsc/",
+    "tags": [
+      "State",
+      "High"
+    ]
+  },
+  {
+    "title": "RRB NTPC",
+    "fullName": "Non-Technical Popular Categories",
+    "location": "Central / National",
+    "category": "Railway",
+    "description": "Railway recruitment exam for station master, goods guard, commercial clerk and other non-technical posts.",
+    "searchTerms": "RRB NTPC NTPC Non-Technical Popular Categories Railway 12th Pass / Graduate",
+    "link": "/syllabus/rrb-ntpc/",
+    "tags": [
+      "National",
+      "Medium"
+    ]
+  },
+  {
+    "title": "RRB JE",
+    "fullName": "Railway Junior Engineer",
+    "location": "Central / National",
+    "category": "Railway",
+    "description": "Railway recruitment exam for Junior Engineer posts in Civil, Electrical, Mechanical and other departments.",
+    "searchTerms": "RRB JE JE Railway Junior Engineer Railway Diploma / B.E. / B.Tech in relevant Engineering",
+    "link": "/syllabus/rrb-je/",
+    "tags": [
+      "National",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "IBPS PO",
+    "fullName": "Probationary Officer",
+    "location": "Central / National",
+    "category": "Banking",
+    "description": "Banking exam for Probationary Officer posts in all public sector banks except SBI.",
+    "searchTerms": "IBPS PO IBPS PO Probationary Officer Banking Graduate",
+    "link": "/syllabus/ibps-po/",
+    "tags": [
+      "National",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "SBI PO",
+    "fullName": "State Bank of India Probationary Officer",
+    "location": "Central / National",
+    "category": "Banking",
+    "description": "Prestigious banking exam conducted by SBI for Probationary Officer posts across all SBI branches.",
+    "searchTerms": "SBI PO SBI PO State Bank of India Probationary Officer Banking Graduate",
+    "link": "/syllabus/sbi-po/",
+    "tags": [
+      "National",
+      "High"
+    ]
+  },
+  {
+    "title": "IBPS Clerk",
+    "fullName": "IBPS Clerical Cadre",
+    "location": "Central / National",
+    "category": "Banking",
+    "description": "High-volume banking exam for Clerk posts in public sector banks - one of the most attempted exams in India.",
+    "searchTerms": "IBPS Clerk Clerk IBPS Clerical Cadre Banking Graduate",
+    "link": "/syllabus/ibps-clerk/",
+    "tags": [
+      "National",
+      "Medium"
+    ]
+  },
+  {
+    "title": "NDA",
+    "fullName": "National Defence Academy",
+    "location": "Central / National",
+    "category": "Defence",
+    "description": "UPSC-conducted exam for entry into National Defence Academy and Naval Academy for Army, Navy and Air Force.",
+    "searchTerms": "NDA NDA National Defence Academy Defence 12th Pass (PCM for Navy/Air Force)",
+    "link": "/syllabus/nda/",
+    "tags": [
+      "National",
+      "High"
+    ]
+  },
+  {
+    "title": "CDS",
+    "fullName": "Combined Defence Services",
+    "location": "Central / National",
+    "category": "Defence",
+    "description": "UPSC exam for commissioning into Indian Army, Navy and Air Force as officers via IMA, INA, AFA and OTA.",
+    "searchTerms": "CDS CDS Combined Defence Services Defence Graduate (B.E./B.Tech for AFA/INA)",
+    "link": "/syllabus/cds/",
+    "tags": [
+      "National",
+      "High"
+    ]
+  },
+  {
+    "title": "CTET",
+    "fullName": "Central Teacher Eligibility Test",
+    "location": "Central / National",
+    "category": "Teaching",
+    "description": "CBSE-conducted eligibility test for teaching positions in KVS, NVS, Army schools and DSSSB - valid for lifetime.",
+    "searchTerms": "CTET CTET Central Teacher Eligibility Test Teaching D.El.Ed / B.Ed from recognized institution",
+    "link": "/syllabus/ctet/",
+    "tags": [
+      "National",
+      "Medium"
+    ]
+  },
+  {
+    "title": "UGC NET",
+    "fullName": "National Eligibility Test",
+    "location": "Central / National",
+    "category": "Teaching",
+    "description": "NTA-conducted exam qualifying candidates for Assistant Professor and Junior Research Fellowship in 83 subjects.",
+    "searchTerms": "UGC NET NET National Eligibility Test Teaching Master's Degree with 55% marks",
+    "link": "/syllabus/ugc-net/",
+    "tags": [
+      "National",
+      "High"
+    ]
+  },
+  {
+    "title": "JENPAS UG",
+    "fullName": "Joint Entrance Test for Nursing, Paramedical and Allied Sciences",
+    "location": "West Bengal",
+    "category": "Nursing & Allied Sciences",
+    "description": "State-level entrance exam for B.Sc. Nursing, BPT, BMLT, and other undergraduate paramedical and allied health science courses in West Bengal.",
+    "searchTerms": "JENPAS UG JENPAS UG Joint Entrance Test for Nursing, Paramedical and Allied Sciences Nursing &amp; Allied Sciences 12th Pass (PCB)",
+    "link": "/syllabus/jenpas-ug/",
+    "tags": [
+      "State",
+      "High"
+    ]
+  },
+  {
+    "title": "JEPBN",
+    "fullName": "Joint Entrance Post Basic Nursing",
+    "location": "West Bengal",
+    "category": "Nursing & Allied Sciences",
+    "description": "Joint entrance examination conducted by WBJEEB for admission into Post Basic B.Sc. Nursing course in West Bengal.",
+    "searchTerms": "JEPBN JEPBN Joint Entrance Post Basic Nursing Nursing &amp; Allied Sciences GNM Pass",
+    "link": "/syllabus/jepbn/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "ANM &amp; GNM",
+    "fullName": "Auxiliary Nursing Midwifery &amp; General Nursing and Midwifery",
+    "location": "West Bengal",
+    "category": "Nursing & Allied Sciences",
+    "description": "Entrance examination for admission to 2-year Auxiliary Nursing Midwifery (ANM) and 3-year General Nursing and Midwifery (GNM) courses in West Bengal.",
+    "searchTerms": "ANM &amp; GNM ANM &amp; GNM Auxiliary Nursing Midwifery &amp; General Nursing and Midwifery Nursing &amp; Allied Sciences 12th Pass",
+    "link": "/syllabus/anm-gnm/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "SMFWBEE",
+    "fullName": "State Medical Faculty of West Bengal Entrance Examination",
+    "location": "West Bengal",
+    "category": "Nursing & Allied Sciences",
+    "description": "Entrance exam conducted by State Medical Faculty of West Bengal for admission into various Diploma paramedical courses.",
+    "searchTerms": "SMFWBEE SMFWBEE State Medical Faculty of West Bengal Entrance Examination Nursing &amp; Allied Sciences 12th Pass (PCB)",
+    "link": "/syllabus/smfwbee/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "WBPSC Food SI",
+    "fullName": "Food Sub-Inspector Recruitment Examination",
+    "location": "West Bengal",
+    "category": "Civil Services & General",
+    "description": "Competitive recruitment exam conducted by West Bengal Public Service Commission for Sub-Inspector posts in Subordinate Food & Supplies Service.",
+    "searchTerms": "WBPSC Food SI Food SI Food Sub-Inspector Recruitment Examination State Government 10th Pass",
+    "link": "/syllabus/wbpsc-food-si/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "JELET",
+    "fullName": "Joint Entrance Examination for Lateral Entry",
+    "location": "West Bengal",
+    "category": "Engineering",
+    "description": "Entrance exam for lateral entry into 2nd year (3rd semester) of 4-year Bachelor Degree courses in Engineering/Technology and Pharmacy.",
+    "searchTerms": "JELET JELET Joint Entrance Examination for Lateral Entry Engineering Diploma in Engineering/Tech / B.Sc",
+    "link": "/syllabus/jelet/",
+    "tags": [
+      "State",
+      "High"
+    ]
+  },
+  {
+    "title": "JEXPO / VOCLET",
+    "fullName": "Joint Entrance Examination for Polytechnics &amp; Vocational Lateral Entry",
+    "location": "West Bengal",
+    "category": "Engineering",
+    "description": "Entrance exams for admission into 1st year (JEXPO) and lateral entry to 2nd year (VOCLET) of Diploma in Engineering and Technology courses in West Bengal.",
+    "searchTerms": "JEXPO / VOCLET JEXPO Joint Entrance Examination for Polytechnics &amp; Vocational Lateral Entry Engineering 10th Pass / 12th Vocational / ITI",
+    "link": "/syllabus/jexpo-voclet/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "UP CNET",
+    "fullName": "Common Nursing Entrance Test (B.Sc Nursing)",
+    "location": "Uttar Pradesh",
+    "category": "Nursing & Allied Sciences",
+    "description": "Uttar Pradesh state-level Common Nursing Entrance Test conducted by ABVMU for admission to B.Sc. Nursing courses.",
+    "searchTerms": "UP CNET UP CNET Common Nursing Entrance Test (B.Sc Nursing) Nursing &amp; Allied Sciences 12th Pass (PCB)",
+    "link": "/syllabus/up-cnet/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "UPGET",
+    "fullName": "Common Nursing Entrance Test (GNM / ANM)",
+    "location": "Uttar Pradesh",
+    "category": "Nursing & Allied Sciences",
+    "description": "Uttar Pradesh state-level GNM/ANM Common Nursing Entrance Test conducted by ABVMU for nursing diploma courses.",
+    "searchTerms": "UPGET UPGET Common Nursing Entrance Test (GNM / ANM) Nursing &amp; Allied Sciences 12th Pass",
+    "link": "/syllabus/upget/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "JEECUP",
+    "fullName": "Joint Entrance Examination Polytechnic (Group A)",
+    "location": "Uttar Pradesh",
+    "category": "Engineering",
+    "description": "State-level entrance exam for admission to Diploma in Engineering & Technology courses in polytechnics across Uttar Pradesh.",
+    "searchTerms": "JEECUP JEECUP Joint Entrance Examination Polytechnic (Group A) Engineering 10th Pass",
+    "link": "/syllabus/jeecup/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "UPSSSC X-Ray Technician",
+    "fullName": "X-Ray Technician Recruitment Examination",
+    "location": "Uttar Pradesh",
+    "category": "Civil Services & General",
+    "description": "Uttar Pradesh recruitment examination conducted by UPSSSC for X-Ray Technician posts in the state health department.",
+    "searchTerms": "UPSSSC X-Ray Technician X-Ray Tech X-Ray Technician Recruitment Examination State Government Diploma in X-Ray Tech",
+    "link": "/syllabus/upsssc-xray-technician/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "UPSSSC Lab Technician",
+    "fullName": "Laboratory Technician Recruitment Examination",
+    "location": "Uttar Pradesh",
+    "category": "Civil Services & General",
+    "description": "Uttar Pradesh recruitment examination conducted by UPSSSC for Laboratory Technician posts in various state healthcare units.",
+    "searchTerms": "UPSSSC Lab Technician Lab Tech Laboratory Technician Recruitment Examination State Government DMLT",
+    "link": "/syllabus/upsssc-lab-technician/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "Bihar DCECE Paramedical",
+    "fullName": "Diploma Certificate Entrance Competitive Exam (Paramedical)",
+    "location": "Bihar",
+    "category": "Nursing & Allied Sciences",
+    "description": "State-level entrance exam conducted by BCECEB for admission into Diploma Paramedical, GNM, and ANM courses in Bihar.",
+    "searchTerms": "Bihar DCECE Paramedical DCECE PM Diploma Certificate Entrance Competitive Exam (Paramedical) Nursing &amp; Allied Sciences 12th Pass (PCB/PCM)",
+    "link": "/syllabus/bihar-dcece-pm/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "Bihar BCECE",
+    "fullName": "Bihar Combined Entrance Competitive Examination (Pharmacy/Agriculture)",
+    "location": "Bihar",
+    "category": "Nursing & Allied Sciences",
+    "description": "State-level competitive entrance examination for admission to undergraduate Pharmacy, Agriculture, and Horticulture programs in Bihar.",
+    "searchTerms": "Bihar BCECE BCECE Bihar Combined Entrance Competitive Examination (Pharmacy/Agriculture) Nursing &amp; Allied Sciences 12th Pass (PCB/PCM/CBA)",
+    "link": "/syllabus/bihar-bcece/",
+    "tags": [
+      "State",
+      "High"
+    ]
+  },
+  {
+    "title": "MP PAT",
+    "fullName": "Madhya Pradesh Pre-Agriculture Test",
+    "location": "Madhya Pradesh",
+    "category": "Agriculture",
+    "description": "State-level entrance test conducted by MPESB for admission to B.Sc. Agriculture, Horticulture, Forestry, and Agriculture Engineering programs in MP.",
+    "searchTerms": "MP PAT MP PAT Madhya Pradesh Pre-Agriculture Test Agriculture 12th Pass (Science/Agri)",
+    "link": "/syllabus/mp-pat/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "MP PNST",
+    "fullName": "Madhya Pradesh Pre-Nursing Selection Test",
+    "location": "Madhya Pradesh",
+    "category": "Nursing & Allied Sciences",
+    "description": "State-level selection test conducted by MPESB for admission to B.Sc. Nursing degree courses in government nursing colleges of Madhya Pradesh.",
+    "searchTerms": "MP PNST MP PNST Madhya Pradesh Pre-Nursing Selection Test Nursing &amp; Allied Sciences 12th Pass (PCB)",
+    "link": "/syllabus/mp-pnst/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "RUHS B.Sc Nursing",
+    "fullName": "Rajasthan University of Health Sciences B.Sc Nursing Entrance Exam",
+    "location": "Rajasthan",
+    "category": "Nursing & Allied Sciences",
+    "description": "State-level entrance exam conducted by RUHS for admission to B.Sc. Nursing undergraduate courses in government and private colleges of Rajasthan.",
+    "searchTerms": "RUHS B.Sc Nursing RUHS Nursing Rajasthan University of Health Sciences B.Sc Nursing Entrance Exam Nursing &amp; Allied Sciences 12th Pass (PCB)",
+    "link": "/syllabus/ruhs-bsc-nursing/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "Rajasthan JET",
+    "fullName": "Rajasthan Joint Entrance Test (Agriculture)",
+    "location": "Rajasthan",
+    "category": "Agriculture",
+    "description": "State-level Joint Entrance Test for admission to B.Sc. (Hons) Agriculture, Forestry, and Horticulture courses in Rajasthan state universities.",
+    "searchTerms": "Rajasthan JET Rajasthan JET Rajasthan Joint Entrance Test (Agriculture) Agriculture 12th Pass (Science/Agri)",
+    "link": "/syllabus/rajasthan-jet/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "UP Police Constable",
+    "fullName": "Uttar Pradesh Police Constable Recruitment Exam",
+    "location": "Uttar Pradesh",
+    "category": "Police & Law Enforcement",
+    "description": "Uttar Pradesh state police recruitment exam for Constable posts in civil police and other units.",
+    "searchTerms": "UP Police Constable UP Constable Uttar Pradesh Police Constable Recruitment Exam Police &amp; Law Enforcement 12th Pass",
+    "link": "/syllabus/up-police-constable/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "UP Police SI",
+    "fullName": "Uttar Pradesh Police Sub Inspector Recruitment Exam",
+    "location": "Uttar Pradesh",
+    "category": "Police & Law Enforcement",
+    "description": "Uttar Pradesh state recruitment exam for Sub Inspector posts in civil police and other departments.",
+    "searchTerms": "UP Police SI UP SI Uttar Pradesh Police Sub Inspector Recruitment Exam Police &amp; Law Enforcement Graduate",
+    "link": "/syllabus/up-police-si/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "Bihar Police Constable",
+    "fullName": "Bihar Police Constable Recruitment Exam",
+    "location": "Bihar",
+    "category": "Police & Law Enforcement",
+    "description": "State-level recruitment exam conducted by CSBC for Police Constable vacancies in Bihar.",
+    "searchTerms": "Bihar Police Constable Bihar Constable Bihar Police Constable Recruitment Exam Police &amp; Law Enforcement 12th Pass",
+    "link": "/syllabus/bihar-police-constable/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "Bihar Police SI",
+    "fullName": "Bihar Police Sub Inspector Recruitment Exam",
+    "location": "Bihar",
+    "category": "Police & Law Enforcement",
+    "description": "State-level recruitment exam conducted by BPSSC for Sub Inspector posts in Bihar Police.",
+    "searchTerms": "Bihar Police SI Bihar SI Bihar Police Sub Inspector Recruitment Exam Police &amp; Law Enforcement Graduate",
+    "link": "/syllabus/bihar-police-si/",
+    "tags": [
+      "State",
+      "Medium-High"
+    ]
+  },
+  {
+    "title": "WBP Constable",
+    "fullName": "West Bengal Police Constable Recruitment Exam",
+    "location": "West Bengal",
+    "category": "Police & Law Enforcement",
+    "description": "West Bengal state police recruitment exam conducted by WBPRB for Constable vacancies.",
+    "searchTerms": "WBP Constable WBP Constable West Bengal Police Constable Recruitment Exam Police &amp; Law Enforcement 10th Pass",
+    "link": "/syllabus/wbp-constable/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "KP Constable",
+    "fullName": "Kolkata Police Constable Recruitment Exam",
+    "location": "West Bengal",
+    "category": "Police & Law Enforcement",
+    "description": "Recruitment exam conducted by WBPRB for Constable posts in Kolkata Police department.",
+    "searchTerms": "KP Constable KP Constable Kolkata Police Constable Recruitment Exam Police &amp; Law Enforcement 10th Pass",
+    "link": "/syllabus/kp-constable/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "MP Police Constable",
+    "fullName": "Madhya Pradesh Police Constable Recruitment Exam",
+    "location": "Madhya Pradesh",
+    "category": "Police & Law Enforcement",
+    "description": "State-level recruitment test conducted by MPESB for Constable posts in MP Police.",
+    "searchTerms": "MP Police Constable MP Constable Madhya Pradesh Police Constable Recruitment Exam Police &amp; Law Enforcement 10th Pass",
+    "link": "/syllabus/mp-police-constable/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "Rajasthan Police Constable",
+    "fullName": "Rajasthan Police Constable Recruitment Exam",
+    "location": "Rajasthan",
+    "category": "Police & Law Enforcement",
+    "description": "State-level recruitment exam conducted by Rajasthan Police Department for Constable posts.",
+    "searchTerms": "Rajasthan Police Constable Rajasthan Constable Rajasthan Police Constable Recruitment Exam Police &amp; Law Enforcement 12th Pass",
+    "link": "/syllabus/rajasthan-police-constable/",
+    "tags": [
+      "State",
+      "Medium"
+    ]
+  },
+  {
+    "title": "IMU CET (Merchant Navy)",
+    "fullName": "Indian Maritime University Common Entrance Test",
+    "location": "West Bengal",
+    "category": "Engineering",
+    "description": "National-level entrance test conducted by IMU for admission into B.Sc. Nautical Science, B.Tech. Marine Engineering and other maritime courses.",
+    "searchTerms": "IMU CET (Merchant Navy) IMU CET Indian Maritime University Common Entrance Test Engineering 12th Pass (PCM)",
+    "link": "/syllabus/imu-cet/",
+    "tags": [
+      "National",
+      "High"
+    ]
+  }
+]

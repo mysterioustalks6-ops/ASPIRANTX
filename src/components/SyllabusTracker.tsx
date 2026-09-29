@@ -43,6 +43,10 @@ import {
 } from '../lib/unifiedSyllabus';
 import { PersonalSyllabusNode } from '../lib/personalSyllabus';
 import { MySyllabusDndTree } from './MySyllabusDndTree';
+import { OpenKoshExamDirectory } from './OpenKoshExamDirectory';
+import { OpenKoshExamFrame } from './OpenKoshExamFrame';
+import { convertOpenKoshToSyllabusNodes } from '../data/openkoshData';
+import { getExamConfig } from '../lib/examRegistry';
 import { 
   CheckCircle2, 
   Circle, 
@@ -101,6 +105,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   onOpenPremium
 }) => {
   const [selectedExam, setSelectedExam] = useState<ExamType>(initialExam || 'UPSC_CSE');
+  const [viewMode, setViewMode] = useState<'tracker' | 'directory'>('tracker');
 
   useEffect(() => {
     if (initialExam) {
@@ -259,6 +264,16 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   const loadData = async () => {
     // 1. Fetch Official Syllabus
     let offNodes: any[] = await fetchOfficialSyllabus(selectedExam);
+
+    // 2. Check OpenKosh first if official API returned no nodes
+    if (offNodes.length === 0) {
+      const openkoshNodes = convertOpenKoshToSyllabusNodes(selectedExam);
+      if (openkoshNodes.length > 0) {
+        offNodes = openkoshNodes;
+      }
+    }
+
+    // 3. Check custom user-created exams from storage
     if (offNodes.length === 0) {
       const customExams = getCustomExamsFromStorage();
       const customMatch = customExams.find(c => c.id === selectedExam || c.id.toLowerCase() === (selectedExam || '').toLowerCase());
@@ -276,6 +291,38 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         offNodes = INITIAL_SYLLABUS_HIERARCHY.filter(
           n => normalizeKey(n.exam || '') === normalizeKey(selectedExam)
         );
+      }
+    }
+
+    // 4. Synthesize from EXAM_REGISTRY if still empty
+    if (offNodes.length === 0) {
+      const config = getExamConfig(selectedExam);
+      if (config && config.syllabusTree) {
+        const synthesized: any[] = [];
+        Object.entries(config.syllabusTree).forEach(([subj, data], sIdx) => {
+          (data.topics || []).forEach((top, tIdx) => {
+            const subtopicsList = data.subtopics && data.subtopics[top] ? data.subtopics[top] : [top];
+            subtopicsList.forEach((sub, subIdx) => {
+              synthesized.push({
+                id: `${config.examId}_${sIdx}_${tIdx}_${subIdx}`,
+                exam: config.examId,
+                paper: config.papers?.[0] || 'Paper 1',
+                subject: subj,
+                chapter: top,
+                topic: top,
+                subtopic: sub,
+                title: sub,
+                stage: config.stages?.[0] || 'Prelims',
+                weightage: 'High',
+                estimatedHours: 2.5,
+                completed: false,
+                description: `${subj} - ${top}`,
+                difficulty: 'Medium'
+              });
+            });
+          });
+        });
+        offNodes = synthesized;
       }
     }
     setOfficialRawNodes(offNodes);
@@ -700,7 +747,27 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Predictor Engine Dynamic Widget */}
+      {viewMode === 'directory' ? (
+        <OpenKoshExamDirectory
+          onSelectExam={(newId) => {
+            setSelectedExam(newId as ExamType);
+            setViewMode('tracker');
+          }}
+          selectedExamId={selectedExam}
+          onClose={() => setViewMode('tracker')}
+        />
+      ) : (
+        <>
+          {/* OpenKosh-style Exam Details Frame */}
+          <OpenKoshExamFrame
+            examId={selectedExam}
+            onSelectExam={(newId) => setSelectedExam(newId as ExamType)}
+            onBrowseAll={() => setViewMode('directory')}
+            totalTopics={officialStats.totalSubs || currentTopics.length}
+            completedTopics={officialStats.completedSubs}
+          />
+
+          {/* Predictor Engine Dynamic Widget */}
       <PremiumGate
         featureName="ai_predictor"
         featureTitle="PYQ Syllabus Predictor Engine"
@@ -746,6 +813,14 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
         {/* Global Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
+          <button
+            onClick={() => setViewMode('directory')}
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer shadow-md shadow-blue-600/20"
+          >
+            <Layers className="w-4 h-4" />
+            <span>Browse 45 Syllabuses</span>
+          </button>
+
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
             className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-sky-400 transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
@@ -1358,6 +1433,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           </div>
         )}
       </AnimatePresence>
+        </>
+      )}
 
       {/* Google Spreadsheet Importer Modal */}
       <GoogleSheetImportModal
