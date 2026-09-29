@@ -26,7 +26,7 @@
       "destination": "/studyride.apk"
     },
     {
-      "source": "/((?!landing-pages|ads\\.txt|sitemap\\.xml|robots\\.txt|llms\\.txt|.*\\.apk).*)",
+      "source": "/((?!ads\\.txt|sitemap\\.xml|robots\\.txt|llms\\.txt|.*\\.apk).*)",
       "destination": "/index.html"
     }
   ]

@@ -390,25 +390,6 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           </button>
 
           <button
-            onClick={() => onNavigate('kage')}
-            className="p-3.5 rounded-2xl bg-gradient-to-r from-red-950/40 via-stone-900/60 to-slate-900 border border-red-500/40 hover:border-red-400 transition-all text-left flex items-center justify-between group shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-red-600/20 text-red-400 flex items-center justify-center font-bold text-xs">
-                3D
-              </div>
-              <div>
-                <div className="text-xs font-bold text-white group-hover:text-red-300 flex items-center gap-1.5">
-                  Kage Landing Experience
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 font-mono">ThreeUI</span>
-                </div>
-                <div className="text-[11px] text-slate-400">Interactive 3D temple scene & local Three.js world</div>
-              </div>
-            </div>
-            <ChevronRight className="w-4 h-4 text-red-400 group-hover:translate-x-0.5 transition-all" />
-          </button>
-
-          <button
             onClick={onOpenWorkspaceCustomizer}
             className="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-sky-500/40 transition-all text-left flex items-center justify-between group"
           >
