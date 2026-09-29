@@ -197,7 +197,15 @@ app.use(rewardsRoutes);
 app.use(focusRoutes);
 
 // Standalone Server Listening (Skipped in Vercel Serverless / AWS Lambda)
-if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+const isServerless = Boolean(
+  process.env.VERCEL ||
+  process.env.VERCEL_ENV ||
+  process.env.NOW_REGION ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.LAMBDA_TASK_ROOT
+);
+
+if (!isServerless) {
   if (process.env.NODE_ENV !== 'production') {
     import('vite').then(({ createServer: createViteServer }) => {
       createViteServer({

@@ -1,3 +1,56 @@
+// server.js
+import dns from "dns";
+import pg from "pg";
+import dotenv from "dotenv";
+import fs2 from "fs";
+import path2 from "path";
+import crypto3 from "crypto";
+import "dotenv/config";
+import { GoogleGenAI as GoogleGenAI2 } from "@google/genai";
+import "dotenv/config";
+import express from "express";
+import path9 from "path";
+import fs5 from "fs";
+import compression from "compression";
+import helmet from "helmet";
+import { createServerClient } from "@supabase/ssr";
+import jwt from "jsonwebtoken";
+import "dotenv/config";
+import path from "path";
+import fs from "fs";
+import os from "os";
+import crypto from "crypto";
+import jwt2 from "jsonwebtoken";
+import rateLimit from "express-rate-limit";
+import { createClient } from "@supabase/supabase-js";
+import { GoogleGenAI } from "@google/genai";
+import { Resend } from "resend";
+import { Router } from "express";
+import path3 from "path";
+import fs3 from "fs";
+import os2 from "os";
+import crypto4 from "crypto";
+import crypto2 from "crypto";
+import { Router as Router2 } from "express";
+import path4 from "path";
+import { Router as Router3 } from "express";
+import path5 from "path";
+import { Router as Router4 } from "express";
+import path6 from "path";
+import fs4 from "fs";
+import os3 from "os";
+import crypto5 from "crypto";
+import jwt3 from "jsonwebtoken";
+import { Router as Router5 } from "express";
+import path7 from "path";
+import { Router as Router6 } from "express";
+import path8 from "path";
+import { Router as Router7 } from "express";
+import { GoogleGenAI as GoogleGenAI3 } from "@google/genai";
+import crypto6 from "crypto";
+import { Router as Router8 } from "express";
+import crypto7 from "crypto";
+import { Router as Router9 } from "express";
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __esm = (fn, res) => function __init() {
@@ -7,17 +60,12 @@ var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-
-// src/lib/postgres.ts
 var postgres_exports = {};
 __export(postgres_exports, {
   findDatabaseUrl: () => findDatabaseUrl,
   pgPool: () => pgPool,
   queryPostgres: () => queryPostgres
 });
-import dns from "dns";
-import pg from "pg";
-import dotenv from "dotenv";
 function findDatabaseUrl() {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   if (process.env.POSTGRES_URL) return process.env.POSTGRES_URL;
@@ -36,7 +84,10 @@ async function queryPostgres(text, params) {
   }
   return await pgPool.query(text, params);
 }
-var Pool, connectionString, poolInstance, pgPool;
+var Pool;
+var connectionString;
+var poolInstance;
+var pgPool;
 var init_postgres = __esm({
   "src/lib/postgres.ts"() {
     if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
@@ -80,8 +131,6 @@ var init_postgres = __esm({
     pgPool = poolInstance;
   }
 });
-
-// src/lib/examList.ts
 var EXAM_LIST;
 var init_examList = __esm({
   "src/lib/examList.ts"() {
@@ -387,8 +436,6 @@ var init_examList = __esm({
     ];
   }
 });
-
-// src/lib/autoFetch/sourceRegistry.ts
 function getCanonicalExamId(examId) {
   return EXAM_ALIAS_MAP[examId] || examId;
 }
@@ -451,7 +498,10 @@ function isCopyrightedOrPaidSource(urlStr, textSnippet = "") {
     return { rejected: true, reason: `Invalid source URL: ${err.message}` };
   }
 }
-var EXAM_ALIAS_MAP, OFFICIAL_EXAM_REGISTRY, BANNED_COPYRIGHT_DOMAINS, COPYRIGHT_PAGE_PHRASES;
+var EXAM_ALIAS_MAP;
+var OFFICIAL_EXAM_REGISTRY;
+var BANNED_COPYRIGHT_DOMAINS;
+var COPYRIGHT_PAGE_PHRASES;
 var init_sourceRegistry = __esm({
   "src/lib/autoFetch/sourceRegistry.ts"() {
     init_examList();
@@ -1364,8 +1414,6 @@ var init_sourceRegistry = __esm({
     ];
   }
 });
-
-// src/lib/autoFetch/robotsCompliance.ts
 async function fetchAndParseRobots(domain) {
   const cached = robotsCache.get(domain);
   if (cached && Date.now() - cached.fetchedAt < ROBOTS_CACHE_TTL_MS) {
@@ -1441,7 +1489,9 @@ async function isUrlPermittedByRobots(urlStr) {
     return { permitted: false, reason: `Invalid URL: ${err.message}` };
   }
 }
-var ROBOTS_CACHE_TTL_MS, robotsCache, BOT_USER_AGENT;
+var ROBOTS_CACHE_TTL_MS;
+var robotsCache;
+var BOT_USER_AGENT;
 var init_robotsCompliance = __esm({
   "src/lib/autoFetch/robotsCompliance.ts"() {
     ROBOTS_CACHE_TTL_MS = 24 * 60 * 60 * 1e3;
@@ -1449,8 +1499,6 @@ var init_robotsCompliance = __esm({
     BOT_USER_AGENT = "AspirantX-AcademicBot/1.0 (+https://aspirantx.com/bot; academic-audit@aspirantx.com)";
   }
 });
-
-// src/lib/autoFetch/politeFetcher.ts
 var politeFetcher_exports = {};
 __export(politeFetcher_exports, {
   getDomainStats: () => getDomainStats,
@@ -1579,7 +1627,8 @@ async function politeFetch(urlStr, minDelayMs = DEFAULT_MIN_DELAY_MS) {
     };
   }
 }
-var domainTrackers, DEFAULT_MIN_DELAY_MS;
+var domainTrackers;
+var DEFAULT_MIN_DELAY_MS;
 var init_politeFetcher = __esm({
   "src/lib/autoFetch/politeFetcher.ts"() {
     init_robotsCompliance();
@@ -1587,8 +1636,6 @@ var init_politeFetcher = __esm({
     DEFAULT_MIN_DELAY_MS = 2500;
   }
 });
-
-// src/lib/autoFetch/textExtractor.ts
 function cleanHtmlToText(rawHtml) {
   if (!rawHtml) return "";
   let text = rawHtml;
@@ -1660,8 +1707,6 @@ var init_textExtractor = __esm({
   "src/lib/autoFetch/textExtractor.ts"() {
   }
 });
-
-// src/lib/autoFetch/contentStore.ts
 var contentStore_exports = {};
 __export(contentStore_exports, {
   getAllStoredExamContent: () => getAllStoredExamContent,
@@ -1674,9 +1719,6 @@ __export(contentStore_exports, {
   saveContentRecord: () => saveContentRecord,
   writeLocalCache: () => writeLocalCache
 });
-import fs2 from "fs";
-import path2 from "path";
-import crypto3 from "crypto";
 function normalizeStringStem(str) {
   return str.toLowerCase().replace(/\s+/g, " ").trim();
 }
@@ -1984,7 +2026,8 @@ async function getStorageSizeMetrics() {
   }
   return result;
 }
-var LOCAL_CACHE_DIR, LOCAL_CACHE_FILE;
+var LOCAL_CACHE_DIR;
+var LOCAL_CACHE_FILE;
 var init_contentStore = __esm({
   "src/lib/autoFetch/contentStore.ts"() {
     init_postgres();
@@ -1992,10 +2035,6 @@ var init_contentStore = __esm({
     LOCAL_CACHE_FILE = path2.join(LOCAL_CACHE_DIR, "exam_content.json");
   }
 });
-
-// src/lib/autoFetch/structuringEngine.ts
-import "dotenv/config";
-import { GoogleGenAI as GoogleGenAI2 } from "@google/genai";
 function getGeminiInstance() {
   const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_KEY;
   if (!apiKey) return null;
@@ -2421,8 +2460,6 @@ var init_structuringEngine = __esm({
     init_sourceRegistry();
   }
 });
-
-// src/lib/autoFetch/agentPipeline.ts
 var agentPipeline_exports = {};
 __export(agentPipeline_exports, {
   getLatestRunSummary: () => getLatestRunSummary,
@@ -2751,7 +2788,8 @@ async function runAutoFetchPipeline(options = {}) {
   }
   return summary;
 }
-var latestRunSummary, isPipelineRunning;
+var latestRunSummary;
+var isPipelineRunning;
 var init_agentPipeline = __esm({
   "src/lib/autoFetch/agentPipeline.ts"() {
     init_sourceRegistry();
@@ -2764,18 +2802,6 @@ var init_agentPipeline = __esm({
     isPipelineRunning = false;
   }
 });
-
-// server.ts
-import "dotenv/config";
-import express from "express";
-import path9 from "path";
-import fs5 from "fs";
-import compression from "compression";
-import helmet from "helmet";
-
-// authMiddleware.ts
-import { createServerClient } from "@supabase/ssr";
-import jwt from "jsonwebtoken";
 var DESIGNATED_ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.VITE_ADMIN_EMAIL || "ambujyadav0010@gmail.com";
 var JWT_SECRET = process.env.JWT_SECRET || process.env.VITE_SUPABASE_ANON_KEY || "aspirantx_dev_jwt_secret_fallback_key_2026";
 function parseCookies(req) {
@@ -2965,19 +2991,6 @@ async function expressEdgeMiddleware(req, res, next) {
   }
   next();
 }
-
-// routes/shared.ts
-import "dotenv/config";
-import path from "path";
-import fs from "fs";
-import os from "os";
-import crypto from "crypto";
-import jwt2 from "jsonwebtoken";
-import rateLimit from "express-rate-limit";
-import { createClient } from "@supabase/supabase-js";
-import { GoogleGenAI } from "@google/genai";
-
-// src/data/allQuestionsData.json
 var allQuestionsData_default = [
   {
     id: "diag_NEET_UG_101",
@@ -33805,8 +33818,6 @@ var allQuestionsData_default = [
     answerVerified: true
   }
 ];
-
-// src/data/academicData.ts
 var INITIAL_SYLLABUS_HIERARCHY = [
   {
     id: "u1-1",
@@ -33936,8 +33947,6 @@ var INITIAL_QUESTION_BANK = allQuestionsData_default.map((q) => ({
   verification_status: "verified",
   language: "English"
 }));
-
-// src/data/booksData.ts
 var COMPREHENSIVE_BOOKS_DATABASE = [
   // --- INDIAN POLITY & GOVERNANCE ---
   {
@@ -34142,9 +34151,6 @@ var COMPREHENSIVE_BOOKS_DATABASE = [
     importance: "Essential"
   }
 ];
-
-// src/lib/email.ts
-import { Resend } from "resend";
 async function sendTransactionalEmail(to, subject, html) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -34171,8 +34177,6 @@ async function sendTransactionalEmail(to, subject, html) {
     return { sent: false, error: err.message || "Exception occurred during email dispatch." };
   }
 }
-
-// routes/shared.ts
 init_postgres();
 var globalApiLimiter = rateLimit({
   windowMs: 15 * 60 * 1e3,
@@ -37086,20 +37090,8 @@ function setAdminTeamStore(val) {
     adminTeamStore = val;
   }
 }
-
-// server.ts
 init_postgres();
-
-// routes/academic.routes.ts
-import { Router } from "express";
-import path3 from "path";
-import fs3 from "fs";
-import os2 from "os";
-import crypto4 from "crypto";
-
-// src/lib/rewards/rewardEngine.ts
 init_postgres();
-import crypto2 from "crypto";
 var UUID_REGEX2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function toCanonicalUuid2(input) {
   if (!input || typeof input !== "string") return "00000000-0000-4000-8000-000000000000";
@@ -37441,8 +37433,6 @@ var RewardEngine = class {
     };
   }
 };
-
-// routes/academic.routes.ts
 init_postgres();
 var router = Router();
 var __dirname = path3.resolve();
@@ -41293,10 +41283,6 @@ router.patch(["/api/admin/exam-content/:examId/status", "/admin/exam-content/:ex
   }
 });
 var academic_routes_default = router;
-
-// routes/community.routes.ts
-import { Router as Router2 } from "express";
-import path4 from "path";
 var router2 = Router2();
 var __dirname2 = path4.resolve();
 router2.get("/api/community/groups", async (req, res) => {
@@ -41789,10 +41775,6 @@ router2.post("/api/community/tip", async (req, res) => {
   }
 });
 var community_routes_default = router2;
-
-// routes/admin.routes.ts
-import { Router as Router3 } from "express";
-import path5 from "path";
 init_postgres();
 var router3 = Router3();
 var __dirname3 = path5.resolve();
@@ -43471,14 +43453,6 @@ router3.get("/api/admin/ingestion/status/:jobId", verifyAdminAuth, async (req, r
   }
 });
 var admin_routes_default = router3;
-
-// routes/user.routes.ts
-import { Router as Router4 } from "express";
-import path6 from "path";
-import fs4 from "fs";
-import os3 from "os";
-import crypto5 from "crypto";
-import jwt3 from "jsonwebtoken";
 init_postgres();
 var router4 = Router4();
 var __dirname4 = path6.resolve();
@@ -46982,10 +46956,6 @@ router4.get("/api/user/analytics/weaknesses", async (req, res) => {
   }
 });
 var user_routes_default = router4;
-
-// routes/teacher.routes.ts
-import { Router as Router5 } from "express";
-import path7 from "path";
 init_postgres();
 var router5 = Router5();
 var __dirname5 = path7.resolve();
@@ -48795,10 +48765,6 @@ router5.post("/api/blog/posts/:id/reject", adminMutationLimiter, verifyAdminAuth
   }
 });
 var teacher_routes_default = router5;
-
-// routes/ai.routes.ts
-import { Router as Router6 } from "express";
-import path8 from "path";
 var router6 = Router6();
 var __dirname6 = path8.resolve();
 router6.get("/api/ai/status", (_req, res) => {
@@ -49462,17 +49428,8 @@ ${fullTranscript.slice(0, 8e3)}`;
   }
 });
 var ai_routes_default = router6;
-
-// routes/cbt.routes.ts
 init_postgres();
-import { Router as Router7 } from "express";
-import { GoogleGenAI as GoogleGenAI3 } from "@google/genai";
-
-// src/lib/cbt/cbtService.ts
 init_postgres();
-import crypto6 from "crypto";
-
-// src/lib/cbt/questionGenerator.ts
 init_postgres();
 async function getQuestionInventory(examId) {
   const res = await queryPostgres(
@@ -49562,8 +49519,6 @@ async function generateExamQuestions(params) {
     question_ids: questionIds
   };
 }
-
-// src/lib/cbt/cbtService.ts
 var CbtService = class {
   /**
    * Create a new authoritative test attempt session.
@@ -50251,8 +50206,6 @@ var CbtService = class {
     return res.rows;
   }
 };
-
-// routes/cbt.routes.ts
 var router7 = Router7();
 async function getEffectiveUserId(req) {
   const verifiedUser = await extractVerifiedUserFromReq2(req);
@@ -50513,14 +50466,8 @@ Provide a crisp, clear, intellectually rigorous explanation that clarifies their
   }
 });
 var cbt_routes_default = router7;
-
-// routes/rewards.routes.ts
-import { Router as Router8 } from "express";
 init_postgres();
-
-// src/lib/focus/focusService.ts
 init_postgres();
-import crypto7 from "crypto";
 var UUID_REGEX3 = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function toCanonicalUuid4(input) {
   if (!input || typeof input !== "string") return "00000000-0000-4000-8000-000000000000";
@@ -50817,8 +50764,6 @@ var FocusService = class {
     };
   }
 };
-
-// routes/rewards.routes.ts
 var router8 = Router8();
 async function getAuthUserId(req) {
   const verifiedUser = extractVerifiedUserFromReq(req);
@@ -51039,9 +50984,6 @@ router8.post("/api/rewards/event", async (req, res) => {
   }
 });
 var rewards_routes_default = router8;
-
-// routes/focus.routes.ts
-import { Router as Router9 } from "express";
 var router9 = Router9();
 async function getAuthUserId2(req) {
   const verifiedUser = extractVerifiedUserFromReq(req);
@@ -51151,8 +51093,6 @@ router9.get("/api/focus/stats", async (req, res) => {
   }
 });
 var focus_routes_default = router9;
-
-// server.ts
 var PORT = 3e3;
 var __dirname7 = path9.resolve();
 var app = express();
@@ -51290,7 +51230,10 @@ app.use(ai_routes_default);
 app.use(cbt_routes_default);
 app.use(rewards_routes_default);
 app.use(focus_routes_default);
-if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+var isServerless = Boolean(
+  process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT
+);
+if (!isServerless) {
   if (process.env.NODE_ENV !== "production") {
     import("vite").then(({ createServer: createViteServer }) => {
       createViteServer({

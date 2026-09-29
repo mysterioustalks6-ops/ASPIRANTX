@@ -51290,7 +51290,10 @@ app.use(ai_routes_default);
 app.use(cbt_routes_default);
 app.use(rewards_routes_default);
 app.use(focus_routes_default);
-if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+var isServerless = Boolean(
+  process.env.VERCEL || process.env.VERCEL_ENV || process.env.NOW_REGION || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT
+);
+if (!isServerless) {
   if (process.env.NODE_ENV !== "production") {
     import("vite").then(({ createServer: createViteServer }) => {
       createViteServer({
