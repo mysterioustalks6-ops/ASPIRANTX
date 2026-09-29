@@ -539,12 +539,14 @@ textarea:focus-visible,
 
 /* ThreeUI Shader Frame Container */
 .shader-frame {
-  position: relative;
-  width: 100%;
+  position: fixed;
+  inset: 0;
+  width: 100vw;
   height: 100vh;
-  min-height: 100vh;
+  height: 100dvh;
   overflow: hidden;
-  background: #080808;
+  background: #05070a;
+  z-index: 0;
 }
 
 .shader-frame .landing-page-frame {
@@ -553,4 +555,5 @@ textarea:focus-visible,
   width: 100%;
   height: 100%;
 }
+
 

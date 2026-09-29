@@ -158,275 +158,238 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[#080808] text-slate-100 font-sans selection:bg-sky-500 selection:text-white">
-      {/* Top Floating Glass Navigation Header */}
-      <header className="fixed top-3 sm:top-5 left-3 sm:left-6 right-3 sm:right-6 z-40 max-w-6xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-black/75 backdrop-blur-xl border border-white/10 flex items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-3">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#e0231c] shadow-[0_0_12px_#e0231c]" />
-          <div className="flex items-baseline gap-1.5">
-            <h1 className="font-extrabold text-sm sm:text-base tracking-widest uppercase text-white">
-              KAGE <span className="text-[#e0231c] text-xs font-normal">/ 影</span>
-            </h1>
-            <span className="hidden sm:inline-block text-[10px] text-slate-400 font-mono px-2 py-0.5 rounded-md bg-white/5 border border-white/5">
-              ThreeUI Temple Sanctuary
-            </span>
+    <div className="min-h-screen w-full bg-[#06080d] text-slate-100 font-sans selection:bg-sky-500 selection:text-white flex flex-col justify-between p-4 sm:p-6 relative">
+      {/* Top Bar for Sign-In Page */}
+      <div className="w-full max-w-md mx-auto flex items-center justify-between py-2">
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            window.location.hash = '';
+            window.location.pathname = '/';
+          }}
+          className="text-xs text-slate-400 hover:text-slate-200 transition-colors inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10"
+        >
+          <span>← Back to Sanctuary</span>
+        </a>
+
+        {!Capacitor.isNativePlatform() && (
+          <a
+            id="landing-download-app-btn"
+            href={CANONICAL_APP_RELEASE.apkDownloadUrl}
+            download={CANONICAL_APP_RELEASE.apkFileName}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-medium text-xs transition-colors"
+            title={`Download Android App v${CANONICAL_APP_RELEASE.version}`}
+          >
+            <Download className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span>Download APK</span>
+          </a>
+        )}
+      </div>
+
+      {/* Main Auth Container */}
+      <div className="w-full max-w-md mx-auto my-auto p-6 sm:p-8 rounded-3xl bg-[#0c1017] border border-white/10 shadow-2xl relative space-y-5">
+        <div className="text-center space-y-1.5 pt-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-semibold tracking-wide mb-1">
+            <Sparkles className="w-3 h-3" />
+            <span>Aspirant Workspace</span>
           </div>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
+            Sign In to StudyRide
+          </h2>
+          <p className="text-xs text-slate-400">
+            Precision syllabus tracking, PYQ archive, and CBT test simulator.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
-          {!Capacitor.isNativePlatform() && (
-            <a
-              id="landing-download-app-btn"
-              href={CANONICAL_APP_RELEASE.apkDownloadUrl}
-              download={CANONICAL_APP_RELEASE.apkFileName}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-medium text-xs transition-colors"
-              title={`Download Android App v${CANONICAL_APP_RELEASE.version}`}
-            >
-              <Download className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <span>Download APK</span>
-            </a>
-          )}
-
-          <button
-            id="landing-guest-demo-btn"
-            onClick={handleGuestLogin}
-            className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-xs border border-white/10 transition-colors cursor-pointer"
-          >
-            Guest Demo
-          </button>
-
-          <button
-            id="landing-signin-btn"
-            onClick={() => setShowAuthModal(true)}
-            className="px-4 py-1.5 rounded-xl bg-[#e0231c] hover:bg-[#c81e18] text-white font-bold text-xs shadow-lg shadow-[#e0231c]/30 transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <span>Sign In / Workspace</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </header>
-
-      {/* Auth Modal Dialog Overlay */}
-      <AnimatePresence>
-        {showAuthModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-md p-6 rounded-3xl bg-[#0c1017] border border-white/10 shadow-2xl relative space-y-5"
-            >
-              <button
-                onClick={() => setShowAuthModal(false)}
-                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="text-center space-y-1.5 pt-2">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-semibold tracking-wide mb-1">
-                  <Sparkles className="w-3 h-3" />
-                  <span>Aspirant Workspace</span>
-                </div>
-                <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                  Sign In to StudyRide
-                </h2>
-                <p className="text-xs text-slate-400">
-                  Precision syllabus tracking, PYQ archive, and CBT test simulator.
-                </p>
-              </div>
-
-              {/* Feedback Alerts */}
-              {authError && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
-                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                  <span className="leading-snug">{authError}</span>
-                </div>
-              )}
-
-              {authSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="leading-snug">{authSuccess}</span>
-                </div>
-              )}
-
-              {/* Central Auth Surface */}
-              <div className="p-5 rounded-2xl bg-black/40 border border-white/[0.08] shadow-inner space-y-4">
-                {activeAuthMethod === 'options' ? (
-                  <div className="space-y-3">
-                    <button
-                      id="hero-signin-btn"
-                      onClick={handleGoogleSignIn}
-                      disabled={loading}
-                      className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm flex items-center justify-center gap-3 transition-colors shadow-sm cursor-pointer disabled:opacity-60"
-                    >
-                      {loading ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-slate-700" />
-                      ) : (
-                        <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                          <path
-                            fill="#4285F4"
-                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                          />
-                        </svg>
-                      )}
-                      <span>Continue with Google</span>
-                    </button>
-
-                    <div className="relative flex items-center justify-center my-3">
-                      <div className="border-t border-white/[0.08] w-full" />
-                      <span className="bg-[#0c1017] px-2.5 text-[11px] text-slate-500 font-medium uppercase tracking-wider">
-                        or
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <button
-                        id="landing-signin-email-btn"
-                        onClick={() => {
-                          setActiveAuthMethod('signin');
-                          setAuthError(null);
-                        }}
-                        className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/[0.06] text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Email Sign In</span>
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setActiveAuthMethod('signup');
-                          setAuthError(null);
-                        }}
-                        className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/[0.06] text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                      >
-                        <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Create Account</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <form onSubmit={handleEmailAuthSubmit} className="space-y-3.5">
-                    <div className="flex items-center justify-between pb-1 border-b border-white/[0.06]">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setActiveAuthMethod('signin')}
-                          className={`text-xs font-bold pb-1 transition-colors ${
-                            activeAuthMethod === 'signin'
-                              ? 'text-sky-400 border-b-2 border-sky-400'
-                              : 'text-slate-400 hover:text-slate-200'
-                          }`}
-                        >
-                          Sign In
-                        </button>
-                        <span className="text-slate-600 text-xs">•</span>
-                        <button
-                          type="button"
-                          onClick={() => setActiveAuthMethod('signup')}
-                          className={`text-xs font-bold pb-1 transition-colors ${
-                            activeAuthMethod === 'signup'
-                              ? 'text-sky-400 border-b-2 border-sky-400'
-                              : 'text-slate-400 hover:text-slate-200'
-                          }`}
-                        >
-                          Create Account
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setActiveAuthMethod('options')}
-                        className="text-[11px] text-slate-400 hover:text-slate-200"
-                      >
-                        ← Back
-                      </button>
-                    </div>
-
-                    {activeAuthMethod === 'signup' && (
-                      <div>
-                        <label className="block text-[11px] font-medium text-slate-400 mb-1">Full Name</label>
-                        <input
-                          type="text"
-                          value={nameInput}
-                          onChange={(e) => setNameInput(e.target.value)}
-                          placeholder="e.g. Rahul Sharma"
-                          className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">Email Address</label>
-                      <input
-                        type="email"
-                        required
-                        value={emailInput}
-                        onChange={(e) => setEmailInput(e.target.value)}
-                        placeholder="student@example.com"
-                        className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-medium text-slate-400 mb-1">Password</label>
-                      <input
-                        type="password"
-                        required
-                        value={passwordInput}
-                        onChange={(e) => setPasswordInput(e.target.value)}
-                        placeholder="••••••••••••"
-                        className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
-                    >
-                      {loading ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <span>{activeAuthMethod === 'signup' ? 'Create Account' : 'Sign In'}</span>
-                      )}
-                    </button>
-                  </form>
-                )}
-
-                <div className="pt-2 text-center">
-                  <button
-                    id="hero-guest-btn"
-                    type="button"
-                    onClick={handleGuestLogin}
-                    className="text-xs text-slate-400 hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>Continue as Guest</span>
-                    <ArrowRight className="w-3 h-3 text-slate-500" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
+        {/* Feedback Alerts */}
+        {authError && (
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <span className="leading-snug">{authError}</span>
           </div>
         )}
-      </AnimatePresence>
 
-      {/* The Authored Kage Landing Page Scene */}
-      <div className="w-full h-screen overflow-hidden">
-        <Scene />
+        {authSuccess && (
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <span className="leading-snug">{authSuccess}</span>
+          </div>
+        )}
+
+        {/* Central Auth Surface */}
+        <div className="p-5 rounded-2xl bg-black/40 border border-white/[0.08] shadow-inner space-y-4">
+          {activeAuthMethod === 'options' ? (
+            <div className="space-y-3">
+              <button
+                id="hero-signin-btn"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm flex items-center justify-center gap-3 transition-colors shadow-sm cursor-pointer disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-700" />
+                ) : (
+                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                    <path
+                      fill="#4285F4"
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    />
+                    <path
+                      fill="#34A853"
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    />
+                    <path
+                      fill="#FBBC05"
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                    />
+                    <path
+                      fill="#EA4335"
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                    />
+                  </svg>
+                )}
+                <span>Continue with Google</span>
+              </button>
+
+              <div className="relative flex items-center justify-center my-3">
+                <div className="border-t border-white/[0.08] w-full" />
+                <span className="bg-[#0c1017] px-2.5 text-[11px] text-slate-500 font-medium uppercase tracking-wider">
+                  or
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  id="landing-signin-email-btn"
+                  onClick={() => {
+                    setActiveAuthMethod('signin');
+                    setAuthError(null);
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/[0.06] text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Email Sign In</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveAuthMethod('signup');
+                    setAuthError(null);
+                  }}
+                  className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 border border-white/[0.06] text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <UserIcon className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Create Account</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleEmailAuthSubmit} className="space-y-3.5">
+              <div className="flex items-center justify-between pb-1 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveAuthMethod('signin')}
+                    className={`text-xs font-bold pb-1 transition-colors ${
+                      activeAuthMethod === 'signin'
+                        ? 'text-sky-400 border-b-2 border-sky-400'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <span className="text-slate-600 text-xs">•</span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveAuthMethod('signup')}
+                    className={`text-xs font-bold pb-1 transition-colors ${
+                      activeAuthMethod === 'signup'
+                        ? 'text-sky-400 border-b-2 border-sky-400'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Create Account
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveAuthMethod('options')}
+                  className="text-[11px] text-slate-400 hover:text-slate-200"
+                >
+                  ← Back
+                </button>
+              </div>
+
+              {activeAuthMethod === 'signup' && (
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-400 mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    placeholder="e.g. Rahul Sharma"
+                    className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="student@example.com"
+                  className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-slate-400 mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
+              >
+                {loading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <span>{activeAuthMethod === 'signup' ? 'Create Account' : 'Sign In'}</span>
+                )}
+              </button>
+            </form>
+          )}
+
+          <div className="pt-2 text-center">
+            <button
+              id="hero-guest-btn"
+              type="button"
+              onClick={handleGuestLogin}
+              className="text-xs text-slate-400 hover:text-slate-200 transition-colors inline-flex items-center gap-1 cursor-pointer"
+            >
+              <span>Continue as Guest Demo</span>
+              <ArrowRight className="w-3 h-3 text-slate-500" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="w-full text-center py-2 text-[11px] text-slate-600">
+        StudyRide Academic Prep Platform • {new Date().getFullYear()}
       </div>
     </div>
   );

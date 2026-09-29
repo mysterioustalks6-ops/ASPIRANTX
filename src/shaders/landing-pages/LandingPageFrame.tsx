@@ -141,7 +141,7 @@ export function LandingPageFrame({
     <div
       className={`threeui-background landing-page-frame${className ? ` ${className}` : ""}`}
       data-state={ready ? "ready" : "loading"}
-      style={{ position: "relative", overflow: "hidden", background: "#080808", pointerEvents: "auto", ...style }}
+      style={{ position: "relative", overflow: "hidden", background: "#05070a", pointerEvents: "auto", ...style }}
     >
       <iframe
         ref={frameRef}
@@ -163,7 +163,7 @@ export function LandingPageFrame({
           width: "100%",
           height: "100%",
           border: 0,
-          background: "#080808",
+          background: "#05070a",
           // A background presentation begins life as the complete source page.
           // Keep that page visually sealed until onLoad has installed the
           // scene-only CSS, otherwise its authored navigation/copy can flash for

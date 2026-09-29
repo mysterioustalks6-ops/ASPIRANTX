@@ -205,22 +205,32 @@ function AppContent() {
     })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    if (typeof window !== 'undefined' && window.location.pathname === '/download') {
+    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.hash === '#download')) {
       return 'download';
     }
-    const hash = window.location.hash.replace('#', '');
+    const hash = typeof window !== 'undefined' ? window.location.hash.replace('#', '') : '';
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
+    if (hash === 'signin' || hash === 'login') return 'signin';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
-      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'kage'];
-    return (validTabs.includes(hash) ? hash : 'syllabus') as ActiveTab;
+      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'kage', 'signin'];
+    if (validTabs.includes(hash)) {
+      return hash as ActiveTab;
+    }
+    return 'kage';
   });
   const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
 
   useEffect(() => {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=') || window.location.hash.includes('refresh_token=')) {
+      return;
+    }
+    if (activeTab === 'kage') {
+      if (window.location.hash && window.location.hash !== '#kage') {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
       return;
     }
     if (activeTab === 'blog_submit') {
@@ -240,6 +250,10 @@ function AppContent() {
         setActiveTab('blog_submit');
       } else if (hash.startsWith('blog')) {
         setActiveTab('blog');
+      } else if (hash === 'signin' || hash === 'login') {
+        setActiveTab('signin');
+      } else if (hash === '' || hash === 'kage') {
+        setActiveTab('kage');
       } else if (hash) {
         setActiveTab(hash as ActiveTab);
       }
@@ -1072,7 +1086,7 @@ function AppContent() {
 
   if (activeTab === 'kage') {
     return (
-      <div className="relative w-full h-screen overflow-hidden bg-[#080808]">
+      <div className="fixed inset-0 w-full h-full overflow-hidden bg-[#05070a] z-0">
         <KageScene />
       </div>
     );
@@ -1088,8 +1102,8 @@ function AppContent() {
     );
   }
 
-  if (!user) {
-    logAuthDiagnostic('NAVIGATION', 'Rendering Sign In page (LandingPage)', { reason: 'No active user in app state' });
+  if (!user || activeTab === 'signin') {
+    logAuthDiagnostic('NAVIGATION', 'Rendering Sign In page (LandingPage)', { reason: 'No active user in app state or activeTab is signin' });
     return (
       <LandingPage
         onLoginSuccess={(u) => {
@@ -1110,6 +1124,9 @@ function AppContent() {
           setUser(immediateUser);
           if (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) {
             setIsAdminUnlocked(true);
+          }
+          if (activeTab === 'signin' || activeTab === 'kage') {
+            setActiveTab('syllabus');
           }
 
           // Background Profile Enrichment (Non-blocking)
