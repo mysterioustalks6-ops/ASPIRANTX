@@ -151,7 +151,7 @@ export interface SyllabusTopic {
   exam?: string;
   title: string;
   category: string; // e.g., 'Polity', 'History', 'Economy', 'Quant'
-  stage: 'Prelims' | 'Mains' | 'Tier-1' | 'Tier-2';
+  stage: 'Prelims' | 'Mains' | 'Tier-1' | 'Tier-2' | 'Board Exam' | 'Written Exam' | 'Annual Exam' | 'Main Exam' | 'Main Test' | 'Full Test' | 'Paper 1' | 'Paper 1 & 2' | 'Board + NEET' | 'Semester Exams' | 'Phase 1' | 'Paper 2' | 'Stage 1 (GA + Engg. Maths)' | 'Stage 2 (Core CS Paper)' | 'Stage 2 (Core EC Paper)' | 'Stage 2 (Core EE Paper)' | 'Stage 2 (Core ME Paper)' | 'Stage 2 (Core CE Paper)' | 'Stage 2 (Core CH Paper)' | 'Stage 2 (Core IN Paper)' | 'Stage 2 (Core BT Paper)' | 'Stage 2 (Core AE Paper)' | 'Stage 2 (Core Mathematics Paper)' | 'Stage 2 (Core Physics Paper)' | 'Stage 2 (Core Chemistry Paper)' | 'Stage 2 (Core PI Paper)' | 'Stage 2 (Core ST Paper)' | 'Stage 2 (Core Branch Paper)';
   completed: boolean;
   subtopicsCount: number;
   completedSubtopics: number;
@@ -371,7 +371,7 @@ export interface PyqRecord {
   id: string;
   exam: string;
   year: number; // 1991 to 2026
-  stage: 'Prelims' | 'Mains' | 'Tier-1' | 'Tier-2';
+  stage: 'Prelims' | 'Mains' | 'Tier-1' | 'Tier-2' | 'Board Exam' | 'Written Exam' | 'Annual Exam' | 'Main Exam' | 'Main Test' | 'Full Test' | 'Paper 1' | 'Paper 1 & 2' | 'Board + NEET' | 'Semester Exams' | 'Phase 1' | 'Paper 2' | 'Stage 1 (GA + Engg. Maths)' | 'Stage 2 (Core CS Paper)' | 'Stage 2 (Core EC Paper)' | 'Stage 2 (Core EE Paper)' | 'Stage 2 (Core ME Paper)' | 'Stage 2 (Core CE Paper)' | 'Stage 2 (Core CH Paper)' | 'Stage 2 (Core IN Paper)' | 'Stage 2 (Core BT Paper)' | 'Stage 2 (Core AE Paper)' | 'Stage 2 (Core Mathematics Paper)' | 'Stage 2 (Core Physics Paper)' | 'Stage 2 (Core Chemistry Paper)' | 'Stage 2 (Core PI Paper)' | 'Stage 2 (Core ST Paper)' | 'Stage 2 (Core Branch Paper)';
   paper: string;
   subject: string;
   topic: string;

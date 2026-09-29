@@ -147,8 +147,8 @@ app.get('/api/version', (_req, res) => {
     versionCode: Shared.APP_VERSION_CODE || 12,
     apkDownloadUrl: 'https://studyride.in/studyride.apk',
     directApkUrl: 'https://aspirantx.vercel.app/studyride.apk',
-    releaseDate: 'September 25, 2026',
-    releaseNotes: 'Official Modern Glowing Emblem Logo, Focus Shield Pro (Regain-inspired), OLED Dark theme, App Limits, and Avatar Studio.',
+    releaseDate: 'September 29, 2026',
+    releaseNotes: 'Focus Shield BLOCKS engine overhaul with instant App Group blocking, auto-refresh permissions upon returning from Android Settings, granular daily limits, and Google Play Protect compliance optimizations.',
     timestamp: new Date().toISOString()
   });
 });

@@ -93,7 +93,7 @@
         </service>
     </application>
 
-    <!-- Permissions (Standard Usage Access & Wallpaper, NO Accessibility Service) -->
+    <!-- Permissions (Standard Usage Access, Wallpaper, Notifications, Overlay & Scoped Foreground Service) -->
     <uses-feature android:name="android.software.live_wallpaper" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
@@ -103,7 +103,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
 
     <!-- Queries for Launchable Apps and Wallpaper Picker (Safe Play-Store Compliant) -->
     <queries>

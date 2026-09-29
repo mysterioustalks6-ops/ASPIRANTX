@@ -180,7 +180,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           exam: node.exam,
           title: node.title || node.chapter || 'Topic',
           category: node.category || node.subject || 'General Subject',
-          stage: (node.stage === 'Prelims' || node.stage === 'Mains' || node.stage === 'Tier-1' || node.stage === 'Tier-2') ? node.stage : 'Prelims',
+          stage: (['Prelims','Mains','Tier-1','Tier-2','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(node.stage as any) ? node.stage : 'Prelims',
           completed: subList.length > 0 && subList.every((s) => completedSet.has(s.id) || s.completed),
           subtopicsCount: subList.length,
           completedSubtopics: subList.filter((s) => completedSet.has(s.id) || s.completed).length,
@@ -199,7 +199,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           exam: node.exam,
           title: node.chapter || node.topic || 'General Chapter',
           category: node.subject || node.category || 'General Subject',
-          stage: (node.stage === 'Prelims' || node.stage === 'Mains' || node.stage === 'Tier-1' || node.stage === 'Tier-2') ? node.stage : 'Prelims',
+          stage: (['Prelims','Mains','Tier-1','Tier-2','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(node.stage as any) ? node.stage : 'Prelims',
           completed: false,
           subtopicsCount: 0,
           completedSubtopics: 0,
@@ -482,7 +482,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
         subjectTopics.forEach((topic) => {
           const chapterTitle = topic.title || 'General Chapter';
-          const stageVal = (topic.stage === 'Prelims' || topic.stage === 'Mains' || topic.stage === 'Tier-1' || topic.stage === 'Tier-2') ? topic.stage : 'Prelims';
+          const stageVal = (['Prelims','Mains','Tier-1','Tier-2','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(topic.stage as any) ? topic.stage : 'Prelims';
           const weightageVal = topic.weightage || 'Medium';
 
           if (Array.isArray(topic.subtopics) && topic.subtopics.length > 0) {

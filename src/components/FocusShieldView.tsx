@@ -43,6 +43,7 @@ import { AvatarStudioModal, AvatarConfig, DEFAULT_AVATAR_CONFIG } from './Avatar
 import { AspirantAvatar } from './AspirantAvatar';
 import { AppPickerModal, DistractingApp, FALLBACK_DEVICE_APPS } from './AppPickerModal';
 import { AppGroupModal, AppGroup } from './AppGroupModal';
+import { AccessibilityGuideModal } from './AccessibilityGuideModal';
 
 declare const Capacitor: any;
 
@@ -95,8 +96,8 @@ export const DEFAULT_APP_GROUPS: AppGroup[] = [
       'com.whatsapp',
       'org.telegram.messenger'
     ],
-    dailyLimitMinutes: 30,
-    blockMode: 'LIMIT',
+    dailyLimitMinutes: 0,
+    blockMode: 'BLOCKED',
     enabled: false,
     isCustom: false
   },
@@ -129,8 +130,8 @@ export const DEFAULT_APP_GROUPS: AppGroup[] = [
       'com.roblox.client',
       'com.ludo.king'
     ],
-    dailyLimitMinutes: 20,
-    blockMode: 'LIMIT',
+    dailyLimitMinutes: 0,
+    blockMode: 'BLOCKED',
     enabled: false,
     isCustom: false
   },
@@ -227,6 +228,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
 
   // Permissions & Telemetry
   const [permStatus, setPermStatus] = useState<{ hasUsageStats?: boolean; hasOverlay?: boolean; hasAccessibility?: boolean; canBlock?: boolean }>({});
+  const [showAccessibilityGuide, setShowAccessibilityGuide] = useState<boolean>(false);
   const [showStrictFrictionModal, setShowStrictFrictionModal] = useState<boolean>(false);
   const [frictionCountdown, setFrictionCountdown] = useState<number>(15);
   const [frictionInput, setFrictionInput] = useState<string>('');
@@ -256,10 +258,18 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
     } catch (e) {}
 
     // 4. Query Real Native Permissions & Usage Stats
+    const checkLivePerms = async () => {
+      if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
+        try {
+          const perms = await callNativePlugin('checkBlockerPermissions');
+          if (perms) setPermStatus(perms);
+        } catch (e) {}
+      }
+    };
+
     const initDevice = async () => {
       if (typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform()) {
-        const perms = await callNativePlugin('checkBlockerPermissions');
-        if (perms) setPermStatus(perms);
+        await checkLivePerms();
 
         const appsRes = await callNativePlugin('getInstalledApps');
         if (appsRes?.apps && Array.isArray(appsRes.apps)) {
@@ -289,19 +299,33 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
       }
     };
     initDevice();
+
+    // Auto-refresh permissions whenever user returns to app
+    window.addEventListener('focus', checkLivePerms);
+    const visHandler = () => {
+      if (document.visibilityState === 'visible') checkLivePerms();
+    };
+    document.addEventListener('visibilitychange', visHandler);
+    const permInterval = setInterval(checkLivePerms, 2000);
+
+    return () => {
+      window.removeEventListener('focus', checkLivePerms);
+      document.removeEventListener('visibilitychange', visHandler);
+      clearInterval(permInterval);
+    };
   }, []);
 
   const handleToggleShorts = async () => {
     if (!permStatus.hasUsageStats) {
       await callNativePlugin('openUsageAccessSettings');
-      const p = await callNativePlugin('checkBlockerPermissions');
-      if (p) setPermStatus(p);
       return;
     }
     if (!permStatus.hasOverlay) {
       await callNativePlugin('openOverlaySettings');
-      const p = await callNativePlugin('checkBlockerPermissions');
-      if (p) setPermStatus(p);
+      return;
+    }
+    if (!permStatus.hasAccessibility && !blockShorts) {
+      setShowAccessibilityGuide(true);
       return;
     }
     const nextVal = !blockShorts;
@@ -316,14 +340,10 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const handleToggleReels = async () => {
     if (!permStatus.hasUsageStats) {
       await callNativePlugin('openUsageAccessSettings');
-      const p = await callNativePlugin('checkBlockerPermissions');
-      if (p) setPermStatus(p);
       return;
     }
     if (!permStatus.hasOverlay) {
       await callNativePlugin('openOverlaySettings');
-      const p = await callNativePlugin('checkBlockerPermissions');
-      if (p) setPermStatus(p);
       return;
     }
     const nextVal = !blockReels;
@@ -416,7 +436,30 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   };
 
   const handleToggleGroup = async (groupId: string) => {
+    if (!permStatus.hasUsageStats) {
+      await callNativePlugin('openUsageAccessSettings');
+      return;
+    }
+    if (!permStatus.hasOverlay) {
+      await callNativePlugin('openOverlaySettings');
+      return;
+    }
     const updated = appGroups.map(g => g.id === groupId ? { ...g, enabled: !g.enabled } : g);
+    setAppGroups(updated);
+    localStorage.setItem('studyride_app_groups', JSON.stringify(updated));
+    await callNativePlugin('setAppGroups', { groups: updated });
+  };
+
+  const handleToggleGroupMode = async (groupId: string) => {
+    const updated = appGroups.map(g => {
+      if (g.id !== groupId) return g;
+      const nextMode: 'LIMIT' | 'BLOCKED' = g.blockMode === 'BLOCKED' ? 'LIMIT' : 'BLOCKED';
+      return {
+        ...g,
+        blockMode: nextMode,
+        dailyLimitMinutes: nextMode === 'BLOCKED' ? 0 : (g.dailyLimitMinutes || 30)
+      };
+    });
     setAppGroups(updated);
     localStorage.setItem('studyride_app_groups', JSON.stringify(updated));
     await callNativePlugin('setAppGroups', { groups: updated });
@@ -510,6 +553,97 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
   const focusedMins = Math.floor((totalRequestedSeconds - remainingSeconds) / 60);
   const goalPercent = Math.min(100, Math.round((screenTimeData.productiveMinutes / dailyGoalMinutes) * 100));
 
+  const renderPermissionWizard = () => {
+    const step = !permStatus.hasUsageStats ? 1 : !permStatus.hasOverlay ? 2 : !permStatus.hasAccessibility ? 3 : 0;
+    if (step === 0) return (
+      <div className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
+        <div className="flex items-center gap-2 text-emerald-400 font-bold">
+          <CheckCircle2 className="w-4 h-4" />
+          <span>Focus Shield Ready — Full Protection Active</span>
+        </div>
+        <span className="text-[11px] text-emerald-300/80 font-mono">3/3 ✓</span>
+      </div>
+    );
+
+    const steps = [
+      {
+        num: 1, icon: '📊', color: 'amber',
+        title: 'Step 1 of 3 — App Detection',
+        desc: 'Ek baar "Allow" karo — app detect karega ki YouTube ya Instagram khula hai',
+        btnText: 'Allow Now →',
+        action: async () => {
+          await callNativePlugin('openUsageAccessSettings');
+        }
+      },
+      {
+        num: 2, icon: '🛡️', color: 'sky',
+        title: 'Step 2 of 3 — Block Screen',
+        desc: 'Ek baar "Allow" karo — blocking screen distracting apps ke upar aayegi',
+        btnText: 'Allow Now →',
+        action: async () => {
+          await callNativePlugin('openOverlaySettings');
+        }
+      },
+      {
+        num: 3, icon: '✂️', color: 'violet',
+        title: 'Step 3 of 3 — Shorts Detector',
+        desc: 'Sirf Shorts tab block karne ke liye chahiye — YouTube lectures bilkul safe rahenge',
+        btnText: 'Allow Now →',
+        action: async () => {
+          setShowAccessibilityGuide(true);
+        }
+      }
+    ];
+
+    const s = steps[step - 1];
+    const colorMap: Record<string, string> = {
+      amber: 'bg-amber-500/10 border-amber-500/30',
+      sky:   'bg-sky-500/10 border-sky-500/30',
+      violet:'bg-violet-500/10 border-violet-500/30',
+    };
+    const btnMap: Record<string, string> = {
+      amber: 'bg-amber-400 hover:bg-amber-300',
+      sky:   'bg-sky-400 hover:bg-sky-300',
+      violet:'bg-violet-400 hover:bg-violet-300',
+    };
+    const iconBgMap: Record<string, string> = {
+      amber: 'bg-amber-500/20',
+      sky:   'bg-sky-500/20',
+      violet:'bg-violet-500/20',
+    };
+
+    return (
+      <div className={`p-4 rounded-3xl border ${colorMap[s.color]} shadow-lg`}>
+        {/* Progress dots */}
+        <div className="flex items-center gap-1.5 mb-3">
+          {[1,2,3].map(n => (
+            <div key={n} className={`h-1 rounded-full flex-1 transition-all ${n <= step ? (s.color === 'amber' ? 'bg-amber-400' : s.color === 'sky' ? 'bg-sky-400' : 'bg-violet-400') : 'bg-slate-700'}`} />
+          ))}
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-2xl ${iconBgMap[s.color]} flex items-center justify-center text-xl shrink-0`}>
+              {s.icon}
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-white">{s.title}</h4>
+              <p className="text-[11px] text-slate-300 mt-0.5 leading-tight">{s.desc}</p>
+            </div>
+          </div>
+          <button
+            onClick={s.action}
+            className={`px-4 py-2 rounded-xl ${btnMap[s.color]} text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md transition-all active:scale-95`}
+          >
+            {s.btnText}
+          </button>
+        </div>
+        <p className="text-[10px] text-slate-500 mt-2 text-center">
+          Settings khulegi → StudyRide dhundho → Enable karo → wapas aao — auto detect hoga ✓
+        </p>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#0C0F0D] text-slate-100 flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
       {/* ── TOP APP BAR ── */}
@@ -585,112 +719,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         {activeTab === 'FOCUS' && (
           <div className="space-y-4 animate-in fade-in duration-300">
             {/* ══ PERMISSION SETUP WIZARD ══ */}
-            {(() => {
-              const step = !permStatus.hasUsageStats ? 1 : !permStatus.hasOverlay ? 2 : !permStatus.hasAccessibility ? 3 : 0;
-              if (step === 0) return (
-                <div className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Focus Shield Ready — Full Protection Active</span>
-                  </div>
-                  <span className="text-[11px] text-emerald-300/80 font-mono">3/3 ✓</span>
-                </div>
-              );
-
-              const steps = [
-                {
-                  num: 1, icon: '📊', color: 'amber',
-                  title: 'Step 1 of 3 — App Detection',
-                  desc: 'Ek baar "Allow" karo — app detect karega ki YouTube ya Instagram khula hai',
-                  btnText: 'Allow Now →',
-                  action: async () => {
-                    await callNativePlugin('openUsageAccessSettings');
-                    // Auto-poll every 1.5s so wizard advances automatically
-                    const poll = setInterval(async () => {
-                      const p = await callNativePlugin('checkBlockerPermissions');
-                      if (p) { setPermStatus(p); if (p.hasUsageStats) clearInterval(poll); }
-                    }, 1500);
-                    setTimeout(() => clearInterval(poll), 30000);
-                  }
-                },
-                {
-                  num: 2, icon: '🛡️', color: 'sky',
-                  title: 'Step 2 of 3 — Block Screen',
-                  desc: 'Ek baar "Allow" karo — blocking screen distracting apps ke upar aayegi',
-                  btnText: 'Allow Now →',
-                  action: async () => {
-                    await callNativePlugin('openOverlaySettings');
-                    const poll = setInterval(async () => {
-                      const p = await callNativePlugin('checkBlockerPermissions');
-                      if (p) { setPermStatus(p); if (p.hasOverlay) clearInterval(poll); }
-                    }, 1500);
-                    setTimeout(() => clearInterval(poll), 30000);
-                  }
-                },
-                {
-                  num: 3, icon: '✂️', color: 'violet',
-                  title: 'Step 3 of 3 — Shorts Detector',
-                  desc: 'Sirf Shorts tab block karne ke liye chahiye — YouTube lectures bilkul safe rahenge',
-                  btnText: 'Allow Now →',
-                  action: async () => {
-                    await callNativePlugin('openAccessibilitySettings');
-                    const poll = setInterval(async () => {
-                      const p = await callNativePlugin('checkBlockerPermissions');
-                      if (p) { setPermStatus(p); if (p.hasAccessibility) clearInterval(poll); }
-                    }, 1500);
-                    setTimeout(() => clearInterval(poll), 30000);
-                  }
-                }
-              ];
-
-              const s = steps[step - 1];
-              const colorMap: Record<string, string> = {
-                amber: 'bg-amber-500/10 border-amber-500/30',
-                sky:   'bg-sky-500/10 border-sky-500/30',
-                violet:'bg-violet-500/10 border-violet-500/30',
-              };
-              const btnMap: Record<string, string> = {
-                amber: 'bg-amber-400 hover:bg-amber-300',
-                sky:   'bg-sky-400 hover:bg-sky-300',
-                violet:'bg-violet-400 hover:bg-violet-300',
-              };
-              const iconBgMap: Record<string, string> = {
-                amber: 'bg-amber-500/20',
-                sky:   'bg-sky-500/20',
-                violet:'bg-violet-500/20',
-              };
-
-              return (
-                <div className={`p-4 rounded-3xl border ${colorMap[s.color]} shadow-lg`}>
-                  {/* Progress dots */}
-                  <div className="flex items-center gap-1.5 mb-3">
-                    {[1,2,3].map(n => (
-                      <div key={n} className={`h-1 rounded-full flex-1 transition-all ${n <= step ? (s.color === 'amber' ? 'bg-amber-400' : s.color === 'sky' ? 'bg-sky-400' : 'bg-violet-400') : 'bg-slate-700'}`} />
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-2xl ${iconBgMap[s.color]} flex items-center justify-center text-xl shrink-0`}>
-                        {s.icon}
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-black text-white">{s.title}</h4>
-                        <p className="text-[11px] text-slate-300 mt-0.5 leading-tight">{s.desc}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={s.action}
-                      className={`px-4 py-2 rounded-xl ${btnMap[s.color]} text-slate-950 font-black text-xs shrink-0 cursor-pointer shadow-md transition-all active:scale-95`}
-                    >
-                      {s.btnText}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-2 text-center">
-                    Settings khulegi → StudyRide dhundho → Enable karo → wapas aao — auto detect hoga ✓
-                  </p>
-                </div>
-              );
-            })()}
+            {renderPermissionWizard()}
 
             {/* 1. Large Focus Goal Ring */}
             <div className="p-6 rounded-3xl bg-[#161B18] border border-[#1E2520] relative overflow-hidden flex flex-col items-center justify-center text-center">
@@ -997,6 +1026,9 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
            ══════════════════════════════════════════════ */}
         {activeTab === 'BLOCKS' && (
           <div className="space-y-6 animate-in fade-in duration-300">
+            {/* ══ PERMISSION STATUS BANNER IN BLOCKS TAB ══ */}
+            {renderPermissionWizard()}
+
             {/* ── 1. REGAIN-STYLE APP GROUPS SECTION ── */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -1050,9 +1082,30 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
                                 {group.packages.length} apps
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-400">
-                              {group.blockMode === 'BLOCKED' ? '🔒 Strict 100% Locked' : `⏱️ ${limitMins}m shared limit`}
-                            </p>
+                            <div className="flex items-center gap-1.5 mt-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleGroupMode(group.id)}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                  group.blockMode === 'BLOCKED'
+                                    ? 'bg-rose-500/25 text-rose-300 border border-rose-500/40 shadow-sm'
+                                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                🔒 100% Block Now
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleGroupMode(group.id)}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer ${
+                                  group.blockMode === 'LIMIT'
+                                    ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
+                                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                ⏱️ {limitMins}m Limit
+                              </button>
+                            </div>
                           </div>
                         </div>
 
@@ -1623,6 +1676,21 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         installedApps={installedApps}
         onSave={handleSaveGroup}
         onDelete={handleDeleteGroup}
+      />
+
+      {/* 8. Accessibility Service Prominent Setup Modal */}
+      <AccessibilityGuideModal
+        isOpen={showAccessibilityGuide}
+        onClose={() => setShowAccessibilityGuide(false)}
+        featureName="YouTube Shorts Block"
+        onPermissionGranted={async () => {
+          setBlockShorts(true);
+          await callNativePlugin('setGranularBlockRules', {
+            blockShorts: true,
+            blockReels,
+            youtubeStudyMode
+          });
+        }}
       />
     </div>
   );

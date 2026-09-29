@@ -90,12 +90,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   const [myClaims, setMyClaims] = useState<any[]>([]);
   const [loadingClaims, setLoadingClaims] = useState<boolean>(false);
 
   const [isGeneratingAiSyllabus, setIsGeneratingAiSyllabus] = useState<boolean>(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
 
   // Study Reminder Settings State
@@ -132,12 +134,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     setUploadError(null);
 
     if (file.size > 8 * 1024 * 1024) {
-      setUploadError('File size exceeds 8MB limit. Please choose a smaller image.');
-      return;
-    }
-
-    if (!isSupabaseConfigured) {
-      setUploadError('Supabase is not configured. Real photo upload requires Supabase credentials.');
+      setUploadError('Photo 8MB se bada hai. Chhoti image choose karein.');
       return;
     }
 
@@ -152,84 +149,127 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          const maxDim = 512;
+          const maxDim = 400;
           if (width > height) {
-            if (width > maxDim) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            }
+            if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; }
           } else {
-            if (height > maxDim) {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
+            if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
           }
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-          }
-          canvas.toBlob(async (blob) => {
-            if (!blob) {
-              setUploadingPhoto(false);
-              setUploadError('Failed to compress image.');
-              return;
-            }
-            const fileName = `${user.id}/${Date.now()}.jpg`;
-            const { data, error } = await supabase.storage.from('avatars').upload(fileName, blob, {
-              contentType: 'image/jpeg',
-              upsert: true
-            });
-            if (error) {
-              setUploadError(`Upload failed: ${error.message}. Please ensure storage bucket 'avatars' (public read) is created in Supabase Dashboard.`);
-              setUploadingPhoto(false);
-              return;
-            }
-            const { data: pubData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-            if (pubData?.publicUrl) {
-              setAvatarUrl(pubData.publicUrl);
-            }
+          if (ctx) { ctx.drawImage(img, 0, 0, width, height); }
+
+          // --- Try Supabase upload first ---
+          if (isSupabaseConfigured) {
+            canvas.toBlob(async (blob) => {
+              if (!blob) { setUploadError('Image compress nahi hui.'); setUploadingPhoto(false); return; }
+              const fileName = `${user.id}/${Date.now()}.jpg`;
+              const { error } = await supabase.storage.from('avatars').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+              if (error) {
+                // Supabase failed — fallback to base64
+                const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                setAvatarUrl(base64);
+                localStorage.setItem(`aspirantx_avatar_${user.id}`, base64);
+                setUploadingPhoto(false);
+              } else {
+                const { data: pubData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+                if (pubData?.publicUrl) { setAvatarUrl(pubData.publicUrl); }
+                setUploadingPhoto(false);
+              }
+            }, 'image/jpeg', 0.75);
+          } else {
+            // --- No Supabase: save as base64 in localStorage ---
+            const base64 = canvas.toDataURL('image/jpeg', 0.7);
+            setAvatarUrl(base64);
+            localStorage.setItem(`aspirantx_avatar_${user.id}`, base64);
             setUploadingPhoto(false);
-          }, 'image/jpeg', 0.8);
+          }
         };
+        img.onerror = () => { setUploadError('Image load nahi hui.'); setUploadingPhoto(false); };
       };
+      reader.onerror = () => { setUploadError('File read error.'); setUploadingPhoto(false); };
     } catch (err: any) {
-      setUploadError(err.message || 'Error processing photo.');
+      setUploadError(err.message || 'Photo upload mein error.');
       setUploadingPhoto(false);
     }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSaving(true);
+    setSaveError(null);
+    setSaveSuccessMessage(null);
 
-    const updatedProfile: UserProfile = {
-      ...user,
-      name,
-      avatar_url: avatarUrl,
-      bio,
-      studyGoal,
-      educationCategory: category,
-      exam: examName,
-      stateName,
-      boardOrUniversity,
-      streamOrSubject,
-      targetYear,
-    };
+    try {
+      // Resolve avatar — prefer uploaded, else check localStorage cache, else use preset
+      const resolvedAvatar = avatarUrl ||
+        localStorage.getItem(`aspirantx_avatar_${user.id}`) ||
+        user.avatar_url ||
+        AVATAR_PRESETS[0];
 
-    await saveUserProfile(updatedProfile);
+      const updatedProfile: UserProfile = {
+        ...user,
+        name: name.trim() || user.name,
+        avatar_url: resolvedAvatar,
+        bio: bio.trim(),
+        studyGoal: studyGoal.trim(),
+        educationCategory: category,
+        exam: examName.trim() || user.exam,
+        stateName,
+        boardOrUniversity,
+        streamOrSubject: streamOrSubject.trim(),
+        targetYear,
+        isProfileComplete: true,
+      };
 
-    if (SYLLABUS_PRESETS[category]) {
-      localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
+      // Save locally first (instant)
+      localStorage.setItem(`aspirantx_user_profile_${user.id}`, JSON.stringify(updatedProfile));
+
+      // Set syllabus preset
+      if (SYLLABUS_PRESETS[category]) {
+        localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
+      }
+
+      // Save to backend & Supabase
+      await saveUserProfile(updatedProfile);
+
+      // Also sync avatar_url to server explicitly
+      if (user.email) {
+        const token = localStorage.getItem('aspirantx_auth_token');
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        fetch('/api/user/update-profile', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            name: updatedProfile.name,
+            exam: updatedProfile.exam,
+            educationCategory: updatedProfile.educationCategory,
+            stateName: updatedProfile.stateName,
+            boardOrUniversity: updatedProfile.boardOrUniversity,
+            streamOrSubject: updatedProfile.streamOrSubject,
+            targetYear: updatedProfile.targetYear,
+            bio: updatedProfile.bio,
+            studyGoal: updatedProfile.studyGoal,
+            avatar_url: resolvedAvatar.startsWith('data:') ? '' : resolvedAvatar,
+            isProfileComplete: true,
+          }),
+        }).catch(() => {});
+      }
+
+      setSaveSuccessMessage('✅ Profile save ho gaya! Dashboard update ho raha hai...');
+      if (onProfileUpdated) onProfileUpdated(updatedProfile);
+
+      setTimeout(() => {
+        setSaveSuccessMessage(null);
+        onClose();
+      }, 1500);
+    } catch (err: any) {
+      setSaveError(`Save mein problem: ${err.message || 'Unknown error'}. Dobara try karein.`);
+    } finally {
+      setIsSaving(false);
     }
-
-    setSaveSuccessMessage('Profile & Syllabus settings updated successfully!');
-    if (onProfileUpdated) onProfileUpdated(updatedProfile);
-
-    setTimeout(() => {
-      setSaveSuccessMessage(null);
-      onClose();
-    }, 1200);
   };
 
   const handleGenerateAiSyllabus = async () => {
@@ -460,50 +500,65 @@ Return ONLY valid JSON format like:
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                    <span>Avatar (Presets or Upload)</span>
-                    {uploadingPhoto && <span className="text-[10px] text-cyan-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Uploading...</span>}
+                    <span>Profile Photo</span>
+                    {uploadingPhoto && <span className="text-[10px] text-cyan-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Upload ho raha hai...</span>}
                   </label>
                   
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={avatarUrl}
-                      alt="Current Avatar"
-                      className="w-10 h-10 rounded-full object-cover border-2 border-cyan-400 shadow-md shrink-0"
-                    />
+                  {/* Big Avatar Preview */}
+                  <div className="flex items-center gap-4">
+                    <div className="relative shrink-0">
+                      <img
+                        src={avatarUrl}
+                        alt="Profile Photo"
+                        onError={(e) => { (e.target as HTMLImageElement).src = AVATAR_PRESETS[0]; }}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-cyan-400 shadow-lg"
+                      />
+                      {uploadingPhoto && (
+                        <div className="absolute inset-0 rounded-2xl bg-slate-950/70 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
+                        </div>
+                      )}
+                    </div>
 
-                    {/* Preset Gallery */}
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                    <div className="space-y-2 flex-1">
+                      {/* Upload Button */}
+                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-bold text-cyan-300 cursor-pointer transition-all">
+                        <Upload className="w-3.5 h-3.5" /> Apni Photo Upload Karein
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                          disabled={uploadingPhoto}
+                        />
+                      </label>
+                      <p className="text-[10px] text-slate-500">
+                        JPG/PNG, max 8MB — automatically compressed & saved locally
+                      </p>
+                      {uploadError && (
+                        <p className="text-[11px] text-rose-400 font-semibold flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" /> {uploadError}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preset Avatar Gallery */}
+                  <div>
+                    <p className="text-[10px] text-slate-500 mb-1.5">Ya preset avatar choose karein:</p>
+                    <div className="flex items-center gap-2 flex-wrap">
                       {AVATAR_PRESETS.map((url, idx) => (
                         <img
                           key={idx}
                           src={url}
-                          alt="Avatar Preset"
+                          alt={`Avatar ${idx + 1}`}
                           onClick={() => setAvatarUrl(url)}
-                          className={`w-8 h-8 rounded-full object-cover cursor-pointer border-2 transition-all ${
-                            avatarUrl === url ? 'border-cyan-400 scale-110 shadow-lg' : 'border-slate-800 opacity-60 hover:opacity-100'
+                          className={`w-9 h-9 rounded-full object-cover cursor-pointer border-2 transition-all ${
+                            avatarUrl === url ? 'border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30' : 'border-slate-700 opacity-60 hover:opacity-100 hover:border-slate-500'
                           }`}
                         />
                       ))}
                     </div>
-                  </div>
-
-                  {/* Real Photo Upload File Input */}
-                  <div className="pt-1">
-                    <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-cyan-300 cursor-pointer transition-all">
-                      <Upload className="w-3.5 h-3.5" /> Upload Your Photo (Max 8MB)
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </label>
-                    <p className="text-[10px] text-slate-500 mt-1">
-                      Note: Requires Supabase Storage bucket named <code className="text-cyan-400">avatars</code> (public read) in your Supabase dashboard.
-                    </p>
-                    {uploadError && (
-                      <p className="text-[11px] text-rose-400 mt-1 font-semibold">{uploadError}</p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -693,10 +748,15 @@ Return ONLY valid JSON format like:
               </div>
             </div>
 
-            {/* Save Status Banner */}
+            {/* Save Status Banners */}
             {saveSuccessMessage && (
               <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2">
                 <Check className="w-4 h-4 text-emerald-400" /> {saveSuccessMessage}
+              </div>
+            )}
+            {saveError && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400" /> {saveError}
               </div>
             )}
 
@@ -705,16 +765,22 @@ Return ONLY valid JSON format like:
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white"
+                disabled={isSaving}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white disabled:opacity-50"
               >
                 Cancel
               </button>
 
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                disabled={isSaving || uploadingPhoto}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Check className="w-4 h-4" /> Save Profile & Update Dashboard
+                {isSaving ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
+                ) : (
+                  <><Check className="w-4 h-4" /> Save Profile</>
+                )}
               </button>
             </div>
           </form>

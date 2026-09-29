@@ -54,6 +54,10 @@ public class FocusShieldMonitorService extends Service {
     private View activeOverlayView = null;
     private String currentlyDisplayedOverlayPkg = "";
 
+    // YouTube Lecture Session tracking (no arbitrary timer; unlocked for full lecture session until user leaves)
+    private static long lastYouTubeActiveTime = 0;
+    private static boolean isYouTubeLectureActive = false;
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -160,6 +164,18 @@ public class FocusShieldMonitorService extends Service {
 
         String currentPackage = getForegroundPackage();
         if (currentPackage != null && !currentPackage.isEmpty()) {
+            // Keep YouTube lecture session active while user is in YouTube
+            if ("com.google.android.youtube".equals(currentPackage)) {
+                if (isYouTubeLectureActive) {
+                    lastYouTubeActiveTime = now;
+                }
+            } else {
+                // If user was away from YouTube for more than 5 minutes (closed/finished studying), reset lecture session
+                if (isYouTubeLectureActive && (now - lastYouTubeActiveTime > 5 * 60 * 1000L)) {
+                    isYouTubeLectureActive = false;
+                }
+            }
+
             // Do not block StudyRide, Android system UI, launcher or settings
             String myPkg = getPackageName();
             if (currentPackage.equals(myPkg) 
@@ -213,13 +229,10 @@ public class FocusShieldMonitorService extends Service {
                 blockReason = "REELS_BLOCKED";
             }
             // YouTube: Block when Shorts toggle ON.
-            // If user granted "Watch Lecture" bypass (stored as youtube_lecture_bypass_until),
-            // allow YouTube until that timestamp expires.
+            // If user unlocked "Watch Lecture", allow uninterrupted YouTube access for the full lecture session without any timer.
             if (!shouldBlock && blockShorts && "com.google.android.youtube".equals(currentPackage)) {
                 boolean ytStudyMode = prefs.getBoolean(FocusShieldAccessibilityService.PREF_YT_STUDY_MODE, false);
-                long lectureBypassUntil = prefs.getLong("youtube_lecture_bypass_until", 0);
-                boolean bypassActive = System.currentTimeMillis() < lectureBypassUntil;
-                if (!ytStudyMode && !bypassActive) {
+                if (!ytStudyMode && !isYouTubeLectureActive) {
                     shouldBlock = true;
                     blockReason = "SHORTS_BLOCKED";
                 }
@@ -385,19 +398,16 @@ public class FocusShieldMonitorService extends Service {
 
         if (btnReturn != null) {
             if ("SHORTS_BLOCKED".equals(reason)) {
-                // For Shorts block: show "Watch Lecture" bypass button
-                btnReturn.setText("Watch Lecture ✅ (10 min)");
+                // For Shorts block: show "Watch Lecture" bypass button without any timer
+                btnReturn.setText("Watch Lecture ✅");
                 btnReturn.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        // Grant 10-minute lecture bypass
-                        getSharedPreferences(FocusShieldPlugin.PREFS_NAME, Context.MODE_PRIVATE)
-                            .edit()
-                            .putLong("youtube_lecture_bypass_until", System.currentTimeMillis() + 10 * 60 * 1000L)
-                            .apply();
+                        isYouTubeLectureActive = true;
+                        lastYouTubeActiveTime = System.currentTimeMillis();
                         hideBlockOverlay();
                         Toast.makeText(FocusShieldMonitorService.this,
-                            "✅ Lecture mode: 10 min YouTube access granted", Toast.LENGTH_SHORT).show();
+                            "✅ Lecture Mode Unlocked — Happy Studying!", Toast.LENGTH_SHORT).show();
                     }
                 });
             } else {

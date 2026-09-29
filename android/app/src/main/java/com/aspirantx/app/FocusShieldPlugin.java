@@ -106,6 +106,9 @@ public class FocusShieldPlugin extends Plugin {
         boolean hasUsage = hasUsageStatsPermission(context);
         boolean hasOverlay = hasOverlayPermission(context);
         boolean hasAccessibility = hasAccessibilityPermission(context);
+        if (hasUsage) {
+            ensureProtectionService();
+        }
 
         JSObject res = new JSObject();
         res.put("hasUsageStats", hasUsage);
@@ -239,18 +242,8 @@ public class FocusShieldPlugin extends Plugin {
                 .putStringSet("blocked_packages", updated)
                 .apply();
 
-        // Start monitor if either reels or shorts blocking is enabled
-        if ((blockReels || blockShorts) && hasUsageStatsPermission(context)) {
-            try {
-                Intent serviceIntent = new Intent(context, FocusShieldMonitorService.class);
-                serviceIntent.setAction(FocusShieldMonitorService.ACTION_START);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    context.startForegroundService(serviceIntent);
-                } else {
-                    context.startService(serviceIntent);
-                }
-            } catch (Exception ignored) {}
-        }
+        // Ensure monitor service is running if usage access is granted
+        ensureProtectionService();
 
         JSObject res = new JSObject();
         res.put("success", true);

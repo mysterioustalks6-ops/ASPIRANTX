@@ -72,6 +72,7 @@ android/capacitor-cordova-android-plugins/build/
 android/app/src/main/assets/public/
 *.zip
 *.apk
+*.aab
 scratch_*.png
 scratch_*.xml
 *_dump*.xml
