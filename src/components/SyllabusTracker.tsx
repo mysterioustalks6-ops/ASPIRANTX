@@ -185,7 +185,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           exam: node.exam,
           title: node.title || node.chapter || 'Topic',
           category: node.category || node.subject || 'General Subject',
-          stage: (['Prelims','Mains','Tier-1','Tier-2','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(node.stage as any) ? node.stage : 'Prelims',
+          stage: (['Prelims','Mains','Tier-1','Tier-2','Interview','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(node.stage as any) ? node.stage : 'Prelims',
           completed: subList.length > 0 && subList.every((s) => completedSet.has(s.id) || s.completed),
           subtopicsCount: subList.length,
           completedSubtopics: subList.filter((s) => completedSet.has(s.id) || s.completed).length,
@@ -204,7 +204,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           exam: node.exam,
           title: node.chapter || node.topic || 'General Chapter',
           category: node.subject || node.category || 'General Subject',
-          stage: (['Prelims','Mains','Tier-1','Tier-2','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(node.stage as any) ? node.stage : 'Prelims',
+          stage: (['Prelims','Mains','Tier-1','Tier-2','Interview','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(node.stage as any) ? node.stage : 'Prelims',
           completed: false,
           subtopicsCount: 0,
           completedSubtopics: 0,
@@ -262,15 +262,13 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
   // Load syllabus nodes and time summary
   const loadData = async () => {
-    // 1. Fetch Official Syllabus
-    let offNodes: any[] = await fetchOfficialSyllabus(selectedExam);
+    // 1. Authoritative OpenKosh Detailed Syllabus (45 Comprehensive National & State Exams)
+    const openkoshNodes = convertOpenKoshToSyllabusNodes(selectedExam);
+    let offNodes: any[] = openkoshNodes && openkoshNodes.length > 0 ? openkoshNodes : [];
 
-    // 2. Check OpenKosh first if official API returned no nodes
+    // 2. Fallback to API if OpenKosh doesn't cover this exam
     if (offNodes.length === 0) {
-      const openkoshNodes = convertOpenKoshToSyllabusNodes(selectedExam);
-      if (openkoshNodes.length > 0) {
-        offNodes = openkoshNodes;
-      }
+      offNodes = await fetchOfficialSyllabus(selectedExam);
     }
 
     // 3. Check custom user-created exams from storage

@@ -232,6 +232,19 @@ export function convertOpenKoshToSyllabusNodes(examId: string): SyllabusHierarch
   const nodes: SyllabusHierarchyNode[] = [];
 
   exam.sections.forEach((section, sIdx) => {
+    const sTitle = section.title || '';
+    const sLower = sTitle.toLowerCase();
+    const stageName: string = 
+      (sLower.includes('tier ii') || sLower.includes('tier-2') || sLower.includes('cbt 2') || sLower.includes('stage ii') || sLower.includes('mains') || sLower.includes('final written') || sLower.includes('voclet'))
+        ? 'Tier-2'
+        : (sLower.includes('tier i') || sLower.includes('tier-1') || sLower.includes('cbt 1') || sLower.includes('stage i') || sLower.includes('session i') || sLower.includes('prelim') || sLower.includes('primary') || sLower.includes('jexpo'))
+        ? 'Tier-1'
+        : (sLower.includes('interview') || sLower.includes('personality') || sLower.includes('ssb'))
+        ? 'Interview'
+        : sTitle.includes('Mains')
+        ? 'Mains'
+        : 'Prelims';
+
     section.subjects.forEach((subj, subIdx) => {
       (subj.topics || []).forEach((t, tIdx) => {
         const id = t.id || `${exam.examId}_${sIdx}_${subIdx}_${tIdx}`;
@@ -244,11 +257,11 @@ export function convertOpenKoshToSyllabusNodes(examId: string): SyllabusHierarch
           topic: t.name,
           subtopic: t.name,
           title: t.name,
-          stage: section.title.includes('Mains') ? 'Mains' : 'Prelims',
+          stage: stageName as any,
           weightage: 'High',
           estimatedHours: 2.5,
           completed: false,
-          description: `${subj.marks ? subj.marks + ' | ' : ''}${subj.questions ? subj.questions + ' questions | ' : ''}${section.description || ''}`,
+          description: `${subj.marks ? subj.marks + ' | ' : ''}${subj.questions ? subj.questions + ' questions | ' : ''}${section.title}`,
           difficulty: exam.difficulty === 'High' ? 'Hard' : exam.difficulty === 'Low' ? 'Easy' : 'Medium',
           recommendedBooks: (exam.books || []).map(b => `${b.book} (${b.author})`),
           pyqCount: 10

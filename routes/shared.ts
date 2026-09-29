@@ -2317,8 +2317,62 @@ export function getSystemInstructionForMode(mode: string, exam: string, summary?
   return fullPrompt;
 }
 
+const initialSyllabusList: any[] = [...INITIAL_SYLLABUS_HIERARCHY];
+try {
+  const openkoshJsonPath = path.resolve(process.cwd(), 'src', 'data', 'openkoshDetailedSyllabus.json');
+  if (fs.existsSync(openkoshJsonPath)) {
+    const openkoshRaw = JSON.parse(fs.readFileSync(openkoshJsonPath, 'utf8'));
+    for (const [examId, exam] of Object.entries(openkoshRaw as Record<string, any>)) {
+      if (exam && Array.isArray(exam.sections)) {
+        exam.sections.forEach((section: any, sIdx: number) => {
+          const sTitle = section.title || '';
+          const sLower = sTitle.toLowerCase();
+          const stageName = 
+            (sLower.includes('tier ii') || sLower.includes('tier-2') || sLower.includes('cbt 2') || sLower.includes('stage ii') || sLower.includes('mains') || sLower.includes('final written') || sLower.includes('voclet'))
+              ? 'Tier-2'
+              : (sLower.includes('tier i') || sLower.includes('tier-1') || sLower.includes('cbt 1') || sLower.includes('stage i') || sLower.includes('session i') || sLower.includes('prelim') || sLower.includes('primary') || sLower.includes('jexpo'))
+              ? 'Tier-1'
+              : (sLower.includes('interview') || sLower.includes('personality') || sLower.includes('ssb'))
+              ? 'Interview'
+              : sTitle.includes('Mains')
+              ? 'Mains'
+              : 'Prelims';
+
+          section.subjects?.forEach((subj: any, subIdx: number) => {
+            subj.topics?.forEach((t: any, tIdx: number) => {
+              const id = t.id || `${exam.examId}_${sIdx}_${subIdx}_${tIdx}`;
+              initialSyllabusList.push({
+                id,
+                exam: exam.examId,
+                paper: section.title,
+                subject: subj.title,
+                chapter: subj.title,
+                topic: t.name,
+                subtopic: t.name,
+                title: t.name,
+                stage: stageName,
+                weightage: 'High',
+                estimatedHours: 2.5,
+                completed: false,
+                description: `${subj.marks ? subj.marks + ' | ' : ''}${subj.questions ? subj.questions + ' questions | ' : ''}${section.title}`,
+                difficulty: exam.difficulty === 'High' ? 'Hard' : exam.difficulty === 'Low' ? 'Easy' : 'Medium',
+                recommendedBooks: (exam.books || []).map((b: any) => `${b.book} (${b.author})`),
+                pyqCount: 10,
+                version: 1,
+                updatedAt: new Date().toISOString()
+              });
+            });
+          });
+        });
+      }
+    }
+  }
+} catch (err) {
+  console.warn('[SHARED] Could not preload OpenKosh detailed syllabus:', err);
+}
+
 export const syllabusNodesStore: Map<string, any> = new Map(
-  INITIAL_SYLLABUS_HIERARCHY.map((node) => [node.id, { ...node, version: 1, updatedAt: new Date().toISOString() }])
+  initialSyllabusList.map((node) => [node.id, { ...node, version: 1, updatedAt: node.updatedAt || new Date().toISOString() }])
 );
 
 export const pyqQueryCache = new Map<string, { data: any; timestamp: number }>();
