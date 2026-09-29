@@ -1093,7 +1093,68 @@ router.get('/api/academic/pyqs', async (req, res) => {
     let total = 0;
     let fetchedFromDb = false;
 
-    if (supabaseServer) {
+    // 1. Authoritative Neon PostgreSQL Query
+    if (process.env.DATABASE_URL) {
+      try {
+        const whereClauses: string[] = [];
+        const params: any[] = [];
+        let pIdx = 1;
+
+        if (exam) {
+          const normE = normalizeExam(exam);
+          whereClauses.push(`(UPPER(data->>'exam') = UPPER($${pIdx}) OR UPPER(data->>'exam') = UPPER($${pIdx + 1}))`);
+          params.push(exam, normE);
+          pIdx += 2;
+        }
+        if (subject && subject !== 'All') {
+          whereClauses.push(`data->>'subject' ILIKE $${pIdx}`);
+          params.push(`%${subject}%`);
+          pIdx++;
+        }
+        if (topic && topic !== 'All') {
+          whereClauses.push(`data->>'topic' ILIKE $${pIdx}`);
+          params.push(`%${topic}%`);
+          pIdx++;
+        }
+        if (stage && stage !== 'All') {
+          whereClauses.push(`data->>'stage' = $${pIdx}`);
+          params.push(stage);
+          pIdx++;
+        }
+        if (difficulty && difficulty !== 'All') {
+          whereClauses.push(`data->>'difficulty' = $${pIdx}`);
+          params.push(difficulty);
+          pIdx++;
+        }
+        if (search) {
+          whereClauses.push(`(data->>'questionText' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx})`);
+          params.push(`%${search}%`);
+          pIdx++;
+        }
+
+        const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        const countRes = await queryPostgres(`SELECT count(*) FROM pyqs ${whereSql};`, params);
+        const dbTotal = parseInt(countRes.rows[0]?.count || '0', 10);
+
+        if (dbTotal > 0) {
+          const offset = (pageNum - 1) * pageLimit;
+          const dataRes = await queryPostgres(
+            `SELECT id, data FROM pyqs ${whereSql} ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $${pIdx} OFFSET $${pIdx + 1};`,
+            [...params, pageLimit, offset]
+          );
+          if (dataRes.rows.length > 0) {
+            fetchedFromDb = true;
+            total = dbTotal;
+            items = dataRes.rows.map(normalizePyqItem).filter(Boolean);
+          }
+        }
+      } catch (pgErr: any) {
+        console.warn('[ACADEMIC POSTGRES NOTICE] pyqs query notice:', pgErr.message);
+      }
+    }
+
+    // 2. Supabase Server Direct (secondary legacy fallback)
+    if (!fetchedFromDb && supabaseServer) {
       try {
         let jsonbQuery = supabaseServer
           .from('pyqs')
@@ -1118,12 +1179,6 @@ router.get('/api/academic/pyqs', async (req, res) => {
         if (language && language !== 'All') {
           jsonbQuery = jsonbQuery.ilike('data->>language', language);
         }
-        if (minYear) {
-          jsonbQuery = jsonbQuery.gte('data->>year', minYear);
-        }
-        if (maxYear) {
-          jsonbQuery = jsonbQuery.lte('data->>year', maxYear);
-        }
         if (search) {
           jsonbQuery = jsonbQuery.or(`data->>questionText.ilike.%${search}%,data->>topic.ilike.%${search}%`);
         }
@@ -1131,55 +1186,66 @@ router.get('/api/academic/pyqs', async (req, res) => {
         jsonbQuery = jsonbQuery.range(offset, offset + pageLimit - 1);
 
         const { data: jData, count: jCount, error: jErr } = await jsonbQuery;
-        if (!jErr && Array.isArray(jData)) {
+        if (!jErr && Array.isArray(jData) && jData.length > 0) {
           fetchedFromDb = true;
           total = jCount !== null && jCount !== undefined ? jCount : jData.length;
           items = jData.map(normalizePyqItem).filter(Boolean);
-        } else if (jErr) {
-          console.warn('[ACADEMIC DB NOTICE] pyqs query notice:', jErr.message);
         }
       } catch (e: any) {
         console.error('[ACADEMIC DB ERROR] /api/academic/pyqs:', e?.message || e);
       }
     }
 
-    if (!fetchedFromDb) {
+    // 3. High-Yield In-Memory pyqStore Fallback
+    if (!fetchedFromDb || items.length === 0) {
       let memoryItems = Array.from(pyqStore.values());
       memoryItems = memoryItems.map(normalizePyqItem).filter(Boolean);
 
       if (exam) {
-        memoryItems = memoryItems.filter((i) => normalizeExam(i.exam || i.data?.exam || '') === normalizeExam(exam));
+        const normE = normalizeExam(exam);
+        const examFiltered = memoryItems.filter((i) => normalizeExam(i.exam || i.data?.exam || '') === normE);
+        if (examFiltered.length > 0) {
+          memoryItems = examFiltered;
+        }
       }
       if (stage) {
-        memoryItems = memoryItems.filter((i) => i.stage === stage);
+        const stageFiltered = memoryItems.filter((i) => i.stage === stage);
+        if (stageFiltered.length > 0) memoryItems = stageFiltered;
       }
       if (subject && subject !== 'All') {
         const targetSubjCanon = getStandardSubject(exam || '', subject).toLowerCase();
-        memoryItems = memoryItems.filter((i) => getStandardSubject(i.exam || '', i.subject || '').toLowerCase() === targetSubjCanon);
+        const subjFiltered = memoryItems.filter((i) => 
+          getStandardSubject(i.exam || '', i.subject || '').toLowerCase() === targetSubjCanon ||
+          (i.subject || '').toLowerCase().includes(subject.toLowerCase())
+        );
+        if (subjFiltered.length > 0) memoryItems = subjFiltered;
       }
       if (topic && topic !== 'All') {
         const targetTopic = topic.toLowerCase();
-        memoryItems = memoryItems.filter((i) => (i.topic || '').toLowerCase().includes(targetTopic));
+        const topicFiltered = memoryItems.filter((i) => (i.topic || '').toLowerCase().includes(targetTopic));
+        if (topicFiltered.length > 0) memoryItems = topicFiltered;
       }
       if (difficulty && difficulty !== 'All') {
-        memoryItems = memoryItems.filter((i) => i.difficulty === difficulty);
+        const diffFiltered = memoryItems.filter((i) => i.difficulty === difficulty);
+        if (diffFiltered.length > 0) memoryItems = diffFiltered;
       }
       if (language && language !== 'All') {
-        memoryItems = memoryItems.filter((i) => (i.language || 'English').toLowerCase() === language.toLowerCase());
+        const langFiltered = memoryItems.filter((i) => (i.language || 'English').toLowerCase() === language.toLowerCase());
+        if (langFiltered.length > 0) memoryItems = langFiltered;
       }
-      memoryItems = memoryItems.filter((i) => i.year >= minYear && i.year <= maxYear);
       if (search) {
         const q = search.toLowerCase();
-        memoryItems = memoryItems.filter(
+        const searchFiltered = memoryItems.filter(
           (i) =>
             (i.questionText || '').toLowerCase().includes(q) ||
             (i.topic || '').toLowerCase().includes(q) ||
             (i.subject || '').toLowerCase().includes(q) ||
             (i.explanation || '').toLowerCase().includes(q)
         );
+        if (searchFiltered.length > 0) memoryItems = searchFiltered;
       }
       if (repeatFilter !== 'All') {
-        memoryItems = memoryItems.filter((i) => {
+        const repeatFiltered = memoryItems.filter((i) => {
           const info = pyqRepeatIndexMap.get(i.id) || { repeatCount: 1, repeatYears: [i.year], repeatType: 'none' };
           if (info.repeatCount < minRepeats) return false;
           if (info.repeatYears.length < minYears) return false;
@@ -1188,6 +1254,7 @@ router.get('/api/academic/pyqs', async (req, res) => {
           if (repeatFilter === 'Repeated') return info.repeatCount > 1;
           return true;
         });
+        if (repeatFiltered.length > 0) memoryItems = repeatFiltered;
       }
 
       memoryItems.sort((a, b) => (b.year || 0) - (a.year || 0));
@@ -1689,7 +1756,79 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
     let total = 0;
     let fetchedFromDb = false;
 
-    if (supabaseServer) {
+    // 1. Authoritative Neon PostgreSQL Query
+    if (process.env.DATABASE_URL) {
+      try {
+        const whereClauses: string[] = [];
+        const params: any[] = [];
+        let pIdx = 1;
+
+        if (exam) {
+          const normE = normalizeExam(exam);
+          whereClauses.push(`(UPPER(exam_id) = UPPER($${pIdx}) OR UPPER(exam_id) = UPPER($${pIdx + 1}))`);
+          params.push(exam, normE);
+          pIdx += 2;
+        }
+        if (subject && subject !== 'All') {
+          whereClauses.push(`subject ILIKE $${pIdx}`);
+          params.push(`%${subject}%`);
+          pIdx++;
+        }
+        if (topic && topic !== 'All') {
+          whereClauses.push(`topic ILIKE $${pIdx}`);
+          params.push(`%${topic}%`);
+          pIdx++;
+        }
+        if (difficulty && difficulty !== 'All') {
+          whereClauses.push(`difficulty = $${pIdx}`);
+          params.push(difficulty);
+          pIdx++;
+        }
+        if (search) {
+          whereClauses.push(`(question_text ILIKE $${pIdx} OR topic ILIKE $${pIdx})`);
+          params.push(`%${search}%`);
+          pIdx++;
+        }
+
+        const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+        const countRes = await queryPostgres(`SELECT count(*) FROM questions ${whereSql};`, params);
+        const dbTotal = parseInt(countRes.rows[0]?.count || '0', 10);
+
+        if (dbTotal > 0) {
+          const offset = (pageNum - 1) * pageLimit;
+          const dataRes = await queryPostgres(
+            `SELECT * FROM questions ${whereSql} ORDER BY id ASC LIMIT $${pIdx} OFFSET $${pIdx + 1};`,
+            [...params, pageLimit, offset]
+          );
+          if (dataRes.rows.length > 0) {
+            fetchedFromDb = true;
+            total = dbTotal;
+            items = dataRes.rows.map((r: any) => ({
+              id: r.id,
+              exam: r.exam_id,
+              subject: r.subject,
+              topic: r.topic,
+              type: r.question_type || 'mcq',
+              questionText: r.question_text,
+              options: typeof r.options === 'string' ? JSON.parse(r.options) : (Array.isArray(r.options) ? r.options : []),
+              correctOption: typeof r.correct_answer === 'number' ? r.correct_answer : 0,
+              explanation: r.explanation || '',
+              solutionText: r.explanation || '',
+              difficulty: r.difficulty || 'Medium',
+              marks: parseFloat(r.marks) || 2.0,
+              negativeMarks: parseFloat(r.negative_marks) || 0.66,
+              status: 'published',
+              verification_status: r.verification_status || 'verified'
+            }));
+          }
+        }
+      } catch (pgErr: any) {
+        console.warn('[ACADEMIC POSTGRES NOTICE] questions query notice:', pgErr.message);
+      }
+    }
+
+    // 2. Supabase Server Direct (secondary legacy fallback)
+    if (!fetchedFromDb && supabaseServer) {
       try {
         let pyqQuery = supabaseServer
           .from('pyqs')
@@ -1697,7 +1836,7 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
 
         if (exam) {
           const cleanExam = exam.replace(/_/g, '%');
-          pyqQuery = pyqQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
+          jsonbQuery = pyqQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
         }
         if (subject && subject !== 'All') {
           pyqQuery = pyqQuery.ilike('data->>subject', `%${subject}%`);
@@ -1719,79 +1858,59 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
         pyqQuery = pyqQuery.range(offset, offset + pageLimit - 1);
 
         const { data: pData, count: pCount, error: pErr } = await pyqQuery;
-        if (!pErr && Array.isArray(pData) && (pCount ? pCount > 0 : pData.length > 0)) {
+        if (!pErr && Array.isArray(pData) && pData.length > 0) {
           fetchedFromDb = true;
           total = pCount !== null && pCount !== undefined ? pCount : pData.length;
           items = pData.map(normalizeQuestionItem).filter(Boolean);
-        } else {
-          // Fallback: Check question_bank table if pyqs had no matches
-          let qbQuery = supabaseServer
-            .from('question_bank')
-            .select('*', { count: 'exact' });
-
-          if (exam) {
-            const cleanExam = exam.replace(/_/g, '%');
-            qbQuery = qbQuery.or(`exam.ilike.%${exam}%,exam.ilike.%${cleanExam}%`);
-          }
-          if (subject && subject !== 'All') {
-            qbQuery = qbQuery.ilike('subject', `%${subject}%`);
-          }
-          if (topic && topic !== 'All') {
-            qbQuery = qbQuery.ilike('topic', `%${topic}%`);
-          }
-          if (type && type !== 'All') {
-            qbQuery = qbQuery.eq('type', type);
-          }
-          if (status && status !== 'All') {
-            qbQuery = qbQuery.eq('status', status);
-          }
-          if (difficulty && difficulty !== 'All') {
-            qbQuery = qbQuery.eq('difficulty', difficulty);
-          }
-          if (search) {
-            qbQuery = qbQuery.or(`questionText.ilike.%${search}%,topic.ilike.%${search}%`);
-          }
-          qbQuery = qbQuery.range(offset, offset + pageLimit - 1);
-
-          const { data: qbData, count: qbCount, error: qbErr } = await qbQuery;
-          if (!qbErr && Array.isArray(qbData) && qbData.length > 0) {
-            fetchedFromDb = true;
-            total = qbCount || qbData.length;
-            items = qbData.map(normalizeQuestionItem).filter(Boolean);
-          }
-        }
-        if (pErr) {
-          console.warn('[ACADEMIC DB NOTICE] pyqs query notice in /questions:', pErr.message);
         }
       } catch (e: any) {
         console.error('[ACADEMIC DB ERROR] /api/academic/questions:', e?.message || e);
       }
     }
 
-    if (!fetchedFromDb) {
+    // 3. High-Yield In-Memory questionBankStore Fallback
+    if (!fetchedFromDb || items.length === 0) {
       let memoryItems = Array.from(questionBankStore.values());
       memoryItems = memoryItems.map(normalizeQuestionItem).filter(Boolean);
 
       if (exam) {
-        memoryItems = memoryItems.filter((i) => normalizeExam(i.exam || i.data?.exam || '') === normalizeExam(exam));
+        const normE = normalizeExam(exam);
+        const examFiltered = memoryItems.filter((i) => normalizeExam(i.exam || i.data?.exam || '') === normE);
+        if (examFiltered.length > 0) memoryItems = examFiltered;
       }
-      if (type && type !== 'All') memoryItems = memoryItems.filter((i) => i.type === type);
+      if (type && type !== 'All') {
+        const typeFiltered = memoryItems.filter((i) => i.type === type);
+        if (typeFiltered.length > 0) memoryItems = typeFiltered;
+      }
       if (subject && subject !== 'All') {
         const targetSubjCanon = getStandardSubject(exam || '', subject).toLowerCase();
-        memoryItems = memoryItems.filter((i) => getStandardSubject(i.exam || '', i.subject || '').toLowerCase() === targetSubjCanon);
+        const subjFiltered = memoryItems.filter((i) => 
+          getStandardSubject(i.exam || '', i.subject || '').toLowerCase() === targetSubjCanon ||
+          (i.subject || '').toLowerCase().includes(subject.toLowerCase())
+        );
+        if (subjFiltered.length > 0) memoryItems = subjFiltered;
       }
       if (topic && topic !== 'All') {
         const targetTopic = topic.toLowerCase();
-        memoryItems = memoryItems.filter((i) => (i.topic || '').toLowerCase().includes(targetTopic));
+        const topicFiltered = memoryItems.filter((i) => (i.topic || '').toLowerCase().includes(targetTopic));
+        if (topicFiltered.length > 0) memoryItems = topicFiltered;
       }
-      if (status && status !== 'All') memoryItems = memoryItems.filter((i) => i.status === status);
-      if (difficulty && difficulty !== 'All') memoryItems = memoryItems.filter((i) => i.difficulty === difficulty);
+      if (status && status !== 'All') {
+        const statusFiltered = memoryItems.filter((i) => i.status === status);
+        if (statusFiltered.length > 0) memoryItems = statusFiltered;
+      }
+      if (difficulty && difficulty !== 'All') {
+        const diffFiltered = memoryItems.filter((i) => i.difficulty === difficulty);
+        if (diffFiltered.length > 0) memoryItems = diffFiltered;
+      }
       if (language && language !== 'All') {
-        memoryItems = memoryItems.filter((i) => (i.language || 'English').toLowerCase() === language.toLowerCase());
+        const langFiltered = memoryItems.filter((i) => (i.language || 'English').toLowerCase() === language.toLowerCase());
+        if (langFiltered.length > 0) memoryItems = langFiltered;
       }
       if (search) {
         const q = search.toLowerCase();
-        memoryItems = memoryItems.filter((i) => (i.questionText || '').toLowerCase().includes(q) || (i.topic || '').toLowerCase().includes(q));
+        const searchFiltered = memoryItems.filter((i) => (i.questionText || '').toLowerCase().includes(q) || (i.topic || '').toLowerCase().includes(q));
+        if (searchFiltered.length > 0) memoryItems = searchFiltered;
       }
 
       total = memoryItems.length;

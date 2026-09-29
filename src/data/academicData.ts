@@ -1,5 +1,5 @@
 import { SyllabusHierarchyNode } from '../types';
-const neetPyqs: any[] = [];
+
 
 export const INITIAL_SYLLABUS_HIERARCHY: SyllabusHierarchyNode[] = [
   {
@@ -99,40 +99,39 @@ export const INITIAL_SYLLABUS_HIERARCHY: SyllabusHierarchyNode[] = [
   }
 ];
 
-export const INITIAL_PYQS_DATABASE = neetPyqs || [];
+import allQuestionsJson from './allQuestionsData.json';
 
-export const INITIAL_QUESTION_BANK = [
-  {
-    id: 'qb_1',
-    subject: 'Indian Polity & Governance',
-    topic: 'Fundamental Rights',
-    questionText: 'Which Article of the Constitution guarantees right to equality before law?',
-    options: ['Article 14', 'Article 19', 'Article 21', 'Article 32'],
-    correctOption: 0,
-    explanation: 'Article 14 ensures that the State shall not deny to any person equality before the law or the equal protection of the laws within the territory of India.',
-    difficulty: 'Medium',
-    source: 'PYQ'
-  },
-  {
-    id: 'qb_2',
-    subject: 'Modern Indian History',
-    topic: 'Gandhian Era',
-    questionText: 'In which year was the Non-Cooperation Movement launched by Mahatma Gandhi?',
-    options: ['1919', '1920', '1922', '1930'],
-    correctOption: 1,
-    explanation: 'The Non-Cooperation Movement was officially launched in September 1920 at the Calcutta special session of the Indian National Congress.',
-    difficulty: 'Easy',
-    source: 'PYQ'
-  },
-  {
-    id: 'qb_3',
-    subject: 'Indian Economy',
-    topic: 'Monetary Policy',
-    questionText: 'Who regulates the monetary policy framework in India?',
-    options: ['Ministry of Finance', 'SEBI', 'Reserve Bank of India (RBI)', 'NITI Aayog'],
-    correctOption: 2,
-    explanation: 'Reserve Bank of India (RBI) is entrusted with the responsibility of monetary policy formulation and maintaining price stability in India.',
-    difficulty: 'Easy',
-    source: 'PYQ'
-  }
-];
+export const INITIAL_PYQS_DATABASE: any[] = (allQuestionsJson as any[]).map((q) => ({
+  id: q.id,
+  exam: q.exam,
+  subject: q.subject,
+  topic: q.topic,
+  year: q.year || 2023,
+  stage: q.stage || 'Prelims',
+  difficulty: q.difficulty || 'Medium',
+  language: 'English',
+  questionText: q.questionText,
+  options: q.options,
+  correctOption: q.correctOption,
+  explanation: q.explanation,
+  qualityStatus: 'readable',
+  answerVerified: true
+}));
+
+export const INITIAL_QUESTION_BANK: any[] = (allQuestionsJson as any[]).map((q) => ({
+  id: q.id,
+  exam: q.exam,
+  subject: q.subject,
+  topic: q.topic,
+  type: q.type || 'mcq',
+  questionText: q.questionText,
+  options: q.options,
+  correctOption: q.correctOption,
+  explanation: q.explanation,
+  solutionText: q.explanation,
+  difficulty: q.difficulty || 'Medium',
+  status: 'published',
+  verification_status: 'verified',
+  language: 'English'
+}));
+
