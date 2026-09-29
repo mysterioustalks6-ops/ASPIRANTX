@@ -80,6 +80,7 @@ const TeacherBlogSubmit = lazy(() => import('./components/TeacherBlogSubmit').th
 const RewardsHub = lazy(() => import('./components/RewardsHub').then(m => ({ default: m.RewardsHub })));
 const FocusShieldView = lazy(() => import('./components/FocusShieldView').then(m => ({ default: m.FocusShieldView })));
 const DownloadPage = lazy(() => import('./components/DownloadPage').then(m => ({ default: m.DownloadPage })));
+const KageScene = lazy(() => import('./shaders/Scene').then(m => ({ default: m.Scene })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
 
@@ -213,7 +214,7 @@ function AppContent() {
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
-      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub'];
+      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'kage'];
     return (validTabs.includes(hash) ? hash : 'syllabus') as ActiveTab;
   });
   const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
@@ -1069,6 +1070,14 @@ function AppContent() {
     );
   }
 
+  if (activeTab === 'kage') {
+    return (
+      <div className="relative w-full h-screen overflow-hidden bg-[#080808]">
+        <KageScene />
+      </div>
+    );
+  }
+
   if (!splashFinished || initializing) {
     return (
       <AppSplashScreen
@@ -1688,6 +1697,10 @@ function AppContent() {
                   onClose={() => setActiveTab('dashboard')}
                   onNavigateTab={(t) => setActiveTab(t as ActiveTab)}
                 />
+              )}
+
+              {activeTab === 'kage' && (
+                <KageScene />
               )}
               </Suspense>
             </PageTransition>
