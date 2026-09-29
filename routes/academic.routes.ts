@@ -1836,7 +1836,7 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
 
         if (exam) {
           const cleanExam = exam.replace(/_/g, '%');
-          jsonbQuery = pyqQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
+          pyqQuery = pyqQuery.or(`data->>exam.ilike.%${exam}%,data->>exam.ilike.%${cleanExam}%`);
         }
         if (subject && subject !== 'All') {
           pyqQuery = pyqQuery.ilike('data->>subject', `%${subject}%`);
