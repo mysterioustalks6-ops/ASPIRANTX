@@ -35473,31 +35473,97 @@ async function persistCbtResultAtomic(userId, result) {
     throw dbErr;
   }
 }
-async function persistAdminUserAtomic(user) {
-  if (!user || !user.id) return;
-  const idx = adminUsersDb.findIndex((u) => u.id === user.id || u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase());
-  if (idx >= 0) adminUsersDb[idx] = user;
-  else adminUsersDb.push(user);
+async function upsertUserToNeon(user) {
+  if (!user || !user.id && !user.email) return;
+  const email = String(user.email || "").trim().toLowerCase();
+  const userId = String(user.id || toCanonicalUuid(`email_${email}`));
+  const isSuper = email === DESIGNATED_ADMIN_EMAIL2.toLowerCase() || email === "studyride@gmail.com";
+  const role = isSuper ? "ADMIN" : user.role || "USER";
+  const isPremium = isSuper || Boolean(user.isPremium);
+  const planName = isSuper ? "LIFETIME" : user.planName || (isPremium ? "PRO PASS" : "FREE");
+  const name = user.name || email.split("@")[0] || "Aspirant";
+  const exam = user.exam || (isSuper ? "UPSC_CSE" : "NEET_UG");
+  const streakDays = Number(user.streakDays ?? 1);
+  const xp = Number(user.xp ?? 100);
+  const coins = Number(user.coins ?? 50);
+  const level = Number(user.level ?? 1);
+  const status = user.status || "ACTIVE";
+  const joinedAt = user.joinedAt || (/* @__PURE__ */ new Date()).toISOString();
+  const adminUserData = {
+    id: userId,
+    user_id: userId,
+    name,
+    email,
+    role,
+    isPremium,
+    planName,
+    streakDays,
+    xp,
+    coins,
+    level,
+    exam,
+    stateName: user.stateName || "All India",
+    avatar_url: user.avatar_url || "",
+    status,
+    isProfileComplete: user.isProfileComplete !== void 0 ? user.isProfileComplete : true,
+    joinedAt
+  };
+  const idx = adminUsersDb.findIndex((u) => u.id === userId || u.email && u.email.toLowerCase() === email);
+  if (idx >= 0) {
+    adminUsersDb[idx] = { ...adminUsersDb[idx], ...adminUserData };
+  } else {
+    adminUsersDb.push(adminUserData);
+  }
+  try {
+    await queryPostgres(`
+      INSERT INTO admin_users (id, user_id, email, data, created_at, updated_at)
+      VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        data = admin_users.data || EXCLUDED.data,
+        updated_at = NOW();
+    `, [userId, userId, email, JSON.stringify(adminUserData)]);
+  } catch (neonErr) {
+    console.warn("[Neon upsertUserToNeon error]:", neonErr?.message || neonErr);
+  }
+  if (isValidUuid(userId)) {
+    try {
+      await queryPostgres(`
+        INSERT INTO user_profiles (id, xp, coins, level, is_premium, streak_days, updated_at)
+        VALUES ($1::uuid, $2, $3, $4, $5, $6, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          xp = GREATEST(user_profiles.xp, EXCLUDED.xp),
+          coins = GREATEST(user_profiles.coins, EXCLUDED.coins),
+          level = GREATEST(user_profiles.level, EXCLUDED.level),
+          is_premium = user_profiles.is_premium OR EXCLUDED.is_premium,
+          streak_days = GREATEST(user_profiles.streak_days, EXCLUDED.streak_days),
+          updated_at = NOW();
+      `, [userId, xp, coins, level, isPremium, streakDays]);
+    } catch (_pErr) {
+    }
+  }
   if (supabaseServer) {
     try {
       await supabaseServer.from("admin_users").upsert([{
-        id: user.id,
-        email: String(user.email || "").trim().toLowerCase(),
-        name: user.name || "User",
-        role: user.role || "STUDENT",
-        is_premium: Boolean(user.isPremium),
-        plan_name: user.planName || "FREE",
-        streak_days: Number(user.streakDays || 0),
-        xp: Number(user.xp || 0),
-        coins: Number(user.coins || 0),
-        level: Number(user.level || 1),
-        status: user.status || "ACTIVE",
+        id: userId,
+        email,
+        name,
+        role,
+        is_premium: isPremium,
+        plan_name: planName,
+        streak_days: streakDays,
+        xp,
+        coins,
+        level,
+        status,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
       }], { onConflict: "id" });
-    } catch (err) {
-      console.warn("[ADMIN USER PERSIST ERROR]", err?.message || err);
+    } catch (_supaErr) {
     }
   }
+}
+async function persistAdminUserAtomic(user) {
+  await upsertUserToNeon(user);
 }
 function loadAdminStoreFromDisk() {
   const possiblePaths = [
@@ -42931,51 +42997,55 @@ router3.get("/api/admin/users", verifyAdminAuth, async (req, res) => {
         const params = [];
         let paramIdx = 1;
         if (search) {
-          whereClauses.push(`(name ILIKE $${paramIdx} OR email ILIKE $${paramIdx})`);
+          whereClauses.push(`(email ILIKE $${paramIdx} OR COALESCE(data->>'name', '') ILIKE $${paramIdx})`);
           params.push(`%${search}%`);
           paramIdx++;
         }
         if (role && role !== "ALL") {
-          whereClauses.push(`role = $${paramIdx}`);
+          whereClauses.push(`(data->>'role' = $${paramIdx})`);
           params.push(role);
           paramIdx++;
         }
         if (status && status !== "ALL") {
-          whereClauses.push(`status = $${paramIdx}`);
+          whereClauses.push(`(data->>'status' = $${paramIdx})`);
           params.push(status);
           paramIdx++;
         }
         const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
         const countRes = await queryPostgres(
-          `SELECT COUNT(*) as total FROM public.user_profiles ${whereSql};`,
+          `SELECT COUNT(*) as total FROM public.admin_users ${whereSql};`,
           params
         );
         const total2 = parseInt(countRes.rows[0]?.total || "0", 10);
         const usersRes = await queryPostgres(
-          `SELECT id, name, email, role, is_premium, plan_name, streak_days, xp, coins, level, state_name, exam, status, created_at, updated_at, data
-           FROM public.user_profiles
+          `SELECT id, user_id, email, data, created_at, updated_at
+           FROM public.admin_users
            ${whereSql}
            ORDER BY updated_at DESC
            LIMIT $${paramIdx} OFFSET $${paramIdx + 1};`,
           [...params, limit, offset]
         );
-        const mappedUsers = usersRes.rows.map((row) => ({
-          id: row.id,
-          name: row.name || "Aspirant",
-          email: row.email,
-          role: row.role || "USER",
-          isPremium: Boolean(row.is_premium),
-          planName: row.plan_name || "FREE",
-          streakDays: Number(row.streak_days) || 0,
-          xp: Number(row.xp) || 0,
-          coins: Number(row.coins) || 0,
-          level: Number(row.level) || 1,
-          stateName: row.state_name || "",
-          exam: row.exam || "",
-          completedTopicsCount: 0,
-          joinedAt: row.created_at || row.updated_at || (/* @__PURE__ */ new Date()).toISOString(),
-          status: row.status || "ACTIVE"
-        }));
+        const mappedUsers = usersRes.rows.map((row) => {
+          const d = row.data || {};
+          return {
+            id: row.id,
+            name: d.name || row.email?.split("@")[0] || "Aspirant",
+            email: row.email,
+            role: d.role || "USER",
+            isPremium: Boolean(d.isPremium),
+            planName: d.planName || (d.isPremium ? "PRO PASS" : "FREE"),
+            streakDays: Number(d.streakDays ?? 1),
+            xp: Number(d.xp ?? 100),
+            coins: Number(d.coins ?? 50),
+            level: Number(d.level ?? 1),
+            stateName: d.stateName || "All India",
+            exam: d.exam || "NEET_UG",
+            completedTopicsCount: Number(d.completedTopicsCount || 0),
+            joinedAt: d.joinedAt || row.created_at || (/* @__PURE__ */ new Date()).toISOString(),
+            status: d.status || "ACTIVE",
+            avatar_url: d.avatar_url || ""
+          };
+        });
         const totalPages2 = Math.ceil(total2 / limit) || 1;
         return res.json({
           success: true,
@@ -43359,18 +43429,14 @@ router3.get("/api/admin/live-users", verifyAdminAuth, (_req, res) => {
 router3.post("/api/admin/users", adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   const { users } = req.body;
   if (Array.isArray(users)) {
-    setAdminUsersDb(users);
-    if (supabaseServer) {
-      await supabaseServer.from("admin_users").upsert(
-        adminUsersDb.map((u) => ({ ...u, updated_at: (/* @__PURE__ */ new Date()).toISOString() })),
-        { onConflict: "id" }
-      );
+    for (const u of users) {
+      await upsertUserToNeon(u);
     }
     saveAdminStoreToDisk();
     recordAdminAuditLog({
       user: req.adminEmail || DESIGNATED_ADMIN_EMAIL2,
       action: "SYNC_USER_DIRECTORY",
-      details: `Synced ${users.length} users into directory`,
+      details: `Synced ${users.length} users into directory and Neon database`,
       ip: req.clientIp,
       requestId: req.requestId,
       endpoint: req.originalUrl,
@@ -43383,63 +43449,32 @@ router3.post("/api/admin/users", adminMutationLimiter, verifyAdminAuth, async (r
 router3.put("/api/admin/users/:email", adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   const targetEmail = decodeURIComponent(String(req.params.email || "")).trim().toLowerCase();
   const updates = req.body;
-  let found = false;
-  setAdminUsersDb(adminUsersDb.map((u) => {
-    if (String(u.email).trim().toLowerCase() === targetEmail) {
-      found = true;
-      const updatedUser = { ...u, ...updates };
-      if (typeof updates.isPremium === "boolean") {
-        if (updates.isPremium) {
-          serverSubscriptionsDb.set(targetEmail, {
-            userEmail: targetEmail,
-            planId: updates.planName || "PRO PASS",
-            isPremium: true,
-            activatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-            expiresAt: null,
-            paymentId: `admin_sync_${Date.now()}`,
-            orderId: `admin_sync_${Date.now()}`,
-            verificationMethod: "ADMIN_VERIFIED",
-            amountPaid: 0,
-            currency: "INR"
-          });
-        } else {
-          serverSubscriptionsDb.delete(targetEmail);
-        }
-      }
-      return updatedUser;
-    }
-    return u;
-  }));
-  if (!found && updates.email) {
-    const newUser = {
-      id: updates.id || `usr-${Date.now()}`,
-      name: updates.name || "User",
-      email: targetEmail,
-      role: updates.role || "USER",
-      isPremium: Boolean(updates.isPremium),
-      planName: updates.planName || (updates.isPremium ? "PRO PASS" : "FREE"),
-      streakDays: updates.streakDays || 1,
-      xp: updates.xp || 100,
-      coins: updates.coins || 50,
-      level: updates.level || 1,
-      completedTopicsCount: updates.completedTopicsCount || 0,
-      joinedAt: (/* @__PURE__ */ new Date()).toISOString().split("T")[0],
-      status: updates.status || "ACTIVE"
-    };
-    adminUsersDb.unshift(newUser);
-  }
-  if (supabaseServer) {
-    const updatedRecord = adminUsersDb.find((u) => String(u.email).trim().toLowerCase() === targetEmail);
-    if (updatedRecord) {
-      await supabaseServer.from("admin_users").upsert([{ ...updatedRecord, updated_at: (/* @__PURE__ */ new Date()).toISOString() }], { onConflict: "id" });
-    }
-    const sub = serverSubscriptionsDb.get(targetEmail);
-    if (sub) {
-      await supabaseServer.from("user_subscriptions").upsert([{ ...sub, updated_at: (/* @__PURE__ */ new Date()).toISOString() }], { onConflict: "userEmail" });
+  let existing = adminUsersDb.find((u) => String(u.email).trim().toLowerCase() === targetEmail);
+  const updatedUser = {
+    ...existing || {},
+    ...updates,
+    email: targetEmail,
+    id: existing?.id || updates.id || toCanonicalUuid(`email_${targetEmail}`)
+  };
+  if (typeof updates.isPremium === "boolean") {
+    if (updates.isPremium) {
+      serverSubscriptionsDb.set(targetEmail, {
+        userEmail: targetEmail,
+        planId: updates.planName || "PRO PASS",
+        isPremium: true,
+        activatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+        expiresAt: null,
+        paymentId: `admin_sync_${Date.now()}`,
+        orderId: `admin_sync_${Date.now()}`,
+        verificationMethod: "ADMIN_VERIFIED",
+        amountPaid: 0,
+        currency: "INR"
+      });
     } else {
-      await supabaseServer.from("user_subscriptions").delete().eq("userEmail", targetEmail);
+      serverSubscriptionsDb.delete(targetEmail);
     }
   }
+  await upsertUserToNeon(updatedUser);
   saveAdminStoreToDisk();
   recordAdminAuditLog({
     user: req.adminEmail || DESIGNATED_ADMIN_EMAIL2,
@@ -43450,13 +43485,21 @@ router3.put("/api/admin/users/:email", adminMutationLimiter, verifyAdminAuth, as
     endpoint: req.originalUrl,
     outcome: "SUCCESS"
   });
-  res.json({ success: true, users: adminUsersDb });
+  res.json({ success: true, user: updatedUser, users: adminUsersDb });
 });
 router3.delete("/api/admin/users/:email", adminMutationLimiter, verifyAdminAuth, async (req, res) => {
   const targetEmail = String(req.params.email).trim().toLowerCase();
   const userToRemove = adminUsersDb.find((u) => String(u.email).trim().toLowerCase() === targetEmail);
   setAdminUsersDb(adminUsersDb.filter((u) => String(u.email).trim().toLowerCase() !== targetEmail));
   serverSubscriptionsDb.delete(targetEmail);
+  try {
+    await queryPostgres(
+      "DELETE FROM admin_users WHERE LOWER(email) = LOWER($1) OR id = $2",
+      [targetEmail, userToRemove?.id || targetEmail]
+    );
+  } catch (neonErr) {
+    console.warn("[Admin Delete User Neon error]:", neonErr?.message || neonErr);
+  }
   if (supabaseServer) {
     if (userToRemove?.id) {
       await supabaseServer.from("admin_users").delete().eq("id", userToRemove.id);
@@ -43473,7 +43516,7 @@ router3.delete("/api/admin/users/:email", adminMutationLimiter, verifyAdminAuth,
     endpoint: req.originalUrl,
     outcome: "SUCCESS"
   });
-  res.json({ success: true, users: adminUsersDb });
+  res.json({ success: true, message: `User ${targetEmail} removed successfully.` });
 });
 router3.get("/api/admin/content", (_req, res) => {
   res.setHeader("Cache-Control", "private, no-cache, no-store, must-revalidate");
@@ -44430,41 +44473,70 @@ router4.get("/api/user/profile", async (req, res) => {
     return res.status(401).json({ error: "Authentication Required" });
   }
   const userId = verifiedUser.sub;
-  if (supabaseServer && userId) {
+  const email = (verifiedUser.email || "").trim().toLowerCase();
+  if (pgPool) {
     try {
-      const { data, error } = await supabaseServer.from("user_profiles").select("*").eq("id", userId).single();
-      if (!error && data) {
-        const isComplete = data.is_profile_complete === true || Boolean(data.exam && data.exam.trim() !== "");
+      const dbRes = await queryPostgres(
+        "SELECT data FROM admin_users WHERE LOWER(email) = LOWER($1) OR id = $2 LIMIT 1",
+        [email, userId]
+      );
+      if (dbRes.rows && dbRes.rows.length > 0 && dbRes.rows[0].data) {
+        const d = dbRes.rows[0].data;
+        const isComplete = d.isProfileComplete === true || Boolean(d.exam && d.exam.trim() !== "");
         return res.json({
           success: true,
           profile: {
-            id: data.id,
-            name: data.name || verifiedUser.email.split("@")[0],
-            email: verifiedUser.email,
-            exam: data.exam || "NEET_UG",
-            targetExam: data.exam || "NEET_UG",
+            id: d.id || userId,
+            name: d.name || email.split("@")[0],
+            email,
+            exam: d.exam || "NEET_UG",
+            targetExam: d.exam || "NEET_UG",
             profileComplete: isComplete,
             isProfileComplete: isComplete,
-            educationCategory: data.education_category || "UPSC_CIVILS",
-            stateName: data.state_name || "All India",
-            targetYear: data.target_year || 2026,
-            streakDays: data.streak_days || 1,
-            lastActiveDate: data.last_active_date || getISTDateString(),
-            xp: data.xp || 0,
-            coins: data.coins || 0,
-            level: data.level || 1
+            educationCategory: d.educationCategory || "UPSC_CIVILS",
+            stateName: d.stateName || "All India",
+            targetYear: d.targetYear || 2026,
+            streakDays: d.streakDays || 1,
+            lastActiveDate: d.lastActiveDate || getISTDateString(),
+            xp: d.xp || 0,
+            coins: d.coins || 0,
+            level: d.level || 1
           }
         });
       }
-    } catch (e) {
+    } catch (_neonErr) {
     }
+  }
+  const known = adminUsersDb.find((u) => u.email && u.email.toLowerCase() === email || u.id === userId);
+  if (known) {
+    const isComplete = known.isProfileComplete === true || Boolean(known.exam && known.exam.trim() !== "");
+    return res.json({
+      success: true,
+      profile: {
+        id: known.id || userId,
+        name: known.name || email.split("@")[0],
+        email,
+        exam: known.exam || "NEET_UG",
+        targetExam: known.exam || "NEET_UG",
+        profileComplete: isComplete,
+        isProfileComplete: isComplete,
+        educationCategory: known.educationCategory || "UPSC_CIVILS",
+        stateName: known.stateName || "All India",
+        targetYear: known.targetYear || 2026,
+        streakDays: known.streakDays || 1,
+        lastActiveDate: known.lastActiveDate || getISTDateString(),
+        xp: known.xp || 0,
+        coins: known.coins || 0,
+        level: known.level || 1
+      }
+    });
   }
   return res.json({
     success: true,
     profile: {
       id: userId,
-      name: verifiedUser.email.split("@")[0],
-      email: verifiedUser.email,
+      name: email.split("@")[0],
+      email,
       exam: "NEET_UG",
       targetExam: "NEET_UG",
       profileComplete: true,
@@ -44484,30 +44556,27 @@ router4.post("/api/user/profile", async (req, res) => {
     return res.status(401).json({ error: "Authentication Required" });
   }
   const userId = verifiedUser.sub;
+  const email = (verifiedUser.email || "").trim().toLowerCase();
   const { name, exam, targetExam, educationCategory, stateName, targetYear, isProfileComplete } = req.body;
   const chosenExam = targetExam || exam || "NEET_UG";
   const complete = isProfileComplete !== void 0 ? isProfileComplete : Boolean(chosenExam && chosenExam.trim());
-  if (supabaseServer && userId) {
-    try {
-      await supabaseServer.from("user_profiles").upsert({
-        id: userId,
-        name: name || verifiedUser.email.split("@")[0],
-        exam: chosenExam,
-        education_category: educationCategory || "UPSC_CIVILS",
-        state_name: stateName || "All India",
-        target_year: targetYear || 2026,
-        is_profile_complete: complete,
-        updated_at: (/* @__PURE__ */ new Date()).toISOString()
-      });
-    } catch (e) {
-    }
-  }
+  const cleanName = (name || email.split("@")[0] || "Aspirant").trim();
+  await upsertUserToNeon({
+    id: userId,
+    email,
+    name: cleanName,
+    exam: chosenExam,
+    educationCategory: educationCategory || "UPSC_CIVILS",
+    stateName: stateName || "All India",
+    targetYear: targetYear || 2026,
+    isProfileComplete: complete
+  });
   return res.json({
     success: true,
     profile: {
       id: userId,
-      name: name || verifiedUser.email.split("@")[0],
-      email: verifiedUser.email,
+      name: cleanName,
+      email,
       exam: chosenExam,
       targetExam: chosenExam,
       profileComplete: complete,
@@ -45591,17 +45660,13 @@ router4.post("/api/user/set-exam", async (req, res) => {
     if (!email || !exam) {
       return res.status(400).json({ error: "Email and exam are required" });
     }
-    let updated = false;
-    setAdminUsersDb(adminUsersDb.map((u) => {
-      if (String(u.email).trim().toLowerCase() === String(email).trim().toLowerCase()) {
-        updated = true;
-        return { ...u, exam };
-      }
-      return u;
-    }));
-    if (updated) {
-      saveAdminStoreToDisk();
-    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    await upsertUserToNeon({
+      id: verifiedUser?.sub,
+      email: cleanEmail,
+      exam
+    });
+    saveAdminStoreToDisk();
     if (supabaseServer && verifiedUser?.sub) {
       await supabaseServer.from("user_profiles").update({ exam, updated_at: (/* @__PURE__ */ new Date()).toISOString() }).eq("id", verifiedUser.sub);
     }
@@ -45627,27 +45692,20 @@ router4.post("/api/user/update-profile", async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: "User email is required" });
     }
-    let updated = false;
-    setAdminUsersDb(adminUsersDb.map((u) => {
-      if (String(u.email).trim().toLowerCase() === String(email).trim().toLowerCase()) {
-        updated = true;
-        return {
-          ...u,
-          name: name || u.name,
-          exam: exam || u.exam,
-          stateName: stateName || u.stateName,
-          educationCategory: educationCategory || u.educationCategory,
-          boardOrUniversity: boardOrUniversity || u.boardOrUniversity,
-          streamOrSubject: streamOrSubject || u.streamOrSubject,
-          targetYear: targetYear !== void 0 ? Number(targetYear) : u.targetYear,
-          isProfileComplete: isProfileComplete !== void 0 ? Boolean(isProfileComplete) : u.isProfileComplete
-        };
-      }
-      return u;
-    }));
-    if (updated) {
-      saveAdminStoreToDisk();
-    }
+    const cleanEmail = String(email).trim().toLowerCase();
+    await upsertUserToNeon({
+      id: verifiedUser?.sub,
+      email: cleanEmail,
+      name,
+      exam,
+      stateName,
+      educationCategory,
+      boardOrUniversity,
+      streamOrSubject,
+      targetYear: targetYear !== void 0 ? Number(targetYear) : void 0,
+      isProfileComplete: isProfileComplete !== void 0 ? Boolean(isProfileComplete) : void 0
+    });
+    saveAdminStoreToDisk();
     if (supabaseServer && verifiedUser?.sub) {
       const dbUpdates = { updated_at: (/* @__PURE__ */ new Date()).toISOString() };
       if (name) dbUpdates.name = name;
@@ -46124,12 +46182,8 @@ router4.post("/api/auth/register", async (req, res) => {
           isProfileComplete: true,
           joinedAt: (/* @__PURE__ */ new Date()).toISOString()
         };
-        await queryPostgres(
-          `INSERT INTO admin_users (id, user_id, email, data, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, NOW(), NOW())
-           ON CONFLICT (id) DO UPDATE SET data = $4, updated_at = NOW()`,
-          [userId, userId, cleanEmail, JSON.stringify(adminUserData)]
-        );
+        await upsertUserToNeon(adminUserData);
+        saveAdminStoreToDisk();
       } catch (dbErr) {
         console.warn("Neon persistence in register notice:", dbErr);
       }
@@ -46193,12 +46247,54 @@ router4.post("/api/auth/login", async (req, res) => {
       }
     }
     const userId = userRow.id;
-    const isSuper = cleanEmail === DESIGNATED_ADMIN_EMAIL2.toLowerCase();
+    const isSuper = cleanEmail === DESIGNATED_ADMIN_EMAIL2.toLowerCase() || cleanEmail === "studyride@gmail.com";
     const assignedRole = isSuper ? "ADMIN" : "USER";
     const metadata = userRow.raw_user_meta_data || {};
-    const name = metadata.name || cleanEmail.split("@")[0] || "Aspirant";
+    const name = metadata.name || metadata.full_name || cleanEmail.split("@")[0] || "Aspirant";
+    let existingData = {};
+    if (pgPool) {
+      try {
+        const adminUserRes = await queryPostgres(
+          "SELECT data FROM admin_users WHERE LOWER(email) = LOWER($1) OR id = $2 LIMIT 1",
+          [cleanEmail, userId]
+        );
+        if (adminUserRes.rows && adminUserRes.rows.length > 0 && adminUserRes.rows[0].data) {
+          existingData = adminUserRes.rows[0].data;
+        }
+      } catch (_e) {
+      }
+    }
+    if (!existingData.email) {
+      const memoryMatch = adminUsersDb.find((u) => u.email && u.email.toLowerCase() === cleanEmail);
+      if (memoryMatch) existingData = memoryMatch;
+    }
+    const exam = existingData.exam || (isSuper ? "UPSC_CSE" : "NEET_UG");
+    const isPremium = isSuper || Boolean(existingData.isPremium);
+    const planName = isSuper ? "LIFETIME" : existingData.planName || (isPremium ? "PRO PASS" : "FREE");
+    const streakDays = Number(existingData.streakDays ?? 1);
+    const xp = Number(existingData.xp ?? 100);
+    const coins = Number(existingData.coins ?? 50);
+    const level = Number(existingData.level ?? 1);
+    const avatar_url = existingData.avatar_url || metadata.avatar_url || metadata.picture || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80";
+    await upsertUserToNeon({
+      id: userId,
+      email: cleanEmail,
+      name,
+      avatar_url,
+      exam,
+      role: assignedRole,
+      isPremium,
+      planName,
+      streakDays,
+      xp,
+      coins,
+      level,
+      status: existingData.status || "ACTIVE",
+      isProfileComplete: existingData.isProfileComplete !== void 0 ? existingData.isProfileComplete : true
+    });
+    saveAdminStoreToDisk();
     const internalToken = jwt3.sign(
-      { sub: userId, email: cleanEmail, role: assignedRole, isPremium: isSuper, iss: "protrack-auth-server" },
+      { sub: userId, email: cleanEmail, role: assignedRole, isPremium: isSuper || isPremium, iss: "protrack-auth-server" },
       JWT_SECRET2,
       { expiresIn: "30d" }
     );
@@ -46209,14 +46305,14 @@ router4.post("/api/auth/login", async (req, res) => {
         id: userId,
         name,
         email: cleanEmail,
-        avatar_url: metadata.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
-        exam: isSuper ? "UPSC_CSE" : "NEET_UG",
+        avatar_url,
+        exam,
         role: assignedRole,
-        isPremium: isSuper,
-        streakDays: 1,
-        xp: 100,
-        coins: 50,
-        level: 1,
+        isPremium,
+        streakDays,
+        xp,
+        coins,
+        level,
         isProfileComplete: true
       }
     });
@@ -46232,8 +46328,8 @@ router4.get("/api/auth/me", async (req, res) => {
       return res.status(401).json({ success: false, error: "Authentication required" });
     }
     const email = verifiedUser.email.toLowerCase();
-    const isSuper = email === DESIGNATED_ADMIN_EMAIL2.toLowerCase();
-    const knownUser = adminUsersDb.find((u) => u.email.toLowerCase() === email);
+    const isSuper = email === DESIGNATED_ADMIN_EMAIL2.toLowerCase() || email === "studyride@gmail.com";
+    const knownUser = adminUsersDb.find((u) => u.email && u.email.toLowerCase() === email);
     return res.json({
       success: true,
       user: {
@@ -46310,18 +46406,29 @@ router4.post("/api/auth/token", async (req, res) => {
       error: "Authentication Failed: Could not verify access token with identity provider or internal secret."
     });
   }
-  const isSuper = verifiedEmail === DESIGNATED_ADMIN_EMAIL2.toLowerCase();
-  const knownUser = adminUsersDb.find((u) => u.email.toLowerCase() === verifiedEmail);
-  let finalUser = knownUser;
-  if (!knownUser && !isSuper) {
+  const isSuper = verifiedEmail === DESIGNATED_ADMIN_EMAIL2.toLowerCase() || verifiedEmail === "studyride@gmail.com";
+  let finalUser = adminUsersDb.find((u) => u.email && u.email.toLowerCase() === verifiedEmail);
+  if (!finalUser && pgPool) {
+    try {
+      const dbRes = await queryPostgres(
+        "SELECT data FROM admin_users WHERE LOWER(email) = LOWER($1) OR id = $2 LIMIT 1",
+        [verifiedEmail, userId]
+      );
+      if (dbRes.rows && dbRes.rows.length > 0 && dbRes.rows[0].data) {
+        finalUser = dbRes.rows[0].data;
+      }
+    } catch (_dbErr) {
+    }
+  }
+  if (!finalUser) {
     finalUser = {
       id: userId || `usr_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       name: verifiedEmail.split("@")[0],
       email: verifiedEmail,
-      exam: "",
-      role: "USER",
-      isPremium: false,
-      planName: "FREE",
+      exam: isSuper ? "UPSC_CSE" : "NEET_UG",
+      role: isSuper ? "ADMIN" : "USER",
+      isPremium: isSuper,
+      planName: isSuper ? "LIFETIME" : "FREE",
       streakDays: 1,
       xp: 100,
       coins: 50,
@@ -46331,17 +46438,9 @@ router4.post("/api/auth/token", async (req, res) => {
       status: "ACTIVE",
       isProfileComplete: false
     };
-    adminUsersDb.push(finalUser);
-    if (supabaseServer) {
-      try {
-        await supabaseServer.from("admin_users").upsert([
-          { ...finalUser, updated_at: (/* @__PURE__ */ new Date()).toISOString() }
-        ], { onConflict: "id" });
-      } catch (e) {
-      }
-    }
-    saveAdminStoreToDisk();
   }
+  await upsertUserToNeon(finalUser);
+  saveAdminStoreToDisk();
   if (finalUser && finalUser.status === "BANNED" && !isSuper) {
     recordAdminAuditLog({
       user: verifiedEmail,

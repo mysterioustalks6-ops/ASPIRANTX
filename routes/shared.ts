@@ -1833,35 +1833,109 @@ export interface AdminUserRecord {
   [key: string]: any;
 }
 
+export async function upsertUserToNeon(user: Partial<AdminUserRecord>): Promise<void> {
+  if (!user || (!user.id && !user.email)) return;
+
+  const email = String(user.email || '').trim().toLowerCase();
+  const userId = String(user.id || toCanonicalUuid(`email_${email}`));
+  const isSuper = email === DESIGNATED_ADMIN_EMAIL.toLowerCase() || email === 'studyride@gmail.com';
+  const role = isSuper ? 'ADMIN' : (user.role || 'USER');
+  const isPremium = isSuper || Boolean(user.isPremium);
+  const planName = isSuper ? 'LIFETIME' : (user.planName || (isPremium ? 'PRO PASS' : 'FREE'));
+  const name = user.name || email.split('@')[0] || 'Aspirant';
+  const exam = user.exam || (isSuper ? 'UPSC_CSE' : 'NEET_UG');
+  const streakDays = Number(user.streakDays ?? 1);
+  const xp = Number(user.xp ?? 100);
+  const coins = Number(user.coins ?? 50);
+  const level = Number(user.level ?? 1);
+  const status = user.status || 'ACTIVE';
+  const joinedAt = user.joinedAt || new Date().toISOString();
+
+  const adminUserData: AdminUserRecord = {
+    id: userId,
+    user_id: userId,
+    name,
+    email,
+    role,
+    isPremium,
+    planName,
+    streakDays,
+    xp,
+    coins,
+    level,
+    exam,
+    stateName: user.stateName || 'All India',
+    avatar_url: user.avatar_url || '',
+    status,
+    isProfileComplete: user.isProfileComplete !== undefined ? user.isProfileComplete : true,
+    joinedAt
+  };
+
+  // 1. Sync in-memory store
+  const idx = adminUsersDb.findIndex(u => u.id === userId || (u.email && u.email.toLowerCase() === email));
+  if (idx >= 0) {
+    adminUsersDb[idx] = { ...adminUsersDb[idx], ...adminUserData };
+  } else {
+    adminUsersDb.push(adminUserData);
+  }
+
+  // 2. Persist to Neon Postgres admin_users
+  try {
+    await queryPostgres(`
+      INSERT INTO admin_users (id, user_id, email, data, created_at, updated_at)
+      VALUES ($1, $2, $3, $4::jsonb, NOW(), NOW())
+      ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        data = admin_users.data || EXCLUDED.data,
+        updated_at = NOW();
+    `, [userId, userId, email, JSON.stringify(adminUserData)]);
+  } catch (neonErr: any) {
+    console.warn('[Neon upsertUserToNeon error]:', neonErr?.message || neonErr);
+  }
+
+  // 3. Upsert user_profiles in Neon if UUID is valid
+  if (isValidUuid(userId)) {
+    try {
+      await queryPostgres(`
+        INSERT INTO user_profiles (id, xp, coins, level, is_premium, streak_days, updated_at)
+        VALUES ($1::uuid, $2, $3, $4, $5, $6, NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          xp = GREATEST(user_profiles.xp, EXCLUDED.xp),
+          coins = GREATEST(user_profiles.coins, EXCLUDED.coins),
+          level = GREATEST(user_profiles.level, EXCLUDED.level),
+          is_premium = user_profiles.is_premium OR EXCLUDED.is_premium,
+          streak_days = GREATEST(user_profiles.streak_days, EXCLUDED.streak_days),
+          updated_at = NOW();
+      `, [userId, xp, coins, level, isPremium, streakDays]);
+    } catch (_pErr) {}
+  }
+
+  // 4. Supabase fallback if configured
+  if (supabaseServer) {
+    try {
+      await supabaseServer.from('admin_users').upsert([{
+        id: userId,
+        email,
+        name,
+        role,
+        is_premium: isPremium,
+        plan_name: planName,
+        streak_days: streakDays,
+        xp,
+        coins,
+        level,
+        status,
+        updated_at: new Date().toISOString()
+      }], { onConflict: 'id' });
+    } catch (_supaErr) {}
+  }
+}
+
 /**
  * Atomic Admin User persister
  */
 export async function persistAdminUserAtomic(user: AdminUserRecord): Promise<void> {
-  if (!user || !user.id) return;
-  const idx = adminUsersDb.findIndex(u => u.id === user.id || (u.email && user.email && u.email.toLowerCase() === user.email.toLowerCase()));
-  if (idx >= 0) adminUsersDb[idx] = user;
-  else adminUsersDb.push(user);
-
-  if (supabaseServer) {
-    try {
-      await supabaseServer.from('admin_users').upsert([{
-        id: user.id,
-        email: String(user.email || '').trim().toLowerCase(),
-        name: user.name || 'User',
-        role: user.role || 'STUDENT',
-        is_premium: Boolean(user.isPremium),
-        plan_name: user.planName || 'FREE',
-        streak_days: Number(user.streakDays || 0),
-        xp: Number(user.xp || 0),
-        coins: Number(user.coins || 0),
-        level: Number(user.level || 1),
-        status: user.status || 'ACTIVE',
-        updated_at: new Date().toISOString()
-      }], { onConflict: 'id' });
-    } catch (err: any) {
-      console.warn('[ADMIN USER PERSIST ERROR]', err?.message || err);
-    }
-  }
+  await upsertUserToNeon(user);
 }
 
 export function loadAdminStoreFromDisk() {
