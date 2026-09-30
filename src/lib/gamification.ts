@@ -173,7 +173,7 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
   // Check local avatar storage cache
   if (userId) {
     const localAvatar = localStorage.getItem(`aspirantx_avatar_${userId}`);
-    if (localAvatar && (!profile.avatar_url || profile.avatar_url.trim() === '')) {
+    if (localAvatar && localAvatar.trim() !== '') {
       profile.avatar_url = localAvatar;
     }
   }
@@ -190,6 +190,7 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
         const json = await res.json().catch(() => ({}));
         if (json.success && json.profile) {
           const p = json.profile;
+          const localAvatar = localStorage.getItem(`aspirantx_avatar_${userId}`);
           profile = {
             ...profile,
             name: p.name || profile.name,
@@ -200,7 +201,7 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
             streamOrSubject: p.streamOrSubject || profile.streamOrSubject,
             targetYear: p.targetYear || profile.targetYear,
             isProfileComplete: p.isProfileComplete ?? profile.isProfileComplete,
-            avatar_url: p.avatar_url || profile.avatar_url || localStorage.getItem(`aspirantx_avatar_${userId}`) || '',
+            avatar_url: p.avatar_url || localAvatar || profile.avatar_url || '',
             bio: p.bio !== undefined && p.bio !== '' ? p.bio : profile.bio,
             studyGoal: p.studyGoal !== undefined && p.studyGoal !== '' ? p.studyGoal : profile.studyGoal,
             pinnedBadges: (Array.isArray(p.pinnedBadges) && p.pinnedBadges.length > 0) ? p.pinnedBadges : profile.pinnedBadges,
@@ -269,7 +270,7 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
             exam: data.exam ?? profile.exam,
             bio: data.bio ?? profile.bio,
             studyGoal: data.study_goal ?? profile.studyGoal,
-            avatar_url: data.avatar_url || profile.avatar_url,
+            avatar_url: data.avatar_url || (userId ? localStorage.getItem(`aspirantx_avatar_${userId}`) : null) || profile.avatar_url,
             isProfileComplete: dbComplete,
             educationCategory: data.education_category ?? profile.educationCategory,
             stateName: data.state_name ?? profile.stateName,
@@ -290,10 +291,14 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
   // Save updated profile to per-user cache
   if (profile.id) {
     try {
+      if (profile.avatar_url) {
+        localStorage.setItem(`aspirantx_avatar_${profile.id}`, profile.avatar_url);
+      }
       localStorage.setItem(`aspirantx_profile_cache_${profile.id}`, JSON.stringify({
         userId: profile.id,
         name: profile.name,
         targetExam: profile.exam,
+        avatar_url: profile.avatar_url,
         profileComplete: Boolean(profile.isProfileComplete || (profile.exam && profile.exam.trim() !== '')),
         targetYear: profile.targetYear,
         updatedAt: new Date().toISOString()
@@ -365,10 +370,14 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
 
   if (profile.id) {
     try {
+      if (profile.avatar_url) {
+        localStorage.setItem(`aspirantx_avatar_${profile.id}`, profile.avatar_url);
+      }
       localStorage.setItem(`aspirantx_profile_cache_${profile.id}`, JSON.stringify({
         userId: profile.id,
         name: profile.name,
         targetExam: profile.exam,
+        avatar_url: profile.avatar_url,
         profileComplete: Boolean(profile.isProfileComplete || (profile.exam && profile.exam.trim() !== '')),
         targetYear: profile.targetYear,
         updatedAt: new Date().toISOString()

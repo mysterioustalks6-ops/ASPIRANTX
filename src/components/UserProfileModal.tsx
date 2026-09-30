@@ -104,7 +104,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   
   // Profile Form States
   const [name, setName] = useState<string>(user.name || '');
-  const [avatarUrl, setAvatarUrl] = useState<string>(user.avatar_url || CURATED_AVATARS[0].url);
+  const [avatarUrl, setAvatarUrl] = useState<string>(() => {
+    const local = typeof window !== 'undefined' ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null;
+    return local || user.avatar_url || CURATED_AVATARS[0].url;
+  });
   const [bio, setBio] = useState<string>(user.bio || 'Future Civil Servant / High-Performance Aspirant');
   const [studyGoal, setStudyGoal] = useState<string>(user.studyGoal || 'Daily Consistency • Master Syllabus • Crack Target Exam');
   const [category, setCategory] = useState<string>(user.educationCategory || 'UPSC_CIVILS');
@@ -235,7 +238,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           setAvatarUrl(compressedDataUrl);
           try {
             localStorage.setItem(`aspirantx_avatar_${user.id}`, compressedDataUrl);
+            const cacheKey = `aspirantx_profile_cache_${user.id}`;
+            const existingRaw = localStorage.getItem(cacheKey);
+            const existing = existingRaw ? JSON.parse(existingRaw) : {};
+            localStorage.setItem(cacheKey, JSON.stringify({ ...existing, avatar_url: compressedDataUrl, updatedAt: new Date().toISOString() }));
           } catch (_) {}
+          if (onProfileUpdated) {
+            onProfileUpdated({ ...user, avatar_url: compressedDataUrl });
+          }
         }
         setUploadingPhoto(false);
       };
@@ -1135,7 +1145,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                         setAvatarUrl(av.url);
                         try {
                           localStorage.setItem(`aspirantx_avatar_${user.id}`, av.url);
+                          const cacheKey = `aspirantx_profile_cache_${user.id}`;
+                          const existingRaw = localStorage.getItem(cacheKey);
+                          const existing = existingRaw ? JSON.parse(existingRaw) : {};
+                          localStorage.setItem(cacheKey, JSON.stringify({ ...existing, avatar_url: av.url, updatedAt: new Date().toISOString() }));
                         } catch (_) {}
+                        if (onProfileUpdated) {
+                          onProfileUpdated({ ...user, avatar_url: av.url });
+                        }
                       }}
                       title={av.label}
                       className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${

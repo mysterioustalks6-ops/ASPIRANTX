@@ -177,7 +177,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src={user.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                      src={user.avatar_url || (user.id ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
                       alt="Avatar"
                       className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
                     />

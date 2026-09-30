@@ -174,11 +174,13 @@ function AppContent() {
         const cacheKey = `aspirantx_profile_cache_${user.id}`;
         const existingRaw = localStorage.getItem(cacheKey);
         const existing = existingRaw ? JSON.parse(existingRaw) : {};
+        const localAv = localStorage.getItem(`aspirantx_avatar_${user.id}`);
         localStorage.setItem(cacheKey, JSON.stringify({
           ...existing,
           userId: user.id,
           targetExam: norm,
           exam: norm,
+          avatar_url: user.avatar_url || localAv || existing.avatar_url,
           profileComplete: true,
           updatedAt: new Date().toISOString(),
         }));
@@ -691,10 +693,16 @@ function AppContent() {
           const cachedExam = (cachedProfile?.targetExam || cachedProfile?.exam || localStorage.getItem('aspirantx_global_selected_exam') || 'NEET_UG');
 
           if (hasValidCache) {
+            const cachedAvatar = localStorage.getItem(`aspirantx_avatar_${session.user.id}`) ||
+              cachedProfile.avatar_url ||
+              session.user.user_metadata?.avatar_url ||
+              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+
             const immediateUser: UserProfile = {
               id: session.user.id,
               name: cachedProfile.name || email.split('@')[0] || 'Aspirant',
               email,
+              avatar_url: cachedAvatar,
               exam: cachedExam,
               targetYear: cachedProfile.targetYear || 2026,
               streakDays: 1,
@@ -926,13 +934,15 @@ function AppContent() {
 
             setUser((prev) => {
               const isComp = Boolean(profile.isProfileComplete || (profile.exam && profile.exam.trim() !== '') || prev?.isProfileComplete);
+              const localAv = localStorage.getItem(`aspirantx_avatar_${session.user.id}`);
+              const resolvedAvatar = localAv || profile.avatar_url || prev?.avatar_url || session.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
               const next: UserProfile = {
-                ...profile,
                 ...prev,
+                ...profile,
                 id: session.user.id,
                 name: profile.name || prev?.name || session.user.user_metadata?.full_name || email.split('@')[0] || 'Aspirant',
                 email,
-                avatar_url: localStorage.getItem(`aspirantx_avatar_${session.user.id}`) || profile.avatar_url || prev?.avatar_url || session.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                avatar_url: resolvedAvatar,
                 role: isDesignatedAdmin ? 'ADMIN' : (profile.role || 'USER'),
                 isProfileComplete: isComp,
               };

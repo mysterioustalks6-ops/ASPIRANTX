@@ -115,7 +115,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             id: data.user.id,
             name: data.user.user_metadata?.full_name || (isAdminUser ? 'Ambuj Yadav (Admin)' : email.split('@')[0]) || 'Aspirant',
             email,
-            avatar_url: data.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            avatar_url: localStorage.getItem(`aspirantx_avatar_${data.user.id}`) || data.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
             exam: isAdminUser ? 'UPSC_CSE' : 'NEET_UG',
             targetYear: 2026,
             streakDays: isAdminUser ? 45 : 1,
