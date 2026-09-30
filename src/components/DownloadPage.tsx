@@ -163,15 +163,16 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                 <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-left space-y-2">
                   <div className="flex items-center gap-2 text-amber-400 font-bold text-xs">
                     <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span>Google Play Protect Warning? (आसानी से इंस्टॉल करें)</span>
+                    <span>Installation & Play Protect Guide (आसानी से इंस्टॉल करें)</span>
                   </div>
                   <p className="text-[11px] text-slate-300 leading-relaxed">
-                    Direct APK download hone ke karan Google Play Protect warning dikha sakta hai. Install karne ke liye:
+                    Direct APK download hone ke karan Google Play Protect warning dikha sakta hai. Install aur setup karne ke liye:
                   </p>
                   <ol className="text-[11px] text-slate-300 space-y-1 list-decimal list-inside">
                     <li>Browser warning par <strong className="text-white">"Download anyway"</strong> par click karein.</li>
                     <li>Play Protect warning aane par <strong className="text-amber-300">"More details"</strong> (अधिक विवरण) par click karein.</li>
                     <li>Neeche <strong className="text-amber-300">"Install anyway"</strong> (फिर भी इंस्टॉल करें) select karein.</li>
+                    <li>Agar Android 13/14 me Focus Shield Accessibility par <em>"Restricted setting"</em> aaye, to: <strong>Settings ➔ Apps ➔ StudyRide ➔ 3 Dots (⋮) ➔ "Allow restricted settings"</strong> par tap karein.</li>
                   </ol>
                 </div>
               </div>
