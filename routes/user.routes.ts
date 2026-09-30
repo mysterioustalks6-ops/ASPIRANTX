@@ -2433,7 +2433,12 @@ router.post('/api/user/update-profile', async (req, res) => {
       boardOrUniversity, 
       streamOrSubject, 
       targetYear,
-      isProfileComplete 
+      isProfileComplete,
+      bio,
+      studyGoal,
+      avatar_url,
+      pinnedBadges,
+      themeAccent
     } = req.body;
 
     if (!email) {
@@ -2451,7 +2456,12 @@ router.post('/api/user/update-profile', async (req, res) => {
       boardOrUniversity,
       streamOrSubject,
       targetYear: targetYear !== undefined ? Number(targetYear) : undefined,
-      isProfileComplete: isProfileComplete !== undefined ? Boolean(isProfileComplete) : undefined
+      isProfileComplete: isProfileComplete !== undefined ? Boolean(isProfileComplete) : undefined,
+      avatar_url: avatar_url || undefined,
+      bio: bio !== undefined ? String(bio) : undefined,
+      studyGoal: studyGoal !== undefined ? String(studyGoal) : undefined,
+      pinnedBadges: Array.isArray(pinnedBadges) ? pinnedBadges : undefined,
+      themeAccent: themeAccent !== undefined ? String(themeAccent) : undefined
     });
     saveAdminStoreToDisk();
 

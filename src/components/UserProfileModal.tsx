@@ -2,14 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile } from '../types';
 import { saveUserProfile } from '../lib/gamification';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { CustomExamModal } from './CustomExamModal';
+import { triggerConfetti } from '../lib/animations';
 import { 
   EXAM_CATEGORIES, 
   INDIAN_STATES_AND_UTS, 
   EDUCATIONAL_BOARDS,
   SYLLABUS_PRESETS 
 } from '../data/syllabusTemplates';
+import { 
+  PROFILE_BADGES, 
+  PROFILE_AWARDS, 
+  CURATED_AVATARS, 
+  THEME_AURA_PRESETS,
+  ProfileBadge
+} from '../data/profileBadgesData';
 import { 
   User, 
   Target, 
@@ -37,14 +44,22 @@ import {
   Upload,
   Image as ImageIcon,
   Bell,
-  Send
+  Send,
+  Zap,
+  Compass,
+  Star,
+  Copy,
+  Pin,
+  Palette,
+  ChevronRight,
+  Sliders,
+  Share2
 } from 'lucide-react';
 import { 
   loadStudyReminderSettings, 
   saveStudyReminderSettings, 
   StudyReminderSettings,
-  requestNotificationPermission,
-  getDailyStudySummary 
+  requestNotificationPermission 
 } from '../lib/studyReminderService';
 
 interface UserProfileModalProps {
@@ -57,14 +72,21 @@ interface UserProfileModalProps {
   onOpenCustomizerModal?: () => void;
 }
 
-const AVATAR_PRESETS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=120&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=120&auto=format&fit=crop&q=80',
-];
+const ICON_MAP: Record<string, any> = {
+  Flame,
+  Zap,
+  ShieldCheck,
+  Crown,
+  Compass,
+  BookOpen,
+  Target,
+  Trophy,
+  Clock,
+  Sparkles,
+  User,
+  Award,
+  Coins
+};
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   user,
@@ -73,12 +95,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onProfileUpdated,
   onOpenReferralModal,
   onNavigateToRewards,
+  onOpenCustomizerModal,
 }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'reminders' | 'rewards'>('profile');
+  // Navigation Tabs: 'overview' | 'badges' | 'awards' | 'edit'
+  const [activeTab, setActiveTab] = useState<'overview' | 'badges' | 'awards' | 'edit'>('overview');
+  
+  // Profile Form States
   const [name, setName] = useState<string>(user.name || '');
-  const [avatarUrl, setAvatarUrl] = useState<string>(user.avatar_url || AVATAR_PRESETS[0]);
-  const [bio, setBio] = useState<string>(user.bio || '');
-  const [studyGoal, setStudyGoal] = useState<string>(user.studyGoal || '');
+  const [avatarUrl, setAvatarUrl] = useState<string>(user.avatar_url || CURATED_AVATARS[0].url);
+  const [bio, setBio] = useState<string>(user.bio || 'Future Civil Servant / High-Performance Aspirant');
+  const [studyGoal, setStudyGoal] = useState<string>(user.studyGoal || 'Daily Consistency • Master Syllabus • Crack Target Exam');
   const [category, setCategory] = useState<string>(user.educationCategory || 'UPSC_CIVILS');
   const [examName, setExamName] = useState<string>(user.exam || 'UPSC CSE (IAS/IPS)');
   const [stateName, setStateName] = useState<string>(user.stateName || 'Uttar Pradesh');
@@ -87,26 +113,54 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   );
   const [streamOrSubject, setStreamOrSubject] = useState<string>(user.streamOrSubject || 'General Studies');
   const [targetYear, setTargetYear] = useState<number>(user.targetYear || 2026);
+  const [themeAccent, setThemeAccent] = useState<string>(user.themeAccent || 'cyan');
+  const [pinnedBadges, setPinnedBadges] = useState<string[]>(
+    user.pinnedBadges && user.pinnedBadges.length > 0
+      ? user.pinnedBadges
+      : ['badge_first_spark', 'badge_syllabus_starter', 'badge_focus_monk']
+  );
 
+  // Badge Filter State
+  const [badgeFilter, setBadgeFilter] = useState<'ALL' | 'MASTERY' | 'STREAK' | 'FOCUS' | 'COMMUNITY' | 'UNLOCKED'>('ALL');
+
+  // Photo Upload & Statuses
   const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [copiedReferral, setCopiedReferral] = useState<boolean>(false);
 
+  // Rewards Claims
   const [myClaims, setMyClaims] = useState<any[]>([]);
   const [loadingClaims, setLoadingClaims] = useState<boolean>(false);
 
-  const [isGeneratingAiSyllabus, setIsGeneratingAiSyllabus] = useState<boolean>(false);
-  const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  // Custom Exam Modal
   const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
 
-  // Study Reminder Settings State
+  // Reminders Settings
   const [reminderSettings, setReminderSettings] = useState<StudyReminderSettings>(() => loadStudyReminderSettings());
-  const [reminderSavedMessage, setReminderSavedMessage] = useState<string | null>(null);
-  const [testingNotification, setTestingNotification] = useState<boolean>(false);
+
+  // Active Aura Theme Info
+  const activeAura = THEME_AURA_PRESETS.find(p => p.id === themeAccent) || THEME_AURA_PRESETS[0];
 
   useEffect(() => {
-    if (activeTab === 'rewards' && user) {
+    if (user) {
+      setName(user.name || '');
+      setAvatarUrl(user.avatar_url || CURATED_AVATARS[0].url);
+      setBio(user.bio || 'Future Civil Servant / High-Performance Aspirant');
+      setStudyGoal(user.studyGoal || 'Daily Consistency • Master Syllabus • Crack Target Exam');
+      setExamName(user.exam || 'UPSC CSE (IAS/IPS)');
+      setTargetYear(user.targetYear || 2026);
+      setThemeAccent(user.themeAccent || 'cyan');
+      if (user.pinnedBadges && user.pinnedBadges.length > 0) {
+        setPinnedBadges(user.pinnedBadges);
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab === 'awards' && user) {
       fetchMyClaims();
     }
   }, [activeTab, user?.id]);
@@ -126,87 +180,94 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setUploadError(null);
 
-    if (file.size > 8 * 1024 * 1024) {
-      setUploadError('Photo 8MB se bada hai. Chhoti image choose karein.');
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Kripya sirf image file (JPG, PNG, WebP) upload karein.');
       return;
     }
 
-    setUploadingPhoto(true);
-    try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = async () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 400;
-          if (width > height) {
-            if (width > maxDim) { height = Math.round((height * maxDim) / width); width = maxDim; }
-          } else {
-            if (height > maxDim) { width = Math.round((width * maxDim) / height); height = maxDim; }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) { ctx.drawImage(img, 0, 0, width, height); }
+    if (file.size > 8 * 1024 * 1024) {
+      setUploadError('Photo ka size 8MB se zyada nahi hona chahiye.');
+      return;
+    }
 
-          // --- Try Supabase upload first ---
-          if (isSupabaseConfigured) {
-            canvas.toBlob(async (blob) => {
-              if (!blob) { setUploadError('Image compress nahi hui.'); setUploadingPhoto(false); return; }
-              const fileName = `${user.id}/${Date.now()}.jpg`;
-              const { error } = await supabase.storage.from('avatars').upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
-              if (error) {
-                // Supabase failed — fallback to base64
-                const base64 = canvas.toDataURL('image/jpeg', 0.7);
-                setAvatarUrl(base64);
-                localStorage.setItem(`aspirantx_avatar_${user.id}`, base64);
-                setUploadingPhoto(false);
-              } else {
-                const { data: pubData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-                if (pubData?.publicUrl) { setAvatarUrl(pubData.publicUrl); }
-                setUploadingPhoto(false);
-              }
-            }, 'image/jpeg', 0.75);
-          } else {
-            // --- No Supabase: save as base64 in localStorage ---
-            const base64 = canvas.toDataURL('image/jpeg', 0.7);
-            setAvatarUrl(base64);
-            localStorage.setItem(`aspirantx_avatar_${user.id}`, base64);
-            setUploadingPhoto(false);
+    setUploadError(null);
+    setUploadingPhoto(true);
+
+    const reader = new FileReader();
+    reader.onload = (uploadEvent) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_DIM = 240;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_DIM) {
+            height = Math.round((height * MAX_DIM) / width);
+            width = MAX_DIM;
           }
-        };
-        img.onerror = () => { setUploadError('Image load nahi hui.'); setUploadingPhoto(false); };
+        } else {
+          if (height > MAX_DIM) {
+            width = Math.round((width * MAX_DIM) / height);
+            height = MAX_DIM;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          setAvatarUrl(compressedDataUrl);
+          try {
+            localStorage.setItem(`aspirantx_avatar_${user.id}`, compressedDataUrl);
+          } catch (_) {}
+        }
+        setUploadingPhoto(false);
       };
-      reader.onerror = () => { setUploadError('File read error.'); setUploadingPhoto(false); };
-    } catch (err: any) {
-      setUploadError(err.message || 'Photo upload mein error.');
+      img.onerror = () => {
+        setUploadError('Photo read karne me problem aayi.');
+        setUploadingPhoto(false);
+      };
+      img.src = uploadEvent.target?.result as string;
+    };
+    reader.onerror = () => {
+      setUploadError('File read fail ho gayi.');
       setUploadingPhoto(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const togglePinBadge = (badgeId: string) => {
+    if (pinnedBadges.includes(badgeId)) {
+      setPinnedBadges(pinnedBadges.filter(id => id !== badgeId));
+    } else {
+      if (pinnedBadges.length >= 3) {
+        setPinnedBadges([...pinnedBadges.slice(1), badgeId]);
+      } else {
+        setPinnedBadges([...pinnedBadges, badgeId]);
+      }
+      triggerConfetti();
     }
   };
 
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setIsSaving(true);
     setSaveError(null);
     setSaveSuccessMessage(null);
 
     try {
-      // Resolve avatar — prefer uploaded, else check localStorage cache, else use preset
       const resolvedAvatar = avatarUrl ||
         localStorage.getItem(`aspirantx_avatar_${user.id}`) ||
         user.avatar_url ||
-        AVATAR_PRESETS[0];
+        CURATED_AVATARS[0].url;
 
       const updatedProfile: UserProfile = {
         ...user,
@@ -220,26 +281,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         boardOrUniversity,
         streamOrSubject: streamOrSubject.trim(),
         targetYear,
+        themeAccent,
+        pinnedBadges,
         isProfileComplete: true,
       };
 
-      // Save locally first (instant)
+      // 1. Instant local storage update
       localStorage.setItem(`aspirantx_user_profile_${user.id}`, JSON.stringify(updatedProfile));
+      saveStudyReminderSettings(reminderSettings);
 
-      // Set syllabus preset
+      // 2. Set syllabus preset if available
       if (SYLLABUS_PRESETS[category]) {
         localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
       }
 
-      // Save to backend & Supabase
+      // 3. Save via gamification layer
       await saveUserProfile(updatedProfile);
 
-      // Also sync avatar_url to server explicitly
+      // 4. Sync to backend API
       if (user.email) {
         const token = localStorage.getItem('aspirantx_auth_token');
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        fetch('/api/user/update-profile', {
+
+        await fetch('/api/user/update-profile', {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -253,850 +318,615 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             bio: updatedProfile.bio,
             studyGoal: updatedProfile.studyGoal,
             avatar_url: resolvedAvatar.startsWith('data:') ? '' : resolvedAvatar,
+            pinnedBadges: updatedProfile.pinnedBadges,
+            themeAccent: updatedProfile.themeAccent,
             isProfileComplete: true,
           }),
-        }).catch(() => {});
+        }).catch((e) => console.warn('Background profile update ping error:', e));
       }
 
-      setSaveSuccessMessage('✅ Profile save ho gaya! Dashboard update ho raha hai...');
+      triggerConfetti();
+      setSaveSuccessMessage('✨ Profile successfully updated! Changes live across your dashboard.');
       if (onProfileUpdated) onProfileUpdated(updatedProfile);
 
       setTimeout(() => {
         setSaveSuccessMessage(null);
-        onClose();
-      }, 1500);
+      }, 2500);
     } catch (err: any) {
-      setSaveError(`Save mein problem: ${err.message || 'Unknown error'}. Dobara try karein.`);
+      setSaveError(`Save karne me problem: ${err.message || 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleGenerateAiSyllabus = async () => {
-    setIsGeneratingAiSyllabus(true);
-    setSaveSuccessMessage(null);
-
-    const promptMessage = `Generate a structured syllabus breakdown for a student studying "${examName}" under Education Level "${category}", Board/Commission "${boardOrUniversity}", State "${stateName}", Stream/Subject "${streamOrSubject}". 
-Output MUST be a JSON array of 4 SyllabusTopic objects, each with title, category, stage ("Prelims" or "Mains" or "Exam"), weightage ("High" or "Medium"), notes, and 4 subtopics.
-Return ONLY valid JSON format like:
-[
-  {
-    "id": "c1",
-    "title": "Topic Title",
-    "category": "Subject",
-    "stage": "Prelims",
-    "completed": false,
-    "subtopicsCount": 4,
-    "completedSubtopics": 0,
-    "weightage": "High",
-    "notes": "Key study instructions",
-    "subtopics": [
-      { "id": "c1-1", "topicId": "c1", "title": "Subtopic 1", "completed": false, "estimatedHours": 2.5, "weightage": "High" }
-    ]
-  }
-]`;
-
-    try {
-      const res = await fetch('/api/gemini/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: promptMessage,
-          exam: examName || 'UPSC_CSE',
-          userEmail: user?.email,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || data.details || 'Failed to generate AI syllabus');
-      }
-
-      if (data.reply) {
-        const jsonMatch = data.reply.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          const parsedSyllabus = JSON.parse(jsonMatch[0]);
-          localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(parsedSyllabus));
-          setSaveSuccessMessage(`Custom AI Syllabus generated for "${examName}"!`);
-        } else if (data.reply.includes('[StudyRide AI Mentor') || data.reply.includes('[ProTrack AI Mentor') || data.reply.includes('[AspirantX AI Mentor') || data.reply.includes('GEMINI_API_KEY')) {
-          if (SYLLABUS_PRESETS[category]) {
-            localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
-          }
-          setSaveSuccessMessage(`⚠️ GEMINI_API_KEY is missing in server environment (.env). Preset syllabus loaded for "${examName}".`);
-        } else {
-          if (SYLLABUS_PRESETS[category]) {
-            localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
-          }
-          setSaveSuccessMessage(`Syllabus template configured for "${examName}"!`);
-        }
-      } else {
-        throw new Error('No response generated by AI mentor.');
-      }
-    } catch (e: any) {
-      if (SYLLABUS_PRESETS[category]) {
-        localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
-      }
-      setSaveSuccessMessage(`Syllabus template configured for "${examName}"! (${e.message || 'Error occurred'})`);
-    } finally {
-      setIsGeneratingAiSyllabus(false);
-    }
+  const handleCopyReferral = () => {
+    const code = user.referralCode || 'ASPIRANT-101';
+    navigator.clipboard.writeText(code);
+    setCopiedReferral(true);
+    setTimeout(() => setCopiedReferral(false), 2000);
   };
 
-  const fulfilledCount = myClaims.filter(c => c.status === 'fulfilled').length;
+  // XP Level Calculations
+  const currentXP = user.xp || 150;
+  const currentLevel = user.level || Math.max(1, Math.floor(currentXP / 150) + 1);
+  const nextLevelXP = currentLevel * 150;
+  const prevLevelXP = (currentLevel - 1) * 150;
+  const xpProgress = Math.min(100, Math.round(((currentXP - prevLevelXP) / 150) * 100));
+
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 md:p-6 z-50 overflow-y-auto">
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        initial={{ opacity: 0, scale: 0.96, y: 15 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }}
-        className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative my-auto my-6"
+        exit={{ opacity: 0, scale: 0.96, y: 15 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="w-full max-w-4xl bg-slate-900/95 border border-slate-800/80 rounded-[32px] shadow-[0_20px_70px_rgba(0,0,0,0.8)] overflow-hidden relative my-auto max-h-[92vh] flex flex-col"
+        style={{
+          boxShadow: `0 0 60px -15px ${activeAura.glow}, 0 25px 70px rgba(0,0,0,0.8)`
+        }}
       >
-        {/* Glow Header */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Dynamic Glowing Ambient Aura */}
+        <div 
+          className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-30"
+          style={{ background: activeAura.glow }}
+        />
+        <div 
+          className="absolute -bottom-24 -left-24 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-20"
+          style={{ background: activeAura.glow }}
+        />
 
-        {/* Modal Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between relative z-10 bg-slate-900/90">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              <User className="w-6 h-6" />
+        {/* Top Floating Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 z-30 p-2.5 rounded-full bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 transition-all shadow-lg backdrop-blur-md"
+          title="Close Profile"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        {/* ============================================================== */}
+        {/* DRIBBBLE HERO BANNER WITH AVATAR & PINNED BADGES */}
+        {/* ============================================================== */}
+        <div className="relative pt-6 px-6 sm:px-8 pb-5 border-b border-slate-800/80 bg-gradient-to-b from-slate-950/90 via-slate-900/80 to-slate-900/40">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            {/* Avatar & Core Identity */}
+            <div className="flex items-center gap-4 sm:gap-5">
+              {/* Concentric Level Ring Avatar */}
+              <div className="relative group shrink-0">
+                <div 
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl p-1 relative overflow-hidden transition-transform duration-300 group-hover:scale-105"
+                  style={{
+                    background: `linear-gradient(135deg, ${activeAura.glow}, rgba(255,255,255,0.1), ${activeAura.glow})`
+                  }}
+                >
+                  <img
+                    src={avatarUrl}
+                    alt={name || 'Student Avatar'}
+                    onError={(e) => { (e.target as HTMLImageElement).src = CURATED_AVATARS[0].url; }}
+                    className="w-full h-full object-cover rounded-[22px] bg-slate-950 shadow-inner"
+                  />
+                  {uploadingPhoto && (
+                    <div className="absolute inset-0 bg-slate-950/80 rounded-[22px] flex items-center justify-center backdrop-blur-sm">
+                      <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Level Badge Pill */}
+                <div className="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-[10px] tracking-wider uppercase border border-amber-300/40 shadow-lg flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-slate-950" />
+                  LVL {currentLevel}
+                </div>
+              </div>
+
+              {/* Name, Handle, Exam & Target Year */}
+              <div className="space-y-1.5 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
+                    {name || 'Aspirant'}
+                  </h1>
+                  {user.isPremium ? (
+                    <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-black tracking-wide flex items-center gap-1">
+                      <Crown className="w-3 h-3" /> PRO PASS
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700 text-[10px] font-bold">
+                      Aspirant
+                    </span>
+                  )}
+                </div>
+
+                {/* Target Exam & Year Pills */}
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <span className={`px-2.5 py-1 rounded-lg ${activeAura.bg} ${activeAura.text} border ${activeAura.border} font-extrabold flex items-center gap-1.5`}>
+                    <Target className="w-3.5 h-3.5" />
+                    {examName}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-800/60 text-slate-300 border border-slate-700/60 font-semibold">
+                    Target: {targetYear}
+                  </span>
+                  <span className="text-xs text-slate-400 hidden sm:inline">•</span>
+                  <span className="text-xs text-slate-400 truncate max-w-[200px]">
+                    {user.email}
+                  </span>
+                </div>
+
+                {/* Motto / Bio quote */}
+                <p className="text-xs text-slate-300/90 italic line-clamp-1 max-w-md pt-0.5">
+                  "{studyGoal || 'Discipline beats motivation every single day.'}"
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                Student Profile & Rewards Hub
-              </h2>
-              <p className="text-xs text-slate-400">
-                Manage your profile, academic exam preferences, and reward prize claims.
-              </p>
+
+            {/* Quick Actions & Pinned Badges Showcase */}
+            <div className="flex flex-row md:flex-col items-start md:items-end justify-between gap-3 shrink-0">
+              {/* Pinned Badges Header Strip */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 md:justify-end">
+                  <Pin className="w-3 h-3 text-amber-400" /> Featured Badges
+                </p>
+                <div className="flex items-center gap-2">
+                  {pinnedBadges.map((badgeId) => {
+                    const badge = PROFILE_BADGES.find(b => b.id === badgeId);
+                    if (!badge) return null;
+                    const IconComponent = ICON_MAP[badge.icon] || Award;
+                    return (
+                      <div
+                        key={badge.id}
+                        title={`${badge.name} (${badge.rarity})`}
+                        className={`w-9 h-9 rounded-xl bg-gradient-to-br ${badge.accentColor} p-0.5 shadow-md hover:scale-110 transition-transform cursor-pointer`}
+                        onClick={() => setActiveTab('badges')}
+                      >
+                        <div className="w-full h-full bg-slate-950/80 rounded-[10px] flex items-center justify-center backdrop-blur-sm">
+                          <IconComponent className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Edit Profile Button Trigger */}
+              <button
+                onClick={() => setActiveTab('edit')}
+                className="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-md active:scale-95"
+              >
+                <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                Edit Profile & Preferences
+              </button>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Dribbble Level XP Progress Bar */}
+          <div className="mt-5 pt-4 border-t border-slate-800/60">
+            <div className="flex items-center justify-between text-xs font-bold mb-1.5">
+              <span className="text-slate-400 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Level {currentLevel} Mastery
+              </span>
+              <span className="text-white font-mono">
+                {currentXP} / {nextLevelXP} XP <span className="text-slate-500 font-sans">({xpProgress}%)</span>
+              </span>
+            </div>
+            <div className="w-full h-2.5 rounded-full bg-slate-950/80 border border-slate-800 overflow-hidden p-0.5">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${xpProgress}%` }}
+                transition={{ duration: 0.8, ease: 'easeOut' }}
+                className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-indigo-400 to-amber-400 shadow-[0_0_12px_rgba(6,182,212,0.6)]"
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Three-Tab Navigation Bar */}
-        <div className="flex border-b border-slate-800 bg-slate-950/60 px-6 pt-3 gap-6 overflow-x-auto custom-scrollbar">
+        {/* ============================================================== */}
+        {/* FOUR-TAB DRIBBBLE NAVIGATION BAR */}
+        {/* ============================================================== */}
+        <div className="flex items-center border-b border-slate-800/80 bg-slate-950/60 px-6 sm:px-8 gap-6 sm:gap-8 overflow-x-auto custom-scrollbar shrink-0">
           <button
             type="button"
-            onClick={() => setActiveTab('profile')}
-            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'profile'
-                ? 'border-cyan-400 text-cyan-400'
+            onClick={() => setActiveTab('overview')}
+            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'overview'
+                ? `${activeAura.border} ${activeAura.text}`
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <User className="w-4 h-4" /> Profile Details
+            <User className="w-4 h-4" /> Overview & Stats
           </button>
+
           <button
             type="button"
-            onClick={() => setActiveTab('reminders')}
-            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'reminders'
-                ? 'border-indigo-400 text-indigo-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Clock className="w-4 h-4" /> Daily Reminders
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('rewards')}
-            className={`pb-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'rewards'
+            onClick={() => setActiveTab('badges')}
+            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'badges'
                 ? 'border-amber-400 text-amber-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Gift className="w-4 h-4" /> My Rewards ({myClaims.length})
+            <Award className="w-4 h-4" /> Badges Showcase ({PROFILE_BADGES.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('awards')}
+            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'awards'
+                ? 'border-purple-400 text-purple-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Trophy className="w-4 h-4" /> Awards & Trophies ({PROFILE_AWARDS.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('edit')}
+            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'edit'
+                ? 'border-cyan-400 text-cyan-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Palette className="w-4 h-4" /> Dynamic Customizer
           </button>
         </div>
 
-        {/* Tab 1: Profile Details */}
-        {activeTab === 'profile' && (
-          <form onSubmit={handleSaveProfile} className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            {/* Section 1: Personal Details & Avatar */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
-              <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                <User className="w-4 h-4" /> Student Profile Info & Stats
-              </h3>
+        {/* Toast / Notification Banner */}
+        {saveSuccessMessage && (
+          <div className="mx-6 mt-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>{saveSuccessMessage}</span>
+          </div>
+        )}
+        {saveError && (
+          <div className="mx-6 mt-4 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{saveError}</span>
+          </div>
+        )}
 
-              {/* Stats Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
-                  <Award className="w-4 h-4 text-purple-400" />
-                  <div>
-                    <p className="text-[10px] text-slate-400">Level</p>
-                    <p className="font-extrabold text-white">LVL {user.level || 1}</p>
+        {/* ============================================================== */}
+        {/* TAB 1: OVERVIEW & STATS */}
+        {/* ============================================================== */}
+        {activeTab === 'overview' && (
+          <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            {/* Stat Cards Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              {/* Streak Card */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-orange-500/40 transition-all group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Streak</span>
+                  <div className="p-2 rounded-xl bg-orange-500/10 text-orange-400 group-hover:scale-110 transition-transform">
+                    <Flame className="w-4 h-4 fill-orange-400" />
                   </div>
                 </div>
-
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <div>
-                    <p className="text-[10px] text-slate-400">Coins</p>
-                    <p className="font-extrabold text-amber-400">{user.coins || 0} Coins</p>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
-                  <Flame className="w-4 h-4 text-orange-400 fill-orange-400" />
-                  <div>
-                    <p className="text-[10px] text-slate-400">Streak</p>
-                    <p className="font-extrabold text-orange-400">{user.streakDays ?? 1} Days</p>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2">
-                  <Crown className="w-4 h-4 text-emerald-400" />
-                  <div>
-                    <p className="text-[10px] text-slate-400">Status</p>
-                    <p className="font-extrabold text-emerald-400">
-                      {user.isPremium ? 'PRO Pass' : 'Freemium'}
-                    </p>
-                  </div>
-                </div>
+                <p className="text-2xl font-black text-white">{user.streakDays ?? 1} <span className="text-sm font-semibold text-orange-400">Days</span></p>
+                <p className="text-[10px] text-slate-500 mt-1">Target: 21 Days Habit Titan</p>
               </div>
 
-              {/* Referral Code Quick Banner */}
-              <div className="p-3.5 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-purple-500/10 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="text-xs font-black text-amber-300 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Referral Code: <span className="font-mono text-amber-400 tracking-wider font-extrabold">{user.referralCode || 'ASPIRANT-101'}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Share code with friends to earn +150 Coins & unlock 1-Day PRO Pass!
-                  </p>
+              {/* Coins Balance Card */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-amber-500/40 transition-all group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aspirant Coins</span>
+                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform">
+                    <Coins className="w-4 h-4 fill-amber-400" />
+                  </div>
                 </div>
-
-                {onOpenReferralModal && (
+                <p className="text-2xl font-black text-amber-400">{user.coins ?? 50} <span className="text-sm font-semibold text-slate-400">🪙</span></p>
+                {onNavigateToRewards && (
                   <button
-                    type="button"
-                    onClick={onOpenReferralModal}
-                    className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 shrink-0"
+                    onClick={onNavigateToRewards}
+                    className="text-[10px] text-amber-400/90 hover:text-amber-300 font-bold mt-1 flex items-center gap-1"
                   >
-                    Referral Dashboard →
+                    Redeem for Prizes →
                   </button>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Student Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    placeholder="e.g. Rahul Sharma"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                    <span>Profile Photo</span>
-                    {uploadingPhoto && <span className="text-[10px] text-cyan-400 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Upload ho raha hai...</span>}
-                  </label>
-                  
-                  {/* Big Avatar Preview */}
-                  <div className="flex items-center gap-4">
-                    <div className="relative shrink-0">
-                      <img
-                        src={avatarUrl}
-                        alt="Profile Photo"
-                        onError={(e) => { (e.target as HTMLImageElement).src = AVATAR_PRESETS[0]; }}
-                        className="w-16 h-16 rounded-2xl object-cover border-2 border-cyan-400 shadow-lg"
-                      />
-                      {uploadingPhoto && (
-                        <div className="absolute inset-0 rounded-2xl bg-slate-950/70 flex items-center justify-center">
-                          <Loader2 className="w-5 h-5 animate-spin text-cyan-400" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 flex-1">
-                      {/* Upload Button */}
-                      <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-bold text-cyan-300 cursor-pointer transition-all">
-                        <Upload className="w-3.5 h-3.5" /> Apni Photo Upload Karein
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                          disabled={uploadingPhoto}
-                        />
-                      </label>
-                      <p className="text-[10px] text-slate-500">
-                        JPG/PNG, max 8MB — automatically compressed & saved locally
-                      </p>
-                      {uploadError && (
-                        <p className="text-[11px] text-rose-400 font-semibold flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" /> {uploadError}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Preset Avatar Gallery */}
-                  <div>
-                    <p className="text-[10px] text-slate-500 mb-1.5">Ya preset avatar choose karein:</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {AVATAR_PRESETS.map((url, idx) => (
-                        <img
-                          key={idx}
-                          src={url}
-                          alt={`Avatar ${idx + 1}`}
-                          onClick={() => setAvatarUrl(url)}
-                          className={`w-9 h-9 rounded-full object-cover cursor-pointer border-2 transition-all ${
-                            avatarUrl === url ? 'border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30' : 'border-slate-700 opacity-60 hover:opacity-100 hover:border-slate-500'
-                          }`}
-                        />
-                      ))}
-                    </div>
+              {/* Study Time Card */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-cyan-500/40 transition-all group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Study Time</span>
+                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition-transform">
+                    <Clock className="w-4 h-4" />
                   </div>
                 </div>
+                <p className="text-2xl font-black text-white">{(user.studyHoursToday ?? 0).toFixed(1)} <span className="text-sm font-semibold text-cyan-400">Hours</span></p>
+                <p className="text-[10px] text-slate-500 mt-1">Logged today in IST</p>
               </div>
 
-              {/* Optional Profile Fields: Bio & Study Goal */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                    <span>Bio / About Me</span>
-                    <span className="text-[10px] text-slate-500">{(bio || '').length}/150 chars</span>
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={150}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="e.g. Dedicated aspirant, coffee lover & focused learner."
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                  />
+              {/* Total XP Card */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-purple-500/40 transition-all group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total XP</span>
+                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Study Goal / Target</label>
-                  <input
-                    type="text"
-                    value={studyGoal}
-                    onChange={(e) => setStudyGoal(e.target.value)}
-                    placeholder="e.g. Crack UPSC CSE 2027 with AIR under 100"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                  />
-                </div>
+                <p className="text-2xl font-black text-white">{currentXP} <span className="text-sm font-semibold text-purple-400">XP</span></p>
+                <p className="text-[10px] text-slate-500 mt-1">Next rank in {nextLevelXP - currentXP} XP</p>
               </div>
             </div>
 
-            {/* Section 2: Education Level & Target Exam Category */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
-              <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" /> 1. Select Education Level / Exam Field
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto p-1 custom-scrollbar">
-                {EXAM_CATEGORIES.map((cat) => (
+            {/* Referral Hero Banner */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-purple-500/15 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <h3 className="text-sm font-black text-amber-300">Invite Friends & Earn Rewards</h3>
+                </div>
+                <p className="text-xs text-slate-300">
+                  Share your referral code to unlock <span className="font-extrabold text-amber-300">+150 Coins</span> and free <span className="font-extrabold text-cyan-300">PRO Pass</span> for every classmate who joins.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="px-3 py-1 rounded-lg bg-slate-950/80 border border-amber-500/40 font-mono text-xs font-black text-amber-400 tracking-wider">
+                    {user.referralCode || 'ASPIRANT-101'}
+                  </span>
                   <button
-                    type="button"
-                    key={cat.id}
-                    onClick={() => {
-                      setCategory(cat.id);
-                      if (cat.id === 'SCHOOL_PRIMARY') setExamName('Class 5 Foundation (EVS, Math, English)');
-                      else if (cat.id === 'SCHOOL_MIDDLE') setExamName('Class 8 Board / School Exam');
-                      else if (cat.id === 'SCHOOL_HIGH') setExamName('Class 10 Board Exam (CBSE/State)');
-                      else if (cat.id === 'SCHOOL_SENIOR_PCM') setExamName('Class 12 Physics, Chemistry, Math & JEE');
-                      else if (cat.id === 'SCHOOL_SENIOR_PCB') setExamName('Class 12 Biology & NEET UG');
-                      else if (cat.id === 'SCHOOL_SENIOR_COMMERCE') setExamName('Class 12 Commerce & Accounts');
-                      else if (cat.id === 'SCHOOL_SENIOR_ARTS') setExamName('Class 12 Humanities & Arts');
-                      else if (cat.id === 'PHD_RESEARCH') setExamName('Ph.D. Entrance & Research Methodology');
-                      else if (cat.id === 'STATE_PSC_CIVIL') setExamName('State PSC Civil Services Exam');
-                      else if (cat.id === 'STATE_POLICE_TEACHER') setExamName('State Sub-Inspector / SI & Police Exam');
-                      else if (cat.id === 'UPSC_CIVILS') setExamName('UPSC Civil Services (IAS/IPS)');
-                      else if (cat.id === 'SSC_EXAMS') setExamName('SSC CGL / CHSL / MTS');
-                    }}
-                    className={`p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
-                      category === cat.id
-                        ? 'bg-cyan-500/10 border-cyan-500/50 text-white shadow-md'
-                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                    onClick={handleCopyReferral}
+                    className="p-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1 transition-all"
+                  >
+                    {copiedReferral ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copiedReferral ? 'Copied!' : 'Copy Code'}
+                  </button>
+                </div>
+              </div>
+
+              {onOpenReferralModal && (
+                <button
+                  type="button"
+                  onClick={onOpenReferralModal}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 shrink-0"
+                >
+                  Referral Dashboard →
+                </button>
+              )}
+            </div>
+
+            {/* Academic Information Summary Card */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-cyan-400" /> Academic Roadmap
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-500">Target Commission / Exam</p>
+                  <p className="font-extrabold text-white mt-0.5">{examName}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-500">Board / University</p>
+                  <p className="font-extrabold text-white mt-0.5 truncate">{boardOrUniversity}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-500">State / Region</p>
+                  <p className="font-extrabold text-white mt-0.5">{stateName}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* TAB 2: BADGES SHOWCASE */}
+        {/* ============================================================== */}
+        {activeTab === 'badges' && (
+          <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            {/* Badges Filter Bar */}
+            <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-800/80">
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  <Award className="w-4 h-4 text-amber-400" /> Achievement Badges Collection
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Complete study sessions, solve PYQs, and maintain streaks to unlock badges. Click <Pin className="w-3 h-3 inline text-amber-400" /> to pin top 3 to your profile!
+                </p>
+              </div>
+
+              {/* Filter Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(['ALL', 'STREAK', 'MASTERY', 'FOCUS', 'COMMUNITY', 'UNLOCKED'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setBadgeFilter(f)}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-extrabold uppercase transition-all ${
+                      badgeFilter === f
+                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                        : 'bg-slate-800/60 text-slate-400 hover:text-white'
                     }`}
                   >
-                    <span className="text-xl shrink-0">{cat.icon}</span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate">{cat.name}</p>
-                      <p className="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{cat.description}</p>
-                    </div>
+                    {f}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Section 3: Exam Name, State & Board Customizer */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-4">
-              <h3 className="text-xs font-bold text-cyan-400 uppercase tracking-wider flex items-center gap-2">
-                <Target className="w-4 h-4" /> 2. Specific Exam, State & Board Details
-              </h3>
+            {/* Badges Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {PROFILE_BADGES
+                .filter(b => {
+                  if (badgeFilter === 'ALL') return true;
+                  if (badgeFilter === 'UNLOCKED') return b.currentValue(user) >= b.targetValue;
+                  return b.category === badgeFilter;
+                })
+                .map((badge) => {
+                  const currentVal = badge.currentValue(user);
+                  const isUnlocked = currentVal >= badge.targetValue;
+                  const isPinned = pinnedBadges.includes(badge.id);
+                  const pct = Math.min(100, Math.round((currentVal / badge.targetValue) * 100));
+                  const IconComponent = ICON_MAP[badge.icon] || Award;
 
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-300">Exam / Degree Title</label>
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomModalOpen(true)}
-                      className="text-[11px] font-extrabold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 bg-cyan-500/10 px-2.5 py-1 rounded-lg border border-cyan-500/30 transition-all"
+                  return (
+                    <div
+                      key={badge.id}
+                      className={`p-4 rounded-2xl border transition-all relative overflow-hidden group ${
+                        isUnlocked
+                          ? 'bg-slate-950/80 border-slate-800 hover:border-slate-700 shadow-md'
+                          : 'bg-slate-950/40 border-slate-800/40 opacity-70'
+                      }`}
                     >
-                      <Sparkles className="w-3 h-3" /> + Create Custom Exam & Syllabus
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={examName}
-                    onChange={(e) => setExamName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    placeholder="e.g. UPSC CSE, JEE Advanced, Class 10 CBSE"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-cyan-400" /> State / UT
-                    </label>
-                    <select
-                      value={stateName}
-                      onChange={(e) => setStateName(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    >
-                      {INDIAN_STATES_AND_UTS.map((st) => (
-                        <option key={st} value={st}>{st}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5 text-cyan-400" /> Board / Commission
-                    </label>
-                    <select
-                      value={boardOrUniversity}
-                      onChange={(e) => setBoardOrUniversity(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    >
-                      {EDUCATIONAL_BOARDS.map((bo) => (
-                        <option key={bo} value={bo}>{bo}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Target Year</label>
-                  <div className="flex items-center gap-2">
-                    {[2025, 2026, 2027, 2028, 2029].map((year) => (
-                      <button
-                        type="button"
-                        key={year}
-                        onClick={() => setTargetYear(year)}
-                        className={`flex-1 py-2 rounded-xl text-xs font-extrabold border transition-all ${
-                          targetYear === year
-                            ? 'bg-cyan-500 text-slate-950 border-cyan-400 shadow-md'
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
-                        }`}
-                      >
-                        {year}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4: AI Syllabus Generator Card */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-amber-500/10 border border-cyan-500/30 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-black text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-cyan-400" /> Generate Tailored AI Syllabus
-                  </h4>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Automatically builds a custom syllabus with chapters & subtopics for "{examName}" ({stateName}).
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGenerateAiSyllabus}
-                  disabled={isGeneratingAiSyllabus}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-cyan-500/20 shrink-0"
-                >
-                  {isGeneratingAiSyllabus ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Generating...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4" /> AI Auto-Syllabus
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Save Status Banners */}
-            {saveSuccessMessage && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2">
-                <Check className="w-4 h-4 text-emerald-400" /> {saveSuccessMessage}
-              </div>
-            )}
-            {saveError && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-bold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-rose-400" /> {saveError}
-              </div>
-            )}
-
-            {/* Action Footer */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSaving}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white disabled:opacity-50"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                disabled={isSaving || uploadingPhoto}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {isSaving ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
-                ) : (
-                  <><Check className="w-4 h-4" /> Save Profile</>
-                )}
-              </button>
-            </div>
-          </form>
-        )}
-
-        {/* Tab: Daily Reminders (Self-set, gentle nudges) */}
-        {activeTab === 'reminders' && (
-          <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            {/* Header info */}
-            <div className="p-4 rounded-2xl bg-indigo-950/20 border border-indigo-500/30 flex items-start gap-3">
-              <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 shrink-0 mt-0.5">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-                  Daily Study Summary & Notification
-                </h3>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  A gentle daily check-in with your pending topics and streak. Research shows non-urgent, self-set reminders support study consistency without creating stress or guilt.
-                </p>
-              </div>
-            </div>
-
-            {/* Toggle Enable/Disable */}
-            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-xs font-bold text-slate-200">Enable Daily Study Reminder</label>
-                <p className="text-[11px] text-slate-400">Receive at most 1 calm nudge per day</p>
-              </div>
-              <button
-                type="button"
-                onClick={async () => {
-                  const nextState = !reminderSettings.enabled;
-                  if (nextState) {
-                    await requestNotificationPermission();
-                  }
-                  const updated = { ...reminderSettings, enabled: nextState };
-                  setReminderSettings(updated);
-                  saveStudyReminderSettings(updated);
-                  setReminderSavedMessage(nextState ? 'Reminder enabled' : 'Reminder turned off');
-                  setTimeout(() => setReminderSavedMessage(null), 3000);
-                }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  reminderSettings.enabled ? 'bg-indigo-600' : 'bg-slate-800'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    reminderSettings.enabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            {reminderSettings.enabled && (
-              <>
-                {/* Time Selection */}
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-300">Preferred Reminder Time</label>
-                    <span className="text-xs font-mono font-bold text-indigo-400">
-                      {reminderSettings.reminderTime}
-                    </span>
-                  </div>
-                  <input
-                    type="time"
-                    value={reminderSettings.reminderTime}
-                    onChange={(e) => {
-                      const updated = { ...reminderSettings, reminderTime: e.target.value };
-                      setReminderSettings(updated);
-                      saveStudyReminderSettings(updated);
-                    }}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-indigo-400 text-xs text-white outline-none"
-                  />
-                  {/* Preset quick buttons */}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {[
-                      { label: '6:00 PM (Evening)', time: '18:00' },
-                      { label: '8:00 PM (Default)', time: '20:00' },
-                      { label: '9:30 PM (Night)', time: '21:30' },
-                      { label: '10:30 PM (Late)', time: '22:30' },
-                    ].map((preset) => (
-                      <button
-                        type="button"
-                        key={preset.time}
-                        onClick={() => {
-                          const updated = { ...reminderSettings, reminderTime: preset.time };
-                          setReminderSettings(updated);
-                          saveStudyReminderSettings(updated);
-                          setReminderSavedMessage(`Time set to ${preset.label}`);
-                          setTimeout(() => setReminderSavedMessage(null), 3000);
-                        }}
-                        className={`text-[11px] px-3 py-1.5 rounded-lg border font-semibold transition-all ${
-                          reminderSettings.reminderTime === preset.time
-                            ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500/50 font-bold'
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Content Preferences */}
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
-                  <label className="text-xs font-bold text-slate-300">Summary Content Included</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
-                      { id: 'both', label: 'Tasks & Streak' },
-                      { id: 'tasks_only', label: 'Tasks Only' },
-                      { id: 'streak_only', label: 'Streak Only' },
-                    ].map((opt) => (
-                      <button
-                        type="button"
-                        key={opt.id}
-                        onClick={() => {
-                          const updated = { ...reminderSettings, updateType: opt.id as any };
-                          setReminderSettings(updated);
-                          saveStudyReminderSettings(updated);
-                        }}
-                        className={`p-3 rounded-xl border text-xs text-left transition-all ${
-                          reminderSettings.updateType === opt.id
-                            ? 'bg-indigo-600/20 text-indigo-200 border-indigo-500/50 font-bold'
-                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-300'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Preview of current message */}
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Live Preview of Today's Summary
-                  </div>
-                  {(() => {
-                    const summary = getDailyStudySummary(user, examName || user.exam);
-                    return (
-                      <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-indigo-300 flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5" /> {summary.headlineCopy}
-                          </span>
-                          <span className="text-[10px] text-slate-400">
-                            {summary.isCompletedForToday ? 'Completed' : `${summary.pendingCount} pending`}
-                          </span>
-                        </div>
-                        {summary.pendingTopics.length > 0 ? (
-                          <div className="space-y-1">
-                            {summary.pendingTopics.map((t) => (
-                              <div key={t.id} className="text-slate-300 text-xs flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                                <span>{t.title}</span>
-                              </div>
-                            ))}
-                            <div className="text-xs text-emerald-400 font-semibold pt-1">
-                              {summary.streakCopy}
-                            </div>
+                      {/* Top Row: Icon + Rarity Tag + Pin Button */}
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${badge.accentColor} p-0.5 shadow-lg group-hover:scale-105 transition-transform`}>
+                          <div className="w-full h-full bg-slate-950/90 rounded-[14px] flex items-center justify-center">
+                            <IconComponent className={`w-6 h-6 ${isUnlocked ? 'text-white' : 'text-slate-500'}`} />
                           </div>
-                        ) : (
-                          <p className="text-slate-300 text-xs leading-relaxed">
-                            {summary.streakCopy}
-                          </p>
-                        )}
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          {/* Rarity Pill */}
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                            badge.rarity === 'LEGENDARY' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' :
+                            badge.rarity === 'EPIC' ? 'bg-purple-500/10 text-purple-300 border-purple-500/30' :
+                            badge.rarity === 'RARE' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' :
+                            'bg-slate-800 text-slate-400 border-slate-700'
+                          }`}>
+                            {badge.rarity}
+                          </span>
+
+                          {/* Pin Toggle Button */}
+                          {isUnlocked && (
+                            <button
+                              onClick={() => togglePinBadge(badge.id)}
+                              title={isPinned ? 'Unpin from profile' : 'Pin to profile top'}
+                              className={`p-1.5 rounded-lg border transition-all ${
+                                isPinned
+                                  ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/30'
+                                  : 'bg-slate-800/60 text-slate-400 hover:text-white border-slate-700'
+                              }`}
+                            >
+                              <Pin className="w-3.5 h-3.5 fill-current" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    );
-                  })()}
-                </div>
 
-                {/* Notification Test Action */}
-                <div className="flex items-center justify-between pt-2">
-                  <button
-                    type="button"
-                    disabled={testingNotification}
-                    onClick={async () => {
-                      setTestingNotification(true);
-                      try {
-                        const granted = await requestNotificationPermission();
-                        if (granted && typeof Notification !== 'undefined') {
-                          const summary = getDailyStudySummary(user, examName || user.exam);
-                          new Notification('Daily Study Reminder', {
-                            body: `${summary.headlineCopy}\n${summary.pendingTopics.map(t => t.title).join(', ')}`,
-                            icon: '/favicon.ico',
-                          });
-                          setReminderSavedMessage('Test notification sent!');
-                        } else {
-                          setReminderSavedMessage('Browser notification permission not granted.');
-                        }
-                      } catch {
-                        setReminderSavedMessage('Notification test triggered');
-                      } finally {
-                        setTestingNotification(false);
-                        setTimeout(() => setReminderSavedMessage(null), 3000);
-                      }
-                    }}
-                    className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold border border-slate-800 flex items-center gap-2"
-                  >
-                    <Send className="w-3.5 h-3.5 text-indigo-400" />
-                    <span>Send Test Notification</span>
-                  </button>
+                      {/* Title & Description */}
+                      <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                        {badge.name}
+                      </h4>
+                      <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                        {badge.description}
+                      </p>
 
-                  {reminderSavedMessage && (
-                    <span className="text-xs font-bold text-emerald-400 flex items-center gap-1">
-                      <Check className="w-3.5 h-3.5" /> {reminderSavedMessage}
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
+                      {/* Progress Bar & Status */}
+                      <div className="mt-3 pt-3 border-t border-slate-800/60">
+                        <div className="flex items-center justify-between text-[11px] mb-1 font-bold">
+                          <span className={isUnlocked ? 'text-emerald-400 flex items-center gap-1' : 'text-slate-400'}>
+                            {isUnlocked ? <Check className="w-3 h-3" /> : null}
+                            {isUnlocked ? 'Unlocked' : `${currentVal} / ${badge.targetValue} ${badge.unit}`}
+                          </span>
+                          <span className="text-amber-400 font-extrabold">+{badge.xpReward} XP</span>
+                        </div>
+                        <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isUnlocked ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-slate-700'
+                            }`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         )}
 
-        {/* Tab 2: My Rewards */}
-        {activeTab === 'rewards' && (
-          <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-            {/* Summary Strip */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
-                  <Gift className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-black uppercase text-slate-400">Total Claims</div>
-                  <div className="text-lg font-black text-white">{myClaims.length}</div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
-                <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-[10px] font-black uppercase text-slate-400">Fulfilled Prizes</div>
-                  <div className="text-lg font-black text-emerald-400">{fulfilledCount}</div>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
-                <div>
-                  <div className="text-[10px] font-black uppercase text-slate-400">Reward Milestones</div>
-                  <div className="text-xs font-bold text-slate-300 mt-0.5">Unlock more tiers</div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    if (onNavigateToRewards) onNavigateToRewards();
-                  }}
-                  className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20"
-                >
-                  Browse →
-                </button>
-              </div>
+        {/* ============================================================== */}
+        {/* TAB 3: AWARDS & TROPHIES CABINET */}
+        {/* ============================================================== */}
+        {activeTab === 'awards' && (
+          <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            <div>
+              <h3 className="text-sm font-black text-white flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-purple-400" /> Academic Trophies & Prize Claims
+              </h3>
+              <p className="text-xs text-slate-400">
+                Major milestones unlocked during your preparation journey and physical rewards status.
+              </p>
             </div>
 
-            {/* Claims List */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
-                <Trophy className="w-4 h-4" /> Your Reward Claims History
-              </h3>
+            {/* Awards Trophy Showcase */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {PROFILE_AWARDS.map((award) => {
+                const IconComp = ICON_MAP[award.icon] || Trophy;
+                return (
+                  <div
+                    key={award.id}
+                    className={`p-5 rounded-2xl border transition-all ${
+                      award.unlocked
+                        ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/20 border-purple-500/30 shadow-lg'
+                        : 'bg-slate-950/40 border-slate-800/40 opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-purple-500 to-indigo-600 p-0.5 shrink-0 shadow-lg">
+                        <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                          <IconComp className="w-7 h-7 text-amber-400" />
+                        </div>
+                      </div>
 
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider">
+                            {award.category}
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
+                            {award.rarity}
+                          </span>
+                        </div>
+                        <h4 className="text-base font-black text-white truncate">{award.title}</h4>
+                        <p className="text-xs text-slate-400 line-clamp-2">{award.description}</p>
+                        <p className="text-xs font-bold text-amber-300 pt-1 flex items-center gap-1.5">
+                          <Gift className="w-3.5 h-3.5 text-amber-400" /> {award.rewardText}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Real Reward Claims Status */}
+            <div className="pt-4 border-t border-slate-800/80">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                <Gift className="w-4 h-4 text-amber-400" /> Physical & Digital Prize Claims ({myClaims.length})
+              </h4>
               {loadingClaims ? (
-                <div className="p-12 text-center text-slate-400 space-y-2">
-                  <Loader2 className="w-6 h-6 animate-spin text-amber-400 mx-auto" />
-                  <p className="text-xs font-bold">Loading your reward claims...</p>
+                <div className="p-6 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Loading claims...
                 </div>
               ) : myClaims.length === 0 ? (
-                <div className="p-10 rounded-3xl bg-slate-950/60 border border-slate-800 text-center space-y-3">
-                  <Gift className="w-10 h-10 text-slate-600 mx-auto" />
-                  <div className="text-sm font-bold text-slate-300">You have not claimed any reward milestones yet.</div>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    Complete progressive study hours in the Reward Milestones section to unlock real-world prize kits and printed study merch!
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose();
-                      if (onNavigateToRewards) onNavigateToRewards();
-                    }}
-                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 inline-flex items-center gap-2"
-                  >
-                    <Trophy className="w-4 h-4 fill-current" /> Explore Reward Milestones
-                  </button>
+                <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center space-y-2">
+                  <p className="text-xs text-slate-400">Aapne abhi tak koi physical prize claim nahi kiya hai.</p>
+                  <p className="text-[11px] text-slate-500">Milestones complete karke Books, T-Shirts, aur Tablets claim karein!</p>
+                  {onNavigateToRewards && (
+                    <button
+                      onClick={onNavigateToRewards}
+                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow-md"
+                    >
+                      Milestones Hub Dekhein →
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {myClaims.map((c) => (
-                    <div key={c.id} className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="text-sm font-extrabold text-white">{c.milestoneTitle || 'Study Prize Milestone'}</div>
-                        <div className="text-xs text-slate-400">
-                          Claimed: {new Date(c.claimedAt || Date.now()).toLocaleDateString()} • Verified Time: {c.verifiedMinutesAtClaim || 0} mins
-                        </div>
-                        {c.adminNote && (
-                          <div className="text-xs text-amber-300 bg-amber-500/10 p-2 rounded-xl border border-amber-500/20 mt-1">
-                            Admin Note: {c.adminNote}
-                          </div>
-                        )}
-                      </div>
-
+                <div className="space-y-2">
+                  {myClaims.map((claim: any) => (
+                    <div key={claim.id} className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs">
                       <div>
-                        <span className={`px-3 py-1.5 rounded-full text-xs font-black uppercase border ${
-                          c.status === 'fulfilled'
-                            ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'
-                            : c.status === 'approved'
-                            ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
-                            : c.status === 'rejected'
-                            ? 'bg-rose-500/10 text-rose-300 border-rose-500/30'
-                            : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
-                        }`}>
-                          {c.status}
-                        </span>
+                        <p className="font-extrabold text-white">{claim.milestoneName || 'Prize Reward'}</p>
+                        <p className="text-[10px] text-slate-500">{claim.claimedAt ? new Date(claim.claimedAt).toLocaleDateString() : 'Recent'}</p>
                       </div>
+                      <span className={`px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${
+                        claim.status === 'fulfilled' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
+                        claim.status === 'rejected' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' :
+                        'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                      }`}>
+                        {claim.status || 'Pending Review'}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -1104,19 +934,249 @@ Return ONLY valid JSON format like:
             </div>
           </div>
         )}
-      </motion.div>
 
-      <CustomExamModal
-        isOpen={isCustomModalOpen}
-        onClose={() => setIsCustomModalOpen(false)}
-        userProfile={user}
-        onExamCreated={(newExamId, updatedProfile) => {
-          setExamName(newExamId);
-          if (updatedProfile && onProfileUpdated) {
-            onProfileUpdated(updatedProfile);
-          }
-        }}
-      />
+        {/* ============================================================== */}
+        {/* TAB 4: DYNAMIC CUSTOMIZER & SETTINGS */}
+        {/* ============================================================== */}
+        {activeTab === 'edit' && (
+          <form onSubmit={handleSaveProfile} className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            {/* Section 1: Dynamic Aura Theme Accent */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Palette className="w-4 h-4 text-cyan-400" /> Profile Aura Theme Accent
+              </label>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {THEME_AURA_PRESETS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setThemeAccent(t.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 border ${
+                      themeAccent === t.id
+                        ? `${t.bg} ${t.text} ${t.border} shadow-lg shadow-cyan-500/20 scale-105`
+                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="w-3 h-3 rounded-full" style={{ background: t.glow }} />
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Section 2: Personal Identity */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <User className="w-4 h-4 text-purple-400" /> Personal Identity & Bio
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
+                    placeholder="e.g. Ambuj Yadav"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Target Year</label>
+                  <select
+                    value={targetYear}
+                    onChange={(e) => setTargetYear(Number(e.target.value))}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none cursor-pointer"
+                  >
+                    {[2025, 2026, 2027, 2028, 2029].map((yr) => (
+                      <option key={yr} value={yr} className="bg-slate-900 text-white">
+                        {yr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Bio & Motto */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Student Bio / Persona</label>
+                  <input
+                    type="text"
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
+                    placeholder="e.g. UPSC CSE 2026 Aspirant • Sociology Optional"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Study Battlecry / Motto</label>
+                  <input
+                    type="text"
+                    value={studyGoal}
+                    onChange={(e) => setStudyGoal(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
+                    placeholder="e.g. AIR 1 Mission • Consistency Over Intensity"
+                  />
+                </div>
+              </div>
+
+              {/* Avatar Studio */}
+              <div className="space-y-2 pt-2">
+                <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                  <span>Avatar & Profile Photo</span>
+                  {uploadingPhoto && <span className="text-cyan-400 text-[10px] flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Uploading...</span>}
+                </label>
+
+                <div className="flex items-center gap-4">
+                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-bold text-cyan-300 cursor-pointer transition-all">
+                    <Upload className="w-3.5 h-3.5" /> Upload Custom Photo
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploadingPhoto}
+                    />
+                  </label>
+                  <span className="text-[11px] text-slate-500">Ya select karein niche diye gaye presets me se:</span>
+                </div>
+
+                {/* Preset Avatar Gallery */}
+                <div className="flex items-center gap-2.5 flex-wrap pt-1">
+                  {CURATED_AVATARS.map((av) => (
+                    <button
+                      key={av.id}
+                      type="button"
+                      onClick={() => setAvatarUrl(av.url)}
+                      title={av.label}
+                      className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${
+                        avatarUrl === av.url ? 'border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30' : 'border-slate-800 hover:border-slate-600'
+                      }`}
+                    >
+                      <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: Academic Preferences & Target Exam */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Target className="w-4 h-4 text-emerald-400" /> Academic Exam & Board Details
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Target Exam Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={examName}
+                    onChange={(e) => setExamName(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
+                    placeholder="e.g. UPSC CSE, NDA, NEET, SSC CGL..."
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Exam Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none cursor-pointer"
+                  >
+                    {EXAM_CATEGORIES.map((cat) => (
+                      <option key={cat.id} value={cat.id} className="bg-slate-900 text-white">
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">State / Region</label>
+                  <select
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none cursor-pointer"
+                  >
+                    {INDIAN_STATES_AND_UTS.map((st) => (
+                      <option key={st} value={st} className="bg-slate-900 text-white">
+                        {st}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Board / University</label>
+                  <select
+                    value={boardOrUniversity}
+                    onChange={(e) => setBoardOrUniversity(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none cursor-pointer"
+                  >
+                    {EDUCATIONAL_BOARDS.map((bd) => (
+                      <option key={bd} value={bd} className="bg-slate-900 text-white truncate">
+                        {bd}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Stream / Optional</label>
+                  <input
+                    type="text"
+                    value={streamOrSubject}
+                    onChange={(e) => setStreamOrSubject(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
+                    placeholder="e.g. Science / Arts / Commerce"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Save Trigger Button */}
+            <div className="pt-2 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/25 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {isSaving ? 'Saving Changes...' : 'Save & Sync Profile'}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Custom Exam Modal Fallback */}
+        {isCustomModalOpen && (
+          <CustomExamModal
+            isOpen={isCustomModalOpen}
+            onClose={() => setIsCustomModalOpen(false)}
+            onExamSaved={(customExam) => {
+              setExamName(customExam.title);
+              setCategory('OTHER');
+              setIsCustomModalOpen(false);
+            }}
+          />
+        )}
+      </motion.div>
     </div>
   );
 };

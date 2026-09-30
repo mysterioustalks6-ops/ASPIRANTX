@@ -1868,6 +1868,10 @@ export async function upsertUserToNeon(user: Partial<AdminUserRecord>): Promise<
     avatar_url: user.avatar_url || '',
     status,
     isProfileComplete: user.isProfileComplete !== undefined ? user.isProfileComplete : true,
+    bio: user.bio || '',
+    studyGoal: user.studyGoal || '',
+    pinnedBadges: user.pinnedBadges || [],
+    themeAccent: user.themeAccent || 'cyan',
     joinedAt
   };
 
