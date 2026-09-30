@@ -7,6 +7,7 @@ import fs from 'fs';
 import os from 'os';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { queryPostgres, pgPool } from '../src/lib/postgres.js';
 import {
   type AdminAnnouncement,
   type AiConversationRecord,
@@ -787,6 +788,579 @@ router.post('/api/community/tip', async (req, res) => {
   } catch (err: any) {
     console.error('[POST /api/community/tip] error:', err);
     res.status(500).json({ success: false, error: err.message || 'Internal server error' });
+  }
+});
+
+// ============================================================================
+// LIVE STUDY BATTLE GROUPS & REAL-TIME COMPETITION ENGINE
+// ============================================================================
+
+export interface StudyBattleMemberRecord {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  exam?: string;
+  todayStudyMinutes: number;
+  currentSessionSeconds?: number;
+  isLiveStudying?: boolean;
+  isCamOn?: boolean;
+  isAudioOn?: boolean;
+  activeStatus?: string;
+  lastActive?: string;
+  isHost?: boolean;
+}
+
+export interface StudyBattleGroupRecord {
+  id: string;
+  name: string;
+  description: string;
+  avatar_url: string;
+  banner_url?: string;
+  targetExam: string;
+  dailyGoalHours: number;
+  hostId: string;
+  hostName: string;
+  hostAvatar?: string;
+  videoCallAllowed: boolean;
+  createdAt: string;
+  members: StudyBattleMemberRecord[];
+  memberCount: number;
+  totalHoursStudiedToday: number;
+  announcement?: string;
+}
+
+const DEFAULT_BATTLE_GROUPS: StudyBattleGroupRecord[] = [
+  {
+    id: 'battle_upsc_warriors',
+    name: 'UPSC 12-Hour Warriors (Civil Services League)',
+    description: 'Strict silent study arena for UPSC aspirants. Target: GS Mains + Optional. Camera on or live timer study mandatory. Minimum 6 hours daily goal.',
+    avatar_url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80',
+    banner_url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80',
+    targetExam: 'UPSC_CSE',
+    dailyGoalHours: 12,
+    hostId: 'host_upsc_1',
+    hostName: 'Rohit Sharma (IAS 2026 Focus)',
+    hostAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+    videoCallAllowed: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    memberCount: 8,
+    totalHoursStudiedToday: 38.5,
+    announcement: '🔥 GS-2 Governance revision marathon scheduled from 2 PM to 6 PM. All members stay locked in!',
+    members: [
+      {
+        id: 'host_upsc_1',
+        name: 'Rohit Sharma (IAS 2026 Focus)',
+        avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+        exam: 'UPSC_CSE',
+        todayStudyMinutes: 495,
+        isLiveStudying: true,
+        isCamOn: true,
+        activeStatus: '📖 Laxmikanth Polity Revision Ch 18',
+        lastActive: 'Just now',
+        isHost: true,
+      },
+      {
+        id: 'u_priya_ias',
+        name: 'Priya Patel (IPS Mission)',
+        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        exam: 'UPSC_CSE',
+        todayStudyMinutes: 440,
+        isLiveStudying: true,
+        isCamOn: false,
+        activeStatus: '✍️ GS-1 Geography Answer Writing',
+        lastActive: 'Just now',
+        isHost: false,
+      },
+      {
+        id: 'u_vikram_irs',
+        name: 'Vikram Rajput',
+        avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
+        exam: 'UPSC_CSE',
+        todayStudyMinutes: 380,
+        isLiveStudying: true,
+        isCamOn: true,
+        activeStatus: '🧠 Modern Indian History Spectrum',
+        lastActive: '2m ago',
+        isHost: false,
+      },
+      {
+        id: 'u_neha_ifs',
+        name: 'Neha Roy',
+        avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80',
+        exam: 'UPSC_CSE',
+        todayStudyMinutes: 320,
+        isLiveStudying: false,
+        isCamOn: false,
+        activeStatus: '☕ Chai Break (Back in 10m)',
+        lastActive: '15m ago',
+        isHost: false,
+      },
+    ]
+  },
+  {
+    id: 'battle_neet_top100',
+    name: 'NEET 720 All-India Rankers Room',
+    description: 'Intense NCERT Biology line-by-line revision + Physics HCV Numerical solving sprints. Daily leaderboard decides today\'s Top Medic!',
+    avatar_url: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=200&auto=format&fit=crop&q=80',
+    banner_url: 'https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=800&auto=format&fit=crop&q=80',
+    targetExam: 'NEET_UG',
+    dailyGoalHours: 14,
+    hostId: 'host_neet_1',
+    hostName: 'Dr. Ananya Deshmukh',
+    hostAvatar: 'https://images.unsplash.com/photo-1594824813633-82559b9a6b63?w=100&auto=format&fit=crop&q=80',
+    videoCallAllowed: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    memberCount: 12,
+    totalHoursStudiedToday: 45.2,
+    announcement: '🎯 180 Questions Full Physics Speed Test starting at 5 PM! Join live.',
+    members: [
+      {
+        id: 'host_neet_1',
+        name: 'Dr. Ananya Deshmukh',
+        avatar_url: 'https://images.unsplash.com/photo-1594824813633-82559b9a6b63?w=100&auto=format&fit=crop&q=80',
+        exam: 'NEET_UG',
+        todayStudyMinutes: 520,
+        isLiveStudying: true,
+        isCamOn: true,
+        activeStatus: '🔬 Genetics & Evolution NCERT Drill',
+        lastActive: 'Just now',
+        isHost: true,
+      },
+      {
+        id: 'u_tanmay_neet',
+        name: 'Tanmay Saxena',
+        avatar_url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80',
+        exam: 'NEET_UG',
+        todayStudyMinutes: 475,
+        isLiveStudying: true,
+        isCamOn: false,
+        activeStatus: '✍️ Ray Optics Numerical Practice',
+        lastActive: 'Just now',
+        isHost: false,
+      },
+      {
+        id: 'u_simran_neet',
+        name: 'Simran Kaur',
+        avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80',
+        exam: 'NEET_UG',
+        todayStudyMinutes: 390,
+        isLiveStudying: true,
+        isCamOn: true,
+        activeStatus: '🧪 Organic Reaction Mechanisms',
+        lastActive: '5m ago',
+        isHost: false,
+      }
+    ]
+  },
+  {
+    id: 'battle_jee_advanced',
+    name: 'JEE Advanced Physics & Math Crucible',
+    description: 'For hardcore engineering aspirants aiming for Top 500 AIR. Solving Irodov, Pathfinder, and Advanced PYQs.',
+    avatar_url: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=200&auto=format&fit=crop&q=80',
+    banner_url: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?w=800&auto=format&fit=crop&q=80',
+    targetExam: 'JEE_ADV',
+    dailyGoalHours: 10,
+    hostId: 'host_jee_1',
+    hostName: 'Aryan Singhal (IIT-B Aim)',
+    hostAvatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80',
+    videoCallAllowed: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    memberCount: 9,
+    totalHoursStudiedToday: 32.0,
+    announcement: '⚡ Calculus + Electromagnetism advanced problem session now live.',
+    members: [
+      {
+        id: 'host_jee_1',
+        name: 'Aryan Singhal (IIT-B Aim)',
+        avatar_url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80',
+        exam: 'JEE_ADV',
+        todayStudyMinutes: 460,
+        isLiveStudying: true,
+        isCamOn: true,
+        activeStatus: '✍️ Rotational Dynamics Tough Problems',
+        lastActive: 'Just now',
+        isHost: true,
+      },
+      {
+        id: 'u_kavya_jee',
+        name: 'Kavya Sen',
+        avatar_url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80',
+        exam: 'JEE_ADV',
+        todayStudyMinutes: 415,
+        isLiveStudying: true,
+        isCamOn: false,
+        activeStatus: '🧠 Integral Calculus Area Under Curve',
+        lastActive: '1m ago',
+        isHost: false,
+      }
+    ]
+  },
+  {
+    id: 'battle_night_owls',
+    name: 'Night Owls 4AM Grind Club (All Exams)',
+    description: 'Midnight study warriors who thrive when the rest of the world is asleep. 10 PM to 4 AM silent deep work chamber.',
+    avatar_url: 'https://images.unsplash.com/photo-1507499739999-097706ad8914?w=200&auto=format&fit=crop&q=80',
+    banner_url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop&q=80',
+    targetExam: 'ALL_INDIA',
+    dailyGoalHours: 8,
+    hostId: 'host_night_1',
+    hostName: 'Midnight Monk',
+    hostAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+    videoCallAllowed: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    memberCount: 15,
+    totalHoursStudiedToday: 52.4,
+    announcement: '🌙 Keep the midnight fire burning! Track every minute.',
+    members: [
+      {
+        id: 'host_night_1',
+        name: 'Midnight Monk',
+        avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+        exam: 'ALL_INDIA',
+        todayStudyMinutes: 430,
+        isLiveStudying: true,
+        isCamOn: true,
+        activeStatus: '🎧 Deep Focus Pomodoro Block 4',
+        lastActive: 'Just now',
+        isHost: true,
+      }
+    ]
+  }
+];
+
+const communityBattleGroupsStore = new Map<string, StudyBattleGroupRecord>();
+DEFAULT_BATTLE_GROUPS.forEach(g => communityBattleGroupsStore.set(g.id, g));
+
+let battleGroupsTableInitialized = false;
+async function ensureBattleGroupsTable() {
+  if (battleGroupsTableInitialized || !pgPool) return;
+  try {
+    await queryPostgres(`
+      CREATE TABLE IF NOT EXISTS public.study_battle_groups (
+        id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    const { rows } = await queryPostgres('SELECT id, data FROM public.study_battle_groups;');
+    if (rows && rows.length > 0) {
+      for (const row of rows) {
+        if (row.id && row.data) {
+          communityBattleGroupsStore.set(row.id, row.data);
+        }
+      }
+    } else {
+      // Seed default groups into Neon
+      for (const g of DEFAULT_BATTLE_GROUPS) {
+        await queryPostgres(
+          'INSERT INTO public.study_battle_groups (id, data, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (id) DO NOTHING;',
+          [g.id, JSON.stringify(g)]
+        ).catch(() => {});
+      }
+    }
+    battleGroupsTableInitialized = true;
+  } catch (err) {
+    console.warn('[BattleGroups] Database table init notice:', err);
+  }
+}
+
+// Background trigger
+ensureBattleGroupsTable().catch(() => {});
+
+// GET /api/community/battle-groups
+router.get('/api/community/battle-groups', async (req, res) => {
+  try {
+    await ensureBattleGroupsTable();
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const callerId = verifiedUser?.sub || (req.query.userId as string) || '';
+
+    const list = Array.from(communityBattleGroupsStore.values()).map(g => {
+      const isJoined = callerId ? g.members.some(m => m.id === callerId) : false;
+      const sortedMembers = [...g.members].sort((a, b) => (b.todayStudyMinutes || 0) - (a.todayStudyMinutes || 0));
+      return {
+        ...g,
+        isJoined,
+        members: sortedMembers,
+        memberCount: g.members.length,
+      };
+    });
+
+    res.json({ success: true, groups: list });
+  } catch (err: any) {
+    console.error('[GET /api/community/battle-groups] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to fetch battle groups' });
+  }
+});
+
+// POST /api/community/battle-groups (Host creates a new study arena)
+router.post('/api/community/battle-groups', async (req, res) => {
+  try {
+    await ensureBattleGroupsTable();
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const {
+      name,
+      description,
+      avatar_url,
+      banner_url,
+      targetExam = 'UPSC_CSE',
+      dailyGoalHours = 8,
+      videoCallAllowed = true,
+      announcement
+    } = req.body;
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, error: 'Group name is required' });
+    }
+
+    const hostId = verifiedUser?.sub || req.body.hostId || 'usr_' + Date.now();
+    const hostName = verifiedUser?.name || req.body.hostName || 'Aspirant Host';
+    const hostAvatar = verifiedUser?.avatar_url || req.body.hostAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+
+    const newGroupId = 'battle_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    const newGroup: StudyBattleGroupRecord = {
+      id: newGroupId,
+      name: name.trim(),
+      description: (description || 'Daily high-intensity study battle arena. Compete live and stay disciplined.').trim(),
+      avatar_url: avatar_url || 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80',
+      banner_url: banner_url || 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80',
+      targetExam,
+      dailyGoalHours: Number(dailyGoalHours) || 8,
+      hostId,
+      hostName,
+      hostAvatar,
+      videoCallAllowed: Boolean(videoCallAllowed),
+      createdAt: new Date().toISOString(),
+      announcement: announcement || 'Welcome to the arena! Let\'s break personal study records today.',
+      members: [
+        {
+          id: hostId,
+          name: hostName,
+          avatar_url: hostAvatar,
+          exam: targetExam,
+          todayStudyMinutes: 0,
+          isLiveStudying: true,
+          isCamOn: Boolean(videoCallAllowed),
+          activeStatus: '🚀 Arena Created • Getting Ready',
+          lastActive: 'Just now',
+          isHost: true,
+        }
+      ],
+      memberCount: 1,
+      totalHoursStudiedToday: 0
+    };
+
+    communityBattleGroupsStore.set(newGroup.id, newGroup);
+
+    if (pgPool) {
+      await queryPostgres(
+        'INSERT INTO public.study_battle_groups (id, data, updated_at) VALUES ($1, $2, NOW()) ON CONFLICT (id) DO UPDATE SET data = $2, updated_at = NOW();',
+        [newGroup.id, JSON.stringify(newGroup)]
+      ).catch(() => {});
+    }
+
+    res.json({ success: true, group: { ...newGroup, isJoined: true } });
+  } catch (err: any) {
+    console.error('[POST /api/community/battle-groups] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to create battle group' });
+  }
+});
+
+// PUT /api/community/battle-groups/:id (Host edits profile, rules, or announcement)
+router.put('/api/community/battle-groups/:id', async (req, res) => {
+  try {
+    await ensureBattleGroupsTable();
+    const { id } = req.params;
+    const group = communityBattleGroupsStore.get(id);
+    if (!group) return res.status(404).json({ success: false, error: 'Group not found' });
+
+    const { name, description, avatar_url, banner_url, targetExam, dailyGoalHours, announcement, videoCallAllowed } = req.body;
+
+    if (name) group.name = name.trim();
+    if (description !== undefined) group.description = description.trim();
+    if (avatar_url) group.avatar_url = avatar_url;
+    if (banner_url) group.banner_url = banner_url;
+    if (targetExam) group.targetExam = targetExam;
+    if (dailyGoalHours) group.dailyGoalHours = Number(dailyGoalHours);
+    if (announcement !== undefined) group.announcement = announcement.trim();
+    if (videoCallAllowed !== undefined) group.videoCallAllowed = Boolean(videoCallAllowed);
+
+    communityBattleGroupsStore.set(id, group);
+
+    if (pgPool) {
+      await queryPostgres(
+        'UPDATE public.study_battle_groups SET data = $1, updated_at = NOW() WHERE id = $2;',
+        [JSON.stringify(group), id]
+      ).catch(() => {});
+    }
+
+    res.json({ success: true, group });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Failed to update group' });
+  }
+});
+
+// POST /api/community/battle-groups/:id/join
+router.post('/api/community/battle-groups/:id/join', async (req, res) => {
+  try {
+    await ensureBattleGroupsTable();
+    const { id } = req.params;
+    const group = communityBattleGroupsStore.get(id);
+    if (!group) return res.status(404).json({ success: false, error: 'Battle group not found' });
+
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    const userName = verifiedUser?.name || req.body.userName || 'Aspirant';
+    const userAvatar = verifiedUser?.avatar_url || req.body.userAvatar || '';
+    const userExam = req.body.userExam || group.targetExam;
+
+    const existingIdx = group.members.findIndex(m => m.id === userId);
+    let isJoined = false;
+
+    if (existingIdx >= 0) {
+      // Don't allow host to leave their own group
+      if (group.hostId === userId) {
+        isJoined = true;
+      } else {
+        group.members.splice(existingIdx, 1);
+        isJoined = false;
+      }
+    } else {
+      group.members.push({
+        id: userId,
+        name: userName,
+        avatar_url: userAvatar,
+        exam: userExam,
+        todayStudyMinutes: 0,
+        isLiveStudying: true,
+        isCamOn: false,
+        activeStatus: '🔥 Just Joined Room',
+        lastActive: 'Just now',
+        isHost: group.hostId === userId,
+      });
+      isJoined = true;
+    }
+
+    group.memberCount = group.members.length;
+    communityBattleGroupsStore.set(id, group);
+
+    if (pgPool) {
+      await queryPostgres(
+        'UPDATE public.study_battle_groups SET data = $1, updated_at = NOW() WHERE id = $2;',
+        [JSON.stringify(group), id]
+      ).catch(() => {});
+    }
+
+    res.json({ success: true, isJoined, group });
+  } catch (err: any) {
+    console.error('[POST /api/community/battle-groups/:id/join] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to toggle group join' });
+  }
+});
+
+// POST /api/community/battle-groups/:id/log-study (Logs live study session minutes)
+router.post('/api/community/battle-groups/:id/log-study', async (req, res) => {
+  try {
+    await ensureBattleGroupsTable();
+    const { id } = req.params;
+    const group = communityBattleGroupsStore.get(id);
+    if (!group) return res.status(404).json({ success: false, error: 'Battle group not found' });
+
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    const userName = verifiedUser?.name || req.body.userName || 'Aspirant';
+    const userAvatar = verifiedUser?.avatar_url || req.body.userAvatar || '';
+    const minutes = Math.max(1, Number(req.body.minutes) || 1);
+
+    let member = group.members.find(m => m.id === userId);
+    if (!member) {
+      member = {
+        id: userId,
+        name: userName,
+        avatar_url: userAvatar,
+        exam: group.targetExam,
+        todayStudyMinutes: 0,
+        isLiveStudying: true,
+        isCamOn: false,
+        activeStatus: '📖 Deep Focus Study',
+        lastActive: 'Just now',
+        isHost: group.hostId === userId,
+      };
+      group.members.push(member);
+    }
+
+    member.todayStudyMinutes = (member.todayStudyMinutes || 0) + minutes;
+    member.lastActive = 'Just now';
+    if (req.body.activeStatus) member.activeStatus = req.body.activeStatus;
+    if (req.body.isLiveStudying !== undefined) member.isLiveStudying = Boolean(req.body.isLiveStudying);
+    if (req.body.isCamOn !== undefined) member.isCamOn = Boolean(req.body.isCamOn);
+
+    // Recalculate group total hours
+    const totalMins = group.members.reduce((acc, m) => acc + (m.todayStudyMinutes || 0), 0);
+    group.totalHoursStudiedToday = Math.round((totalMins / 60) * 10) / 10;
+    group.memberCount = group.members.length;
+
+    communityBattleGroupsStore.set(id, group);
+
+    if (pgPool) {
+      await queryPostgres(
+        'UPDATE public.study_battle_groups SET data = $1, updated_at = NOW() WHERE id = $2;',
+        [JSON.stringify(group), id]
+      ).catch(() => {});
+    }
+
+    const sortedMembers = [...group.members].sort((a, b) => (b.todayStudyMinutes || 0) - (a.todayStudyMinutes || 0));
+    res.json({
+      success: true,
+      todayStudyMinutes: member.todayStudyMinutes,
+      group: {
+        ...group,
+        members: sortedMembers
+      }
+    });
+  } catch (err: any) {
+    console.error('[POST /api/community/battle-groups/:id/log-study] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to log study minutes' });
+  }
+});
+
+// POST /api/community/battle-groups/:id/heartbeat (Live presence, cam on/off, activity update)
+router.post('/api/community/battle-groups/:id/heartbeat', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const group = communityBattleGroupsStore.get(id);
+    if (!group) return res.status(404).json({ success: false, error: 'Group not found' });
+
+    const verifiedUser = await extractVerifiedUserFromReq(req);
+    const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
+    const userName = verifiedUser?.name || req.body.userName || 'Aspirant';
+    const userAvatar = verifiedUser?.avatar_url || req.body.userAvatar || '';
+
+    let member = group.members.find(m => m.id === userId);
+    if (!member) {
+      member = {
+        id: userId,
+        name: userName,
+        avatar_url: userAvatar,
+        exam: group.targetExam,
+        todayStudyMinutes: 0,
+        isLiveStudying: true,
+        isCamOn: Boolean(req.body.isCamOn),
+        activeStatus: req.body.activeStatus || '📖 Focused Study',
+        lastActive: 'Just now',
+        isHost: group.hostId === userId,
+      };
+      group.members.push(member);
+    } else {
+      if (req.body.isLiveStudying !== undefined) member.isLiveStudying = Boolean(req.body.isLiveStudying);
+      if (req.body.isCamOn !== undefined) member.isCamOn = Boolean(req.body.isCamOn);
+      if (req.body.activeStatus) member.activeStatus = req.body.activeStatus;
+      member.lastActive = 'Just now';
+    }
+
+    communityBattleGroupsStore.set(id, group);
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

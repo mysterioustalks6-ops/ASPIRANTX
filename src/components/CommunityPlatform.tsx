@@ -4,11 +4,12 @@ import {
   Paperclip, Send, AlertCircle, ShieldCheck, CheckCircle2, ThumbsUp, 
   HelpCircle, MoreHorizontal, Filter, X, Sparkles, UserPlus, UserCheck,
   FileText, Download, Trash2, ArrowUpRight, BarChart2, Radio, Check,
-  Coins, Wallet, Zap, ArrowBigUp, ArrowBigDown, Flame
+  Coins, Wallet, Zap, ArrowBigUp, ArrowBigDown, Flame, Trophy, Crown
 } from 'lucide-react';
 import { CommunityGroup, CommunityPost, CommunityComment, UserProfile } from '../types';
 import { CommunityChat } from './CommunityChat';
 import { CommunityWallet } from './CommunityWallet';
+import { CommunityBattleArena } from './CommunityBattleArena';
 import { Stagger, StaggerItem, PressFeedback, AccordionTransition, ModalTransition } from '../lib/animations';
 
 interface CommunityPlatformProps {
@@ -19,7 +20,7 @@ interface CommunityPlatformProps {
 
 export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfile, selectedExam = 'NEET_UG', onOpenPremium }) => {
   // Navigation & View Mode
-  const [activeSubTab, setActiveSubTab] = useState<'forum' | 'wallet' | 'chat_rooms'>('forum');
+  const [activeSubTab, setActiveSubTab] = useState<'battle_arenas' | 'forum' | 'wallet' | 'chat_rooms'>('battle_arenas');
 
   // Groups & Posts state
   const [groups, setGroups] = useState<CommunityGroup[]>([]);
@@ -517,10 +518,25 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
       </div>
 
       {/* SUB TAB NAVIGATION */}
-      <div className="flex border-b border-slate-200">
+      <div className="flex border-b border-slate-200 overflow-x-auto">
+        <button
+          onClick={() => setActiveSubTab('battle_arenas')}
+          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 shrink-0 ${
+            activeSubTab === 'battle_arenas'
+              ? 'border-rose-500 text-rose-600 bg-rose-50/50'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Trophy className="w-4 h-4 text-amber-500" />
+          <span>⚔️ Live Study Battles & Leaderboard</span>
+          <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-black animate-pulse shadow-sm">
+            Live Compete
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveSubTab('forum')}
-          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 ${
+          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 shrink-0 ${
             activeSubTab === 'forum'
               ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -533,7 +549,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
 
         <button
           onClick={() => setActiveSubTab('wallet')}
-          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 ${
+          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 shrink-0 ${
             activeSubTab === 'wallet'
               ? 'border-orange-500 text-orange-600 bg-orange-50/50'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -546,7 +562,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
 
         <button
           onClick={() => setActiveSubTab('chat_rooms')}
-          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 ${
+          className={`px-5 py-3 text-xs font-bold border-b-2 transition-all flex items-center space-x-2 shrink-0 ${
             activeSubTab === 'chat_rooms'
               ? 'border-indigo-600 text-indigo-600 bg-indigo-50/50'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -556,6 +572,11 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
           <span>Live Study Rooms & AI Moderator Chat</span>
         </button>
       </div>
+
+      {/* VIEW MODE 0: LIVE STUDY BATTLES & COMPETE */}
+      {activeSubTab === 'battle_arenas' && (
+        <CommunityBattleArena user={userProfile} selectedExam={selectedExam} onOpenPremium={onOpenPremium} />
+      )}
 
       {/* VIEW MODE 1: LIVE CHAT ROOMS */}
       {activeSubTab === 'chat_rooms' && (
@@ -567,7 +588,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
         <CommunityWallet userProfile={userProfile} onOpenPremium={onOpenPremium} />
       )}
 
-      {/* VIEW MODE 2: DISCUSSIONS FORUM */}
+      {/* VIEW MODE 3: DISCUSSIONS FORUM */}
       {activeSubTab === 'forum' && (
         <div className="space-y-6">
           {/* CONTROL BAR: SEARCH, FILTERS, SORTS */}

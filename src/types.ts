@@ -544,6 +544,41 @@ export interface LeaderboardEntry {
   exam: string;
 }
 
+export interface StudyBattleMember {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  exam?: string;
+  todayStudyMinutes: number;
+  currentSessionSeconds?: number;
+  isLiveStudying?: boolean;
+  isCamOn?: boolean;
+  isAudioOn?: boolean;
+  activeStatus?: string;
+  lastActive?: string;
+  isHost?: boolean;
+}
+
+export interface StudyBattleGroup {
+  id: string;
+  name: string;
+  description: string;
+  avatar_url: string;
+  banner_url?: string;
+  targetExam: string;
+  dailyGoalHours: number;
+  hostId: string;
+  hostName: string;
+  hostAvatar?: string;
+  videoCallAllowed: boolean;
+  createdAt: string;
+  members: StudyBattleMember[];
+  memberCount: number;
+  totalHoursStudiedToday: number;
+  isJoined?: boolean;
+  announcement?: string;
+}
+
 export interface CommunityGroup {
   id: string;
   name: string;
