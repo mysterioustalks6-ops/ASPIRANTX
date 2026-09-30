@@ -2416,6 +2416,29 @@ export function normalizePyqItem(row: any): any {
   const item = row.data && typeof row.data === 'object' ? { ...row.data, id: row.id || row.data.id } : { ...row };
   if (!item.id && row.id) item.id = row.id;
   if ((item.qualityStatus || 'readable') === 'corrupted') return null;
+
+  // Fallback field mappings for schema differences across tables
+  item.questionText = item.questionText || item.question_text || item.question || '';
+  if (item.correctOption === undefined || item.correctOption === null) {
+    if (typeof item.correct_answer === 'number') {
+      item.correctOption = item.correct_answer;
+    } else if (typeof item.answer === 'number') {
+      item.correctOption = item.answer;
+    } else {
+      item.correctOption = 0;
+    }
+  }
+  item.explanation = item.explanation || item.solutionText || item.solution || '';
+  item.solutionText = item.solutionText || item.explanation || '';
+  item.exam = item.exam || item.exam_id || '';
+  if (typeof item.options === 'string') {
+    try { item.options = JSON.parse(item.options); } catch (_) { item.options = []; }
+  }
+  if (!Array.isArray(item.options)) item.options = [];
+  item.marks = parseFloat(item.marks) || 2.0;
+  item.negativeMarks = parseFloat(item.negativeMarks || item.negative_marks) || 0.66;
+  item.difficulty = item.difficulty || 'Medium';
+
   if ((item.qualityStatus === 'review') && (item.correctOption === -1 || item.correctOption === undefined)) {
     item.correctOption = null;
     item.answerVerified = false;
@@ -2619,6 +2642,44 @@ export const normalizeExam = (e: string): string => {
 
   // Standardize punctuation to underscores
   return raw.replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+};
+
+export const getExamAliases = (e: string): string[] => {
+  if (!e) return [];
+  const norm = normalizeExam(e);
+  const aliases = new Set<string>([norm, String(e).trim().toUpperCase()]);
+  
+  if (norm === 'UPSC_CSE') {
+    aliases.add('UPSC');
+    aliases.add('UPSC_CSE');
+    aliases.add('UPSC_PRELIMS');
+    aliases.add('CIVIL_SERVICES');
+  } else if (norm === 'NEET_UG') {
+    aliases.add('NEET');
+    aliases.add('NEET_UG');
+  } else if (norm === 'SSC_CGL') {
+    aliases.add('SSC');
+    aliases.add('SSC_CGL');
+  } else if (norm === 'NDA_NA') {
+    aliases.add('NDA');
+    aliases.add('NDA_NA');
+  } else if (norm === 'JEE_MAIN') {
+    aliases.add('JEE');
+    aliases.add('JEE_MAIN');
+  } else if (norm === 'IBPS_PO') {
+    aliases.add('IBPS');
+    aliases.add('IBPS_PO');
+  } else if (norm === 'RRB_NTPC') {
+    aliases.add('RRB');
+    aliases.add('RRB_NTPC');
+  } else if (norm === 'UPPSC_PCS') {
+    aliases.add('UPPSC');
+    aliases.add('UPPSC_PCS');
+  } else if (norm === 'BPSC') {
+    aliases.add('BPSC');
+    aliases.add('BPSC_PCS');
+  }
+  return Array.from(aliases);
 };
 
 export interface QuestionRepeatInfo {

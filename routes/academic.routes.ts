@@ -134,6 +134,7 @@ import {
   lockRazorpayEnvironment,
   mapRowToUtrRecord,
   mergeAdminSettings,
+  getExamAliases,
   normalizeExam,
   normalizePyqItem,
   normalizeQuestionItem,
@@ -1101,10 +1102,10 @@ router.get('/api/academic/pyqs', async (req, res) => {
         let pIdx = 1;
 
         if (exam) {
-          const normE = normalizeExam(exam);
-          whereClauses.push(`(UPPER(data->>'exam') = UPPER($${pIdx}) OR UPPER(data->>'exam') = UPPER($${pIdx + 1}))`);
-          params.push(exam, normE);
-          pIdx += 2;
+          const aliases = getExamAliases(exam);
+          whereClauses.push(`UPPER(data->>'exam') = ANY($${pIdx})`);
+          params.push(aliases.map((a: string) => a.toUpperCase()));
+          pIdx++;
         }
         if (subject && subject !== 'All') {
           whereClauses.push(`data->>'subject' ILIKE $${pIdx}`);
@@ -1127,7 +1128,7 @@ router.get('/api/academic/pyqs', async (req, res) => {
           pIdx++;
         }
         if (search) {
-          whereClauses.push(`(data->>'questionText' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx})`);
+          whereClauses.push(`(data->>'questionText' ILIKE $${pIdx} OR data->>'question' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx})`);
           params.push(`%${search}%`);
           pIdx++;
         }
@@ -1146,6 +1147,64 @@ router.get('/api/academic/pyqs', async (req, res) => {
             fetchedFromDb = true;
             total = dbTotal;
             items = dataRes.rows.map(normalizePyqItem).filter(Boolean);
+          }
+        } else {
+          // Secondary fallback to questions table in Neon Postgres
+          const qWhereClauses: string[] = [];
+          const qParams: any[] = [];
+          let qIdx = 1;
+          if (exam) {
+            const aliases = getExamAliases(exam);
+            qWhereClauses.push(`UPPER(exam_id) = ANY($${qIdx})`);
+            qParams.push(aliases.map((a: string) => a.toUpperCase()));
+            qIdx++;
+          }
+          if (subject && subject !== 'All') {
+            qWhereClauses.push(`subject ILIKE $${qIdx}`);
+            qParams.push(`%${subject}%`);
+            qIdx++;
+          }
+          if (topic && topic !== 'All') {
+            qWhereClauses.push(`topic ILIKE $${qIdx}`);
+            qParams.push(`%${topic}%`);
+            qIdx++;
+          }
+          if (difficulty && difficulty !== 'All') {
+            qWhereClauses.push(`difficulty = $${qIdx}`);
+            qParams.push(difficulty);
+            qIdx++;
+          }
+          if (search) {
+            qWhereClauses.push(`(question_text ILIKE $${qIdx} OR topic ILIKE $${qIdx})`);
+            qParams.push(`%${search}%`);
+            qIdx++;
+          }
+          const qWhereSql = qWhereClauses.length > 0 ? `WHERE ${qWhereClauses.join(' AND ')}` : '';
+          const qCountRes = await queryPostgres(`SELECT count(*) FROM questions ${qWhereSql};`, qParams);
+          const qDbTotal = parseInt(qCountRes.rows[0]?.count || '0', 10);
+          if (qDbTotal > 0) {
+            const offset = (pageNum - 1) * pageLimit;
+            const qDataRes = await queryPostgres(
+              `SELECT * FROM questions ${qWhereSql} ORDER BY id ASC LIMIT $${qIdx} OFFSET $${qIdx + 1};`,
+              [...qParams, pageLimit, offset]
+            );
+            if (qDataRes.rows.length > 0) {
+              fetchedFromDb = true;
+              total = qDbTotal;
+              items = qDataRes.rows.map((r: any) => normalizePyqItem({
+                id: r.id,
+                exam: r.exam_id,
+                subject: r.subject,
+                topic: r.topic,
+                questionText: r.question_text,
+                options: r.options,
+                correctOption: typeof r.correct_answer === 'number' ? r.correct_answer : (typeof r.correct_option === 'number' ? r.correct_option : 0),
+                explanation: r.explanation || '',
+                difficulty: r.difficulty || 'Medium',
+                marks: parseFloat(r.marks) || 2.0,
+                negativeMarks: parseFloat(r.negative_marks) || 0.66
+              })).filter(Boolean);
+            }
           }
         }
       } catch (pgErr: any) {
@@ -1295,12 +1354,38 @@ router.get('/api/academic/pyqs', async (req, res) => {
   }
 });
 
-router.get('/api/academic/pyqs/analytics', (req, res) => {
+router.get('/api/academic/pyqs/analytics', async (req, res) => {
   try {
     const exam = (req.query.exam as string) || '';
-    let items = Array.from(pyqStore.values());
-    if (exam) {
-      items = items.filter((i) => normalizeExam(i.exam || '') === normalizeExam(exam));
+    let items: any[] = [];
+    if (process.env.DATABASE_URL) {
+      try {
+        let whereSql = '';
+        let params: any[] = [];
+        if (exam) {
+          const aliases = getExamAliases(exam);
+          whereSql = 'WHERE UPPER(data->>\'exam\') = ANY($1)';
+          params = [aliases.map((a: string) => a.toUpperCase())];
+        }
+        const dataRes = await queryPostgres(`SELECT id, data FROM pyqs ${whereSql};`, params);
+        if (dataRes.rows.length > 0) {
+          items = dataRes.rows.map(normalizePyqItem).filter(Boolean);
+        } else if (exam) {
+          const aliases = getExamAliases(exam);
+          const qRes = await queryPostgres(`SELECT * FROM questions WHERE UPPER(exam_id) = ANY($1);`, [aliases.map((a: string) => a.toUpperCase())]);
+          if (qRes.rows.length > 0) {
+            items = qRes.rows.map(normalizePyqItem).filter(Boolean);
+          }
+        }
+      } catch (err: any) {
+        console.warn('[ACADEMIC POSTGRES] pyqs/analytics query error:', err.message);
+      }
+    }
+    if (items.length === 0) {
+      items = Array.from(pyqStore.values());
+      if (exam) {
+        items = items.filter((i) => normalizeExam(i.exam || '') === normalizeExam(exam));
+      }
     }
 
     const topicStatsMap = new Map<string, { topic: string; total: number; repeated: number; years: Set<number> }>();
@@ -1396,6 +1481,27 @@ router.get('/api/academic/pyqs/:id', async (req, res) => {
     const { id } = req.params;
     if (pyqStore.has(id)) {
       return res.json({ success: true, pyq: pyqStore.get(id) });
+    }
+    if (process.env.DATABASE_URL) {
+      try {
+        const pgRes = await queryPostgres('SELECT id, data FROM pyqs WHERE id = $1 LIMIT 1;', [id]);
+        if (pgRes.rows.length > 0) {
+          const item = normalizePyqItem(pgRes.rows[0]);
+          return res.json({ success: true, pyq: item });
+        }
+        const qbRes = await queryPostgres('SELECT id, data FROM question_bank WHERE id = $1 LIMIT 1;', [id]);
+        if (qbRes.rows.length > 0) {
+          const item = normalizePyqItem(qbRes.rows[0]);
+          return res.json({ success: true, pyq: item });
+        }
+        const qRes = await queryPostgres('SELECT * FROM questions WHERE id = $1 LIMIT 1;', [id]);
+        if (qRes.rows.length > 0) {
+          const item = normalizePyqItem(qRes.rows[0]);
+          return res.json({ success: true, pyq: item });
+        }
+      } catch (pgErr: any) {
+        console.warn('[ACADEMIC POSTGRES] pyqs/:id query notice:', pgErr.message);
+      }
     }
     if (supabaseServer) {
       const { data, error } = await supabaseServer.from('pyqs').select('id, data').eq('id', id).maybeSingle();
@@ -1764,10 +1870,10 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
         let pIdx = 1;
 
         if (exam) {
-          const normE = normalizeExam(exam);
-          whereClauses.push(`(UPPER(exam_id) = UPPER($${pIdx}) OR UPPER(exam_id) = UPPER($${pIdx + 1}))`);
-          params.push(exam, normE);
-          pIdx += 2;
+          const aliases = getExamAliases(exam);
+          whereClauses.push(`UPPER(exam_id) = ANY($${pIdx})`);
+          params.push(aliases.map((a: string) => a.toUpperCase()));
+          pIdx++;
         }
         if (subject && subject !== 'All') {
           whereClauses.push(`subject ILIKE $${pIdx}`);
@@ -1803,7 +1909,7 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
           if (dataRes.rows.length > 0) {
             fetchedFromDb = true;
             total = dbTotal;
-            items = dataRes.rows.map((r: any) => ({
+            items = dataRes.rows.map((r: any) => normalizeQuestionItem({
               id: r.id,
               exam: r.exam_id,
               subject: r.subject,
@@ -1811,7 +1917,7 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
               type: r.question_type || 'mcq',
               questionText: r.question_text,
               options: typeof r.options === 'string' ? JSON.parse(r.options) : (Array.isArray(r.options) ? r.options : []),
-              correctOption: typeof r.correct_answer === 'number' ? r.correct_answer : 0,
+              correctOption: typeof r.correct_answer === 'number' ? r.correct_answer : (typeof r.correct_option === 'number' ? r.correct_option : 0),
               explanation: r.explanation || '',
               solutionText: r.explanation || '',
               difficulty: r.difficulty || 'Medium',
@@ -1820,6 +1926,52 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
               status: 'published',
               verification_status: r.verification_status || 'verified'
             }));
+          }
+        } else {
+          // Fallback to pyqs and question_bank in Neon!
+          const pbClauses: string[] = [];
+          const pbParams: any[] = [];
+          let pbIdx = 1;
+          if (exam) {
+            const aliases = getExamAliases(exam);
+            pbClauses.push(`UPPER(data->>'exam') = ANY($${pbIdx})`);
+            pbParams.push(aliases.map((a: string) => a.toUpperCase()));
+            pbIdx++;
+          }
+          if (subject && subject !== 'All') {
+            pbClauses.push(`data->>'subject' ILIKE $${pbIdx}`);
+            pbParams.push(`%${subject}%`);
+            pbIdx++;
+          }
+          if (topic && topic !== 'All') {
+            pbClauses.push(`data->>'topic' ILIKE $${pbIdx}`);
+            pbParams.push(`%${topic}%`);
+            pbIdx++;
+          }
+          if (difficulty && difficulty !== 'All') {
+            pbClauses.push(`data->>'difficulty' = $${pbIdx}`);
+            pbParams.push(difficulty);
+            pbIdx++;
+          }
+          if (search) {
+            pbClauses.push(`(data->>'questionText' ILIKE $${pbIdx} OR data->>'question' ILIKE $${pbIdx} OR data->>'topic' ILIKE $${pbIdx})`);
+            pbParams.push(`%${search}%`);
+            pbIdx++;
+          }
+          const pbWhereSql = pbClauses.length > 0 ? `WHERE ${pbClauses.join(' AND ')}` : '';
+          const pbCountRes = await queryPostgres(`SELECT count(*) FROM pyqs ${pbWhereSql};`, pbParams);
+          const pbTotal = parseInt(pbCountRes.rows[0]?.count || '0', 10);
+          if (pbTotal > 0) {
+            const offset = (pageNum - 1) * pageLimit;
+            const pbDataRes = await queryPostgres(
+              `SELECT id, data FROM pyqs ${pbWhereSql} LIMIT $${pbIdx} OFFSET $${pbIdx + 1};`,
+              [...pbParams, pageLimit, offset]
+            );
+            if (pbDataRes.rows.length > 0) {
+              fetchedFromDb = true;
+              total = pbTotal;
+              items = pbDataRes.rows.map(normalizeQuestionItem).filter(Boolean);
+            }
           }
         }
       } catch (pgErr: any) {
@@ -1955,6 +2107,27 @@ router.get('/api/academic/questions/:id', async (req, res) => {
     const { id } = req.params;
     if (questionBankStore.has(id)) {
       return res.json({ success: true, question: questionBankStore.get(id) });
+    }
+    if (process.env.DATABASE_URL) {
+      try {
+        const qRes = await queryPostgres('SELECT * FROM questions WHERE id = $1 LIMIT 1;', [id]);
+        if (qRes.rows.length > 0) {
+          const item = normalizeQuestionItem(qRes.rows[0]);
+          return res.json({ success: true, question: item });
+        }
+        const pgRes = await queryPostgres('SELECT id, data FROM pyqs WHERE id = $1 LIMIT 1;', [id]);
+        if (pgRes.rows.length > 0) {
+          const item = normalizeQuestionItem(pgRes.rows[0]);
+          return res.json({ success: true, question: item });
+        }
+        const qbRes = await queryPostgres('SELECT id, data FROM question_bank WHERE id = $1 LIMIT 1;', [id]);
+        if (qbRes.rows.length > 0) {
+          const item = normalizeQuestionItem(qbRes.rows[0]);
+          return res.json({ success: true, question: item });
+        }
+      } catch (pgErr: any) {
+        console.warn('[ACADEMIC POSTGRES] questions/:id query notice:', pgErr.message);
+      }
     }
     if (supabaseServer) {
       // 1. Primary: check pyqs table (where 26k questions live)
@@ -2973,32 +3146,76 @@ router.post('/api/academic/cbt/from-bank', async (req, res) => {
       return res.status(400).json({ error: 'exam is required.' });
     }
 
-    // Pull all questions from questionBankStore matching this exam
-    let pool = Array.from(questionBankStore.values()).filter((q: any) => {
-      const examMatch = normalizeExam(q.exam || '') === normalizeExam(exam);
-      const isPublished = q.status === 'published' || !q.status;
-      const isMcq = q.type === 'mcq' || !q.type;
-      return examMatch && isPublished && isMcq;
-    });
+    let pool: any[] = [];
 
-    // Subject filter (if mode is subject or topic)
-    if (mode !== 'full' && subject) {
-      pool = pool.filter((q: any) =>
-        (q.subject || '').toLowerCase().includes(subject.toLowerCase())
-      );
+    // 1. Authoritative Neon PostgreSQL Question Bank Query
+    if (process.env.DATABASE_URL) {
+      try {
+        const aliases = getExamAliases(exam);
+        const whereClauses: string[] = [`UPPER(exam_id) = ANY($1)`];
+        const params: any[] = [aliases.map((a: string) => a.toUpperCase())];
+        let pIdx = 2;
+
+        if (mode !== 'full' && subject) {
+          whereClauses.push(`subject ILIKE $${pIdx}`);
+          params.push(`%${subject}%`);
+          pIdx++;
+        }
+        if (difficulty && difficulty !== 'Mixed') {
+          whereClauses.push(`difficulty = $${pIdx}`);
+          params.push(difficulty);
+          pIdx++;
+        }
+
+        const dataRes = await queryPostgres(`SELECT * FROM questions WHERE ${whereClauses.join(' AND ')};`, params);
+        if (dataRes.rows.length > 0) {
+          pool = dataRes.rows.map((r: any) => normalizeQuestionItem({
+            id: r.id,
+            exam: r.exam_id,
+            subject: r.subject,
+            topic: r.topic,
+            questionText: r.question_text,
+            options: typeof r.options === 'string' ? JSON.parse(r.options) : (Array.isArray(r.options) ? r.options : []),
+            correctOption: typeof r.correct_answer === 'number' ? r.correct_answer : (typeof r.correct_option === 'number' ? r.correct_option : 0),
+            explanation: r.explanation || '',
+            solutionText: r.explanation || '',
+            difficulty: r.difficulty || 'Medium',
+            marks: parseFloat(r.marks) || 2.0,
+            negativeMarks: parseFloat(r.negative_marks) || 0.66
+          }));
+        }
+      } catch (err: any) {
+        console.warn('[ACADEMIC POSTGRES] from-bank query notice:', err.message);
+      }
+    }
+
+    // 2. In-Memory fallback if Neon returns 0
+    if (pool.length === 0) {
+      pool = Array.from(questionBankStore.values()).filter((q: any) => {
+        const examMatch = normalizeExam(q.exam || '') === normalizeExam(exam);
+        const isPublished = q.status === 'published' || !q.status;
+        const isMcq = q.type === 'mcq' || !q.type;
+        return examMatch && isPublished && isMcq;
+      });
+
+      if (mode !== 'full' && subject) {
+        pool = pool.filter((q: any) =>
+          (q.subject || '').toLowerCase().includes(subject.toLowerCase())
+        );
+      }
+
+      if (difficulty && difficulty !== 'Mixed') {
+        pool = pool.filter((q: any) => q.difficulty === difficulty);
+      }
     }
 
     // Topic filter (if mode is topic and topics provided)
     if (mode === 'topic' && Array.isArray(topics) && topics.length > 0) {
       const topicNorms = topics.map((t: string) => t.toLowerCase().trim());
-      pool = pool.filter((q: any) =>
+      const filtered = pool.filter((q: any) =>
         topicNorms.some((t) => (q.topic || '').toLowerCase().includes(t))
       );
-    }
-
-    // Difficulty filter (optional)
-    if (difficulty && difficulty !== 'Mixed') {
-      pool = pool.filter((q: any) => q.difficulty === difficulty);
+      if (filtered.length > 0) pool = filtered;
     }
 
     // If pool is empty but subject filter was strict, try broader exam-only pool
@@ -3111,30 +3328,61 @@ router.post('/api/academic/cbt/from-bank', async (req, res) => {
 router.get('/api/academic/cbt/bank-stats', async (req, res) => {
   try {
     const { exam } = req.query as { exam?: string };
-    let pool = Array.from(questionBankStore.values()).filter((q: any) =>
-      (q.type === 'mcq' || !q.type) && (q.status === 'published' || !q.status)
-    );
-
-    if (exam) {
-      pool = pool.filter((q: any) => normalizeExam(q.exam || '') === normalizeExam(exam));
-    }
-
-    // Group by exam
     const byExam: Record<string, { total: number; subjects: Record<string, { count: number; topics: string[] }> }> = {};
-    for (const q of pool) {
-      const e = q.exam || 'Unknown';
-      const s = q.subject || 'General';
-      const t = q.topic || '';
-      if (!byExam[e]) byExam[e] = { total: 0, subjects: {} };
-      byExam[e].total++;
-      if (!byExam[e].subjects[s]) byExam[e].subjects[s] = { count: 0, topics: [] };
-      byExam[e].subjects[s].count++;
-      if (t && !byExam[e].subjects[s].topics.includes(t)) {
-        byExam[e].subjects[s].topics.push(t);
+    let totalQuestions = 0;
+
+    if (process.env.DATABASE_URL) {
+      try {
+        let whereSql = '';
+        let params: any[] = [];
+        if (exam) {
+          const aliases = getExamAliases(exam);
+          whereSql = 'WHERE UPPER(exam_id) = ANY($1)';
+          params = [aliases.map((a: string) => a.toUpperCase())];
+        }
+        const qRes = await queryPostgres(`SELECT exam_id, subject, topic, count(*) as count FROM questions ${whereSql} GROUP BY exam_id, subject, topic;`, params);
+        for (const row of qRes.rows) {
+          const e = normalizeExam(row.exam_id) || 'Unknown';
+          const s = row.subject || 'General';
+          const t = row.topic || '';
+          const cnt = parseInt(row.count, 10) || 0;
+          totalQuestions += cnt;
+          if (!byExam[e]) byExam[e] = { total: 0, subjects: {} };
+          byExam[e].total += cnt;
+          if (!byExam[e].subjects[s]) byExam[e].subjects[s] = { count: 0, topics: [] };
+          byExam[e].subjects[s].count += cnt;
+          if (t && !byExam[e].subjects[s].topics.includes(t)) {
+            byExam[e].subjects[s].topics.push(t);
+          }
+        }
+      } catch (err: any) {
+        console.warn('[ACADEMIC POSTGRES] bank-stats query notice:', err.message);
       }
     }
 
-    res.json({ success: true, totalQuestions: pool.length, byExam });
+    if (totalQuestions === 0) {
+      let pool = Array.from(questionBankStore.values()).filter((q: any) =>
+        (q.type === 'mcq' || !q.type) && (q.status === 'published' || !q.status)
+      );
+      if (exam) {
+        pool = pool.filter((q: any) => normalizeExam(q.exam || '') === normalizeExam(exam));
+      }
+      for (const q of pool) {
+        const e = q.exam || 'Unknown';
+        const s = q.subject || 'General';
+        const t = q.topic || '';
+        if (!byExam[e]) byExam[e] = { total: 0, subjects: {} };
+        byExam[e].total++;
+        if (!byExam[e].subjects[s]) byExam[e].subjects[s] = { count: 0, topics: [] };
+        byExam[e].subjects[s].count++;
+        if (t && !byExam[e].subjects[s].topics.includes(t)) {
+          byExam[e].subjects[s].topics.push(t);
+        }
+      }
+      totalQuestions = pool.length;
+    }
+
+    res.json({ success: true, totalQuestions, byExam });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to get bank stats', details: err.message });
   }
