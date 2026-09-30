@@ -144,11 +144,11 @@ app.get('/api/version', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.json({
     version: APP_VERSION,
-    versionCode: Shared.APP_VERSION_CODE || 12,
+    versionCode: Shared.APP_VERSION_CODE || 16,
     apkDownloadUrl: 'https://studyride.in/studyride.apk',
     directApkUrl: 'https://aspirantx.vercel.app/studyride.apk',
-    releaseDate: 'September 29, 2026',
-    releaseNotes: 'Focus Shield BLOCKS engine overhaul with instant App Group blocking, auto-refresh permissions upon returning from Android Settings, granular daily limits, and Google Play Protect compliance optimizations.',
+    releaseDate: 'September 30, 2026',
+    releaseNotes: 'v2.5.8: Live Study Battle Arena with real-time study stopwatch & leaderboards, Avatar sync persistence, and Focus Shield digital wellbeing.',
     timestamp: new Date().toISOString()
   });
 });

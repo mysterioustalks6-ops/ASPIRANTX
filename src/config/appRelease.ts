@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.5.7',
-  versionCode: 15,
+  version: '2.5.8',
+  versionCode: 16,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
-  releaseDate: 'September 29, 2026',
+  releaseDate: 'September 30, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v2.5.7: Focus Shield BLOCKS engine overhaul with instant App Group blocking, auto-refresh permissions upon returning from Android Settings, granular daily limits, and Google Play Protect compliance optimizations.',
+  releaseNotes: 'v2.5.8: Live Study Battle Arena with real-time study stopwatch & leaderboards, Avatar sync persistence, and Focus Shield digital wellbeing.',
 };
