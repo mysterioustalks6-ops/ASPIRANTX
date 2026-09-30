@@ -19,6 +19,7 @@ import {
   computeStudyTelemetry,
   StudyTelemetryData
 } from '../data/profileBadgesData';
+import { resolveUserAvatar, storeUserAvatar, syncAvatarToServer } from '../lib/avatarStorage';
 import { 
   User, 
   Target, 
@@ -105,8 +106,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   // Profile Form States
   const [name, setName] = useState<string>(user.name || '');
   const [avatarUrl, setAvatarUrl] = useState<string>(() => {
-    const local = typeof window !== 'undefined' ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null;
-    return local || user.avatar_url || CURATED_AVATARS[0].url;
+    return resolveUserAvatar(user.avatar_url, user.id, user.email);
   });
   const [bio, setBio] = useState<string>(user.bio || 'Future Civil Servant / High-Performance Aspirant');
   const [studyGoal, setStudyGoal] = useState<string>(user.studyGoal || 'Daily Consistency • Master Syllabus • Crack Target Exam');
@@ -157,8 +157,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   useEffect(() => {
     if (user) {
       setName(user.name || '');
-      const localAvatar = typeof window !== 'undefined' ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null;
-      setAvatarUrl(localAvatar || user.avatar_url || CURATED_AVATARS[0].url);
+      setAvatarUrl(resolveUserAvatar(user.avatar_url, user.id, user.email));
       setBio(user.bio || 'Future Civil Servant / High-Performance Aspirant');
       setStudyGoal(user.studyGoal || 'Daily Consistency • Master Syllabus • Crack Target Exam');
       setExamName(user.exam || 'UPSC CSE (IAS/IPS)');
@@ -236,13 +235,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           ctx.drawImage(img, 0, 0, width, height);
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
           setAvatarUrl(compressedDataUrl);
-          try {
-            localStorage.setItem(`aspirantx_avatar_${user.id}`, compressedDataUrl);
-            const cacheKey = `aspirantx_profile_cache_${user.id}`;
-            const existingRaw = localStorage.getItem(cacheKey);
-            const existing = existingRaw ? JSON.parse(existingRaw) : {};
-            localStorage.setItem(cacheKey, JSON.stringify({ ...existing, avatar_url: compressedDataUrl, updatedAt: new Date().toISOString() }));
-          } catch (_) {}
+          storeUserAvatar(compressedDataUrl, user.id, user.email);
+          syncAvatarToServer(compressedDataUrl, user.email, user.id);
           if (onProfileUpdated) {
             onProfileUpdated({ ...user, avatar_url: compressedDataUrl });
           }
@@ -282,10 +276,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
     setSaveSuccessMessage(null);
 
     try {
-      const resolvedAvatar = avatarUrl ||
-        localStorage.getItem(`aspirantx_avatar_${user.id}`) ||
-        user.avatar_url ||
-        CURATED_AVATARS[0].url;
+      const resolvedAvatar = resolveUserAvatar(avatarUrl, user.id, user.email);
 
       const updatedProfile: UserProfile = {
         ...user,
@@ -304,8 +295,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         isProfileComplete: true,
       };
 
-      // 1. Instant local storage update (both v1 and v3 keys, plus dedicated avatar key)
-      localStorage.setItem(`aspirantx_avatar_${user.id}`, resolvedAvatar);
+      // 1. Instant local storage update across all keys
+      storeUserAvatar(resolvedAvatar, user.id, user.email);
+      syncAvatarToServer(resolvedAvatar, user.email, user.id);
       localStorage.setItem(`aspirantx_user_profile_${user.id}`, JSON.stringify(updatedProfile));
       localStorage.setItem(`aspirantx_user_profile_v3_${user.id}`, JSON.stringify(updatedProfile));
       saveStudyReminderSettings(reminderSettings);
@@ -1143,13 +1135,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       type="button"
                       onClick={() => {
                         setAvatarUrl(av.url);
-                        try {
-                          localStorage.setItem(`aspirantx_avatar_${user.id}`, av.url);
-                          const cacheKey = `aspirantx_profile_cache_${user.id}`;
-                          const existingRaw = localStorage.getItem(cacheKey);
-                          const existing = existingRaw ? JSON.parse(existingRaw) : {};
-                          localStorage.setItem(cacheKey, JSON.stringify({ ...existing, avatar_url: av.url, updatedAt: new Date().toISOString() }));
-                        } catch (_) {}
+                        storeUserAvatar(av.url, user.id, user.email);
+                        syncAvatarToServer(av.url, user.email, user.id);
                         if (onProfileUpdated) {
                           onProfileUpdated({ ...user, avatar_url: av.url });
                         }

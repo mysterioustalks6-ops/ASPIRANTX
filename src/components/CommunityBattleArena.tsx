@@ -8,6 +8,7 @@ import {
   Smile, ThumbsUp, Send, Heart, Star
 } from 'lucide-react';
 import { UserProfile, StudyBattleGroup, StudyBattleMember } from '../types';
+import { resolveUserAvatar } from '../lib/avatarStorage';
 
 interface CommunityBattleArenaProps {
   user: UserProfile;
@@ -251,7 +252,7 @@ export const CommunityBattleArena: React.FC<CommunityBattleArenaProps> = ({
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const avatar = user.avatar_url || localStorage.getItem(`aspirantx_avatar_${user.id}`) || '';
+      const avatar = resolveUserAvatar(user.avatar_url, user.id, user.email);
 
       const res = await fetch(`/api/community/battle-groups/${activeGroup.id}/log-study`, {
         method: 'POST',
@@ -284,7 +285,7 @@ export const CommunityBattleArena: React.FC<CommunityBattleArenaProps> = ({
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const avatar = user.avatar_url || localStorage.getItem(`aspirantx_avatar_${user.id}`) || '';
+      const avatar = resolveUserAvatar(user.avatar_url, user.id, user.email);
 
       const res = await fetch(`/api/community/battle-groups/${group.id}/join`, {
         method: 'POST',
@@ -321,7 +322,7 @@ export const CommunityBattleArena: React.FC<CommunityBattleArenaProps> = ({
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const avatar = user.avatar_url || localStorage.getItem(`aspirantx_avatar_${user.id}`) || '';
+      const avatar = resolveUserAvatar(user.avatar_url, user.id, user.email);
 
       const res = await fetch('/api/community/battle-groups', {
         method: 'POST',
@@ -736,7 +737,7 @@ export const CommunityBattleArena: React.FC<CommunityBattleArenaProps> = ({
                   <div className="flex flex-col items-center justify-center my-auto z-10">
                     <div className="relative">
                       <img
-                        src={user.avatar_url || localStorage.getItem(`aspirantx_avatar_${user.id}`) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                        src={resolveUserAvatar(user.avatar_url, user.id, user.email)}
                         alt={user.name}
                         className="w-20 h-20 rounded-2xl object-cover border-2 border-indigo-400 shadow-lg shadow-indigo-500/30"
                       />

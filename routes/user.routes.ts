@@ -977,7 +977,7 @@ router.get('/api/user/profile', async (req, res) => {
   if (pgPool) {
     try {
       const dbRes = await queryPostgres(
-        'SELECT data FROM admin_users WHERE LOWER(email) = LOWER($1) OR id = $2 LIMIT 1',
+        'SELECT data FROM admin_users WHERE LOWER(email) = LOWER($1) OR id = $2 ORDER BY updated_at DESC LIMIT 1',
         [email, userId]
       );
       if (dbRes.rows && dbRes.rows.length > 0 && dbRes.rows[0].data) {
@@ -2551,14 +2551,95 @@ router.post('/api/user/update-profile', async (req, res) => {
       await supabaseServer.from('user_profiles').update(dbUpdates).eq('id', verifiedUser.sub);
     }
 
-    res.json({ 
-      success: true,
-      message: 'Profile successfully synchronized to Neon database and session cache'
-    });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
+      res.json({ 
+        success: true,
+        message: 'Profile successfully synchronized to Neon database and session cache'
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.post('/api/user/avatar', async (req, res) => {
+    try {
+      const verifiedUser = await extractVerifiedUserFromReq(req);
+      const email = (verifiedUser?.email || req.body?.email || '').trim().toLowerCase();
+      const userId = (verifiedUser?.sub || req.body?.userId || '').trim();
+      const avatar_url = (req.body?.avatar_url || '').trim();
+
+      if (!avatar_url) {
+        return res.status(400).json({ error: 'avatar_url is required' });
+      }
+
+      // 1. Update in-memory user record
+      for (let i = 0; i < adminUsersDb.length; i++) {
+        if ((email && adminUsersDb[i].email?.toLowerCase() === email) || (userId && adminUsersDb[i].id === userId)) {
+          adminUsersDb[i].avatar_url = avatar_url;
+        }
+      }
+
+      // 2. Persist to Neon PostgreSQL admin_users
+      if (pgPool && (email || userId)) {
+        try {
+          await queryPostgres(
+            `UPDATE admin_users 
+             SET data = jsonb_set(COALESCE(data, '{}'::jsonb), '{avatar_url}', to_jsonb($1::text)),
+                 updated_at = NOW()
+             WHERE (email IS NOT NULL AND LOWER(email) = LOWER($2)) OR id = $3`,
+            [avatar_url, email || 'none', userId || 'none']
+          );
+        } catch (err: any) {
+          console.warn('[Neon avatar update error]:', err?.message || err);
+        }
+      }
+
+      saveAdminStoreToDisk();
+
+      return res.json({
+        success: true,
+        avatar_url,
+        message: 'Avatar persisted successfully to database and cache'
+      });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  router.get('/api/user/avatar', async (req, res) => {
+    try {
+      const email = (req.query.email as string || '').trim().toLowerCase();
+      const userId = (req.query.userId as string || '').trim();
+
+      if (!email && !userId) {
+        return res.status(400).json({ error: 'email or userId is required' });
+      }
+
+      // 1. Check Neon PostgreSQL
+      if (pgPool) {
+        try {
+          const dbRes = await queryPostgres(
+            `SELECT data->>'avatar_url' as avatar_url FROM admin_users 
+             WHERE (email IS NOT NULL AND LOWER(email) = LOWER($1)) OR id = $2 
+             ORDER BY updated_at DESC LIMIT 1`,
+            [email || 'none', userId || 'none']
+          );
+          if (dbRes.rows && dbRes.rows.length > 0 && dbRes.rows[0].avatar_url) {
+            return res.json({ success: true, avatar_url: dbRes.rows[0].avatar_url });
+          }
+        } catch (_) {}
+      }
+
+      // 2. Check in-memory store
+      const memMatch = adminUsersDb.find(u => (email && u.email?.toLowerCase() === email) || (userId && u.id === userId));
+      if (memMatch && memMatch.avatar_url) {
+        return res.json({ success: true, avatar_url: memMatch.avatar_url });
+      }
+
+      return res.json({ success: true, avatar_url: null });
+    } catch (err: any) {
+      return res.status(500).json({ error: err.message });
+    }
+  });
 
 router.post('/api/study/heartbeat', async (req, res) => {
   try {

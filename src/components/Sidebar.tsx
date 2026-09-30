@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ActiveTab, UserProfile } from '../types';
+import { resolveUserAvatar } from '../lib/avatarStorage';
 import { EXAM_LIST } from '../lib/examList';
 import { 
   BookOpen, 
@@ -844,7 +845,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 title={`${user.name} - My Account Settings`}
               >
                 <img
-                  src={user.avatar_url || (user.id ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                  src={resolveUserAvatar(user.avatar_url, user.id, user.email)}
                   alt={user.name}
                   className="w-8 h-8 rounded-full object-cover border border-slate-700 group-hover:border-sky-500 transition-colors"
                 />
@@ -866,7 +867,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="flex items-center gap-2.5 overflow-hidden cursor-pointer group flex-1 min-w-0"
               >
                 <img
-                  src={user.avatar_url || (user.id ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                  src={resolveUserAvatar(user.avatar_url, user.id, user.email)}
                   alt={user.name}
                   className="w-8 h-8 rounded-full object-cover border border-slate-700 group-hover:border-sky-500 transition-colors shrink-0"
                 />

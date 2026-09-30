@@ -4,6 +4,7 @@ import { PageTransition } from './lib/animations';
 import { UserProfile, ActiveTab } from './types';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { loadUserProfile, saveUserProfile } from './lib/gamification';
+import { resolveUserAvatar, storeUserAvatar } from './lib/avatarStorage';
 import { recordPerfMarker } from './lib/apiDeduplicator';
 import { logAuthDiagnostic } from './lib/authDiagnostics';
 import { EXAM_LIST } from './lib/examList';
@@ -180,7 +181,7 @@ function AppContent() {
           userId: user.id,
           targetExam: norm,
           exam: norm,
-          avatar_url: user.avatar_url || localAv || existing.avatar_url,
+          avatar_url: resolveUserAvatar(user.avatar_url, user.id, user.email),
           profileComplete: true,
           updatedAt: new Date().toISOString(),
         }));
@@ -693,10 +694,11 @@ function AppContent() {
           const cachedExam = (cachedProfile?.targetExam || cachedProfile?.exam || localStorage.getItem('aspirantx_global_selected_exam') || 'NEET_UG');
 
           if (hasValidCache) {
-            const cachedAvatar = localStorage.getItem(`aspirantx_avatar_${session.user.id}`) ||
-              cachedProfile.avatar_url ||
-              session.user.user_metadata?.avatar_url ||
-              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+            const cachedAvatar = resolveUserAvatar(
+              cachedProfile.avatar_url,
+              session.user.id,
+              email
+            );
 
             const immediateUser: UserProfile = {
               id: session.user.id,
@@ -777,7 +779,7 @@ function AppContent() {
                 id: session.user.id,
                 name: profile.name || session.user.user_metadata?.full_name || email.split('@')[0] || 'Aspirant',
                 email,
-                avatar_url: localStorage.getItem(`aspirantx_avatar_${session.user.id}`) || profile.avatar_url || session.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                avatar_url: resolveUserAvatar(profile.avatar_url, session.user.id, email),
                 role: isDesignatedAdmin ? 'ADMIN' : (profile.role || 'USER'),
                 isProfileComplete: isComp,
               };
@@ -934,8 +936,7 @@ function AppContent() {
 
             setUser((prev) => {
               const isComp = Boolean(profile.isProfileComplete || (profile.exam && profile.exam.trim() !== '') || prev?.isProfileComplete);
-              const localAv = localStorage.getItem(`aspirantx_avatar_${session.user.id}`);
-              const resolvedAvatar = localAv || profile.avatar_url || prev?.avatar_url || session.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+              const resolvedAvatar = resolveUserAvatar(profile.avatar_url || prev?.avatar_url, session.user.id, email);
               const next: UserProfile = {
                 ...prev,
                 ...profile,
@@ -1102,6 +1103,7 @@ function AppContent() {
 
           const immediateUser: UserProfile = {
             ...u,
+            avatar_url: resolveUserAvatar(u.avatar_url, u.id, u.email),
             exam: storedExam,
             isProfileComplete: true,
             role: (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) ? 'ADMIN' : (u.role || 'USER'),

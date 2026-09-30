@@ -1,5 +1,6 @@
 import { UserProfile, StudySession } from '../types';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { resolveUserAvatar, storeUserAvatar, getStoredUserAvatar } from './avatarStorage';
 
 const getProfileKey = (userId?: string) => `aspirantx_user_profile_v3_${userId || 'guest'}`;
 const getSessionsKey = (userId?: string) => `aspirantx_study_sessions_v3_${userId || 'guest'}`;
@@ -171,11 +172,9 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
   if (profile.referralEarnings === undefined) profile.referralEarnings = 200;
 
   // Check local avatar storage cache
-  if (userId) {
-    const localAvatar = localStorage.getItem(`aspirantx_avatar_${userId}`);
-    if (localAvatar && localAvatar.trim() !== '') {
-      profile.avatar_url = localAvatar;
-    }
+  const localAvatar = getStoredUserAvatar(userId, profile.email);
+  if (localAvatar && localAvatar.trim() !== '') {
+    profile.avatar_url = localAvatar;
   }
 
   // Fetch authoritative user profile from Neon database API
@@ -190,7 +189,7 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
         const json = await res.json().catch(() => ({}));
         if (json.success && json.profile) {
           const p = json.profile;
-          const localAvatar = localStorage.getItem(`aspirantx_avatar_${userId}`);
+          const resolvedServerAvatar = resolveUserAvatar(p.avatar_url, userId, p.email || profile.email);
           profile = {
             ...profile,
             name: p.name || profile.name,
@@ -201,7 +200,7 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
             streamOrSubject: p.streamOrSubject || profile.streamOrSubject,
             targetYear: p.targetYear || profile.targetYear,
             isProfileComplete: p.isProfileComplete ?? profile.isProfileComplete,
-            avatar_url: p.avatar_url || localAvatar || profile.avatar_url || '',
+            avatar_url: resolvedServerAvatar || localAvatar || profile.avatar_url || '',
             bio: p.bio !== undefined && p.bio !== '' ? p.bio : profile.bio,
             studyGoal: p.studyGoal !== undefined && p.studyGoal !== '' ? p.studyGoal : profile.studyGoal,
             pinnedBadges: (Array.isArray(p.pinnedBadges) && p.pinnedBadges.length > 0) ? p.pinnedBadges : profile.pinnedBadges,
@@ -213,10 +212,8 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
             role: p.role || profile.role,
             isPremium: p.isPremium !== undefined ? p.isPremium : profile.isPremium,
           };
-          if (p.avatar_url) {
-            try {
-              localStorage.setItem(`aspirantx_avatar_${userId}`, p.avatar_url);
-            } catch (_) {}
+          if (profile.avatar_url) {
+            storeUserAvatar(profile.avatar_url, userId, profile.email);
           }
         }
       }
@@ -368,21 +365,8 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
   const key = getProfileKey(profile.id);
   localStorage.setItem(key, JSON.stringify(profile));
 
-  if (profile.id) {
-    try {
-      if (profile.avatar_url) {
-        localStorage.setItem(`aspirantx_avatar_${profile.id}`, profile.avatar_url);
-      }
-      localStorage.setItem(`aspirantx_profile_cache_${profile.id}`, JSON.stringify({
-        userId: profile.id,
-        name: profile.name,
-        targetExam: profile.exam,
-        avatar_url: profile.avatar_url,
-        profileComplete: Boolean(profile.isProfileComplete || (profile.exam && profile.exam.trim() !== '')),
-        targetYear: profile.targetYear,
-        updatedAt: new Date().toISOString()
-      }));
-    } catch (e) {}
+  if (profile.avatar_url) {
+    storeUserAvatar(profile.avatar_url, profile.id, profile.email);
   }
 
   // Broadcast custom update event

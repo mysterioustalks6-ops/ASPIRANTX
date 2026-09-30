@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { motion, AnimatePresence } from 'motion/react';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '../lib/supabase';
 import { UserProfile } from '../types';
+import { resolveUserAvatar } from '../lib/avatarStorage';
 import { startDemoSession } from '../lib/demoSession';
 import { logAuthDiagnostic } from '../lib/authDiagnostics';
 import { 
@@ -115,7 +116,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             id: data.user.id,
             name: data.user.user_metadata?.full_name || (isAdminUser ? 'Ambuj Yadav (Admin)' : email.split('@')[0]) || 'Aspirant',
             email,
-            avatar_url: localStorage.getItem(`aspirantx_avatar_${data.user.id}`) || data.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+            avatar_url: resolveUserAvatar(data.user.user_metadata?.avatar_url, data.user.id, email),
             exam: isAdminUser ? 'UPSC_CSE' : 'NEET_UG',
             targetYear: 2026,
             streakDays: isAdminUser ? 45 : 1,
@@ -146,7 +147,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       id: 'demo-guest-123',
       name: '',
       email: 'guest@studyride.in',
-      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+      avatar_url: resolveUserAvatar(null, 'demo-guest-123', 'guest@studyride.in'),
       exam: '',
       targetYear: 2026,
       streakDays: 1,

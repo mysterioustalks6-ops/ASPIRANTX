@@ -15,6 +15,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
+import { resolveUserAvatar } from '../lib/avatarStorage';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -379,7 +380,7 @@ export const Header: React.FC<HeaderProps> = ({
           aria-label="Open Profile"
         >
           <img
-            src={user?.avatar_url || (user?.id ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+            src={resolveUserAvatar(user?.avatar_url, user?.id, user?.email)}
             alt="Profile"
             className="w-full h-full rounded-lg object-cover border border-slate-700"
           />
