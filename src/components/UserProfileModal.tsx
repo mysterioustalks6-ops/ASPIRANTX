@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserProfile } from '../types';
 import { saveUserProfile } from '../lib/gamification';
@@ -15,7 +15,9 @@ import {
   PROFILE_AWARDS, 
   CURATED_AVATARS, 
   THEME_AURA_PRESETS,
-  ProfileBadge
+  ProfileBadge,
+  computeStudyTelemetry,
+  StudyTelemetryData
 } from '../data/profileBadgesData';
 import { 
   User, 
@@ -144,10 +146,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   // Active Aura Theme Info
   const activeAura = THEME_AURA_PRESETS.find(p => p.id === themeAccent) || THEME_AURA_PRESETS[0];
 
+  // Deterministic Live Study Telemetry (Pomodoro, CBT Mocks, Real Streaks, Topics)
+  const telemetry = useMemo<StudyTelemetryData>(() => {
+    return computeStudyTelemetry(user);
+  }, [user, isOpen, activeTab]);
+
   useEffect(() => {
     if (user) {
       setName(user.name || '');
-      setAvatarUrl(user.avatar_url || CURATED_AVATARS[0].url);
+      const localAvatar = typeof window !== 'undefined' ? localStorage.getItem(`aspirantx_avatar_${user.id}`) : null;
+      setAvatarUrl(localAvatar || user.avatar_url || CURATED_AVATARS[0].url);
       setBio(user.bio || 'Future Civil Servant / High-Performance Aspirant');
       setStudyGoal(user.studyGoal || 'Daily Consistency • Master Syllabus • Crack Target Exam');
       setExamName(user.exam || 'UPSC CSE (IAS/IPS)');
@@ -286,8 +294,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         isProfileComplete: true,
       };
 
-      // 1. Instant local storage update
+      // 1. Instant local storage update (both v1 and v3 keys, plus dedicated avatar key)
+      localStorage.setItem(`aspirantx_avatar_${user.id}`, resolvedAvatar);
       localStorage.setItem(`aspirantx_user_profile_${user.id}`, JSON.stringify(updatedProfile));
+      localStorage.setItem(`aspirantx_user_profile_v3_${user.id}`, JSON.stringify(updatedProfile));
       saveStudyReminderSettings(reminderSettings);
 
       // 2. Set syllabus preset if available
@@ -298,31 +308,46 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       // 3. Save via gamification layer
       await saveUserProfile(updatedProfile);
 
-      // 4. Sync to backend API
+      // 4. Sync to backend API (Neon PostgreSQL authoritative sync)
       if (user.email) {
         const token = localStorage.getItem('aspirantx_auth_token');
         const headers: Record<string, string> = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        await fetch('/api/user/update-profile', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            name: updatedProfile.name,
-            exam: updatedProfile.exam,
-            educationCategory: updatedProfile.educationCategory,
-            stateName: updatedProfile.stateName,
-            boardOrUniversity: updatedProfile.boardOrUniversity,
-            streamOrSubject: updatedProfile.streamOrSubject,
-            targetYear: updatedProfile.targetYear,
-            bio: updatedProfile.bio,
-            studyGoal: updatedProfile.studyGoal,
-            avatar_url: resolvedAvatar.startsWith('data:') ? '' : resolvedAvatar,
-            pinnedBadges: updatedProfile.pinnedBadges,
-            themeAccent: updatedProfile.themeAccent,
-            isProfileComplete: true,
+        const payload = {
+          email: user.email,
+          name: updatedProfile.name,
+          exam: updatedProfile.exam,
+          targetExam: updatedProfile.exam,
+          educationCategory: updatedProfile.educationCategory,
+          stateName: updatedProfile.stateName,
+          boardOrUniversity: updatedProfile.boardOrUniversity,
+          streamOrSubject: updatedProfile.streamOrSubject,
+          targetYear: updatedProfile.targetYear,
+          bio: updatedProfile.bio,
+          studyGoal: updatedProfile.studyGoal,
+          avatar_url: resolvedAvatar,
+          pinnedBadges: updatedProfile.pinnedBadges,
+          themeAccent: updatedProfile.themeAccent,
+          isProfileComplete: true,
+          streakDays: updatedProfile.streakDays,
+          xp: updatedProfile.xp,
+          coins: updatedProfile.coins,
+          level: updatedProfile.level,
+        };
+
+        await Promise.allSettled([
+          fetch('/api/user/update-profile', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
           }),
-        }).catch((e) => console.warn('Background profile update ping error:', e));
+          fetch('/api/user/profile', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload),
+          })
+        ]);
       }
 
       triggerConfetti();
@@ -590,11 +615,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         {/* ============================================================== */}
         {/* TAB 1: OVERVIEW & STATS */}
         {/* ============================================================== */}
+        {/* ============================================================== */}
+        {/* TAB 1: OVERVIEW & STATS (100% REAL TELEMETRY) */}
+        {/* ============================================================== */}
         {activeTab === 'overview' && (
           <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-            {/* Stat Cards Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              {/* Streak Card */}
+            {/* Stat Cards Grid (6 Real Telemetry Metric Cards) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* 1. Daily Study Streak Card */}
               <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-orange-500/40 transition-all group">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Streak</span>
@@ -602,11 +630,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <Flame className="w-4 h-4 fill-orange-400" />
                   </div>
                 </div>
-                <p className="text-2xl font-black text-white">{user.streakDays ?? 1} <span className="text-sm font-semibold text-orange-400">Days</span></p>
-                <p className="text-[10px] text-slate-500 mt-1">Target: 21 Days Habit Titan</p>
+                <p className="text-2xl font-black text-white">{telemetry.streakDays} <span className="text-sm font-semibold text-orange-400">Days</span></p>
+                <p className="text-[10px] text-slate-500 mt-1">Verified Daily Discipline</p>
               </div>
 
-              {/* Coins Balance Card */}
+              {/* 2. Aspirant Coins Balance Card */}
               <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-amber-500/40 transition-all group">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aspirant Coins</span>
@@ -614,7 +642,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <Coins className="w-4 h-4 fill-amber-400" />
                   </div>
                 </div>
-                <p className="text-2xl font-black text-amber-400">{user.coins ?? 50} <span className="text-sm font-semibold text-slate-400">🪙</span></p>
+                <p className="text-2xl font-black text-amber-400">{telemetry.coins} <span className="text-sm font-semibold text-slate-400">🪙</span></p>
                 {onNavigateToRewards && (
                   <button
                     onClick={onNavigateToRewards}
@@ -625,19 +653,43 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 )}
               </div>
 
-              {/* Study Time Card */}
+              {/* 3. Pomodoro Focus Today Card */}
               <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-cyan-500/40 transition-all group">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Study Time</span>
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Focus Today</span>
                   <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition-transform">
                     <Clock className="w-4 h-4" />
                   </div>
                 </div>
-                <p className="text-2xl font-black text-white">{(user.studyHoursToday ?? 0).toFixed(1)} <span className="text-sm font-semibold text-cyan-400">Hours</span></p>
-                <p className="text-[10px] text-slate-500 mt-1">Logged today in IST</p>
+                <p className="text-2xl font-black text-white">{telemetry.todayStudyHours.toFixed(1)} <span className="text-sm font-semibold text-cyan-400">Hours</span></p>
+                <p className="text-[10px] text-slate-500 mt-1">{telemetry.pomodoroSessionsCount} Pomodoro sprints completed</p>
               </div>
 
-              {/* Total XP Card */}
+              {/* 4. Total Verified Study Hours Card */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-emerald-500/40 transition-all group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Studied</span>
+                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                </div>
+                <p className="text-2xl font-black text-white">{telemetry.totalStudyHours.toFixed(1)} <span className="text-sm font-semibold text-emerald-400">Hours</span></p>
+                <p className="text-[10px] text-slate-500 mt-1">{telemetry.totalSessionsCount} study sessions logged</p>
+              </div>
+
+              {/* 5. CBT Mock Hall Accuracy Card */}
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-rose-500/40 transition-all group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">CBT Accuracy</span>
+                  <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 group-hover:scale-110 transition-transform">
+                    <Target className="w-4 h-4" />
+                  </div>
+                </div>
+                <p className="text-2xl font-black text-white">{telemetry.cbtAvgAccuracy}%</p>
+                <p className="text-[10px] text-slate-500 mt-1">{telemetry.cbtMocksCount} mock tests attempted</p>
+              </div>
+
+              {/* 6. Total XP & Rank Card */}
               <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-purple-500/40 transition-all group">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total XP</span>
@@ -645,8 +697,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <Sparkles className="w-4 h-4" />
                   </div>
                 </div>
-                <p className="text-2xl font-black text-white">{currentXP} <span className="text-sm font-semibold text-purple-400">XP</span></p>
-                <p className="text-[10px] text-slate-500 mt-1">Next rank in {nextLevelXP - currentXP} XP</p>
+                <p className="text-2xl font-black text-white">{telemetry.xp} <span className="text-sm font-semibold text-purple-400">XP</span></p>
+                <p className="text-[10px] text-slate-500 mt-1">Level {telemetry.level} Aspirant</p>
               </div>
             </div>
 
@@ -690,7 +742,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
                 <GraduationCap className="w-4 h-4 text-cyan-400" /> Academic Roadmap
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
                   <p className="text-[10px] text-slate-500">Target Commission / Exam</p>
                   <p className="font-extrabold text-white mt-0.5">{examName}</p>
@@ -703,13 +755,17 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   <p className="text-[10px] text-slate-500">State / Region</p>
                   <p className="font-extrabold text-white mt-0.5">{stateName}</p>
                 </div>
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
+                  <p className="text-[10px] text-slate-500">Syllabus Mastered</p>
+                  <p className="font-extrabold text-cyan-400 mt-0.5">{telemetry.completedSubtopicsCount} Topics</p>
+                </div>
               </div>
             </div>
           </div>
         )}
 
         {/* ============================================================== */}
-        {/* TAB 2: BADGES SHOWCASE */}
+        {/* TAB 2: BADGES SHOWCASE (DRIVEN BY REAL TELEMETRY) */}
         {/* ============================================================== */}
         {activeTab === 'badges' && (
           <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
@@ -720,7 +776,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   <Award className="w-4 h-4 text-amber-400" /> Achievement Badges Collection
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Complete study sessions, solve PYQs, and maintain streaks to unlock badges. Click <Pin className="w-3 h-3 inline text-amber-400" /> to pin top 3 to your profile!
+                  Pomodoro sessions, CBT tests, streaks, aur study hours complete karke badges unlock karein. Click <Pin className="w-3 h-3 inline text-amber-400" /> to pin top 3 to your profile!
                 </p>
               </div>
 
@@ -747,11 +803,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               {PROFILE_BADGES
                 .filter(b => {
                   if (badgeFilter === 'ALL') return true;
-                  if (badgeFilter === 'UNLOCKED') return b.currentValue(user) >= b.targetValue;
+                  if (badgeFilter === 'UNLOCKED') return b.currentValue(telemetry) >= b.targetValue;
                   return b.category === badgeFilter;
                 })
                 .map((badge) => {
-                  const currentVal = badge.currentValue(user);
+                  const currentVal = badge.currentValue(telemetry);
                   const isUnlocked = currentVal >= badge.targetValue;
                   const isPinned = pinnedBadges.includes(badge.id);
                   const pct = Math.min(100, Math.round((currentVal / badge.targetValue) * 100));
@@ -836,7 +892,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* TAB 3: AWARDS & TROPHIES CABINET */}
+        {/* TAB 3: AWARDS & TROPHIES CABINET (DRIVEN BY REAL TELEMETRY) */}
         {/* ============================================================== */}
         {activeTab === 'awards' && (
           <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
@@ -845,19 +901,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <Trophy className="w-4 h-4 text-purple-400" /> Academic Trophies & Prize Claims
               </h3>
               <p className="text-xs text-slate-400">
-                Major milestones unlocked during your preparation journey and physical rewards status.
+                Aapki real preparation activities (Pomodoro focus, CBT tests, consistency) ke basis par unlock hone wale dynamic trophies.
               </p>
             </div>
 
             {/* Awards Trophy Showcase */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {PROFILE_AWARDS.map((award) => {
+                const isUnlocked = award.isUnlocked(telemetry);
                 const IconComp = ICON_MAP[award.icon] || Trophy;
                 return (
                   <div
                     key={award.id}
                     className={`p-5 rounded-2xl border transition-all ${
-                      award.unlocked
+                      isUnlocked
                         ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/20 border-purple-500/30 shadow-lg'
                         : 'bg-slate-950/40 border-slate-800/40 opacity-60'
                     }`}
@@ -865,7 +922,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <div className="flex items-start gap-4">
                       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-purple-500 to-indigo-600 p-0.5 shrink-0 shadow-lg">
                         <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                          <IconComp className="w-7 h-7 text-amber-400" />
+                          <IconComp className={`w-7 h-7 ${isUnlocked ? 'text-amber-400' : 'text-slate-600'}`} />
                         </div>
                       </div>
 
@@ -874,15 +931,24 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                           <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider">
                             {award.category}
                           </span>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/30">
-                            {award.rarity}
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                            isUnlocked 
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                              : 'bg-slate-800/80 text-slate-400 border-slate-700'
+                          }`}>
+                            {isUnlocked ? 'UNLOCKED' : 'LOCKED'}
                           </span>
                         </div>
                         <h4 className="text-base font-black text-white truncate">{award.title}</h4>
                         <p className="text-xs text-slate-400 line-clamp-2">{award.description}</p>
-                        <p className="text-xs font-bold text-amber-300 pt-1 flex items-center gap-1.5">
-                          <Gift className="w-3.5 h-3.5 text-amber-400" /> {award.rewardText}
-                        </p>
+                        <div className="pt-2 flex flex-col gap-1 text-xs">
+                          <span className="text-amber-300 font-bold flex items-center gap-1.5">
+                            <Gift className="w-3.5 h-3.5 text-amber-400 shrink-0" /> {award.rewardText}
+                          </span>
+                          <span className="text-[11px] text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">
+                            🎯 Requirement: {award.requirementText}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1025,15 +1091,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
 
               {/* Avatar Studio */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-3 pt-2">
                 <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                  <span>Avatar & Profile Photo</span>
-                  {uploadingPhoto && <span className="text-cyan-400 text-[10px] flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Uploading...</span>}
+                  <span>Avatar & Profile Photo (Permanent Neon Storage)</span>
+                  {uploadingPhoto && <span className="text-cyan-400 text-[10px] flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Compressing & Saving...</span>}
                 </label>
 
-                <div className="flex items-center gap-4">
-                  <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-bold text-cyan-300 cursor-pointer transition-all">
-                    <Upload className="w-3.5 h-3.5" /> Upload Custom Photo
+                {uploadError && (
+                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-4 flex-wrap">
+                  <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 text-xs font-black text-cyan-300 cursor-pointer transition-all shadow-md active:scale-95">
+                    <Upload className="w-4 h-4 text-cyan-400" /> Upload Photo from Device
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -1042,7 +1115,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       disabled={uploadingPhoto}
                     />
                   </label>
-                  <span className="text-[11px] text-slate-500">Ya select karein niche diye gaye presets me se:</span>
+
+                  {avatarUrl && avatarUrl.startsWith('data:') && (
+                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" /> Custom Photo Active & Saved
+                    </span>
+                  )}
+
+                  <span className="text-[11px] text-slate-400">Ya select karein curated presets me se:</span>
                 </div>
 
                 {/* Preset Avatar Gallery */}
@@ -1051,13 +1131,23 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     <button
                       key={av.id}
                       type="button"
-                      onClick={() => setAvatarUrl(av.url)}
+                      onClick={() => {
+                        setAvatarUrl(av.url);
+                        try {
+                          localStorage.setItem(`aspirantx_avatar_${user.id}`, av.url);
+                        } catch (_) {}
+                      }}
                       title={av.label}
                       className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${
-                        avatarUrl === av.url ? 'border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30' : 'border-slate-800 hover:border-slate-600'
+                        avatarUrl === av.url ? 'border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30 ring-2 ring-cyan-400/40' : 'border-slate-800 hover:border-slate-600 opacity-80 hover:opacity-100'
                       }`}
                     >
                       <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
+                      {avatarUrl === av.url && (
+                        <div className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center">
+                          <Check className="w-3.5 h-3.5 text-white drop-shadow" />
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>

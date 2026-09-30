@@ -769,7 +769,7 @@ function AppContent() {
                 id: session.user.id,
                 name: profile.name || session.user.user_metadata?.full_name || email.split('@')[0] || 'Aspirant',
                 email,
-                avatar_url: session.user.user_metadata?.avatar_url || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                avatar_url: localStorage.getItem(`aspirantx_avatar_${session.user.id}`) || profile.avatar_url || session.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
                 role: isDesignatedAdmin ? 'ADMIN' : (profile.role || 'USER'),
                 isProfileComplete: isComp,
               };
@@ -932,7 +932,7 @@ function AppContent() {
                 id: session.user.id,
                 name: profile.name || prev?.name || session.user.user_metadata?.full_name || email.split('@')[0] || 'Aspirant',
                 email,
-                avatar_url: session.user.user_metadata?.avatar_url || profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+                avatar_url: localStorage.getItem(`aspirantx_avatar_${session.user.id}`) || profile.avatar_url || prev?.avatar_url || session.user.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
                 role: isDesignatedAdmin ? 'ADMIN' : (profile.role || 'USER'),
                 isProfileComplete: isComp,
               };

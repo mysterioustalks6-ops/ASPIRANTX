@@ -1851,32 +1851,42 @@ export async function upsertUserToNeon(user: Partial<AdminUserRecord>): Promise<
   const status = user.status || 'ACTIVE';
   const joinedAt = user.joinedAt || new Date().toISOString();
 
+  // 1. Check existing record in memory or Neon cache to preserve values on partial updates
+  const idx = adminUsersDb.findIndex(u => u.id === userId || (u.email && u.email.toLowerCase() === email));
+  const existing = idx >= 0 ? adminUsersDb[idx] : undefined;
+
+  const resolvedAvatar = (user.avatar_url !== undefined && user.avatar_url !== '') 
+    ? user.avatar_url 
+    : (existing?.avatar_url || '');
+
   const adminUserData: AdminUserRecord = {
     id: userId,
     user_id: userId,
-    name,
+    name: user.name || existing?.name || name,
     email,
-    role,
-    isPremium,
-    planName,
-    streakDays,
-    xp,
-    coins,
-    level,
-    exam,
-    stateName: user.stateName || 'All India',
-    avatar_url: user.avatar_url || '',
-    status,
-    isProfileComplete: user.isProfileComplete !== undefined ? user.isProfileComplete : true,
-    bio: user.bio || '',
-    studyGoal: user.studyGoal || '',
-    pinnedBadges: user.pinnedBadges || [],
-    themeAccent: user.themeAccent || 'cyan',
-    joinedAt
+    role: user.role || existing?.role || role,
+    isPremium: user.isPremium !== undefined ? Boolean(user.isPremium) : (existing?.isPremium ?? isPremium),
+    planName: user.planName || existing?.planName || planName,
+    streakDays: user.streakDays !== undefined ? Number(user.streakDays) : (existing?.streakDays ?? streakDays),
+    xp: user.xp !== undefined ? Number(user.xp) : (existing?.xp ?? xp),
+    coins: user.coins !== undefined ? Number(user.coins) : (existing?.coins ?? coins),
+    level: user.level !== undefined ? Number(user.level) : (existing?.level ?? level),
+    exam: user.exam || existing?.exam || exam,
+    stateName: user.stateName || existing?.stateName || 'All India',
+    boardOrUniversity: user.boardOrUniversity || existing?.boardOrUniversity || 'CBSE',
+    streamOrSubject: user.streamOrSubject || existing?.streamOrSubject || 'General Studies',
+    targetYear: user.targetYear || existing?.targetYear || 2026,
+    avatar_url: resolvedAvatar,
+    status: user.status || existing?.status || status,
+    isProfileComplete: user.isProfileComplete !== undefined ? user.isProfileComplete : (existing?.isProfileComplete ?? true),
+    bio: user.bio !== undefined ? user.bio : (existing?.bio || ''),
+    studyGoal: user.studyGoal !== undefined ? user.studyGoal : (existing?.studyGoal || ''),
+    pinnedBadges: (Array.isArray(user.pinnedBadges) && user.pinnedBadges.length > 0) ? user.pinnedBadges : (existing?.pinnedBadges || []),
+    themeAccent: user.themeAccent || existing?.themeAccent || 'cyan',
+    joinedAt: user.joinedAt || existing?.joinedAt || joinedAt
   };
 
-  // 1. Sync in-memory store
-  const idx = adminUsersDb.findIndex(u => u.id === userId || (u.email && u.email.toLowerCase() === email));
+  // Sync in-memory store
   if (idx >= 0) {
     adminUsersDb[idx] = { ...adminUsersDb[idx], ...adminUserData };
   } else {

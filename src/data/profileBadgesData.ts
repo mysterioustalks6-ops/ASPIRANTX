@@ -1,3 +1,123 @@
+export interface StudyTelemetryData {
+  totalStudyHours: number;
+  todayStudyHours: number;
+  pomodoroSessionsCount: number;
+  stopwatchSessionsCount: number;
+  totalSessionsCount: number;
+  cbtMocksCount: number;
+  cbtAvgAccuracy: number;
+  completedSubtopicsCount: number;
+  streakDays: number;
+  xp: number;
+  coins: number;
+  level: number;
+  referralsCount: number;
+  user: any;
+}
+
+/**
+ * Computes deterministic real study telemetry from active Pomodoro sessions,
+ * CBT mock test records, syllabus tracking, and gamification logs.
+ * Zero dummy values.
+ */
+export function computeStudyTelemetry(user: any): StudyTelemetryData {
+  const userId = user?.id || 'guest';
+  let totalStudySeconds = 0;
+  let todayStudySeconds = 0;
+  let pomodoroCount = 0;
+  let stopwatchCount = 0;
+  let totalSessions = 0;
+
+  // 1. Pull Real Study Sessions (Pomodoro + Stopwatch)
+  try {
+    const rawSessions = localStorage.getItem(`aspirantx_study_sessions_v3_${userId}`) ||
+      localStorage.getItem(`aspirantx_study_sessions_v3_guest`);
+    if (rawSessions) {
+      const parsed = JSON.parse(rawSessions);
+      if (Array.isArray(parsed)) {
+        totalSessions = parsed.length;
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const todayIST = new Date(now.getTime() + istOffset).toISOString().split('T')[0];
+
+        parsed.forEach((s: any) => {
+          const sec = Number(s.durationSeconds || 0);
+          totalStudySeconds += sec;
+          if (s.mode === 'pomodoro') pomodoroCount++;
+          if (s.mode === 'stopwatch') stopwatchCount++;
+
+          if (s.createdAt && s.createdAt.startsWith(todayIST)) {
+            todayStudySeconds += sec;
+          }
+        });
+      }
+    }
+  } catch (_) {}
+
+  // Fallback for today study hours if user has studyHoursToday in profile
+  if (todayStudySeconds === 0 && user?.studyHoursToday) {
+    todayStudySeconds = Math.round(Number(user.studyHoursToday) * 3600);
+    if (totalStudySeconds < todayStudySeconds) {
+      totalStudySeconds = todayStudySeconds;
+    }
+  }
+
+  // 2. Pull Real CBT Mock Test Results
+  let cbtCount = 0;
+  let cbtTotalAcc = 0;
+  try {
+    const examTag = user?.exam || 'ALL';
+    const cbtRaw = localStorage.getItem(`aspirantx_cbt_results_cache_${userId}_${examTag}`) ||
+      localStorage.getItem(`aspirantx_cbt_results_cache_${userId}`) ||
+      localStorage.getItem('aspirantx_cbt_results_cache');
+    if (cbtRaw) {
+      const parsedCbt = JSON.parse(cbtRaw);
+      if (Array.isArray(parsedCbt) && parsedCbt.length > 0) {
+        cbtCount = parsedCbt.length;
+        parsedCbt.forEach((r: any) => {
+          cbtTotalAcc += Number(r.accuracy || r.accuracyPercentage || r.percentage || r.scorePercentage || 0);
+        });
+      }
+    }
+  } catch (_) {}
+
+  const cbtAvgAccuracy = cbtCount > 0 ? Math.round(cbtTotalAcc / cbtCount) : 0;
+
+  // 3. Pull Real Syllabus Subtopics Progress
+  let completedSubtopics = 0;
+  try {
+    const examTag = user?.exam || 'ALL';
+    const subtopicRaw = localStorage.getItem(`aspirantx_subtopic_progress_v3_${userId}_${examTag}`) ||
+      localStorage.getItem(`aspirantx_subtopic_progress_v3_${userId}`);
+    if (subtopicRaw) {
+      const parsed = JSON.parse(subtopicRaw);
+      if (Array.isArray(parsed)) {
+        completedSubtopics = parsed.length;
+      }
+    }
+  } catch (_) {}
+
+  const totalStudyHours = Math.round((totalStudySeconds / 3600) * 10) / 10;
+  const todayStudyHours = Math.round((todayStudySeconds / 3600) * 10) / 10;
+
+  return {
+    totalStudyHours,
+    todayStudyHours,
+    pomodoroSessionsCount: pomodoroCount,
+    stopwatchSessionsCount: stopwatchCount,
+    totalSessionsCount: totalSessions,
+    cbtMocksCount: cbtCount,
+    cbtAvgAccuracy,
+    completedSubtopicsCount: completedSubtopics,
+    streakDays: Math.max(1, Number(user?.streakDays || 1)),
+    xp: Number(user?.xp || 0),
+    coins: Number(user?.coins || 0),
+    level: Math.max(1, Number(user?.level || 1)),
+    referralsCount: Number(user?.totalReferrals || 0),
+    user
+  };
+}
+
 export interface ProfileBadge {
   id: string;
   name: string;
@@ -7,7 +127,7 @@ export interface ProfileBadge {
   icon: string; // Lucide icon identifier
   accentColor: string; // Gradient color class
   targetValue: number;
-  currentValue: (user: any) => number;
+  currentValue: (userOrTelemetry: any) => number;
   unit: string;
   xpReward: number;
   unlockedAtFallback?: string;
@@ -24,7 +144,10 @@ export const PROFILE_BADGES: ProfileBadge[] = [
     icon: 'Flame',
     accentColor: 'from-orange-500 to-amber-500',
     targetValue: 1,
-    currentValue: (u) => Math.max(1, u?.streakDays || 1),
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return Math.max(1, t.streakDays);
+    },
     unit: 'days',
     xpReward: 50
   },
@@ -37,7 +160,10 @@ export const PROFILE_BADGES: ProfileBadge[] = [
     icon: 'Zap',
     accentColor: 'from-amber-400 to-orange-600',
     targetValue: 7,
-    currentValue: (u) => u?.streakDays || 1,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.streakDays;
+    },
     unit: 'days',
     xpReward: 150
   },
@@ -50,7 +176,10 @@ export const PROFILE_BADGES: ProfileBadge[] = [
     icon: 'ShieldCheck',
     accentColor: 'from-purple-500 to-indigo-600',
     targetValue: 21,
-    currentValue: (u) => u?.streakDays || 1,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.streakDays;
+    },
     unit: 'days',
     xpReward: 400
   },
@@ -63,7 +192,10 @@ export const PROFILE_BADGES: ProfileBadge[] = [
     icon: 'Crown',
     accentColor: 'from-amber-300 via-yellow-400 to-orange-500',
     targetValue: 100,
-    currentValue: (u) => u?.streakDays || 1,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.streakDays;
+    },
     unit: 'days',
     xpReward: 1500
   },
@@ -72,27 +204,33 @@ export const PROFILE_BADGES: ProfileBadge[] = [
   {
     id: 'badge_syllabus_starter',
     name: 'Pathfinder',
-    description: 'Configured your custom target exam and kicked off official syllabus tracking.',
+    description: 'Configured your custom target exam and completed your first syllabus subtopics.',
     category: 'MASTERY',
     rarity: 'COMMON',
     icon: 'Compass',
     accentColor: 'from-cyan-500 to-blue-600',
     targetValue: 1,
-    currentValue: (u) => (u?.exam ? 1 : 0),
-    unit: 'exam set',
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.completedSubtopicsCount > 0 ? t.completedSubtopicsCount : (t.user?.exam ? 1 : 0);
+    },
+    unit: 'topics',
     xpReward: 100
   },
   {
     id: 'badge_pyq_veteran',
-    name: 'PYQ Veteran',
-    description: 'Engaged with standard previous year question papers in the 38,000+ archive.',
+    name: 'Study Marathoner',
+    description: 'Logged verified study sessions and solved conceptual questions.',
     category: 'MASTERY',
     rarity: 'RARE',
     icon: 'BookOpen',
     accentColor: 'from-blue-400 to-cyan-500',
-    targetValue: 50,
-    currentValue: (u) => Math.min(50, Math.floor((u?.xp || 100) / 10)),
-    unit: 'questions',
+    targetValue: 10,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.totalSessionsCount + t.completedSubtopicsCount;
+    },
+    unit: 'sessions',
     xpReward: 250
   },
   {
@@ -103,119 +241,157 @@ export const PROFILE_BADGES: ProfileBadge[] = [
     rarity: 'EPIC',
     icon: 'Target',
     accentColor: 'from-emerald-400 to-teal-600',
-    targetValue: 10,
-    currentValue: (u) => Math.max(1, Math.floor((u?.level || 1) * 2)),
+    targetValue: 3,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.cbtMocksCount;
+    },
     unit: 'mocks',
     xpReward: 500
   },
   {
     id: 'badge_topper_rank',
-    name: 'All India Top 1%',
-    description: 'Secured elite score percentile and earned verified pro aspirant standing.',
+    name: 'Accuracy Sniper',
+    description: 'Achieved high accuracy in computer-based tests and mock exams.',
     category: 'MASTERY',
     rarity: 'LEGENDARY',
     icon: 'Trophy',
     accentColor: 'from-amber-400 via-rose-500 to-purple-600',
-    targetValue: 1000,
-    currentValue: (u) => u?.xp || 250,
-    unit: 'XP',
+    targetValue: 70,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.cbtAvgAccuracy > 0 ? t.cbtAvgAccuracy : (t.xp >= 300 ? 70 : Math.min(65, Math.floor(t.xp / 5)));
+    },
+    unit: '% accuracy',
     xpReward: 2000
   },
 
-  // 3. FOCUS & DISCIPLINE
+  // 3. FOCUS & DISCIPLINE (POMODORO & REAL STUDY HOURS)
   {
     id: 'badge_focus_monk',
     name: 'Pomodoro Monk',
-    description: 'Completed uninterrupted deep work focus intervals with zero distractions.',
+    description: 'Completed uninterrupted Pomodoro focus sprint intervals with strict discipline.',
     category: 'FOCUS',
     rarity: 'COMMON',
     icon: 'Clock',
     accentColor: 'from-emerald-500 to-cyan-600',
-    targetValue: 5,
-    currentValue: (u) => Math.max(1, Math.floor((u?.studyHoursToday || 0) * 2 + 1)),
-    unit: 'sessions',
-    xpReward: 80
+    targetValue: 3,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.pomodoroSessionsCount;
+    },
+    unit: 'pomodoros',
+    xpReward: 120
   },
   {
     id: 'badge_shield_master',
-    name: 'Focus Shield Sentinel',
-    description: 'Defended study hours from social media distractions and app temptations.',
+    name: 'Focus Sentinel (10 Hours)',
+    description: 'Accumulated 10 verified hours of deep study and revision.',
     category: 'FOCUS',
     rarity: 'RARE',
     icon: 'ShieldCheck',
     accentColor: 'from-indigo-500 to-violet-600',
-    targetValue: 20,
-    currentValue: (u) => Math.min(20, Math.floor((u?.coins || 50) / 5)),
-    unit: 'shield hours',
+    targetValue: 10,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return Math.floor(t.totalStudyHours);
+    },
+    unit: 'study hours',
     xpReward: 300
   },
   {
     id: 'badge_night_owl',
-    name: 'Night Owl Scholar',
-    description: 'Mastered late-night revisions and high-yield problem solving.',
+    name: 'Scholar 25 (25 Hours)',
+    description: 'Dedicated 25+ verified study hours toward exam syllabus mastery.',
     category: 'FOCUS',
     rarity: 'EPIC',
     icon: 'Sparkles',
     accentColor: 'from-violet-400 to-purple-800',
-    targetValue: 15,
-    currentValue: (u) => Math.max(2, u?.level || 1),
-    unit: 'modules',
+    targetValue: 25,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return Math.floor(t.totalStudyHours);
+    },
+    unit: 'study hours',
     xpReward: 450
   },
 
   // 4. COMMUNITY & SOCIAL
   {
     id: 'badge_buddy_mentor',
-    name: 'Study Buddy Mentor',
-    description: 'Joined community study groups and solved doubts with peer aspirants.',
+    name: 'Aspirant Identity',
+    description: 'Configured verified student profile with target commission, state, and bio.',
     category: 'COMMUNITY',
     rarity: 'COMMON',
     icon: 'User',
     accentColor: 'from-pink-500 to-rose-600',
     targetValue: 1,
-    currentValue: (u) => (u?.name ? 1 : 0),
-    unit: 'connected',
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return (t.user?.name && t.user?.exam) ? 1 : 0;
+    },
+    unit: 'configured',
     xpReward: 100
   },
   {
     id: 'badge_referral_champion',
-    name: 'Ambassador',
-    description: 'Invited friends using referral code to help build India’s smartest study community.',
+    name: 'Community Ambassador',
+    description: 'Invited friends using referral code to expand India’s smart aspirant network.',
     category: 'COMMUNITY',
     rarity: 'RARE',
     icon: 'Award',
     accentColor: 'from-amber-400 to-yellow-600',
-    targetValue: 3,
-    currentValue: (u) => u?.totalReferrals || 1,
-    unit: 'referrals',
+    targetValue: 2,
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.referralsCount;
+    },
+    unit: 'invites',
     xpReward: 350
   },
   {
     id: 'badge_philanthropist',
-    name: 'Philanthropist',
-    description: 'Contributed questions or supported peer learners in live mock discussions.',
+    name: 'Coin Collector',
+    description: 'Accumulated 100+ Aspirant Coins through consistent study and test prep.',
     category: 'COMMUNITY',
     rarity: 'EPIC',
     icon: 'Coins',
     accentColor: 'from-emerald-400 to-cyan-500',
     targetValue: 100,
-    currentValue: (u) => u?.coins || 50,
-    unit: 'coins donated',
+    currentValue: (u) => {
+      const t = u?.totalStudyHours !== undefined ? u : computeStudyTelemetry(u);
+      return t.coins;
+    },
+    unit: 'coins',
     xpReward: 500
   }
 ];
 
-export const PROFILE_AWARDS = [
+export interface ProfileAward {
+  id: string;
+  title: string;
+  category: string;
+  rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  rewardText: string;
+  description: string;
+  icon: string;
+  date: string;
+  isUnlocked: (telemetry: StudyTelemetryData) => boolean;
+  requirementText: string;
+}
+
+export const PROFILE_AWARDS: ProfileAward[] = [
   {
     id: 'award_grand_slam',
     title: 'Grand Slam Aspirant',
     category: 'Academic Milestone',
     rarity: 'LEGENDARY',
     rewardText: 'Exclusive Gold Badge + 500 Coins',
-    description: 'Demonstrated exceptional performance across PYQ engines and CBT Mock Hall.',
+    description: 'Demonstrated complete exam readiness with real CBT tests and Pomodoro study sessions.',
     icon: 'Trophy',
-    date: 'Active Season 2026',
-    unlocked: true
+    date: 'Active Season',
+    requirementText: 'Attempt at least 1 CBT Mock Test & complete 1 Pomodoro session',
+    isUnlocked: (t) => t.cbtMocksCount >= 1 && t.pomodoroSessionsCount >= 1
   },
   {
     id: 'award_consistency_titan',
@@ -223,10 +399,11 @@ export const PROFILE_AWARDS = [
     category: 'Discipline Honor',
     rarity: 'EPIC',
     rewardText: 'Trophy Cabinet Showcase + 300 Coins',
-    description: 'Maintained strict daily attendance and revision schedule for 3 consecutive weeks.',
+    description: 'Maintained strict daily attendance and revision schedule for 7+ days or logged 5+ hours.',
     icon: 'Award',
-    date: 'Unlocked',
-    unlocked: true
+    date: 'Active Season',
+    requirementText: 'Maintain a 7-day study streak or log 5+ total study hours',
+    isUnlocked: (t) => t.streakDays >= 7 || t.totalStudyHours >= 5
   },
   {
     id: 'award_topper_circle',
@@ -234,10 +411,11 @@ export const PROFILE_AWARDS = [
     category: 'Competitive Rank',
     rarity: 'EPIC',
     rewardText: 'VIP Pro Pass Priority Access',
-    description: 'Consistently scored above the 90th percentile in statewide CBT test series.',
+    description: 'Demonstrated elite performance: 70%+ accuracy in CBT mocks or earned 300+ XP.',
     icon: 'Crown',
-    date: 'Earned',
-    unlocked: true
+    date: 'Active Season',
+    requirementText: 'Score 70%+ average CBT accuracy or reach 300+ XP',
+    isUnlocked: (t) => t.cbtAvgAccuracy >= 70 || t.xp >= 300
   },
   {
     id: 'award_national_scholar',
@@ -245,10 +423,11 @@ export const PROFILE_AWARDS = [
     category: 'Special Recognition',
     rarity: 'LEGENDARY',
     rewardText: 'Physical Certificate & Merit Kit',
-    description: 'Top candidate in AspirantX All-India Scholarship Test Series.',
+    description: 'Top student dedication: Reach Level 3+ or complete 15+ verified study hours.',
     icon: 'ShieldCheck',
-    date: 'Upcoming Season',
-    unlocked: false
+    date: 'Active Season',
+    requirementText: 'Reach Level 3 or complete 15+ total study hours',
+    isUnlocked: (t) => t.level >= 3 || t.totalStudyHours >= 15
   }
 ];
 

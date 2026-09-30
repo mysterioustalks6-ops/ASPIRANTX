@@ -989,18 +989,28 @@ router.get('/api/user/profile', async (req, res) => {
             id: d.id || userId,
             name: d.name || email.split('@')[0],
             email: email,
-            exam: d.exam || 'NEET_UG',
-            targetExam: d.exam || 'NEET_UG',
+            avatar_url: d.avatar_url || '',
+            bio: d.bio || '',
+            studyGoal: d.studyGoal || '',
+            pinnedBadges: Array.isArray(d.pinnedBadges) ? d.pinnedBadges : [],
+            themeAccent: d.themeAccent || 'cyan',
+            exam: d.exam || 'UPSC_CSE',
+            targetExam: d.exam || 'UPSC_CSE',
             profileComplete: isComplete,
             isProfileComplete: isComplete,
             educationCategory: d.educationCategory || 'UPSC_CIVILS',
             stateName: d.stateName || 'All India',
+            boardOrUniversity: d.boardOrUniversity || 'CBSE',
+            streamOrSubject: d.streamOrSubject || 'General Studies',
             targetYear: d.targetYear || 2026,
             streakDays: d.streakDays || 1,
             lastActiveDate: d.lastActiveDate || getISTDateString(),
             xp: d.xp || 0,
             coins: d.coins || 0,
             level: d.level || 1,
+            role: d.role || 'USER',
+            isPremium: Boolean(d.isPremium),
+            referralCode: d.referralCode || ''
           }
         });
       }
@@ -1017,18 +1027,28 @@ router.get('/api/user/profile', async (req, res) => {
         id: known.id || userId,
         name: known.name || email.split('@')[0],
         email: email,
-        exam: known.exam || 'NEET_UG',
-        targetExam: known.exam || 'NEET_UG',
+        avatar_url: known.avatar_url || '',
+        bio: known.bio || '',
+        studyGoal: known.studyGoal || '',
+        pinnedBadges: Array.isArray(known.pinnedBadges) ? known.pinnedBadges : [],
+        themeAccent: known.themeAccent || 'cyan',
+        exam: known.exam || 'UPSC_CSE',
+        targetExam: known.exam || 'UPSC_CSE',
         profileComplete: isComplete,
         isProfileComplete: isComplete,
         educationCategory: known.educationCategory || 'UPSC_CIVILS',
         stateName: known.stateName || 'All India',
+        boardOrUniversity: known.boardOrUniversity || 'CBSE',
+        streamOrSubject: known.streamOrSubject || 'General Studies',
         targetYear: known.targetYear || 2026,
         streakDays: known.streakDays || 1,
         lastActiveDate: known.lastActiveDate || getISTDateString(),
         xp: known.xp || 0,
         coins: known.coins || 0,
         level: known.level || 1,
+        role: known.role || 'USER',
+        isPremium: Boolean(known.isPremium),
+        referralCode: known.referralCode || ''
       }
     });
   }
@@ -1040,16 +1060,28 @@ router.get('/api/user/profile', async (req, res) => {
       id: userId,
       name: email.split('@')[0],
       email: email,
-      exam: 'NEET_UG',
-      targetExam: 'NEET_UG',
+      avatar_url: '',
+      bio: '',
+      studyGoal: '',
+      pinnedBadges: [],
+      themeAccent: 'cyan',
+      exam: 'UPSC_CSE',
+      targetExam: 'UPSC_CSE',
       profileComplete: true,
       isProfileComplete: true,
+      educationCategory: 'UPSC_CIVILS',
+      stateName: 'All India',
+      boardOrUniversity: 'CBSE',
+      streamOrSubject: 'General Studies',
       targetYear: 2026,
       streakDays: 1,
       lastActiveDate: getISTDateString(),
       xp: 0,
       coins: 0,
-      level: 1
+      level: 1,
+      role: 'USER',
+      isPremium: false,
+      referralCode: ''
     }
   });
 });
@@ -1061,9 +1093,24 @@ router.post('/api/user/profile', async (req, res) => {
   }
   const userId = verifiedUser.sub!;
   const email = (verifiedUser.email || '').trim().toLowerCase();
-  const { name, exam, targetExam, educationCategory, stateName, targetYear, isProfileComplete } = req.body;
+  const { 
+    name, 
+    exam, 
+    targetExam, 
+    educationCategory, 
+    stateName, 
+    boardOrUniversity,
+    streamOrSubject,
+    targetYear, 
+    isProfileComplete,
+    avatar_url,
+    bio,
+    studyGoal,
+    pinnedBadges,
+    themeAccent
+  } = req.body;
 
-  const chosenExam = targetExam || exam || 'NEET_UG';
+  const chosenExam = targetExam || exam || 'UPSC_CSE';
   const complete = isProfileComplete !== undefined ? isProfileComplete : Boolean(chosenExam && chosenExam.trim());
   const cleanName = (name || email.split('@')[0] || 'Aspirant').trim();
 
@@ -1075,8 +1122,15 @@ router.post('/api/user/profile', async (req, res) => {
     exam: chosenExam,
     educationCategory: educationCategory || 'UPSC_CIVILS',
     stateName: stateName || 'All India',
-    targetYear: targetYear || 2026,
-    isProfileComplete: complete
+    boardOrUniversity: boardOrUniversity || 'CBSE',
+    streamOrSubject: streamOrSubject || 'General Studies',
+    targetYear: targetYear ? Number(targetYear) : 2026,
+    isProfileComplete: complete,
+    avatar_url: avatar_url || undefined,
+    bio: bio || undefined,
+    studyGoal: studyGoal || undefined,
+    pinnedBadges: Array.isArray(pinnedBadges) ? pinnedBadges : undefined,
+    themeAccent: themeAccent || undefined
   });
 
   return res.json({
@@ -1085,12 +1139,19 @@ router.post('/api/user/profile', async (req, res) => {
       id: userId,
       name: cleanName,
       email,
+      avatar_url: avatar_url || '',
+      bio: bio || '',
+      studyGoal: studyGoal || '',
+      pinnedBadges: pinnedBadges || [],
+      themeAccent: themeAccent || 'cyan',
       exam: chosenExam,
       targetExam: chosenExam,
       profileComplete: complete,
       isProfileComplete: complete,
       educationCategory,
       stateName,
+      boardOrUniversity,
+      streamOrSubject,
       targetYear: targetYear || 2026
     }
   });
@@ -2438,7 +2499,11 @@ router.post('/api/user/update-profile', async (req, res) => {
       studyGoal,
       avatar_url,
       pinnedBadges,
-      themeAccent
+      themeAccent,
+      xp,
+      coins,
+      level,
+      streakDays
     } = req.body;
 
     if (!email) {
@@ -2461,7 +2526,11 @@ router.post('/api/user/update-profile', async (req, res) => {
       bio: bio !== undefined ? String(bio) : undefined,
       studyGoal: studyGoal !== undefined ? String(studyGoal) : undefined,
       pinnedBadges: Array.isArray(pinnedBadges) ? pinnedBadges : undefined,
-      themeAccent: themeAccent !== undefined ? String(themeAccent) : undefined
+      themeAccent: themeAccent !== undefined ? String(themeAccent) : undefined,
+      xp: xp !== undefined ? Number(xp) : undefined,
+      coins: coins !== undefined ? Number(coins) : undefined,
+      level: level !== undefined ? Number(level) : undefined,
+      streakDays: streakDays !== undefined ? Number(streakDays) : undefined
     });
     saveAdminStoreToDisk();
 
@@ -2475,11 +2544,17 @@ router.post('/api/user/update-profile', async (req, res) => {
       if (streamOrSubject) dbUpdates.stream_or_subject = streamOrSubject;
       if (targetYear !== undefined) dbUpdates.target_year = Number(targetYear);
       if (isProfileComplete !== undefined) dbUpdates.is_profile_complete = Boolean(isProfileComplete);
+      if (avatar_url) dbUpdates.avatar_url = avatar_url;
+      if (bio !== undefined) dbUpdates.bio = bio;
+      if (studyGoal !== undefined) dbUpdates.study_goal = studyGoal;
 
       await supabaseServer.from('user_profiles').update(dbUpdates).eq('id', verifiedUser.sub);
     }
 
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      message: 'Profile successfully synchronized to Neon database and session cache'
+    });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

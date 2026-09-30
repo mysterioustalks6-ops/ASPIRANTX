@@ -170,6 +170,58 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
   if (profile.totalReferrals === undefined) profile.totalReferrals = 2;
   if (profile.referralEarnings === undefined) profile.referralEarnings = 200;
 
+  // Check local avatar storage cache
+  if (userId) {
+    const localAvatar = localStorage.getItem(`aspirantx_avatar_${userId}`);
+    if (localAvatar && (!profile.avatar_url || profile.avatar_url.trim() === '')) {
+      profile.avatar_url = localAvatar;
+    }
+  }
+
+  // Fetch authoritative user profile from Neon database API
+  if (typeof window !== 'undefined' && userId && userId !== 'usr_guest_101') {
+    try {
+      const authToken = localStorage.getItem('aspirantx_auth_token');
+      const headers: Record<string, string> = {};
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+      const res = await fetch('/api/user/profile', { headers }).catch(() => null);
+      if (res && res.ok) {
+        const json = await res.json().catch(() => ({}));
+        if (json.success && json.profile) {
+          const p = json.profile;
+          profile = {
+            ...profile,
+            name: p.name || profile.name,
+            exam: p.exam || profile.exam,
+            educationCategory: p.educationCategory || profile.educationCategory,
+            stateName: p.stateName || profile.stateName,
+            boardOrUniversity: p.boardOrUniversity || profile.boardOrUniversity,
+            streamOrSubject: p.streamOrSubject || profile.streamOrSubject,
+            targetYear: p.targetYear || profile.targetYear,
+            isProfileComplete: p.isProfileComplete ?? profile.isProfileComplete,
+            avatar_url: p.avatar_url || profile.avatar_url || localStorage.getItem(`aspirantx_avatar_${userId}`) || '',
+            bio: p.bio !== undefined && p.bio !== '' ? p.bio : profile.bio,
+            studyGoal: p.studyGoal !== undefined && p.studyGoal !== '' ? p.studyGoal : profile.studyGoal,
+            pinnedBadges: (Array.isArray(p.pinnedBadges) && p.pinnedBadges.length > 0) ? p.pinnedBadges : profile.pinnedBadges,
+            themeAccent: p.themeAccent || profile.themeAccent,
+            streakDays: p.streakDays !== undefined ? p.streakDays : profile.streakDays,
+            xp: p.xp !== undefined ? p.xp : profile.xp,
+            coins: p.coins !== undefined ? p.coins : profile.coins,
+            level: p.level !== undefined ? p.level : profile.level,
+            role: p.role || profile.role,
+            isPremium: p.isPremium !== undefined ? p.isPremium : profile.isPremium,
+          };
+          if (p.avatar_url) {
+            try {
+              localStorage.setItem(`aspirantx_avatar_${userId}`, p.avatar_url);
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_neonErr) {}
+  }
+
   // Check Supabase with fast 800ms timeout for ultra-fast site loading
   if (isSupabaseConfigured && userId) {
     try {
@@ -217,7 +269,7 @@ export async function loadUserProfile(userId?: string): Promise<UserProfile> {
             exam: data.exam ?? profile.exam,
             bio: data.bio ?? profile.bio,
             studyGoal: data.study_goal ?? profile.studyGoal,
-            avatar_url: data.avatar_url ?? profile.avatar_url,
+            avatar_url: data.avatar_url || profile.avatar_url,
             isProfileComplete: dbComplete,
             educationCategory: data.education_category ?? profile.educationCategory,
             stateName: data.state_name ?? profile.stateName,
@@ -376,6 +428,7 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
         method: 'POST',
         headers,
         body: JSON.stringify({
+          email: profile.email,
           name: profile.name,
           exam: profile.exam,
           educationCategory: profile.educationCategory,
@@ -384,6 +437,12 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
           streamOrSubject: profile.streamOrSubject,
           targetYear: profile.targetYear,
           isProfileComplete: profile.isProfileComplete,
+          avatar_url: profile.avatar_url || localStorage.getItem(`aspirantx_avatar_${profile.id}`) || undefined,
+          bio: profile.bio,
+          studyGoal: profile.studyGoal,
+          pinnedBadges: profile.pinnedBadges,
+          themeAccent: profile.themeAccent,
+          streakDays: profile.streakDays,
           xp: profile.xp,
           coins: profile.coins,
           level: profile.level,
