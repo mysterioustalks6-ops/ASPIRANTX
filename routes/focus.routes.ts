@@ -145,7 +145,8 @@ router.post('/api/focus/session/:id/cancel', async (req: Request, res: Response)
 router.get('/api/focus/stats', async (req: Request, res: Response) => {
   try {
     const userId = await getAuthUserId(req);
-    const stats = await FocusService.getFocusStats(userId);
+    const targetDate = typeof req.query.date === 'string' ? req.query.date : undefined;
+    const stats = await FocusService.getFocusStats(userId, targetDate);
     res.json({ success: true, stats });
   } catch (err: any) {
     res.status(err.message === 'Authentication Required' ? 401 : 500).json({

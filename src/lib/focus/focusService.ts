@@ -275,7 +275,8 @@ export class FocusService {
       );
 
       // Also persist to user_pomodoro_sessions for backwards compatibility with analytics
-      const pomoDate = new Date().toISOString().split('T')[0];
+      const pomoDateRes = await client.query(`SELECT ((NOW() AT TIME ZONE 'Asia/Kolkata')::date)::text AS ist_date`);
+      const pomoDate = pomoDateRes.rows[0]?.ist_date || new Date().toISOString().split('T')[0];
       await client.query(
         `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, created_at)
          VALUES ($1, $2, $3, $4, NOW())
@@ -337,41 +338,162 @@ export class FocusService {
   /**
    * Aggregated focus telemetry for student dashboard
    */
-  static async getFocusStats(userId: string): Promise<{
+  static async getFocusStats(userId: string, targetDate?: string): Promise<{
     todayMinutes: number;
     weekMinutes: number;
     totalSessions: number;
     recentSessions: FocusSessionRecord[];
   }> {
     const canonicalUserId = toCanonicalUuid(userId);
+    const rawUserId = String(userId || '').trim().toLowerCase();
 
+    // 1. Query today's focus in IST timezone across both focus_sessions and user_pomodoro_sessions
+    // Handles IST calendar day and late-night study sessions (< 5 AM IST) gracefully
     const todayRes = await queryPostgres(
-      `SELECT COALESCE(SUM(verified_minutes), 0) as today_minutes
-       FROM public.focus_sessions
-       WHERE user_id = $1 AND status = 'COMPLETED' AND completed_at >= CURRENT_DATE;`,
-      [canonicalUserId]
+      `WITH ist_now AS (
+        SELECT 
+          (NOW() AT TIME ZONE 'Asia/Kolkata')::date as today_ist,
+          EXTRACT(HOUR FROM (NOW() AT TIME ZONE 'Asia/Kolkata')) as hour_ist
+      ),
+      active_target AS (
+        SELECT 
+          COALESCE($3::date, today_ist) as eval_date,
+          hour_ist
+        FROM ist_now
+      )
+      SELECT (
+        COALESCE((
+          SELECT SUM(verified_minutes)
+          FROM public.focus_sessions, active_target
+          WHERE (user_id = $1 OR user_id = $2)
+            AND status = 'COMPLETED'
+            AND (
+              (completed_at AT TIME ZONE 'Asia/Kolkata')::date = eval_date
+              OR (
+                $3 IS NULL 
+                AND hour_ist < 5 
+                AND (completed_at AT TIME ZONE 'Asia/Kolkata')::date = eval_date - 1
+                AND NOT EXISTS (
+                  SELECT 1 FROM public.focus_sessions 
+                  WHERE (user_id = $1 OR user_id = $2) AND status = 'COMPLETED' 
+                    AND (completed_at AT TIME ZONE 'Asia/Kolkata')::date = eval_date
+                )
+              )
+            )
+        ), 0)
+        +
+        COALESCE((
+          SELECT SUM(minutes)
+          FROM public.user_pomodoro_sessions, active_target
+          WHERE (user_id = $1 OR user_id = $2)
+            AND (
+              date = eval_date::text
+              OR (created_at AT TIME ZONE 'Asia/Kolkata')::date = eval_date
+              OR (
+                $3 IS NULL 
+                AND hour_ist < 5 
+                AND (
+                  date = (eval_date - 1)::text 
+                  OR (created_at AT TIME ZONE 'Asia/Kolkata')::date = eval_date - 1
+                )
+                AND NOT EXISTS (
+                  SELECT 1 FROM public.user_pomodoro_sessions 
+                  WHERE (user_id = $1 OR user_id = $2) 
+                    AND (date = eval_date::text OR (created_at AT TIME ZONE 'Asia/Kolkata')::date = eval_date)
+                )
+              )
+            )
+            AND id NOT IN (
+              SELECT id FROM public.focus_sessions WHERE (user_id = $1 OR user_id = $2) AND status = 'COMPLETED'
+            )
+        ), 0)
+      ) AS today_minutes;`,
+      [canonicalUserId, rawUserId, targetDate || null]
     );
 
+    // 2. Query week's focus in IST timezone
     const weekRes = await queryPostgres(
-      `SELECT COALESCE(SUM(verified_minutes), 0) as week_minutes
-       FROM public.focus_sessions
-       WHERE user_id = $1 AND status = 'COMPLETED' AND completed_at >= (CURRENT_DATE - INTERVAL '7 days');`,
-      [canonicalUserId]
+      `SELECT (
+        COALESCE((
+          SELECT SUM(verified_minutes)
+          FROM public.focus_sessions
+          WHERE (user_id = $1 OR user_id = $2)
+            AND status = 'COMPLETED'
+            AND (completed_at AT TIME ZONE 'Asia/Kolkata')::date >= ((NOW() AT TIME ZONE 'Asia/Kolkata')::date - 7)
+        ), 0)
+        +
+        COALESCE((
+          SELECT SUM(minutes)
+          FROM public.user_pomodoro_sessions
+          WHERE (user_id = $1 OR user_id = $2)
+            AND (
+              (created_at AT TIME ZONE 'Asia/Kolkata')::date >= ((NOW() AT TIME ZONE 'Asia/Kolkata')::date - 7)
+              OR date >= (((NOW() AT TIME ZONE 'Asia/Kolkata')::date - 7))::text
+            )
+            AND id NOT IN (
+              SELECT id FROM public.focus_sessions WHERE (user_id = $1 OR user_id = $2) AND status = 'COMPLETED'
+            )
+        ), 0)
+      ) AS week_minutes;`,
+      [canonicalUserId, rawUserId]
     );
 
+    // 3. Query total sessions count across both tables
     const countRes = await queryPostgres(
-      `SELECT COUNT(*) as total_sessions
-       FROM public.focus_sessions
-       WHERE user_id = $1 AND status = 'COMPLETED';`,
-      [canonicalUserId]
+      `SELECT (
+        COALESCE((
+          SELECT COUNT(*)
+          FROM public.focus_sessions
+          WHERE (user_id = $1 OR user_id = $2) AND status = 'COMPLETED'
+        ), 0)
+        +
+        COALESCE((
+          SELECT COUNT(*)
+          FROM public.user_pomodoro_sessions
+          WHERE (user_id = $1 OR user_id = $2)
+            AND id NOT IN (
+              SELECT id FROM public.focus_sessions WHERE (user_id = $1 OR user_id = $2) AND status = 'COMPLETED'
+            )
+        ), 0)
+      ) AS total_sessions;`,
+      [canonicalUserId, rawUserId]
     );
 
+    // 4. Query recent sessions across both tables unified
     const recRes = await queryPostgres(
-      `SELECT * FROM public.focus_sessions
-       WHERE user_id = $1
+      `SELECT 
+        id, 
+        user_id, 
+        minutes as requested_minutes, 
+        minutes as verified_minutes, 
+        (minutes * 60) as accumulated_seconds, 
+        '[]'::jsonb as blocked_apps, 
+        'COMPLETED' as status, 
+        created_at as started_at, 
+        created_at as last_heartbeat_at, 
+        created_at as completed_at, 
+        created_at
+       FROM public.user_pomodoro_sessions
+       WHERE (user_id = $1 OR user_id = $2)
+         AND id NOT IN (SELECT id FROM public.focus_sessions WHERE (user_id = $1 OR user_id = $2))
+       UNION ALL
+       SELECT 
+        id, 
+        user_id, 
+        requested_minutes, 
+        verified_minutes, 
+        accumulated_seconds, 
+        COALESCE(blocked_apps, '[]'::jsonb) as blocked_apps, 
+        status, 
+        started_at, 
+        last_heartbeat_at, 
+        completed_at, 
+        created_at
+       FROM public.focus_sessions
+       WHERE (user_id = $1 OR user_id = $2)
        ORDER BY created_at DESC
-       LIMIT 10;`,
-      [canonicalUserId]
+       LIMIT 15;`,
+      [canonicalUserId, rawUserId]
     );
 
     return {

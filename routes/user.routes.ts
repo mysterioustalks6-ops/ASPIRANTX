@@ -741,13 +741,20 @@ router.get('/api/user/study-sessions', async (req, res) => {
   const userId = verifiedUser.sub!;
 
   try {
+    const rawUserId = String(userId || '').trim().toLowerCase();
     const dbRes = await queryPostgres(
-      `SELECT id, user_id, minutes, date, created_at
+      `SELECT id, user_id, minutes, date, created_at, 'stopwatch' as session_type
        FROM public.user_pomodoro_sessions
-       WHERE user_id = $1
+       WHERE user_id = $1 OR user_id = $2
+       UNION ALL
+       SELECT id, user_id, verified_minutes as minutes, (completed_at AT TIME ZONE 'Asia/Kolkata')::date::text as date, created_at, 'pomodoro' as session_type
+       FROM public.focus_sessions
+       WHERE (user_id = $1 OR user_id = $2)
+         AND status = 'COMPLETED'
+         AND id NOT IN (SELECT id FROM public.user_pomodoro_sessions WHERE user_id = $1 OR user_id = $2)
        ORDER BY created_at DESC
-       LIMIT 100`,
-      [userId]
+       LIMIT 200`,
+      [userId, rawUserId]
     );
 
     const sessions = dbRes.rows.map((r: any) => ({
@@ -755,9 +762,11 @@ router.get('/api/user/study-sessions', async (req, res) => {
       userId: r.user_id,
       minutes: Number(r.minutes) || 25,
       duration: Number(r.minutes) || 25,
-      completedDuration: Number(r.minutes) || 25,
+      completedDuration: (Number(r.minutes) || 25) * 60,
+      durationSeconds: (Number(r.minutes) || 25) * 60,
       date: r.date,
       status: 'COMPLETED',
+      mode: r.session_type || 'study',
       createdAt: r.created_at
     }));
 
@@ -816,7 +825,7 @@ router.post('/api/user/study-sessions/:id/complete', async (req, res) => {
   const { completedDuration, duration, date } = req.body;
 
   const validMinutes = Math.max(1, Math.min(360, Math.round(Number(completedDuration || duration || 25))));
-  const sessionDate = date || new Date().toISOString().split('T')[0];
+  const sessionDate = date || getISTDateString();
 
   try {
     await queryPostgres(

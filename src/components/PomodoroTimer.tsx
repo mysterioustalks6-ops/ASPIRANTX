@@ -1126,6 +1126,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                 })
               );
             }
+            window.dispatchEvent(
+              new CustomEvent('aspirantx_focus_session_completed', {
+                detail: { sessionId: targetId, durationSeconds, mode: 'pomodoro' },
+              })
+            );
           }
         }
       } catch (e) {
@@ -1280,6 +1285,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
               })
             );
           }
+          window.dispatchEvent(
+            new CustomEvent('aspirantx_focus_session_completed', {
+              detail: { sessionId: targetId, durationSeconds, mode: 'stopwatch' },
+            })
+          );
         }
       }
     } catch (e) {

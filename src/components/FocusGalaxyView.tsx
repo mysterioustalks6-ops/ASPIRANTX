@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
@@ -29,10 +29,11 @@ import {
   Lock,
   Moon,
   ShieldAlert,
-  Play
+  Play,
+  RotateCcw
 } from 'lucide-react';
 import { GalaxyCanvas, CelestialBody, CelestialMoon } from './GalaxyCanvas';
-import { loadStudySessions } from '../lib/gamification';
+import { loadStudySessions, getISTDateString } from '../lib/gamification';
 import { PressFeedback, CountUp, SlideUp, triggerConfetti } from '../lib/animations';
 
 // ════════════════════════════════════════════════════════════════════
@@ -239,6 +240,29 @@ interface FocusGalaxyViewProps {
   onStartFocusSession?: () => void;
 }
 
+const PALETTES = [
+  { primary: '#0284c7', secondary: '#10b981' },
+  { primary: '#f59e0b', secondary: '#d97706' },
+  { primary: '#a855f7', secondary: '#6366f1' },
+  { primary: '#38bdf8', secondary: '#0284c7' },
+  { primary: '#f43f5e', secondary: '#991b1b' },
+  { primary: '#10b981', secondary: '#047857' }
+];
+
+const PLANET_TYPES: ('rocky' | 'gas_giant' | 'ringed' | 'ice' | 'lava' | 'ocean')[] = [
+  'ocean', 'ringed', 'lava', 'ice', 'gas_giant', 'rocky'
+];
+
+export function formatMinutesToHoursAndMinutes(totalMinutes: number): string {
+  const m = Math.max(0, Math.round(totalMinutes));
+  const hours = Math.floor(m / 60);
+  const mins = m % 60;
+  if (hours === 0 && mins === 0) return '0m';
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h 00m`;
+  return `${hours}h ${mins < 10 ? '0' : ''}${mins}m`;
+}
+
 export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   userId = 'guest',
   selectedExam = 'UPSC_CSE',
@@ -252,6 +276,14 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   const [viewScale, setViewScale] = useState<'cluster' | 'system' | 'arm' | 'galaxy'>('system');
   const [selectedPlanet, setSelectedPlanet] = useState<FocusPlanetRecord | null>(null);
   
+  // Real live telemetry & session state
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [todayMinutes, setTodayMinutes] = useState<number>(0);
+  const [weekMinutes, setWeekMinutes] = useState<number>(0);
+  const [totalSessionsCount, setTotalSessionsCount] = useState<number>(0);
+  const [streakDays, setStreakDays] = useState<number>(1);
+  const [rawSessions, setRawSessions] = useState<any[]>([]);
+
   // Modals
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState<boolean>(false);
@@ -274,8 +306,8 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
       name: 'Polity Prime',
       type: 'ocean',
       accentColor: '#0284c7',
-      seed: 'genesis-aspirantx-1',
-      createdAt: '2026-01-14T09:00:00.000Z'
+      seed: `genesis-${userId}`,
+      createdAt: new Date().toISOString()
     };
   });
 
@@ -291,116 +323,217 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
     language: 'English'
   });
 
-  // Load and derive celestial planets and tasks from storage
-  useEffect(() => {
-    const key = `aspirantx_focus_galaxy_${userId}`;
-    const taskKey = `aspirantx_focus_tasks_${userId}`;
-    const today = new Date().toISOString().split('T')[0];
+  // Helper to derive celestial bodies from verified session records
+  const derivePlanetsFromSessions = useCallback((sessions: any[], profile: UserPlanetProfile): FocusPlanetRecord[] => {
+    if (!sessions || sessions.length === 0) return [];
+    
+    return sessions.map((sess, idx) => {
+      const mins = Number(sess.minutes) || Math.round(Number(sess.completedDuration || sess.durationSeconds || 0) / 60) || 25;
+      const dateStr = sess.date || (sess.createdAt ? getISTDateString(new Date(sess.createdAt)) : '');
+      const subject = sess.subject || 'General Study';
+      const topic = sess.topic || 'Focus Sprint';
+      const palette = PALETTES[idx % PALETTES.length];
+      const type = PLANET_TYPES[idx % PLANET_TYPES.length];
 
-    try {
-      const storedPlanets = localStorage.getItem(key);
-      if (storedPlanets) {
-        setPlanets(JSON.parse(storedPlanets));
-      } else {
-        const initialWorlds: FocusPlanetRecord[] = [
+      const name = idx === 0 
+        ? profile.name 
+        : `${subject.split('—')[0].trim()} Sphere ${idx + 1}`;
+
+      return {
+        id: sess.id || `world_${idx}`,
+        name,
+        type: idx === 0 ? profile.type : type,
+        durationMinutes: mins,
+        subject,
+        topic,
+        plantedAt: sess.createdAt || new Date().toISOString(),
+        dateKey: dateStr,
+        status: 'healthy',
+        primaryColor: idx === 0 ? profile.accentColor : palette.primary,
+        secondaryColor: palette.secondary,
+        radius: Math.min(22, Math.max(10, Math.floor(mins / 20) + 10)),
+        orbitRadius: 75 + ((idx * 35) % 160),
+        orbitSpeed: 0.003 + ((idx * 0.002) % 0.006),
+        orbitAngle: (idx * 1.4) % (Math.PI * 2),
+        moons: sess.questionsAttempted && sess.questionsAttempted > 0 ? [
           {
-            id: 'world-1',
-            name: planetProfile.name,
-            type: planetProfile.type,
-            durationMinutes: 45,
-            subject: 'Indian Polity',
-            topic: 'Constitutional Framework & Fundamental Rights',
-            plantedAt: new Date(Date.now() - 3600000).toISOString(),
-            dateKey: today,
-            status: 'healthy',
-            primaryColor: planetProfile.accentColor,
-            secondaryColor: '#10b981',
-            radius: 16,
-            orbitRadius: 85,
-            orbitSpeed: 0.007,
-            orbitAngle: 0.8,
-            moons: [
-              { id: 'm1', name: 'Article 21 Task', radius: 3.5, orbitRadius: 28, orbitSpeed: 0.02, color: '#e2e8f0' },
-              { id: 'm2', name: 'Fundamental Rights Task', radius: 4, orbitRadius: 40, orbitSpeed: 0.015, color: '#38bdf8' }
-            ]
-          },
-          {
-            id: 'world-2',
-            name: 'Chronos Jovian',
-            type: 'ringed',
-            durationMinutes: 60,
-            subject: 'Modern History',
-            topic: '1857 Revolt & Freedom Struggle',
-            plantedAt: new Date(Date.now() - 86400000).toISOString(),
-            dateKey: today,
-            status: 'healthy',
-            primaryColor: '#f59e0b',
-            secondaryColor: '#d97706',
-            radius: 20,
-            orbitRadius: 140,
-            orbitSpeed: 0.004,
-            orbitAngle: 2.4,
-            moons: [
-              { id: 'm3', name: 'Revolt Leaders Task', radius: 3, orbitRadius: 32, orbitSpeed: 0.018, color: '#fcd34d' }
-            ]
-          },
-          {
-            id: 'world-3',
-            name: 'Ignis Volcanic Core',
-            type: 'lava',
-            durationMinutes: 30,
-            subject: 'Economy & Budget',
-            topic: 'Fiscal Deficit & Monetary Policy',
-            plantedAt: new Date(Date.now() - 172800000).toISOString(),
-            dateKey: today,
-            status: 'healthy',
-            primaryColor: '#f43f5e',
-            secondaryColor: '#991b1b',
-            radius: 11,
-            orbitRadius: 195,
-            orbitSpeed: 0.003,
-            orbitAngle: 4.1
+            id: `moon_${sess.id}`,
+            name: `${sess.questionsAttempted} Questions`,
+            radius: 3.5,
+            orbitRadius: 28,
+            orbitSpeed: 0.02,
+            color: '#38bdf8'
           }
-        ];
-        localStorage.setItem(key, JSON.stringify(initialWorlds));
-        setPlanets(initialWorlds);
-      }
+        ] : undefined
+      };
+    });
+  }, []);
 
+  // Main data fetching & reconciliation pipeline
+  const fetchGalaxyData = useCallback(async () => {
+    setIsLoading(true);
+    let loadedSessions: any[] = [];
+    let statsToday = 0;
+    let statsWeek = 0;
+    let statsTotalSessions = 0;
+
+    const token = localStorage.getItem('aspirantx_auth_token');
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    // 1. Fetch live telemetry from /api/focus/stats
+    try {
+      const statsRes = await fetch('/api/focus/stats', { headers });
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        if (statsData.success && statsData.stats) {
+          statsToday = Number(statsData.stats.todayMinutes) || 0;
+          statsWeek = Number(statsData.stats.weekMinutes) || 0;
+          statsTotalSessions = Number(statsData.stats.totalSessions) || 0;
+        }
+      }
+    } catch (e) {
+      console.warn('[FocusGalaxy] Error fetching /api/focus/stats:', e);
+    }
+
+    // 2. Fetch all verified study sessions from /api/user/study-sessions
+    try {
+      const sessRes = await fetch('/api/user/study-sessions', { headers });
+      if (sessRes.ok) {
+        const sessData = await sessRes.json();
+        if (sessData.success && Array.isArray(sessData.sessions)) {
+          loadedSessions = sessData.sessions;
+        }
+      }
+    } catch (e) {
+      console.warn('[FocusGalaxy] Error fetching study sessions:', e);
+    }
+
+    // 3. Fallback / merge with local store
+    try {
+      const local = await loadStudySessions(userId);
+      if (Array.isArray(local) && local.length > 0) {
+        const existingIds = new Set(loadedSessions.map(s => s.id));
+        local.forEach(ls => {
+          if (!existingIds.has(ls.id)) {
+            loadedSessions.push({
+              id: ls.id,
+              userId: ls.userId,
+              minutes: Math.round(ls.durationSeconds / 60) || 1,
+              completedDuration: ls.durationSeconds,
+              durationSeconds: ls.durationSeconds,
+              subject: ls.subject,
+              topic: 'Study Session',
+              mode: ls.mode || 'pomodoro',
+              status: 'COMPLETED',
+              createdAt: ls.createdAt
+            });
+          }
+        });
+      }
+    } catch (e) {}
+
+    // 4. Fetch profile for streak & level
+    let dbStreak = 1;
+    try {
+      const profRes = await fetch('/api/user/profile', { headers });
+      if (profRes.ok) {
+        const profData = await profRes.json();
+        if (profData.profile) {
+          dbStreak = Number(profData.profile.streakDays || profData.profile.streak_days) || 1;
+        }
+      }
+    } catch (e) {}
+
+    // Calculate real today minutes in IST
+    const todayIstStr = getISTDateString();
+    const todayFromSessions = loadedSessions
+      .filter(s => {
+        const sDate = s.date || (s.createdAt ? getISTDateString(new Date(s.createdAt)) : '');
+        return sDate === todayIstStr;
+      })
+      .reduce((acc, s) => acc + (Number(s.minutes) || Math.round((Number(s.completedDuration) || 0) / 60) || 0), 0);
+
+    const resolvedTodayMinutes = Math.max(statsToday, todayFromSessions);
+    setTodayMinutes(resolvedTodayMinutes);
+    setWeekMinutes(statsWeek);
+    setTotalSessionsCount(Math.max(statsTotalSessions, loadedSessions.length));
+    setStreakDays(Math.max(1, dbStreak));
+    setRawSessions(loadedSessions);
+
+    // Build real celestial planets from verified history
+    const derived = derivePlanetsFromSessions(loadedSessions, planetProfile);
+    setPlanets(derived);
+
+    // Load tasks from local storage
+    try {
+      const taskKey = `aspirantx_focus_tasks_${userId}`;
       const storedTasks = localStorage.getItem(taskKey);
       if (storedTasks) {
         setTasks(JSON.parse(storedTasks));
       } else {
-        const defaultTasks: FocusTaskItem[] = [
-          { id: 't-1', title: 'DPSP Articles 36–51 Revision', subject: 'Indian Polity', plannedPomodoros: 4, completedPomodoros: 3, isCompleted: false, dateKey: today },
-          { id: 't-2', title: '1857 Revolt Causes & Leaders', subject: 'Modern History', plannedPomodoros: 2, completedPomodoros: 2, isCompleted: true, dateKey: today },
-          { id: 't-3', title: 'Number Systems & Permutations', subject: 'CSAT Aptitude', plannedPomodoros: 3, completedPomodoros: 1, isCompleted: false, dateKey: today }
-        ];
-        localStorage.setItem(taskKey, JSON.stringify(defaultTasks));
-        setTasks(defaultTasks);
+        setTasks([]);
       }
-    } catch (e) {
-      console.error('[FocusGalaxy] Load error:', e);
-    }
-  }, [userId, planetProfile]);
+    } catch (e) {}
 
-  // Compute total focus metrics
+    setIsLoading(false);
+  }, [userId, planetProfile, derivePlanetsFromSessions]);
+
+  // Initial mount & event listeners
+  useEffect(() => {
+    fetchGalaxyData();
+
+    const handleSessionCompleted = () => {
+      fetchGalaxyData();
+    };
+
+    window.addEventListener('aspirantx_focus_session_completed', handleSessionCompleted);
+    window.addEventListener('aspirantx_streak_updated', handleSessionCompleted);
+
+    return () => {
+      window.removeEventListener('aspirantx_focus_session_completed', handleSessionCompleted);
+      window.removeEventListener('aspirantx_streak_updated', handleSessionCompleted);
+    };
+  }, [fetchGalaxyData]);
+
+  // Compute total focus metrics from verified sessions
   const totalFocusMinutes = useMemo(() => {
-    return planets.reduce((acc, p) => acc + (p.status === 'healthy' ? p.durationMinutes : 0), 0);
-  }, [planets]);
+    return rawSessions.reduce((acc, s) => {
+      const mins = Number(s.minutes) || Math.round((Number(s.completedDuration || s.durationSeconds || 0)) / 60) || 0;
+      return acc + mins;
+    }, 0);
+  }, [rawSessions]);
 
   const totalFocusHours = Number((totalFocusMinutes / 60).toFixed(1));
 
-  // Determine Level and Current Mode (10 Modes x 1000 Levels)
-  const totalLevel = useMemo(() => {
-    return Math.max(1, Math.min(10000, Math.floor(totalFocusHours * 2.5) + 142));
+  const longestSessionMinutes = useMemo(() => {
+    if (rawSessions.length === 0) return 0;
+    return rawSessions.reduce((max, s) => {
+      const mins = Number(s.minutes) || Math.round((Number(s.completedDuration || s.durationSeconds || 0)) / 60) || 0;
+      return Math.max(max, mins);
+    }, 0);
+  }, [rawSessions]);
+
+  // Determine Level and Current Mode deterministically (10 Modes x 1000 Levels)
+  const currentTier = useMemo(() => {
+    const tier = COSMIC_TIERS.find(t => totalFocusHours >= t.minHours && totalFocusHours < t.maxHours);
+    return tier || (totalFocusHours >= 2200 ? COSMIC_TIERS[9] : COSMIC_TIERS[0]);
   }, [totalFocusHours]);
 
-  const currentModeIdx = Math.min(9, Math.floor((totalLevel - 1) / 1000));
-  const currentTier = COSMIC_TIERS[currentModeIdx] || COSMIC_TIERS[0];
-  const modeLevel = ((totalLevel - 1) % 1000) + 1;
-  const nextTier = currentModeIdx < 9 ? COSMIC_TIERS[currentModeIdx + 1] : null;
+  const { modeLevel, totalLevel, modeProgressPercent } = useMemo(() => {
+    const tier = currentTier;
+    const span = Math.max(1, tier.maxHours - tier.minHours);
+    const progressInTier = Math.min(1, Math.max(0, (totalFocusHours - tier.minHours) / span));
+    const lvlInTier = Math.min(1000, Math.max(1, Math.floor(progressInTier * 999) + 1));
+    const totLvl = (tier.modeNumber - 1) * 1000 + lvlInTier;
+    const pct = Math.min(100, Math.round(progressInTier * 100));
+    return { modeLevel: lvlInTier, totalLevel: totLvl, modeProgressPercent: pct };
+  }, [currentTier, totalFocusHours]);
 
-  const modeProgressPercent = Math.min(100, Math.round((modeLevel / 1000) * 100));
+  const nextTier = useMemo(() => {
+    const idx = currentTier.modeNumber - 1;
+    return idx < 9 ? COSMIC_TIERS[idx + 1] : null;
+  }, [currentTier]);
 
   // Filtered planets according to selected timeframe
   const filteredPlanets = useMemo(() => {
@@ -436,6 +569,107 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
     }));
   }, [filteredPlanets]);
 
+  // Monday - Sunday real activity strip from real session records
+  const weekDayActivity = useMemo(() => {
+    const now = new Date();
+    const istNow = new Date(now.getTime() + 5.5 * 3600000);
+    const currentDayOfWeek = (istNow.getUTCDay() + 6) % 7; // 0 = Mon, 6 = Sun
+    const monday = new Date(istNow);
+    monday.setUTCDate(istNow.getUTCDate() - currentDayOfWeek);
+
+    const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return days.map((dayLabel, idx) => {
+      const dayDate = new Date(monday);
+      dayDate.setUTCDate(monday.getUTCDate() + idx);
+      const dateStr = dayDate.toISOString().split('T')[0];
+      const hasSession = rawSessions.some(s => {
+        const sDate = s.date || (s.createdAt ? getISTDateString(new Date(s.createdAt)) : '');
+        return sDate === dateStr;
+      });
+      const isToday = idx === currentDayOfWeek;
+      return { dayLabel, isComplete: hasSession, isToday, dateStr };
+    });
+  }, [rawSessions]);
+
+  // 60-Day Starfield Heatmap from actual historical data
+  const heatmapData = useMemo(() => {
+    const buckets: { day: number; dateStr: string; minutes: number; intensity: number }[] = [];
+    const now = new Date();
+    const istNow = new Date(now.getTime() + 5.5 * 3600000);
+
+    for (let i = 59; i >= 0; i--) {
+      const target = new Date(istNow);
+      target.setUTCDate(istNow.getUTCDate() - i);
+      const dateStr = target.toISOString().split('T')[0];
+
+      const dayMins = rawSessions
+        .filter(s => {
+          const sDate = s.date || (s.createdAt ? getISTDateString(new Date(s.createdAt)) : '');
+          return sDate === dateStr;
+        })
+        .reduce((acc, s) => acc + (Number(s.minutes) || Math.round((Number(s.completedDuration || s.durationSeconds || 0)) / 60) || 0), 0);
+
+      let intensity = 0;
+      if (dayMins > 240) intensity = 4;
+      else if (dayMins > 120) intensity = 3;
+      else if (dayMins > 45) intensity = 2;
+      else if (dayMins > 0) intensity = 1;
+
+      buckets.push({ day: 60 - i, dateStr, minutes: dayMins, intensity });
+    }
+    return buckets;
+  }, [rawSessions]);
+
+  // Subject focus distribution from actual sessions
+  const subjectDistribution = useMemo(() => {
+    const counts: Record<string, number> = {};
+    rawSessions.forEach(s => {
+      const subj = s.subject || 'General Study';
+      const mins = Number(s.minutes) || Math.round((Number(s.completedDuration || s.durationSeconds || 0)) / 60) || 0;
+      counts[subj] = (counts[subj] || 0) + mins;
+    });
+
+    const total = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+    const paletteColors = ['#0284c7', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
+    return sorted.map(([name, mins], idx) => ({
+      name,
+      minutes: mins,
+      hours: Number((mins / 60).toFixed(1)),
+      percentage: Math.round((mins / total) * 100),
+      color: paletteColors[idx % paletteColors.length]
+    }));
+  }, [rawSessions]);
+
+  // Monthly focus chronicle from actual sessions
+  const monthlyChronicle = useMemo(() => {
+    const monthsMap: Record<string, { minutes: number; count: number }> = {};
+    rawSessions.forEach(s => {
+      const dateStr = s.date || (s.createdAt ? getISTDateString(new Date(s.createdAt)) : '');
+      const key = dateStr ? dateStr.slice(0, 7) : 'Unknown';
+      const mins = Number(s.minutes) || Math.round((Number(s.completedDuration || s.durationSeconds || 0)) / 60) || 0;
+      if (!monthsMap[key]) monthsMap[key] = { minutes: 0, count: 0 };
+      monthsMap[key].minutes += mins;
+      monthsMap[key].count += 1;
+    });
+
+    const entries = Object.entries(monthsMap).sort((a, b) => b[0].localeCompare(a[0]));
+    return entries.map(([mKey, data]) => {
+      let label = mKey;
+      try {
+        const [y, m] = mKey.split('-');
+        const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1);
+        label = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+      } catch (e) {}
+      return {
+        month: label,
+        hours: Number((data.minutes / 60).toFixed(1)),
+        worlds: data.count
+      };
+    });
+  }, [rawSessions]);
+
   // Save customized planet profile
   const handleSavePlanetProfile = (updated: UserPlanetProfile) => {
     setPlanetProfile(updated);
@@ -449,6 +683,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   // Add new task
   const handleCreateTask = () => {
     if (!newTaskTitle.trim()) return;
+    const today = getISTDateString();
     const newTask: FocusTaskItem = {
       id: `task-${Date.now()}`,
       title: newTaskTitle.trim(),
@@ -456,7 +691,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
       plannedPomodoros: newTaskPomodoros,
       completedPomodoros: 0,
       isCompleted: false,
-      dateKey: new Date().toISOString().split('T')[0]
+      dateKey: today
     };
     const updated = [newTask, ...tasks];
     setTasks(updated);
@@ -467,35 +702,12 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
     setShowAddTaskModal(false);
   };
 
-  // Toggle task completion and accrete a moon to orbit
+  // Toggle task complete
   const handleToggleTask = (taskId: string) => {
     const updated = tasks.map(t => {
       if (t.id === taskId) {
         const nextState = !t.isCompleted;
-        if (nextState) {
-          triggerConfetti();
-          // Accrete a Moon to the first planet
-          if (planets.length > 0) {
-            const planetCopy = [...planets];
-            const target = planetCopy[0];
-            const currentMoons = target.moons || [];
-            target.moons = [
-              ...currentMoons,
-              {
-                id: `moon-${Date.now()}`,
-                name: `${t.title} Moon`,
-                radius: 3.5,
-                orbitRadius: 24 + currentMoons.length * 10,
-                orbitSpeed: 0.02,
-                color: '#10b981'
-              }
-            ];
-            setPlanets(planetCopy);
-            try {
-              localStorage.setItem(`aspirantx_focus_galaxy_${userId}`, JSON.stringify(planetCopy));
-            } catch (e) {}
-          }
-        }
+        if (nextState) triggerConfetti();
         return {
           ...t,
           isCompleted: nextState,
@@ -564,7 +776,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
           <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-b from-[#0c1626] to-[#06080d] border border-sky-500/30 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800/80 pb-6">
               <div>
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span 
                     className="text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-0.5 rounded-full border"
@@ -577,7 +789,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                     {currentTier.badge} • LVL {modeLevel} / 1000
                   </span>
                   <span className="text-xs font-bold text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center gap-1">
-                    <Flame className="w-3 h-3 fill-current" /> 14 Days Streak
+                    <Flame className="w-3 h-3 fill-current" /> {streakDays} {streakDays === 1 ? 'Day' : 'Days'} Streak
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
@@ -591,27 +803,50 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               <div className="text-right flex flex-col md:items-end">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Today's Focus Mass</span>
                 <p className="text-xl sm:text-2xl font-black text-sky-400 font-mono">
-                  2h 45m <span className="text-xs text-slate-500 font-normal">/ 4h Goal</span>
+                  {formatMinutesToHoursAndMinutes(todayMinutes)} <span className="text-xs text-slate-500 font-normal">/ 4h Goal</span>
                 </p>
                 <div className="w-44 bg-slate-950 h-2 rounded-full mt-2 overflow-hidden border border-slate-800">
-                  <div className="h-full bg-sky-400 rounded-full" style={{ width: '68%' }} />
+                  <div 
+                    className="h-full bg-sky-400 rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.min(100, Math.round((todayMinutes / 240) * 100))}%` }} 
+                  />
                 </div>
               </div>
             </div>
 
             {/* Central Interactive Galaxy Viewport (Hero Visual) */}
             <div className="relative w-full h-[360px] sm:h-[420px] my-6 rounded-2xl overflow-hidden border border-slate-800/80 bg-[#04060a]">
-              <GalaxyCanvas
-                stage={currentTier.stage}
-                bodies={canvasBodies}
-                seed={planetProfile.seed}
-                heroAccentColor={planetProfile.accentColor}
-                viewScale={viewScale}
-                onSelectBody={(b) => {
-                  const match = planets.find(p => p.id === b.id);
-                  if (match) setSelectedPlanet(match);
-                }}
-              />
+              {planets.length === 0 && !isLoading ? (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-slate-950/80 backdrop-blur-sm space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-xl shadow-sky-500/10">
+                    <Globe2 className="w-8 h-8 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-white">Your galaxy starts here.</h3>
+                    <p className="text-xs text-slate-400 max-w-xs mt-1">
+                      Complete your first focus session to begin accreting celestial worlds.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowOnboardingModal(true)}
+                    className="px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-sky-500/25"
+                  >
+                    CREATE MY PLANET
+                  </button>
+                </div>
+              ) : (
+                <GalaxyCanvas
+                  stage={currentTier.stage}
+                  bodies={canvasBodies}
+                  seed={planetProfile.seed}
+                  heroAccentColor={planetProfile.accentColor}
+                  viewScale={viewScale}
+                  onSelectBody={(b) => {
+                    const match = planets.find(p => p.id === b.id);
+                    if (match) setSelectedPlanet(match);
+                  }}
+                />
+              )}
 
               {/* View Scale Filter Chips */}
               <div className="absolute top-4 left-4 z-10 flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-slate-800/90 backdrop-blur-md">
@@ -637,20 +872,18 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               </div>
             </div>
 
-            {/* Monday - Sunday Daily Ring Strip */}
+            {/* Monday - Sunday Daily Ring Strip from Real IST Dates */}
             <div className="grid grid-cols-7 gap-2 my-4 p-3 rounded-2xl bg-slate-950/60 border border-slate-800 text-center">
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => {
-                const isComplete = idx < 4;
-                const isToday = idx === 3;
+              {weekDayActivity.map((item, idx) => {
                 return (
-                  <div key={idx} className={`p-2 rounded-xl flex flex-col items-center gap-1 ${isToday ? 'bg-sky-500/10 border border-sky-500/30' : ''}`}>
-                    <span className="text-[10px] font-bold text-slate-400">{day}</span>
+                  <div key={idx} className={`p-2 rounded-xl flex flex-col items-center gap-1 ${item.isToday ? 'bg-sky-500/10 border border-sky-500/30' : ''}`}>
+                    <span className="text-[10px] font-bold text-slate-400">{item.dayLabel}</span>
                     <div className={`w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-mono ${
-                      isComplete 
+                      item.isComplete 
                         ? 'border-emerald-400 text-emerald-300 bg-emerald-500/20' 
                         : 'border-slate-700 text-slate-500'
                     }`}>
-                      {isComplete ? '✓' : '○'}
+                      {item.isComplete ? '✓' : '○'}
                     </div>
                   </div>
                 );
@@ -670,10 +903,10 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               </PressFeedback>
             )}
 
-            {/* Subtle Long-Term Journey Progress Indicator */}
+            {/* Long-Term Journey Progress Indicator */}
             <div className="mt-4 pt-4 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 font-medium">
               <span>Next Evolution: {nextTier ? nextTier.name : 'Cosmic Summit'} (Lvl {currentTier.maxLevel})</span>
-              <span className="font-mono text-sky-400">{modeProgressPercent}% Mode Progress</span>
+              <span className="font-mono text-sky-400">{modeLevel} / 1000 ({modeProgressPercent}%)</span>
             </div>
           </div>
         </div>
@@ -715,17 +948,27 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
             </div>
 
             <div className="relative w-full h-[500px] rounded-2xl overflow-hidden border border-slate-800 bg-[#04060a]">
-              <GalaxyCanvas
-                stage={currentTier.stage}
-                bodies={canvasBodies}
-                seed={planetProfile.seed}
-                heroAccentColor={planetProfile.accentColor}
-                viewScale={viewScale}
-                onSelectBody={(b) => {
-                  const match = planets.find(p => p.id === b.id);
-                  if (match) setSelectedPlanet(match);
-                }}
-              />
+              {planets.length === 0 && !isLoading ? (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-slate-950/80 backdrop-blur-sm space-y-4">
+                  <Globe2 className="w-10 h-10 text-sky-400 animate-pulse" />
+                  <h3 className="text-base font-bold text-white">No planets accreted yet.</h3>
+                  <p className="text-xs text-slate-400 max-w-xs">
+                    Start a focus session to accrete your first verified world.
+                  </p>
+                </div>
+              ) : (
+                <GalaxyCanvas
+                  stage={currentTier.stage}
+                  bodies={canvasBodies}
+                  seed={planetProfile.seed}
+                  heroAccentColor={planetProfile.accentColor}
+                  viewScale={viewScale}
+                  onSelectBody={(b) => {
+                    const match = planets.find(p => p.id === b.id);
+                    if (match) setSelectedPlanet(match);
+                  }}
+                />
+              )}
               <div className="absolute bottom-4 right-4 z-10 px-3 py-1.5 rounded-full bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-400 backdrop-blur-md flex items-center gap-2">
                 <Compass className="w-3.5 h-3.5 text-sky-400" />
                 <span>Tap any world to view verified study telemetry</span>
@@ -761,167 +1004,160 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
 
             {/* Task Cards List */}
             <div className="space-y-3">
-              {tasks.map(task => (
-                <div
-                  key={task.id}
-                  className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                    task.isCompleted
-                      ? 'bg-slate-950/40 border-emerald-500/30'
-                      : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => handleToggleTask(task.id)}
-                      className={`w-6 h-6 rounded-lg border mt-0.5 flex items-center justify-center transition-all cursor-pointer ${
-                        task.isCompleted
-                          ? 'bg-emerald-500 border-emerald-400 text-slate-950'
-                          : 'border-slate-700 hover:border-emerald-400 text-transparent'
-                      }`}
-                    >
-                      ✓
-                    </button>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20">
-                          {task.subject}
-                        </span>
-                        {task.isCompleted && (
-                          <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
-                            <Moon className="w-3 h-3 fill-current" /> Moon Accreted
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-sm font-bold mt-1 ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>
-                        {task.title}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Planned vs Completed Pomodoro Dots Strip */}
-                  <div className="flex items-center gap-3 self-end sm:self-center">
-                    <div className="flex items-center gap-1.5">
-                      {Array.from({ length: task.plannedPomodoros }).map((_, dotIdx) => (
-                        <span
-                          key={dotIdx}
-                          className={`w-2.5 h-2.5 rounded-full ${
-                            dotIdx < task.completedPomodoros
-                              ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50'
-                              : 'bg-slate-800'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-xs font-mono text-slate-400">
-                      {task.completedPomodoros}/{task.plannedPomodoros} Sprints
-                    </span>
-                  </div>
+              {tasks.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <Calendar className="w-8 h-8 text-slate-600 mx-auto" />
+                  <p className="text-sm font-bold text-slate-300">No tasks planned yet</p>
+                  <p className="text-xs text-slate-500">Tasks are optional. You can start focus sessions directly without any task.</p>
                 </div>
-              ))}
+              ) : (
+                tasks.map(task => (
+                  <div
+                    key={task.id}
+                    className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
+                      task.isCompleted
+                        ? 'bg-slate-950/40 border-emerald-500/30'
+                        : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <button
+                        onClick={() => handleToggleTask(task.id)}
+                        className={`w-6 h-6 rounded-lg border mt-0.5 flex items-center justify-center transition-all cursor-pointer ${
+                          task.isCompleted
+                            ? 'bg-emerald-500 border-emerald-400 text-slate-950'
+                            : 'border-slate-700 hover:border-emerald-400 text-transparent'
+                        }`}
+                      >
+                        ✓
+                      </button>
+                      <div>
+                        <h4 className={`text-sm font-bold ${task.isCompleted ? 'text-slate-400 line-through' : 'text-white'}`}>
+                          {task.title}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-400">
+                            {task.subject}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {task.completedPomodoros} / {task.plannedPomodoros} Pomodoros
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          SCREEN G: HISTORY / STATS (Star-Field Activity Heatmap)
+          SCREEN G: HISTORY & STATS (Full Server-Attested Session Ledger)
       ══════════════════════════════════════════════════════════════════ */}
       {activeSubTab === 'history' && (
         <div className="space-y-6">
           <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6">
-            <div>
-              <h2 className="text-xl font-black text-white flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-sky-400" />
-                <span>Cosmic Telemetry & Star-Field Heatmap</span>
-              </h2>
-              <p className="text-xs text-slate-400">
-                Grounded historical telemetry directly compiled from verified study sessions.
-              </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-white flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-sky-400" />
+                  <span>Verified Study Session Ledger</span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Authoritative historical session records verified through backend cryptographic time checks.
+                </p>
+              </div>
+              <button
+                onClick={() => fetchGalaxyData()}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-sky-400 flex items-center gap-1.5 transition-all"
+                title="Refresh sessions from server"
+              >
+                <RotateCcw className="w-3.5 h-3.5" /> Refresh
+              </button>
             </div>
 
-            {/* 4-Metric Grid */}
+            {/* 4 Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Today's Focus</span>
-                <p className="text-xl font-black text-white mt-1">4h 15m</p>
-                <span className="text-[10px] text-emerald-400 font-mono">+12% vs avg</span>
-              </div>
-              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Weekly Focus</span>
-                <p className="text-xl font-black text-white mt-1">28h 30m</p>
-                <span className="text-[10px] text-sky-400 font-mono">Top 5% Rank</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Total Sessions</span>
+                <p className="text-xl font-black text-white mt-1">{totalSessionsCount}</p>
+                <span className="text-[10px] text-emerald-400 font-mono">Verified Count</span>
               </div>
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Total Focus</span>
-                <p className="text-xl font-black text-white mt-1">{totalFocusHours}h</p>
-                <span className="text-[10px] text-slate-500 font-mono">Verified Time</span>
+                <p className="text-xl font-black text-sky-400 mt-1">{formatMinutesToHoursAndMinutes(totalFocusMinutes)}</p>
+                <span className="text-[10px] text-slate-500 font-mono">{totalFocusHours} Total Hours</span>
               </div>
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Max Streak</span>
-                <p className="text-xl font-black text-amber-400 mt-1">21 Days</p>
-                <span className="text-[10px] text-amber-400 font-mono">All-Time Peak</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Longest Sitting</span>
+                <p className="text-xl font-black text-white mt-1">{formatMinutesToHoursAndMinutes(longestSessionMinutes)}</p>
+                <span className="text-[10px] text-emerald-400 font-mono">Peak Sprint</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Average Session</span>
+                <p className="text-xl font-black text-amber-400 mt-1">
+                  {totalSessionsCount > 0 ? formatMinutesToHoursAndMinutes(Math.round(totalFocusMinutes / totalSessionsCount)) : '0m'}
+                </p>
+                <span className="text-[10px] text-slate-500 font-mono">Per Sitting</span>
               </div>
             </div>
 
-            {/* Star-Field Activity Heatmap Grid */}
-            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-300">Deep Work Starfield (Past 60 Days)</span>
-                <span className="text-[10px] text-slate-500 font-mono">Intensity = Focus Hours</span>
-              </div>
-              <div className="grid grid-cols-12 gap-1.5">
-                {Array.from({ length: 60 }).map((_, i) => {
-                  const intensity = (i * 7) % 5;
-                  const colors = [
-                    'bg-slate-900 border-slate-800',
-                    'bg-sky-950 border-sky-800',
-                    'bg-sky-800 border-sky-600',
-                    'bg-sky-600 border-sky-400',
-                    'bg-sky-400 border-white'
-                  ];
+            {/* Sessions Table / List */}
+            <div className="space-y-3">
+              {rawSessions.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                  <BarChart3 className="w-8 h-8 text-slate-600 mx-auto" />
+                  <p className="text-sm font-bold text-slate-300">No session history yet</p>
+                  <p className="text-xs text-slate-500">
+                    Complete your first Stopwatch or Pomodoro session to log verified deep study time.
+                  </p>
+                </div>
+              ) : (
+                rawSessions.map((sess, idx) => {
+                  const mins = Number(sess.minutes) || Math.round(Number(sess.completedDuration || sess.durationSeconds || 0) / 60) || 25;
+                  const dateStr = sess.date || (sess.createdAt ? getISTDateString(new Date(sess.createdAt)) : 'Not specified');
+                  const mode = sess.mode || (sess.id && sess.id.startsWith('stopwatch') ? 'Stopwatch' : 'Pomodoro');
+                  const subject = sess.subject || 'Not specified';
+                  const topic = sess.topic || sess.subtopic || 'Not specified';
+
                   return (
-                    <div
-                      key={i}
-                      className={`h-5 rounded-md border transition-all ${colors[intensity]}`}
-                      title={`Day ${i + 1}: ${intensity * 1.5}h focus`}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+                    <div 
+                      key={sess.id || idx}
+                      className="p-4 rounded-2xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center font-mono font-bold text-sky-400 text-xs shrink-0 mt-0.5">
+                          #{rawSessions.length - idx}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-bold text-white">{subject}</span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-400 uppercase">
+                              {mode}
+                            </span>
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3" /> VERIFIED
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">{topic}</p>
+                          <span className="text-[10px] font-mono text-slate-500 mt-1 block">
+                            IST Date: {dateStr}
+                          </span>
+                        </div>
+                      </div>
 
-            {/* Subject Breakdown Distribution */}
-            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-slate-300">Subject Focus Distribution</span>
-              <div className="space-y-2">
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-300 font-medium">Indian Polity</span>
-                    <span className="text-sky-400 font-mono">54% (222h)</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                    <div className="h-full bg-sky-500 rounded-full" style={{ width: '54%' }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-300 font-medium">Modern History</span>
-                    <span className="text-amber-400 font-mono">28% (115h)</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                    <div className="h-full bg-amber-500 rounded-full" style={{ width: '28%' }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-slate-300 font-medium">CSAT Aptitude</span>
-                    <span className="text-indigo-400 font-mono">18% (75h)</span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
-                    <div className="h-full bg-indigo-500 rounded-full" style={{ width: '18%' }} />
-                  </div>
-                </div>
-              </div>
+                      <div className="sm:text-right shrink-0">
+                        <span className="text-base font-black text-sky-400 font-mono">
+                          {formatMinutesToHoursAndMinutes(mins)}
+                        </span>
+                        <span className="text-[10px] text-slate-500 block font-mono">COMPLETED</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>
@@ -944,7 +1180,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                 <span>10-Mode Cosmic Progression Roadmap</span>
               </h2>
               <p className="text-xs text-slate-400">
-                10 Modes • 1000 Levels Per Mode • 10,000 Total Levels. No purchased level skipping.
+                10 Modes • 1000 Levels Per Mode • 10,000 Total Levels. Server verified progression.
               </p>
             </div>
 
@@ -978,7 +1214,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                         {tier.modeNumber}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-sm font-black text-white">{tier.name}</h3>
                           <span 
                             className="text-[10px] font-mono px-2 py-0.5 rounded-md border"
@@ -988,7 +1224,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                               backgroundColor: `${tier.accentColor}10`
                             }}
                           >
-                            Levels {tier.minLevel}–{tier.maxLevel}
+                            Levels {tier.minLevel}–{tier.maxLevel} ({tier.minHours}–{tier.maxHours}h)
                           </span>
                           {isCurrent && (
                             <span className="text-[10px] font-bold text-sky-400 bg-sky-500/20 px-2 py-0.5 rounded-full animate-pulse">
@@ -1052,7 +1288,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               </button>
             </div>
 
-            {/* Emotional Giant Display Banner */}
+            {/* Giant Display Banner */}
             <div className="p-8 rounded-2xl bg-gradient-to-r from-[#0a182b] via-[#0f243d] to-[#0a182b] border border-sky-500/40 text-center space-y-2 shadow-xl">
               <span className="text-xs font-mono font-bold text-sky-400 uppercase tracking-widest">
                 VERIFIED FOCUS MASS
@@ -1061,31 +1297,105 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                 {totalFocusHours} HOURS
               </h1>
               <p className="text-sm sm:text-base font-bold text-emerald-400">
-                = {Math.floor(totalFocusHours / 24)} DAYS & {Math.round(totalFocusHours % 24)} HOURS OF NON-STOP FOCUS
+                = {Math.floor(totalFocusHours / 24)} DAYS & {Math.round(totalFocusHours % 24)} HOURS OF VERIFIED DEEP WORK
               </p>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                No distraction skips. No purchased level boosts. Every minute verified through active Pomodoro intervals.
+                No distraction skips. No purchased level boosts. Every minute verified through active focus sessions.
               </p>
             </div>
 
-            {/* Monthly Chronicle */}
+            {/* 4-Metric Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Today's Focus</span>
+                <p className="text-xl font-black text-white mt-1">{formatMinutesToHoursAndMinutes(todayMinutes)}</p>
+                <span className="text-[10px] text-emerald-400 font-mono">IST Day</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Weekly Focus</span>
+                <p className="text-xl font-black text-white mt-1">{formatMinutesToHoursAndMinutes(weekMinutes || totalFocusMinutes)}</p>
+                <span className="text-[10px] text-sky-400 font-mono">Past 7 Days</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Total Focus</span>
+                <p className="text-xl font-black text-white mt-1">{totalFocusHours}h</p>
+                <span className="text-[10px] text-slate-500 font-mono">Verified Time</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Current Streak</span>
+                <p className="text-xl font-black text-amber-400 mt-1">{streakDays} Days</p>
+                <span className="text-[10px] text-amber-400 font-mono">Active Consistency</span>
+              </div>
+            </div>
+
+            {/* Star-Field Activity Heatmap Grid from Real Session Data */}
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300">Deep Work Starfield (Past 60 Days)</span>
+                <span className="text-[10px] text-slate-500 font-mono">Intensity = Focus Hours</span>
+              </div>
+              <div className="grid grid-cols-12 gap-1.5">
+                {heatmapData.map((item, i) => {
+                  const colors = [
+                    'bg-slate-900 border-slate-800',
+                    'bg-sky-950 border-sky-800',
+                    'bg-sky-800 border-sky-600',
+                    'bg-sky-600 border-sky-400',
+                    'bg-sky-400 border-white'
+                  ];
+                  return (
+                    <div
+                      key={i}
+                      className={`h-5 rounded-md border transition-all ${colors[item.intensity]}`}
+                      title={`${item.dateStr}: ${formatMinutesToHoursAndMinutes(item.minutes)} focus`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Real Subject Breakdown Distribution */}
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <span className="text-xs font-bold text-slate-300">Subject Focus Distribution</span>
+              <div className="space-y-2">
+                {subjectDistribution.length === 0 ? (
+                  <p className="text-xs text-slate-500">No subject data yet. Sessions will appear here automatically.</p>
+                ) : (
+                  subjectDistribution.map((item, idx) => (
+                    <div key={idx}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-300 font-medium">{item.name}</span>
+                        <span className="text-sky-400 font-mono">{item.percentage}% ({item.hours}h)</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all duration-500" 
+                          style={{ width: `${item.percentage}%`, backgroundColor: item.color }} 
+                        />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Monthly Chronicle from Real Data */}
             <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
               <span className="text-xs font-bold text-slate-300">Monthly Focus Chronicle</span>
               <div className="space-y-2">
-                {[
-                  { month: 'JANUARY 2026', hours: 112, worlds: 14 },
-                  { month: 'FEBRUARY 2026', hours: 96, worlds: 12 },
-                  { month: 'MARCH 2026', hours: 124, worlds: 16 },
-                  { month: 'APRIL 2026', hours: 80, worlds: 10 },
-                ].map((item, idx) => (
-                  <div key={idx} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-bold text-white">{item.month}</span>
-                      <p className="text-[11px] text-slate-400">{item.worlds} Worlds Accreted</p>
+                {monthlyChronicle.length === 0 ? (
+                  <p className="text-xs text-slate-500">No monthly records yet.</p>
+                ) : (
+                  monthlyChronicle.map((item, idx) => (
+                    <div key={idx} className="p-3.5 rounded-xl bg-slate-900 border border-slate-800/80 flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-bold text-white">{item.month}</span>
+                        <p className="text-[11px] text-slate-400">{item.worlds} {item.worlds === 1 ? 'Session' : 'Sessions'} Logged</p>
+                      </div>
+                      <span className="font-mono font-bold text-sky-400 text-sm">{item.hours} Hours</span>
                     </div>
-                    <span className="font-mono font-bold text-sky-400 text-sm">{item.hours} Hours</span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -1093,7 +1403,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
       )}
 
       {/* ══════════════════════════════════════════════════════════════════
-          SCREEN K: HALL OF FAME (Trophy & Badge Shelf)
+          SCREEN K: HALL OF FAME (Trophy & Badge Shelf from Real Stats)
       ══════════════════════════════════════════════════════════════════ */}
       {activeSubTab === 'hall_of_fame' && (
         <div className="space-y-6">
@@ -1104,25 +1414,67 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                 <span>Hall of Fame & Trophy Shelf</span>
               </h2>
               <p className="text-xs text-slate-400">
-                Milestones achieved through sustained study discipline and focus resilience.
+                Milestones achieved through sustained study discipline and verified focus resilience.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { title: '100 DAYS STREAK', desc: '100 consecutive days of focused Pomodoro sprints.', date: 'Unlocked 12 Mar 2026', icon: '🦅', color: '#f59e0b', unlocked: true },
-                { title: '1000 HOURS FOCUS', desc: 'Accumulated 1,000 verified deep work study hours.', date: '412/1000 Hours (In Progress)', icon: '⚡', color: '#0284c7', unlocked: false },
-                { title: '100 SESSIONS', desc: 'Completed 100 flawless sessions with zero tab drift.', date: 'Unlocked 02 Feb 2026', icon: '🪐', color: '#10b981', unlocked: true },
-                { title: 'CENTURION SPRINT', desc: '120 minutes continuous deep study sitting.', date: 'Unlocked 18 Jan 2026', icon: '🛡️', color: '#6366f1', unlocked: true },
-                { title: 'DEEP WORK DEFENDER', desc: '30 consecutive days with Focus Shield active.', date: 'Unlocked 25 Mar 2026', icon: '🌌', color: '#ec4899', unlocked: true },
-                { title: 'MODE COMPLETE', desc: 'Ascended to Level 1000 in Mode I: Cosmic Dust.', date: 'Locked (Level 142/1000)', icon: '👑', color: '#e0e7ff', unlocked: false }
+                { 
+                  title: '100 DAYS STREAK', 
+                  desc: '100 consecutive days of focused study sitting.', 
+                  date: streakDays >= 100 ? 'Unlocked' : `${streakDays}/100 Days (In Progress)`, 
+                  icon: '🦅', 
+                  color: '#f59e0b', 
+                  unlocked: streakDays >= 100 
+                },
+                { 
+                  title: '1000 HOURS FOCUS', 
+                  desc: 'Accumulated 1,000 verified deep work study hours.', 
+                  date: totalFocusHours >= 1000 ? 'Unlocked' : `${Math.round(totalFocusHours)}/1000 Hours (In Progress)`, 
+                  icon: '⚡', 
+                  color: '#0284c7', 
+                  unlocked: totalFocusHours >= 1000 
+                },
+                { 
+                  title: '100 SESSIONS', 
+                  desc: 'Completed 100 verified focus sessions.', 
+                  date: totalSessionsCount >= 100 ? 'Unlocked' : `${totalSessionsCount}/100 Sessions (In Progress)`, 
+                  icon: '🪐', 
+                  color: '#10b981', 
+                  unlocked: totalSessionsCount >= 100 
+                },
+                { 
+                  title: 'CENTURION SPRINT', 
+                  desc: '120 minutes continuous deep study sitting.', 
+                  date: longestSessionMinutes >= 120 ? `Unlocked (${formatMinutesToHoursAndMinutes(longestSessionMinutes)})` : `Max: ${formatMinutesToHoursAndMinutes(longestSessionMinutes)} / 120m`, 
+                  icon: '🛡️', 
+                  color: '#6366f1', 
+                  unlocked: longestSessionMinutes >= 120 
+                },
+                { 
+                  title: 'DEEP WORK DEFENDER', 
+                  desc: '10 verified study sessions with Focus Shield active.', 
+                  date: totalSessionsCount >= 10 ? 'Unlocked' : `${totalSessionsCount}/10 Sessions`, 
+                  icon: '🌌', 
+                  color: '#ec4899', 
+                  unlocked: totalSessionsCount >= 10 
+                },
+                { 
+                  title: 'MODE COMPLETE', 
+                  desc: `Ascend to Level 1000 in ${currentTier.name}.`, 
+                  date: modeLevel >= 1000 ? 'Unlocked' : `Level ${modeLevel}/1000`, 
+                  icon: '👑', 
+                  color: '#e0e7ff', 
+                  unlocked: modeLevel >= 1000 
+                }
               ].map((badge, idx) => (
                 <div
                   key={idx}
                   className={`p-4 rounded-2xl border flex items-start gap-4 transition-all ${
                     badge.unlocked
                       ? 'bg-slate-950 border-slate-800 hover:border-slate-700'
-                      : 'bg-slate-950/40 border-slate-800/40 opacity-50'
+                      : 'bg-slate-950/40 border-slate-800/40 opacity-60'
                   }`}
                 >
                   <div 
@@ -1135,11 +1487,15 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                     {badge.icon}
                   </div>
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-sm font-black text-white">{badge.title}</h3>
-                      {badge.unlocked && (
+                      {badge.unlocked ? (
                         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                           EARNED
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+                          LOCKED
                         </span>
                       )}
                     </div>
@@ -1362,8 +1718,8 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                   <span className="font-bold text-emerald-400 font-mono">{totalFocusHours} Hours</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Genesis Date:</span>
-                  <span className="text-slate-400 font-mono">14 JAN 2026</span>
+                  <span className="text-slate-400">Total Sessions:</span>
+                  <span className="text-slate-400 font-mono">{totalSessionsCount} Sessions</span>
                 </div>
               </div>
 

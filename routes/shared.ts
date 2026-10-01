@@ -697,6 +697,27 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
     }
   }
 
+  // 1b. Query Neon PostgreSQL public.user_profiles if Supabase didn't find it or as primary
+  try {
+    const pgProfileRes = await queryPostgres(
+      `SELECT id, streak_days, last_active_date::text AS last_active_date 
+       FROM public.user_profiles 
+       WHERE id = $1 LIMIT 1`,
+      [cleanId]
+    );
+    if (pgProfileRes.rows.length > 0) {
+      const pRow = pgProfileRes.rows[0];
+      if (Number(pRow.streak_days) > 0) {
+        currentStreak = Number(pRow.streak_days);
+      }
+      if (pRow.last_active_date) {
+        lastActive = pRow.last_active_date;
+      }
+    }
+  } catch (e: any) {
+    // Graceful fallback
+  }
+
   // 2. Memory user lookup for short-lived caching / fallback when Supabase is disabled or record not found
   let memoryUser = adminUsersDb.find(u => 
     (u.id && (u.id === userIdentifier || u.id.toLowerCase() === cleanId || (matchedSupabaseId && u.id === matchedSupabaseId))) ||
@@ -751,10 +772,25 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
       joinedAt: new Date().toISOString()
     } as any);
   }
-
-  // 4. Persistence to Supabase user_profiles
   let persisted = false;
 
+  // 4. Persistence to Neon public.user_profiles
+  try {
+    await queryPostgres(
+      `INSERT INTO public.user_profiles (id, streak_days, last_active_date, updated_at)
+       VALUES ($1, $2, $3::date, NOW())
+       ON CONFLICT (id) DO UPDATE SET 
+         streak_days = $2,
+         last_active_date = $3::date,
+         updated_at = NOW();`,
+      [cleanId, newStreak, todayStr]
+    );
+    persisted = true;
+  } catch (e: any) {
+    console.warn('[StreakEngine] Neon user_profiles update notice:', e?.message || e);
+  }
+
+  // 5. Persistence to Supabase user_profiles if configured
   if (supabaseServer) {
     const targetId = matchedSupabaseId || userIdentifier;
     const upsertData: Record<string, any> = {
@@ -776,13 +812,11 @@ export async function updateStreak(userIdentifier: string): Promise<{ streakDays
 
       if (upsertErr) {
         console.error('[StreakEngine] Supabase streak upsert failed:', upsertErr.message, 'code:', upsertErr.code);
-        persisted = false;
       } else {
         persisted = true;
       }
     } catch (e: any) {
       console.error('[StreakEngine] Supabase streak upsert exception:', e?.message || e);
-      persisted = false;
     }
   } else {
     // Local development without Supabase
