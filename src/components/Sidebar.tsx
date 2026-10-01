@@ -36,7 +36,8 @@ import {
   Shield,
   Trophy,
   Download,
-  RotateCcw
+  RotateCcw,
+  LayoutGrid
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
@@ -522,13 +523,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Grouped Information Architecture Navigation */}
         <nav className="space-y-4">
-          {/* 1. CORE WORKSPACE */}
+          {/* 1. 5-PILLAR CORE ARCHITECTURE */}
           <div className="space-y-1">
+            {!isCollapsed && (
+              <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-sky-400/90 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Target className="w-3 h-3 text-sky-400" />
+                  5 Core Pillars
+                </span>
+                <span className="text-[9px] text-sky-500/70 font-mono">Pillar 1–5</span>
+              </div>
+            )}
             {renderNavItem({
               id: 'dashboard',
-              label: 'Command Center',
+              label: '1. Home (Today)',
               icon: Target,
-              badge: 'Live',
+              badge: 'Hero',
+            })}
+            {renderNavItem({
+              id: 'syllabus',
+              label: '2. Study (Syllabus)',
+              icon: BookOpen,
+              badge: 'Tree',
+            })}
+            {renderNavItem({
+              id: 'practice_hub',
+              label: '3. Practice (PYQ & CBT)',
+              icon: Award,
+              badge: 'Test',
+            })}
+            {renderNavItem({
+              id: 'progress_hub',
+              label: '4. Progress (Telemetry)',
+              icon: BarChart3,
+              badge: 'Rings',
+            })}
+            {renderNavItem({
+              id: 'more_hub',
+              label: '5. More (Tools & Perks)',
+              icon: LayoutGrid,
+              badge: 'All',
             })}
           </div>
 

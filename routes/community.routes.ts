@@ -1113,8 +1113,8 @@ router.post('/api/community/battle-groups', async (req, res) => {
     }
 
     const hostId = verifiedUser?.sub || req.body.hostId || 'usr_' + Date.now();
-    const hostName = verifiedUser?.name || req.body.hostName || 'Aspirant Host';
-    const hostAvatar = verifiedUser?.avatar_url || req.body.hostAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+    const hostName = (verifiedUser as any)?.name || req.body.hostName || 'Aspirant Host';
+    const hostAvatar = (verifiedUser as any)?.avatar_url || req.body.hostAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
 
     const newGroupId = 'battle_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
     const newGroup: StudyBattleGroupRecord = {
@@ -1209,8 +1209,8 @@ router.post('/api/community/battle-groups/:id/join', async (req, res) => {
 
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
-    const userName = verifiedUser?.name || req.body.userName || 'Aspirant';
-    const userAvatar = verifiedUser?.avatar_url || req.body.userAvatar || '';
+    const userName = (verifiedUser as any)?.name || req.body.userName || 'Aspirant';
+    const userAvatar = (verifiedUser as any)?.avatar_url || req.body.userAvatar || '';
     const userExam = req.body.userExam || group.targetExam;
 
     const existingIdx = group.members.findIndex(m => m.id === userId);
@@ -1267,8 +1267,8 @@ router.post('/api/community/battle-groups/:id/log-study', async (req, res) => {
 
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
-    const userName = verifiedUser?.name || req.body.userName || 'Aspirant';
-    const userAvatar = verifiedUser?.avatar_url || req.body.userAvatar || '';
+    const userName = (verifiedUser as any)?.name || req.body.userName || 'Aspirant';
+    const userAvatar = (verifiedUser as any)?.avatar_url || req.body.userAvatar || '';
     const minutes = Math.max(1, Number(req.body.minutes) || 1);
 
     let member = group.members.find(m => m.id === userId);
@@ -1332,8 +1332,8 @@ router.post('/api/community/battle-groups/:id/heartbeat', async (req, res) => {
 
     const verifiedUser = await extractVerifiedUserFromReq(req);
     const userId = verifiedUser?.sub || req.body.userId || 'usr_guest_101';
-    const userName = verifiedUser?.name || req.body.userName || 'Aspirant';
-    const userAvatar = verifiedUser?.avatar_url || req.body.userAvatar || '';
+    const userName = (verifiedUser as any)?.name || req.body.userName || 'Aspirant';
+    const userAvatar = (verifiedUser as any)?.avatar_url || req.body.userAvatar || '';
 
     let member = group.members.find(m => m.id === userId);
     if (!member) {

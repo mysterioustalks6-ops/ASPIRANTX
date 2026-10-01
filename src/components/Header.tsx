@@ -203,6 +203,21 @@ export const Header: React.FC<HeaderProps> = ({
           title: 'Admin Panel',
           subtitle: 'System control & configuration',
         };
+      case 'practice_hub':
+        return {
+          title: 'Practice Hub',
+          subtitle: 'PYQ archives, question banks & CBT simulators',
+        };
+      case 'progress_hub':
+        return {
+          title: 'Progress & Telemetry',
+          subtitle: 'Readiness rings, velocity & all-India rankings',
+        };
+      case 'more_hub':
+        return {
+          title: 'More Features & Tools',
+          subtitle: 'Productivity engines, community & settings',
+        };
       default:
         return {
           title: 'Workspace',

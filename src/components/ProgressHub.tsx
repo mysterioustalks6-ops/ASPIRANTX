@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { UserProfile, ExamType, ActiveTab } from '../types';
 import { CircularRingMeter } from './CircularPerformanceMeter';
+import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 
 const LeaderboardView = React.lazy(() => import('./LeaderboardView').then(m => ({ default: m.LeaderboardView })));
 const WeaknessDetector = React.lazy(() => import('./WeaknessDetector').then(m => ({ default: m.WeaknessDetector })));
@@ -30,6 +31,42 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
   onNavigate
 }) => {
   const [subTab, setSubTab] = useState<'analytics' | 'leaderboard' | 'weakness'>('analytics');
+  const activeExamTag = normalizeExamId(selectedExam || userProfile.exam);
+  const examCfg = getExamConfig(activeExamTag);
+
+  // Compute live telemetry from user's progress
+  const [telemetry, setTelemetry] = useState(() => {
+    let completed = 0;
+    try {
+      const progressKey = `aspirantx_subtopic_progress_v3_${userProfile.id || 'guest'}_${activeExamTag}`;
+      const raw = localStorage.getItem(progressKey) || localStorage.getItem(`aspirantx_subtopic_progress_v3_${userProfile.id || 'guest'}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) completed = parsed.length;
+      }
+    } catch {}
+
+    let accuracy = 76;
+    try {
+      const key = `aspirantx_cbt_results_cache_${userProfile.id || 'guest'}_${activeExamTag}`;
+      const rawResults = localStorage.getItem(key) || localStorage.getItem('aspirantx_cbt_results_cache');
+      if (rawResults) {
+        const parsed = JSON.parse(rawResults);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const totalAcc = parsed.reduce((acc: number, r: any) => acc + (r.accuracy || r.accuracyPercentage || 0), 0);
+          accuracy = Math.round(totalAcc / parsed.length);
+        }
+      }
+    } catch {}
+
+    const coverage = Math.min(100, Math.round((completed / 240) * 100));
+
+    return {
+      completedTopics: completed,
+      coveragePercent: Math.max(8, coverage),
+      testAccuracy: accuracy,
+    };
+  });
 
   return (
     <div className="space-y-6 pb-28 max-w-4xl mx-auto px-4 pt-2">
@@ -98,24 +135,24 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               <CircularRingMeter 
-                progress={25}
+                progress={telemetry.coveragePercent}
                 size={120}
                 strokeWidth={9}
                 gradientId="grad-syllabus-hub"
                 gradientColors={['#0284c7', '#38bdf8']}
                 title="Syllabus Coverage"
-                subtitle="1 of 4 Official Modules"
+                subtitle={`${telemetry.completedTopics} of 240 Topics`}
                 icon={<Target className="w-3.5 h-3.5 text-sky-400" />}
               />
 
               <CircularRingMeter 
-                progress={78}
+                progress={telemetry.testAccuracy}
                 size={120}
                 strokeWidth={9}
                 gradientId="grad-accuracy-hub"
                 gradientColors={['#10b981', '#34d399']}
                 title="Test Accuracy"
-                subtitle="UPSC Prelims Standard"
+                subtitle="CBT Simulator Score"
                 icon={<Award className="w-3.5 h-3.5 text-emerald-400" />}
               />
 

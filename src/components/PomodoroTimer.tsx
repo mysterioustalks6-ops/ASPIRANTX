@@ -29,9 +29,9 @@ import {
   Save,
   Layers,
   ChevronDown,
-  Sprout,
-  TreeDeciduous,
-  TreePine,
+  Globe2,
+  Orbit,
+  Radio,
   CloudRain,
   Waves,
   Music,
@@ -44,32 +44,13 @@ import { StudySession, CustomSubject, ManualQuestion, PomodoroQuestionRef } from
 import { INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK } from '../data/academicData';
 import { fetchOfficialSyllabus, fetchPersonalSyllabus } from '../lib/unifiedSyllabus';
 import { PomodoroHistoryView } from './PomodoroHistoryView';
-import { ForestGardenView } from './ForestGardenView';
+import { FocusGalaxyView, COSMIC_TIERS, CosmicTier, FocusPlanetRecord } from './FocusGalaxyView';
+import { GalaxyCanvas } from './GalaxyCanvas';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { getApiUrl } from '../lib/apiConfig';
 import { triggerConfetti, PressFeedback, SlideUp, ModalTransition, CountUp } from '../lib/animations';
 import { ContextualTour } from './ContextualTour';
-
-// --- FOREST MILESTONE TIERS (FEATURE C) ---
-interface ForestTier {
-  id: string;
-  name: string;
-  minHours: number;
-  maxHours: number;
-  icon: string;
-  badgeColor: string;
-  borderCol: string;
-  description: string;
-}
-
-const FOREST_TIERS: ForestTier[] = [
-  { id: 't1', name: 'Seedling Scholar', minHours: 0, maxHours: 5, icon: '🌱', badgeColor: 'bg-emerald-500/20 text-emerald-300', borderCol: 'border-emerald-500/40', description: 'Just sprouted your focus garden' },
-  { id: 't2', name: 'Sapling Achiever', minHours: 5, maxHours: 25, icon: '🌿', badgeColor: 'bg-teal-500/20 text-teal-300', borderCol: 'border-teal-500/40', description: 'Deep roots forming consistent study habits' },
-  { id: 't3', name: 'Deep Focus Arborist', minHours: 25, maxHours: 100, icon: '🌳', badgeColor: 'bg-cyan-500/20 text-cyan-300', borderCol: 'border-cyan-500/40', description: 'Canopy of high concentration mastery' },
-  { id: 't4', name: 'Redwood Sage', minHours: 100, maxHours: 250, icon: '🌲', badgeColor: 'bg-purple-500/20 text-purple-300', borderCol: 'border-purple-500/40', description: 'Unwavering willpower and endurance' },
-  { id: 't5', name: 'Grandmaster Bonsai', minHours: 250, maxHours: 1000, icon: '🌸', badgeColor: 'bg-pink-500/20 text-pink-300', borderCol: 'border-pink-500/40', description: 'Zen master of peak academic performance' }
-];
 
 // --- WEB AUDIO API AMBIENT SOUND GENERATOR (FEATURE D) ---
 class FocusAudioEngine {
@@ -81,7 +62,7 @@ class FocusAudioEngine {
   private lfo: OscillatorNode | null = null;
   public isRunning = false;
 
-  start(soundType: 'rain' | 'waves' | 'synth', volume = 0.5) {
+  start(soundType: 'drone' | 'solar' | 'harmonics' | 'rain' | 'waves' | 'synth', volume = 0.5) {
     this.stop();
     try {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -97,8 +78,40 @@ class FocusAudioEngine {
       this.masterGain.connect(this.ctx.destination);
       this.isRunning = true;
 
-      if (soundType === 'rain') {
-        // Pink noise generator for gentle rainfall
+      if (soundType === 'drone' || soundType === 'synth') {
+        // Deep Space Cosmic Drone: 108Hz fundamental + 432Hz harmonic warmth + 6Hz theta modulation
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const subOsc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+
+        osc1.type = 'sine';
+        osc1.frequency.value = 108; // Sacred space root
+        osc2.type = 'sine';
+        osc2.frequency.value = 114; // 6Hz Theta frequency binaural beat for intense flow
+        subOsc.type = 'triangle';
+        subOsc.frequency.value = 54; // Deep sub-bass cosmic gravity
+
+        filter.type = 'lowpass';
+        filter.frequency.value = 380;
+        filter.Q.value = 1.2;
+
+        const subGain = this.ctx.createGain();
+        subGain.gain.value = 0.35;
+        subOsc.connect(subGain);
+        subGain.connect(filter);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(this.masterGain);
+
+        osc1.start(0);
+        osc2.start(0);
+        subOsc.start(0);
+        this.osc1 = osc1;
+        this.osc2 = osc2;
+      } else if (soundType === 'solar' || soundType === 'rain') {
+        // Interstellar Solar Wind: Filtered cosmic pink noise with slow drifting stellar gusts
         const bufferSize = 2 * this.ctx.sampleRate;
         const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
         const output = noiseBuffer.getChannelData(0);
@@ -111,7 +124,7 @@ class FocusAudioEngine {
           b3 = 0.86650 * b3 + white * 0.3104856;
           b4 = 0.55000 * b4 + white * 0.5329522;
           b5 = -0.7616 * b5 - white * 0.0168980;
-          output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+          output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.09;
           b6 = white * 0.115926;
         }
 
@@ -121,71 +134,61 @@ class FocusAudioEngine {
 
         const filter = this.ctx.createBiquadFilter();
         filter.type = 'bandpass';
-        filter.frequency.value = 1100;
-        filter.Q.value = 0.7;
+        filter.frequency.value = 650;
+        filter.Q.value = 1.1;
+
+        const lfo = this.ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.08; // Ultra slow 12s stellar breeze cycle
+
+        const lfoGain = this.ctx.createGain();
+        lfoGain.gain.value = 250;
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
 
         whiteNoise.connect(filter);
         filter.connect(this.masterGain);
-        whiteNoise.start(0);
-        this.noiseNode = whiteNoise;
-      } else if (soundType === 'waves') {
-        // Ocean swell noise modulated by slow LFO
-        const bufferSize = 2 * this.ctx.sampleRate;
-        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-          output[i] = Math.random() * 2 - 1;
-        }
-
-        const whiteNoise = this.ctx.createBufferSource();
-        whiteNoise.buffer = noiseBuffer;
-        whiteNoise.loop = true;
-
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 450;
-
-        const waveGain = this.ctx.createGain();
-        const lfo = this.ctx.createOscillator();
-        lfo.type = 'sine';
-        lfo.frequency.value = 0.14; // ~7 second wave cycle
-
-        const lfoGain = this.ctx.createGain();
-        lfoGain.gain.value = 0.38;
-        lfo.connect(lfoGain);
-        lfoGain.connect(waveGain.gain);
-
-        waveGain.gain.setValueAtTime(0.4, this.ctx.currentTime);
-        whiteNoise.connect(filter);
-        filter.connect(waveGain);
-        waveGain.connect(this.masterGain);
 
         whiteNoise.start(0);
         lfo.start(0);
         this.noiseNode = whiteNoise;
         this.lfo = lfo;
-      } else if (soundType === 'synth') {
-        // Theta Wave Binaural Focus Drone (216 Hz & 222 Hz with harmonic warmth)
+      } else if (soundType === 'harmonics' || soundType === 'waves') {
+        // Celestial Harmonics: 432 Hz + 288 Hz fifth interval glowing resonance
         const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
         const filter = this.ctx.createBiquadFilter();
 
         osc1.type = 'sine';
-        osc1.frequency.value = 216;
+        osc1.frequency.value = 288;
         osc2.type = 'sine';
-        osc2.frequency.value = 222; // 6Hz theta wave focus difference
+        osc2.frequency.value = 432;
 
         filter.type = 'lowpass';
-        filter.frequency.value = 550;
+        filter.frequency.value = 480;
 
+        const swellGain = this.ctx.createGain();
+        const lfo = this.ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.12;
+
+        const lfoGain = this.ctx.createGain();
+        lfoGain.gain.value = 0.3;
+        lfo.connect(lfoGain);
+        lfoGain.connect(swellGain.gain);
+
+        swellGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
         osc1.connect(filter);
         osc2.connect(filter);
-        filter.connect(this.masterGain);
+        filter.connect(swellGain);
+        swellGain.connect(this.masterGain);
 
         osc1.start(0);
         osc2.start(0);
+        lfo.start(0);
         this.osc1 = osc1;
         this.osc2 = osc2;
+        this.lfo = lfo;
       }
     } catch (e) {
       console.warn('FocusAudioEngine start failed:', e);
@@ -225,135 +228,64 @@ class FocusAudioEngine {
   }
 }
 
-// --- PLANT GROWTH VISUAL COMPONENT (FEATURE A) ---
-interface PlantGrowthVisualProps {
+// --- COSMIC ACCRETION VISUAL COMPONENT ---
+interface CosmicAccretionVisualProps {
   progressPercent: number; // 0 to 100
   isDistracted?: boolean;
-  stageName?: string;
   isPomoActive?: boolean;
+  totalFocusHours?: number;
 }
 
-const PlantGrowthVisual: React.FC<PlantGrowthVisualProps> = ({ progressPercent, isDistracted = false, isPomoActive = false }) => {
-  // 5 Distinct Growth Stages:
-  // 1 (0-19%): Seed in soil
-  // 2 (20-39%): Sprout
-  // 3 (40-59%): Young Sapling
-  // 4 (60-79%): Budding Focus Bush/Tree
-  // 5 (80-100%): Majestic Blooming Sacred Tree with Golden Sparkles
-  const stage = progressPercent < 20 ? 1 : progressPercent < 40 ? 2 : progressPercent < 60 ? 3 : progressPercent < 80 ? 4 : 5;
+const CosmicAccretionVisual: React.FC<CosmicAccretionVisualProps> = ({ 
+  progressPercent, 
+  isDistracted = false, 
+  isPomoActive = false,
+  totalFocusHours = 0
+}) => {
+  // Determine Stage based on total focus hours
+  let cosmicStage = 1;
+  for (let i = COSMIC_TIERS.length - 1; i >= 0; i--) {
+    if (totalFocusHours >= COSMIC_TIERS[i].minHours) {
+      cosmicStage = COSMIC_TIERS[i].stage;
+      break;
+    }
+  }
 
-  const stageLabels = [
-    'Stage 1: Seed in Soil 🌱',
-    'Stage 2: Tender Sprout 🌿',
-    'Stage 3: Flourishing Sapling 🪴',
-    'Stage 4: Budding Arbor Tree 🌳',
-    'Stage 5: Majestic Sacred Blossom 🌸'
-  ];
+  const activeTier = COSMIC_TIERS.find(t => t.stage === cosmicStage) || COSMIC_TIERS[0];
 
   return (
-    <div className="flex flex-col items-center justify-center p-3 relative select-none">
-      <div className="relative w-36 h-36 flex items-center justify-center">
-        {/* Soft Background Radial Aura */}
-        <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-700 ${
-          isDistracted 
-            ? 'bg-amber-500/20'
-            : stage === 5 ? 'bg-pink-500/25 animate-pulse' : stage >= 3 ? 'bg-emerald-500/20' : 'bg-purple-500/15'
-        }`} />
+    <div className="flex flex-col items-center justify-center p-2 relative select-none">
+      <div className="relative w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border border-slate-800/80 bg-slate-950/60 shadow-2xl flex items-center justify-center">
+        {/* Soft Cosmic Aurora Glow */}
+        <div 
+          className="absolute inset-0 rounded-full blur-2xl transition-all duration-700 pointer-events-none"
+          style={{
+            backgroundColor: isDistracted 
+              ? 'rgba(245, 158, 11, 0.2)' 
+              : `${activeTier.accentColor}25`
+          }}
+        />
 
-        <svg viewBox="0 0 160 160" className="w-full h-full relative z-10 filter drop-shadow-md">
-          {/* Pot / Earth Base */}
-          <ellipse cx="80" cy="142" rx="42" ry="10" className="fill-slate-950/80 stroke-slate-800" strokeWidth="2" />
-          <path d="M 45 138 Q 80 148 115 138 L 108 152 Q 80 158 52 152 Z" className="fill-amber-950/70 stroke-amber-900/60" strokeWidth="1.5" />
-
-          {/* Stage 1: Seed & Micro Sprout */}
-          {stage === 1 && (
-            <g className="transition-all duration-500">
-              <ellipse cx="80" cy="136" rx="6" ry="4" className="fill-amber-600" />
-              <path d="M 80 134 Q 82 124 84 120" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" fill="transparent" />
-              <circle cx="84" cy="119" r="2.5" className="fill-emerald-400 animate-pulse" />
-            </g>
-          )}
-
-          {/* Stage 2: Small Sprout with 2 Leaves */}
-          {stage === 2 && (
-            <g className="transition-all duration-500">
-              <path d="M 80 136 Q 80 115 80 102" stroke="#059669" strokeWidth="3.5" strokeLinecap="round" fill="transparent" />
-              {/* Left Leaf */}
-              <path d="M 80 116 Q 64 112 66 102 Q 76 104 80 116" fill="#10b981" className="stroke-emerald-300" strokeWidth="0.8" />
-              {/* Right Leaf */}
-              <path d="M 80 108 Q 96 104 94 94 Q 84 96 80 108" fill="#34d399" className="stroke-emerald-200" strokeWidth="0.8" />
-              <circle cx="80" cy="100" r="2" fill="#6ee7b7" />
-            </g>
-          )}
-
-          {/* Stage 3: Flourishing Sapling with 4 Leaves */}
-          {stage === 3 && (
-            <g className="transition-all duration-500">
-              {/* Stem */}
-              <path d="M 80 136 Q 78 110 80 82" stroke="#047857" strokeWidth="4.5" strokeLinecap="round" fill="transparent" />
-              {/* Lower Left Leaf */}
-              <path d="M 79 118 Q 54 116 58 100 Q 72 104 79 118" fill="#059669" className="stroke-emerald-300" strokeWidth="1" />
-              {/* Lower Right Leaf */}
-              <path d="M 80 110 Q 106 108 102 92 Q 88 96 80 110" fill="#10b981" className="stroke-emerald-300" strokeWidth="1" />
-              {/* Upper Left Leaf */}
-              <path d="M 79 94 Q 60 88 64 74 Q 76 78 79 94" fill="#34d399" className="stroke-emerald-200" strokeWidth="1" />
-              {/* Upper Right Leaf */}
-              <path d="M 80 88 Q 98 82 96 68 Q 84 72 80 88" fill="#6ee7b7" className="stroke-emerald-100" strokeWidth="1" />
-              <circle cx="80" cy="80" r="3" fill="#a7f3d0" />
-            </g>
-          )}
-
-          {/* Stage 4: Budding Focus Tree */}
-          {stage === 4 && (
-            <g className="transition-all duration-500">
-              {/* Trunk */}
-              <path d="M 80 136 L 80 85 Q 74 65 65 52 M 80 85 Q 86 65 95 52 M 80 75 L 80 50" stroke="#78350f" strokeWidth="6" strokeLinecap="round" fill="transparent" />
-              {/* Foliage Clusters */}
-              <circle cx="65" cy="52" r="18" fill="#059669" opacity="0.9" />
-              <circle cx="95" cy="52" r="18" fill="#10b981" opacity="0.9" />
-              <circle cx="80" cy="42" r="22" fill="#34d399" opacity="0.95" />
-              <circle cx="80" cy="40" r="14" fill="#6ee7b7" opacity="0.7" />
-              {/* Buds */}
-              <circle cx="60" cy="45" r="3" fill="#f43f5e" />
-              <circle cx="100" cy="45" r="3" fill="#f43f5e" />
-              <circle cx="80" cy="30" r="3.5" fill="#fb7185" />
-            </g>
-          )}
-
-          {/* Stage 5: Majestic Sacred Blooming Tree */}
-          {stage === 5 && (
-            <g className="transition-all duration-500">
-              {/* Trunk with Bark Details */}
-              <path d="M 80 136 Q 78 100 80 80 Q 70 58 55 45 M 80 80 Q 90 58 105 45 M 80 70 L 80 42" stroke="#5c2c16" strokeWidth="7" strokeLinecap="round" fill="transparent" />
-              {/* Lush Glowing Canopy */}
-              <circle cx="55" cy="45" r="22" fill="#047857" opacity="0.9" />
-              <circle cx="105" cy="45" r="22" fill="#059669" opacity="0.9" />
-              <circle cx="80" cy="35" r="28" fill="#10b981" opacity="0.95" />
-              <circle cx="80" cy="30" r="20" fill="#34d399" opacity="0.8" />
-              {/* Blossom Flowers & Golden Sparkles */}
-              <circle cx="50" cy="40" r="5" fill="#fda4af" className="stroke-pink-400" strokeWidth="1" />
-              <circle cx="65" cy="25" r="5.5" fill="#f472b6" className="stroke-pink-300" strokeWidth="1" />
-              <circle cx="95" cy="25" r="5.5" fill="#f472b6" className="stroke-pink-300" strokeWidth="1" />
-              <circle cx="110" cy="40" r="5" fill="#fda4af" className="stroke-pink-400" strokeWidth="1" />
-              <circle cx="80" cy="20" r="6" fill="#fb7185" className="stroke-white animate-pulse" strokeWidth="1" />
-              <circle cx="80" cy="48" r="4.5" fill="#fbcfe8" />
-              
-              {/* Golden Fireflies */}
-              <circle cx="42" cy="32" r="2" fill="#fef08a" className="animate-ping" />
-              <circle cx="118" cy="32" r="2" fill="#fef08a" className="animate-ping" style={{ animationDelay: '0.6s' }} />
-              <circle cx="80" cy="8" r="2.5" fill="#facc15" className="animate-pulse" />
-            </g>
-          )}
-        </svg>
+        {/* Live Procedural Galaxy Canvas with Accretion */}
+        <GalaxyCanvas
+          stage={cosmicStage}
+          activeProgress={progressPercent / 100}
+          isTimerRunning={isPomoActive}
+          className="w-full h-full"
+          seed={`focus-${cosmicStage}-${Math.floor(totalFocusHours)}`}
+        />
       </div>
 
-      <div className="mt-1 text-center">
-        <span className={`text-[11px] font-extrabold tracking-wide uppercase px-2.5 py-0.5 rounded-full border ${
-          isDistracted 
-            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-            : stage === 5 ? 'bg-pink-500/20 text-pink-300 border-pink-500/30' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-        }`}>
-          {stageLabels[stage - 1]} ({progressPercent}%)
+      <div className="mt-2 text-center">
+        <span 
+          className="text-[10px] font-mono font-bold tracking-widest uppercase px-3 py-1 rounded-full border shadow-sm"
+          style={{
+            color: isDistracted ? '#fbbf24' : activeTier.accentColor,
+            borderColor: isDistracted ? 'rgba(245, 158, 11, 0.4)' : `${activeTier.accentColor}40`,
+            backgroundColor: isDistracted ? 'rgba(245, 158, 11, 0.15)' : `${activeTier.accentColor}15`
+          }}
+        >
+          {isDistracted ? '⚠️ GRAVITATIONAL DRIFT' : `${activeTier.badge} • ${progressPercent}% ACCRETED`}
         </span>
       </div>
     </div>
@@ -468,7 +400,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
     return ['General Studies', 'Core Subject 1', 'Core Subject 2', 'Aptitude & Practice'];
   }, [activeExamId, examConfig]);
 
-  const [activeTab, setActiveTab] = useState<'stopwatch' | 'pomodoro' | 'forest' | 'history'>('pomodoro');
+  const [activeTab, setActiveTab] = useState<'stopwatch' | 'pomodoro' | 'galaxy' | 'history'>('pomodoro');
 
   // --- Subject & Topic State ---
   const [customSubjects, setCustomSubjects] = useState<CustomSubject[]>([]);
@@ -585,7 +517,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
   // --- General & Sound State (Feature D: Ambient Sounds) ---
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [soundPlaying, setSoundPlaying] = useState<boolean>(false);
-  const [selectedSound, setSelectedSound] = useState<'rain' | 'waves' | 'synth'>('rain');
+  const [selectedSound, setSelectedSound] = useState<'drone' | 'solar' | 'harmonics' | 'rain' | 'waves' | 'synth'>('drone');
   const [ambientVolume, setAmbientVolume] = useState<number>(0.6);
   const [lastRewardToast, setLastRewardToast] = useState<{ xp: number; coins: number; message: string } | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -1217,6 +1149,45 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
       // Clear active timer state in localStorage
       localStorage.removeItem(`aspirantx_active_pomodoro_session_${userId || 'guest'}`);
 
+      // Accrete new celestial world into Focus Galaxy
+      try {
+        const galaxyKey = `aspirantx_focus_galaxy_${userId || 'guest'}`;
+        const existingGalaxy: FocusPlanetRecord[] = JSON.parse(localStorage.getItem(galaxyKey) || '[]');
+        const planetTypes: ('rocky' | 'gas_giant' | 'ringed' | 'ice' | 'lava' | 'ocean')[] = [
+          'rocky', 'gas_giant', 'ringed', 'ice', 'lava', 'ocean'
+        ];
+        const planetPalettes = [
+          { primary: '#0284c7', secondary: '#10b981' },
+          { primary: '#f59e0b', secondary: '#d97706' },
+          { primary: '#a855f7', secondary: '#6366f1' },
+          { primary: '#38bdf8', secondary: '#0284c7' },
+          { primary: '#f43f5e', secondary: '#991b1b' },
+          { primary: '#10b981', secondary: '#047857' }
+        ];
+        const paletteIdx = existingGalaxy.length % planetPalettes.length;
+        const newWorld: FocusPlanetRecord = {
+          id: `world_${Date.now()}`,
+          name: `${selectedSubject.split('—')[0].trim()} Sphere ${existingGalaxy.length + 1}`,
+          type: planetTypes[existingGalaxy.length % planetTypes.length],
+          durationMinutes: selectedPomoDuration,
+          subject: selectedSubject,
+          topic: topicText || 'Deep Study Sprint',
+          plantedAt: new Date().toISOString(),
+          dateKey: new Date().toISOString().split('T')[0],
+          status: 'healthy',
+          primaryColor: planetPalettes[paletteIdx].primary,
+          secondaryColor: planetPalettes[paletteIdx].secondary,
+          radius: 10 + Math.min(12, Math.floor(selectedPomoDuration / 6)),
+          orbitRadius: 75 + ((existingGalaxy.length * 28) % 150),
+          orbitSpeed: 0.003 + (Math.random() * 0.005),
+          orbitAngle: Math.random() * Math.PI * 2
+        };
+        existingGalaxy.push(newWorld);
+        localStorage.setItem(galaxyKey, JSON.stringify(existingGalaxy));
+      } catch (e) {
+        console.warn('Galaxy world accretion error:', e);
+      }
+
       setCompletionSummary({
         subject: selectedSubject,
         topic: topicText || 'Study Sprint',
@@ -1327,6 +1298,45 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
     });
 
     handleResetStopwatch();
+
+    // Accrete world into Focus Galaxy from stopwatch
+    try {
+      const galaxyKey = `aspirantx_focus_galaxy_${userId || 'guest'}`;
+      const existingGalaxy: FocusPlanetRecord[] = JSON.parse(localStorage.getItem(galaxyKey) || '[]');
+      const planetTypes: ('rocky' | 'gas_giant' | 'ringed' | 'ice' | 'lava' | 'ocean')[] = [
+        'rocky', 'gas_giant', 'ringed', 'ice', 'lava', 'ocean'
+      ];
+      const planetPalettes = [
+        { primary: '#0284c7', secondary: '#10b981' },
+        { primary: '#f59e0b', secondary: '#d97706' },
+        { primary: '#a855f7', secondary: '#6366f1' },
+        { primary: '#38bdf8', secondary: '#0284c7' },
+        { primary: '#f43f5e', secondary: '#991b1b' },
+        { primary: '#10b981', secondary: '#047857' }
+      ];
+      const paletteIdx = existingGalaxy.length % planetPalettes.length;
+      const durationMins = Math.round(durationSeconds / 60) || 1;
+      const newWorld: FocusPlanetRecord = {
+        id: `world_${Date.now()}`,
+        name: `${selectedSubject.split('—')[0].trim()} Sphere ${existingGalaxy.length + 1}`,
+        type: planetTypes[existingGalaxy.length % planetTypes.length],
+        durationMinutes: durationMins,
+        subject: selectedSubject,
+        topic: topicText || 'Live Stopwatch Sprint',
+        plantedAt: new Date().toISOString(),
+        dateKey: new Date().toISOString().split('T')[0],
+        status: 'healthy',
+        primaryColor: planetPalettes[paletteIdx].primary,
+        secondaryColor: planetPalettes[paletteIdx].secondary,
+        radius: 10 + Math.min(12, Math.floor(durationMins / 6)),
+        orbitRadius: 75 + ((existingGalaxy.length * 28) % 150),
+        orbitSpeed: 0.003 + (Math.random() * 0.005),
+        orbitAngle: Math.random() * Math.PI * 2
+      };
+      existingGalaxy.push(newWorld);
+      localStorage.setItem(galaxyKey, JSON.stringify(existingGalaxy));
+    } catch (e) {}
+
     setIsSaving(false);
 
     const updated = await loadStudySessions(userId);
@@ -1362,11 +1372,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
   const currentPomoSecs = pomoMinutes * 60 + pomoSeconds;
   const pomoProgress = Math.round(((totalPomoSecs - currentPomoSecs) / totalPomoSecs) * 100);
 
-  // --- Feature C: Compute Total Focus Hours and Forest Tier ---
+  // --- Feature C: Compute Total Focus Hours and Cosmic Tier ---
   const totalFocusSecs = sessions.reduce((acc, s) => acc + (s.durationSeconds || 0), 0);
   const totalFocusHours = Math.round((totalFocusSecs / 3600) * 10) / 10;
-  const currentTier = [...FOREST_TIERS].reverse().find(t => totalFocusHours >= t.minHours) || FOREST_TIERS[0];
-  const nextTier = FOREST_TIERS.find(t => t.minHours > totalFocusHours);
+  const currentTier = [...COSMIC_TIERS].reverse().find(t => totalFocusHours >= t.minHours) || COSMIC_TIERS[0];
+  const nextTier = COSMIC_TIERS.find(t => t.minHours > totalFocusHours);
 
   const allSubjects = [
     ...currentPredefinedSubjects,
@@ -1380,12 +1390,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
         steps={[
           {
             title: 'Deep Focus Sprints',
-            description: 'Choose your sprint duration (25m, 45m, or 60m). Your focus seedling grows as you concentrate.',
+            description: 'Choose your sprint duration (25m, 45m, or 60m). Your focus star accretes cosmic dust as you concentrate.',
             badge: 'Step 1 of 3'
           },
           {
-            title: 'Ambient Soundscapes',
-            description: 'Enable gentle binaural theta waves, rainfall, or sea swells to drown out ambient background noise.',
+            title: 'Cosmic Soundscapes',
+            description: 'Enable gentle interstellar solar winds, deep space binaural drone, or celestial harmonics to maintain intense flow.',
             badge: 'Step 2 of 3'
           },
           {
@@ -1402,83 +1412,115 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
           <div className="flex items-center gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
             <div>
-              <p className="text-xs font-black uppercase tracking-wider">Distraction Warning — Tab Left Inactive!</p>
+              <p className="text-xs font-black uppercase tracking-wider">Gravitational Drift — Tab Left Inactive!</p>
               <p className="text-[11px] text-amber-300/90">
-                You were away from this tab for &gt;15 seconds. Your focus plant growth has withered slightly ({distractionCount} {distractionCount === 1 ? 'distraction' : 'distractions'} recorded).
+                You were away from this focus tab for &gt;15 seconds. Accretion paused and celestial orbit destabilized ({distractionCount} {distractionCount === 1 ? 'drift' : 'drifts'} recorded).
               </p>
             </div>
           </div>
           <button
             onClick={() => setIsDistracted(false)}
-            className="px-3 py-1.5 rounded-xl bg-amber-500/30 hover:bg-amber-500/40 text-amber-100 text-xs font-bold shrink-0"
+            className="px-3 py-1.5 rounded-xl bg-amber-500/30 hover:bg-amber-500/40 text-amber-100 text-xs font-bold shrink-0 cursor-pointer"
           >
-            Refocus
+            Stabilize Orbit
           </button>
         </div>
       )}
 
-      {/* Feature C: Forest Milestone Streak Card */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-emerald-950/40 to-slate-900 border border-emerald-500/30 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
+      {/* Feature C: Cosmic Focus Horizon Streak Card */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-sky-950/30 to-slate-900 border border-sky-500/30 backdrop-blur-xl flex flex-wrap items-center justify-between gap-4 shadow-xl">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl shadow-inner">
-            {currentTier.icon}
+          <div 
+            className="w-12 h-12 rounded-2xl border flex items-center justify-center text-xl shadow-inner"
+            style={{
+              backgroundColor: `${currentTier.accentColor}15`,
+              borderColor: `${currentTier.accentColor}40`,
+              color: currentTier.accentColor
+            }}
+          >
+            <Orbit className="w-6 h-6 animate-spin" style={{ animationDuration: '24s' }} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">Forest Sanctuary Tier</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="text-xs font-black uppercase tracking-wider text-sky-400">Focus Galaxy Horizon</span>
+              <span 
+                className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border"
+                style={{
+                  color: currentTier.accentColor,
+                  borderColor: `${currentTier.accentColor}40`,
+                  backgroundColor: `${currentTier.accentColor}15`
+                }}
+              >
                 {currentTier.name}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              {totalFocusHours} Total Hours Focused • {sessions.length} Completed Sprints
+              {totalFocusHours} Total Hours in Orbit • {sessions.length} Worlds Accreted
             </p>
           </div>
         </div>
 
         {nextTier && (
           <div className="text-right text-[11px] text-slate-400 flex flex-col items-end">
-            <span className="font-semibold text-slate-300">Next Milestone: {nextTier.name} ({nextTier.minHours}h)</span>
+            <span className="font-semibold text-slate-300">Next Horizon: {nextTier.name} ({nextTier.minHours}h)</span>
             <div className="w-36 h-2 bg-slate-950 rounded-full mt-1.5 overflow-hidden border border-slate-800">
               <div
-                className="h-full bg-emerald-400 rounded-full transition-all"
-                style={{ width: `${Math.min(100, Math.round((totalFocusHours / nextTier.minHours) * 100))}%` }}
+                className="h-full rounded-full transition-all"
+                style={{ 
+                  backgroundColor: nextTier.accentColor,
+                  width: `${Math.min(100, Math.round((totalFocusHours / nextTier.minHours) * 100))}%` 
+                }}
               />
             </div>
           </div>
         )}
       </div>
 
-      {/* Feature D: Ambient Sound Engine Controls Bar */}
+      {/* Feature D: Ambient Cosmic Soundscapes Bar */}
       <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-3 backdrop-blur-xl">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setSoundPlaying(!soundPlaying)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+            onClick={() => {
+              if (soundPlaying) {
+                audioEngineRef.current?.stop();
+                setSoundPlaying(false);
+              } else {
+                if (!audioEngineRef.current) audioEngineRef.current = new FocusAudioEngine();
+                audioEngineRef.current.start(selectedSound, ambientVolume);
+                setSoundPlaying(true);
+              }
+            }}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
               soundPlaying
-                ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
                 : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
             {soundPlaying ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-            {soundPlaying ? 'Ambient Sound ON' : 'Play Ambient Sound'}
+            {soundPlaying ? 'Cosmic Audio ON' : 'Cosmic Frequency'}
           </button>
 
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-            {(['rain', 'waves', 'synth'] as const).map((snd) => (
+            {([
+              { id: 'drone', label: '🪐 432Hz Drone' },
+              { id: 'solar', label: '☀️ Solar Wind' },
+              { id: 'harmonics', label: '✨ Harmonics' }
+            ] as const).map((snd) => (
               <button
-                key={snd}
+                key={snd.id}
                 onClick={() => {
-                  setSelectedSound(snd);
-                  if (!soundPlaying) setSoundPlaying(true);
+                  setSelectedSound(snd.id as any);
+                  if (audioEngineRef.current && soundPlaying) {
+                    audioEngineRef.current.start(snd.id as any, ambientVolume);
+                  }
                 }}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all ${
-                  selectedSound === snd
-                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  selectedSound === snd.id
+                    ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {snd === 'rain' ? '🌧️ Rain' : snd === 'waves' ? '🌊 Waves' : '🎵 Synth'}
+                {snd.label}
               </button>
             ))}
           </div>
@@ -1492,8 +1534,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
             max="1"
             step="0.05"
             value={ambientVolume}
-            onChange={(e) => setAmbientVolume(parseFloat(e.target.value))}
-            className="w-20 accent-emerald-400 cursor-pointer h-1.5 rounded-lg bg-slate-950"
+            onChange={(e) => {
+              const v = parseFloat(e.target.value);
+              setAmbientVolume(v);
+              audioEngineRef.current?.setVolume(v);
+            }}
+            className="w-20 accent-sky-400 cursor-pointer h-1.5 rounded-lg bg-slate-950"
           />
         </div>
       </div>
@@ -1505,27 +1551,27 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
             onClick={() => setActiveTab('pomodoro')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'pomodoro'
-                ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/20'
+                ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" /> Pomodoro Timer
           </button>
           <button
-            onClick={() => setActiveTab('forest')}
+            onClick={() => setActiveTab('galaxy')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'forest'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
+              activeTab === 'galaxy'
+                ? 'bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-sky-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
-            <Sprout className="w-3.5 h-3.5" /> My Focus Forest 🌲
+            <Globe2 className="w-3.5 h-3.5" /> Focus Galaxy 🌌
           </button>
           <button
             onClick={() => setActiveTab('stopwatch')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'stopwatch'
-                ? 'bg-gradient-to-r from-cyan-500 to-purple-600 text-white shadow-lg shadow-cyan-500/20'
+                ? 'bg-gradient-to-r from-cyan-500 to-sky-600 text-white shadow-lg shadow-cyan-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
@@ -1539,7 +1585,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
-            <History className="w-3.5 h-3.5" /> Study History
+            <History className="w-3.5 h-3.5" /> Flight Log
           </button>
         </div>
 
@@ -1765,12 +1811,13 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
 
           {/* Pomodoro Timer Display Card */}
           <div className="p-8 md:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 backdrop-blur-2xl text-center shadow-2xl space-y-8 relative overflow-hidden">
-            {/* Feature A: Visual Growth Component */}
+            {/* Cosmic Accretion Visual */}
             <div className="mb-2">
-              <PlantGrowthVisual
+              <CosmicAccretionVisual
                 progressPercent={pomoProgress}
                 isPomoActive={isPomoActive}
                 isDistracted={isDistracted}
+                totalFocusHours={totalFocusHours}
               />
             </div>
 
@@ -1783,7 +1830,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                   r="110"
                   stroke="currentColor"
                   strokeWidth="8"
-                  className={pomoMode === 'focus' ? 'text-purple-500' : 'text-emerald-400'}
+                  className={pomoMode === 'focus' ? 'text-sky-500' : 'text-emerald-400'}
                   strokeDasharray={2 * Math.PI * 110}
                   strokeDashoffset={(2 * Math.PI * 110 * (100 - pomoProgress)) / 100}
                   strokeLinecap="round"
@@ -1797,7 +1844,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                   {String(pomoMinutes).padStart(2, '0')}:{String(pomoSeconds).padStart(2, '0')}
                 </span>
                 <span className="text-xs uppercase font-bold tracking-widest text-slate-400 mt-2">
-                  {pomoMode === 'focus' ? `${selectedSubject}` : 'Rest & Refresh'}
+                  {pomoMode === 'focus' ? `${selectedSubject}` : 'Orbital Rest & Refresh'}
                 </span>
               </div>
             </div>
@@ -1817,11 +1864,11 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                   className={`px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2.5 transition-all shadow-lg cursor-pointer ${
                     isPomoActive
                       ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
-                      : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-400 hover:to-pink-500 text-white shadow-purple-500/20'
+                      : 'bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-sky-500/20'
                   }`}
                 >
                   {isPomoActive ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-                  {isPomoActive ? 'PAUSE SPRINT' : 'START POMODORO SPRINT'}
+                  {isPomoActive ? 'PAUSE ORBIT' : 'IGNITE ACCRETION SPRINT'}
                 </motion.button>
               </PressFeedback>
 
@@ -1843,7 +1890,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
             {/* Feature: Focus Shield Integration Callout */}
             <div className="mt-6 p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-left flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
                   <Shield className="w-5 h-5" />
                 </div>
                 <div>
@@ -1863,7 +1910,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: { tab: 'focus_shield' } }));
                 }}
-                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md shadow-purple-600/20 flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md shadow-sky-600/20 flex items-center gap-1.5 cursor-pointer shrink-0"
               >
                 <span>Launch Shield</span>
                 <span>→</span>
@@ -1876,12 +1923,13 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
       {/* --- LIVE STOPWATCH (TAB 2) --- */}
       {activeTab === 'stopwatch' && (
         <div className="p-8 md:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 text-center space-y-8 shadow-2xl">
-          {/* Feature A Tree for Stopwatch */}
+          {/* Cosmic Visual for Stopwatch */}
           <div className="mb-2">
-            <PlantGrowthVisual
+            <CosmicAccretionVisual
               progressPercent={Math.min(100, Math.round((stopwatchSeconds / 3600) * 100))}
               isPomoActive={isStopwatchActive}
               isDistracted={isDistracted}
+              totalFocusHours={totalFocusHours}
             />
           </div>
 
@@ -1927,12 +1975,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
         </div>
       )}
 
-      {/* --- FOREST GARDEN ECOSYSTEM (TAB 2) --- */}
-      {activeTab === 'forest' && (
-        <ForestGardenView
+      {/* --- FOCUS GALAXY COSMOS (TAB 2) --- */}
+      {activeTab === 'galaxy' && (
+        <FocusGalaxyView
           userId={userId}
           selectedExam={selectedExam}
-          onPlantNewTree={() => setActiveTab('pomodoro')}
+          onStartFocusSession={() => setActiveTab('pomodoro')}
         />
       )}
 
@@ -2217,8 +2265,8 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                     <AlertTriangle className="w-3 h-3" /> {completionSummary.distractionCount} {completionSummary.distractionCount === 1 ? 'Distraction' : 'Distractions'}
                   </span>
                 ) : (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1">
-                    🌿 Zero Distractions
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 inline-flex items-center gap-1">
+                    ✨ Flawless Orbit (Zero Drift)
                   </span>
                 )}
               </div>

@@ -1263,8 +1263,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <CustomExamModal
             isOpen={isCustomModalOpen}
             onClose={() => setIsCustomModalOpen(false)}
-            onExamSaved={(customExam) => {
-              setExamName(customExam.title);
+            onExamCreated={(examId) => {
+              setExamName(examId);
               setCategory('OTHER');
               setIsCustomModalOpen(false);
             }}

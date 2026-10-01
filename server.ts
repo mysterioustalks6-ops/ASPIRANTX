@@ -246,6 +246,33 @@ if (!isServerless) {
       console.log(`[SERVER] StudyRide Enterprise Backend listening at http://0.0.0.0:${PORT}`);
     });
   }
+
+  // Automated 2-Day Inactivity Email Engine Cron (Runs every 12 hours)
+  import('./src/lib/inactivityEmailEngine.js').then(({ checkAndSendInactivityEmails }) => {
+    // Initial scan 30 seconds after server is fully hydrated and running
+    setTimeout(async () => {
+      try {
+        console.log('[CRON] Initial boot scan for 2-day inactive students...');
+        await checkAndSendInactivityEmails(false);
+      } catch (err) {
+        console.warn('[CRON] Initial inactivity scan notice:', err);
+      }
+    }, 30000);
+
+    // Periodic interval: Check every 12 hours
+    const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+    setInterval(async () => {
+      try {
+        console.log('[CRON] Executing scheduled 12-hour scan for 2-day inactive students...');
+        await checkAndSendInactivityEmails(false);
+      } catch (err) {
+        console.error('[CRON] Scheduled inactivity scan error:', err);
+      }
+    }, TWELVE_HOURS_MS);
+  }).catch((err) => {
+    console.warn('[CRON] Could not initialize inactivityEmailEngine:', err?.message || err);
+  });
 }
 
 export default app;
+

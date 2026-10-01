@@ -5,6 +5,12 @@
       "includeFiles": "server.js"
     }
   },
+  "crons": [
+    {
+      "path": "/api/cron/inactivity-emails",
+      "schedule": "0 10 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*\\.apk)",

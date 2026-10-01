@@ -15,7 +15,7 @@ import {
   Coins, DollarSign, Globe, Sliders, Receipt, Tv, HelpCircle, CheckCircle, Plus,
   Trash2, ToggleLeft, ToggleRight, AlertCircle, Send, CheckSquare, XSquare, UserCheck, UserX, Gift, Trophy,
   MapPin, BookOpen, FileText, Upload, MessageSquare, Loader2, Mic,
-  Megaphone, Edit2, Tag
+  Megaphone, Edit2, Tag, Mail
 } from 'lucide-react';
 import { SlideUp, PressFeedback } from '../lib/animations';
 
@@ -91,6 +91,52 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
   const [annFormPriority, setAnnFormPriority] = useState<'normal' | 'urgent'>('normal');
   const [annFormIsActive, setAnnFormIsActive] = useState<boolean>(true);
   const [annFormExpiresAt, setAnnFormExpiresAt] = useState<string>('');
+
+  // 2-Day Inactivity Email Engine State
+  const [inactivityStats, setInactivityStats] = useState<any>(null);
+  const [inactivityScanLoading, setInactivityScanLoading] = useState<boolean>(false);
+  const [inactivityScanResult, setInactivityScanResult] = useState<string | null>(null);
+
+  const fetchInactivityStats = async () => {
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('aspirantx_jwt_token');
+      const res = await fetch('/api/admin/inactivity-emails/stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (json.success && json.stats) {
+        setInactivityStats(json.stats);
+      }
+    } catch (_e) {}
+  };
+
+  const handleTriggerInactivityEmails = async (force = false) => {
+    setInactivityScanLoading(true);
+    setInactivityScanResult(null);
+    try {
+      const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('aspirantx_jwt_token');
+      const res = await fetch('/api/admin/inactivity-emails/trigger', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ force })
+      });
+      const json = await res.json();
+      if (json.success && json.result) {
+        const r = json.result;
+        setInactivityScanResult(`✅ Scan Complete: ${r.inactiveUsersFound} inactive student(s) found. ${r.emailsSent} email(s) sent (${r.skippedDueToCooldown} in cooldown).`);
+        fetchInactivityStats();
+      } else {
+        setInactivityScanResult(`⚠️ ${json.error || 'Failed to trigger scan'}`);
+      }
+    } catch (err: any) {
+      setInactivityScanResult(`❌ Error: ${err.message}`);
+    } finally {
+      setInactivityScanLoading(false);
+    }
+  };
 
   const fetchAdminAnnouncements = async () => {
     setLoadingAnnouncements(true);
@@ -1406,6 +1452,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
   useEffect(() => {
     if (activeAdminTab === 'users') {
       fetchAdminUsersList(1);
+      fetchInactivityStats();
     }
   }, [activeAdminTab, roleFilter]);
 
@@ -4132,6 +4179,96 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
                 <Globe className="w-5 h-5" />
               </div>
             </div>
+          </div>
+
+          {/* 2-Day Inactivity Study Re-engagement Notification Center */}
+          <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/40 border border-indigo-500/30 shadow-xl relative overflow-hidden">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 flex-shrink-0 shadow-lg shadow-indigo-500/10">
+                  <Mail className="w-6 h-6 animate-pulse" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white tracking-wide">2-Day Inactivity Email Engine</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                      Automated 12h Cron Active
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
+                    Automatically checks for students who haven't opened the app for <span className="text-amber-400 font-semibold">2+ days</span> and dispatches a personalized, inspiring study re-engagement email to protect their streak.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-4 mt-3 text-xs">
+                    <div className="flex items-center gap-1.5 text-slate-300">
+                      <span className="text-slate-500">Inactive 2+ Days:</span>
+                      <span className="font-bold text-amber-400 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20">
+                        {inactivityStats ? inactivityStats.inactive2Days : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-300">
+                      <span className="text-slate-500">Inactive 5+ Days:</span>
+                      <span className="font-bold text-rose-400 px-2 py-0.5 rounded-md bg-rose-500/10 border border-rose-500/20">
+                        {inactivityStats ? inactivityStats.inactive5Days : '—'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-300">
+                      <span className="text-slate-500">Cooldown Guard:</span>
+                      <span className="font-semibold text-indigo-300">5 Days Anti-Spam</span>
+                    </div>
+                    {inactivityStats?.lastRunTimestamp && (
+                      <div className="text-[11px] text-slate-500">
+                        Last Run: {new Date(inactivityStats.lastRunTimestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+                <button
+                  type="button"
+                  onClick={() => handleTriggerInactivityEmails(false)}
+                  disabled={inactivityScanLoading}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {inactivityScanLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Scanning &amp; Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Run Inactivity Scan Now</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTriggerInactivityEmails(true)}
+                  disabled={inactivityScanLoading}
+                  title="Bypasses 5-day cooldown to test email delivery immediately"
+                  className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-700 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Force Test</span>
+                </button>
+              </div>
+            </div>
+
+            {inactivityScanResult && (
+              <div className="mt-3.5 pt-3 border-t border-slate-800/80 text-xs text-slate-300 flex items-center justify-between">
+                <div>{inactivityScanResult}</div>
+                <button
+                  type="button"
+                  onClick={() => setInactivityScanResult(null)}
+                  className="text-slate-500 hover:text-slate-300 text-[11px] underline cursor-pointer"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Controls Bar */}

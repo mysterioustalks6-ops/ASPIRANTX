@@ -2118,4 +2118,55 @@ router.get('/api/admin/ingestion/status/:jobId', verifyAdminAuth, async (req, re
   }
 });
 
+// ============================================================================
+// 2-DAY INACTIVITY RE-ENGAGEMENT EMAIL ENGINE ENDPOINTS
+// ============================================================================
+import { checkAndSendInactivityEmails, getInactivityStats } from '../src/lib/inactivityEmailEngine.js';
+
+router.get('/api/admin/inactivity-emails/stats', verifyAdminAuth, async (_req, res) => {
+  try {
+    const stats = getInactivityStats();
+    res.json({ success: true, stats });
+  } catch (err: any) {
+    console.error('[GET /api/admin/inactivity-emails/stats] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to fetch inactivity stats' });
+  }
+});
+
+router.post('/api/admin/inactivity-emails/trigger', verifyAdminAuth, async (req, res) => {
+  try {
+    const force = Boolean(req.body?.force);
+    console.log(`[ADMIN TRIGGER] Manual 2-day inactivity email run triggered (force=${force})...`);
+    const result = await checkAndSendInactivityEmails(force);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    console.error('[POST /api/admin/inactivity-emails/trigger] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to trigger inactivity emails' });
+  }
+});
+
+// Automated Cron Route (Vercel Cron / GitHub Actions / Uptime Robot)
+const handleCronInactivityEmails = async (req: any, res: any) => {
+  try {
+    const cronSecret = process.env.CRON_SECRET;
+    const providedSecret = req.headers['authorization']?.replace('Bearer ', '') || 
+                           req.headers['x-cron-secret'] || 
+                           req.query.secret;
+
+    if (cronSecret && providedSecret !== cronSecret) {
+      return res.status(401).json({ success: false, error: 'Unauthorized: Invalid CRON_SECRET' });
+    }
+
+    console.log('[CRON /api/cron/inactivity-emails] Automated run triggered...');
+    const result = await checkAndSendInactivityEmails(false);
+    res.json({ success: true, result });
+  } catch (err: any) {
+    console.error('[CRON /api/cron/inactivity-emails] error:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to run cron inactivity emails' });
+  }
+};
+
+router.get('/api/cron/inactivity-emails', handleCronInactivityEmails);
+router.post('/api/cron/inactivity-emails', handleCronInactivityEmails);
+
 export default router;
