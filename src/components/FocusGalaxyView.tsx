@@ -291,19 +291,28 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   const [showAddTaskModal, setShowAddTaskModal] = useState<boolean>(false);
 
   // New task form state
+  const cleanExamTitle = selectedExam ? selectedExam.replace(/_/g, ' ') : '';
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskSubject, setNewTaskSubject] = useState('Indian Polity');
+  const [newTaskSubject, setNewTaskSubject] = useState(cleanExamTitle || 'General Study');
   const [newTaskPomodoros, setNewTaskPomodoros] = useState(3);
+  const [dailyGoalHours, setDailyGoalHours] = useState<number>(4);
 
-  // User's custom planet profile
+  // User's custom planet profile - dynamic real default, purge dummy 'Polity Prime'
   const [planetProfile, setPlanetProfile] = useState<UserPlanetProfile>(() => {
     const key = `aspirantx_focus_planet_profile_${userId}`;
+    const realInitialName = cleanExamTitle ? `${cleanExamTitle} Core` : 'Focus Core';
     try {
       const stored = localStorage.getItem(key);
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Purge dummy default 'Polity Prime'
+        if (parsed.name && parsed.name !== 'Polity Prime') {
+          return parsed;
+        }
+      }
     } catch (e) {}
     return {
-      name: 'Polity Prime',
+      name: realInitialName,
       type: 'ocean',
       accentColor: '#0284c7',
       seed: `genesis-${userId}`,
@@ -311,17 +320,34 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
     };
   });
 
-  // Settings state
-  const [settings, setSettings] = useState({
-    pomoDuration: 50,
-    shortBreak: 10,
-    longBreak: 20,
-    soundActive: true,
-    focusShieldActive: true,
-    freezeDaysRemaining: 2,
-    vacationMode: false,
-    language: 'English'
+  // Settings state persisted to local storage
+  const [settings, setSettings] = useState(() => {
+    const key = `aspirantx_focus_galaxy_settings_${userId}`;
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return {
+      pomoDuration: 50,
+      shortBreak: 10,
+      longBreak: 20,
+      soundActive: true,
+      focusShieldActive: true,
+      freezeDaysRemaining: 0,
+      vacationMode: false,
+      language: 'English'
+    };
   });
+
+  const updateSettings = (updater: (prev: typeof settings) => typeof settings) => {
+    setSettings(prev => {
+      const updated = updater(prev);
+      try {
+        localStorage.setItem(`aspirantx_focus_galaxy_settings_${userId}`, JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
 
   // Helper to derive celestial bodies from verified session records
   const derivePlanetsFromSessions = useCallback((sessions: any[], profile: UserPlanetProfile): FocusPlanetRecord[] => {
@@ -330,14 +356,13 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
     return sessions.map((sess, idx) => {
       const mins = Number(sess.minutes) || Math.round(Number(sess.completedDuration || sess.durationSeconds || 0) / 60) || 25;
       const dateStr = sess.date || (sess.createdAt ? getISTDateString(new Date(sess.createdAt)) : '');
-      const subject = sess.subject || 'General Study';
-      const topic = sess.topic || 'Focus Sprint';
+      const rawSubject = sess.subject || (sess.mode === 'stopwatch' ? 'Stopwatch Focus' : 'Deep Work');
+      const subject = rawSubject.split('—')[0].trim();
+      const topic = sess.topic || (sess.mode === 'stopwatch' ? 'Continuous Sprint' : 'Focus Session');
       const palette = PALETTES[idx % PALETTES.length];
       const type = PLANET_TYPES[idx % PLANET_TYPES.length];
 
-      const name = idx === 0 
-        ? profile.name 
-        : `${subject.split('—')[0].trim()} Sphere ${idx + 1}`;
+      const name = `${subject} #${sessions.length - idx}`;
 
       return {
         id: sess.id || `world_${idx}`,
@@ -413,9 +438,13 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
     try {
       const local = await loadStudySessions(userId);
       if (Array.isArray(local) && local.length > 0) {
-        const existingIds = new Set(loadedSessions.map(s => s.id));
+        const existingMap = new Map(loadedSessions.map(s => [s.id, s]));
         local.forEach(ls => {
-          if (!existingIds.has(ls.id)) {
+          const existing = existingMap.get(ls.id);
+          if (existing) {
+            if (!existing.subject && ls.subject) existing.subject = ls.subject;
+            if (!existing.topic && ls.topic) existing.topic = ls.topic;
+          } else {
             loadedSessions.push({
               id: ls.id,
               userId: ls.userId,
@@ -423,7 +452,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               completedDuration: ls.durationSeconds,
               durationSeconds: ls.durationSeconds,
               subject: ls.subject,
-              topic: 'Study Session',
+              topic: ls.topic || 'Study Session',
               mode: ls.mode || 'pomodoro',
               status: 'COMPLETED',
               createdAt: ls.createdAt
@@ -433,7 +462,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
       }
     } catch (e) {}
 
-    // 4. Fetch profile for streak & level
+    // 4. Fetch profile for streak & real study goal
     let dbStreak = 1;
     try {
       const profRes = await fetch('/api/user/profile', { headers });
@@ -441,6 +470,9 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
         const profData = await profRes.json();
         if (profData.profile) {
           dbStreak = Number(profData.profile.streakDays || profData.profile.streak_days) || 1;
+          if (profData.profile.studyGoal && Number(profData.profile.studyGoal) > 0) {
+            setDailyGoalHours(Number(profData.profile.studyGoal));
+          }
         }
       }
     } catch (e) {}
@@ -624,7 +656,8 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   const subjectDistribution = useMemo(() => {
     const counts: Record<string, number> = {};
     rawSessions.forEach(s => {
-      const subj = s.subject || 'General Study';
+      const rawSubj = s.subject || (s.mode === 'stopwatch' ? 'Stopwatch Study' : (cleanExamTitle ? `${cleanExamTitle} Core` : 'Focus Sprint'));
+      const subj = rawSubj.split('—')[0].trim();
       const mins = Number(s.minutes) || Math.round((Number(s.completedDuration || s.durationSeconds || 0)) / 60) || 0;
       counts[subj] = (counts[subj] || 0) + mins;
     });
@@ -640,7 +673,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
       percentage: Math.round((mins / total) * 100),
       color: paletteColors[idx % paletteColors.length]
     }));
-  }, [rawSessions]);
+  }, [rawSessions, cleanExamTitle]);
 
   // Monthly focus chronicle from actual sessions
   const monthlyChronicle = useMemo(() => {
@@ -803,12 +836,13 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               <div className="text-right flex flex-col md:items-end">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Today's Focus Mass</span>
                 <p className="text-xl sm:text-2xl font-black text-sky-400 font-mono">
-                  {formatMinutesToHoursAndMinutes(todayMinutes)} <span className="text-xs text-slate-500 font-normal">/ 4h Goal</span>
+                  {formatMinutesToHoursAndMinutes(todayMinutes)}{' '}
+                  <span className="text-xs text-slate-500 font-normal">/ {dailyGoalHours}h Goal</span>
                 </p>
                 <div className="w-44 bg-slate-950 h-2 rounded-full mt-2 overflow-hidden border border-slate-800">
                   <div 
                     className="h-full bg-sky-400 rounded-full transition-all duration-500" 
-                    style={{ width: `${Math.min(100, Math.round((todayMinutes / 240) * 100))}%` }} 
+                    style={{ width: `${Math.min(100, Math.round((todayMinutes / (dailyGoalHours * 60)) * 100))}%` }} 
                   />
                 </div>
               </div>
@@ -1536,7 +1570,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                   {[25, 45, 50, 60].map(mins => (
                     <button
                       key={mins}
-                      onClick={() => setSettings(s => ({ ...s, pomoDuration: mins }))}
+                      onClick={() => updateSettings(s => ({ ...s, pomoDuration: mins }))}
                       className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                         settings.pomoDuration === mins
                           ? 'bg-sky-500 text-slate-950'
@@ -1556,7 +1590,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                   <p className="text-[11px] text-slate-400">Locks distracting sites at device network level.</p>
                 </div>
                 <button
-                  onClick={() => setSettings(s => ({ ...s, focusShieldActive: !s.focusShieldActive }))}
+                  onClick={() => updateSettings(s => ({ ...s, focusShieldActive: !s.focusShieldActive }))}
                   className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     settings.focusShieldActive
                       ? 'bg-emerald-500 text-slate-950'
@@ -1773,17 +1807,13 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                 </div>
                 <div>
                   <label className="block text-slate-400 font-bold mb-1">Subject</label>
-                  <select
+                  <input
+                    type="text"
+                    placeholder="Enter subject name (e.g. Modern History, Organic Chemistry, etc.)"
                     value={newTaskSubject}
                     onChange={(e) => setNewTaskSubject(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                  >
-                    <option value="Indian Polity">Indian Polity</option>
-                    <option value="Modern History">Modern History</option>
-                    <option value="Geography & Environment">Geography & Environment</option>
-                    <option value="Economy & Budget">Economy & Budget</option>
-                    <option value="CSAT Aptitude">CSAT Aptitude</option>
-                  </select>
+                    className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-emerald-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-slate-400 font-bold mb-1">Target Pomodoros</label>

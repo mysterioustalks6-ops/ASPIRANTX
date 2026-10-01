@@ -743,11 +743,11 @@ router.get('/api/user/study-sessions', async (req, res) => {
   try {
     const rawUserId = String(userId || '').trim().toLowerCase();
     const dbRes = await queryPostgres(
-      `SELECT id, user_id, minutes, date, created_at, 'stopwatch' as session_type
+      `SELECT id, user_id, minutes, date, subject, topic, created_at, 'stopwatch' as session_type
        FROM public.user_pomodoro_sessions
        WHERE user_id = $1 OR user_id = $2
        UNION ALL
-       SELECT id, user_id, verified_minutes as minutes, (completed_at AT TIME ZONE 'Asia/Kolkata')::date::text as date, created_at, 'pomodoro' as session_type
+       SELECT id, user_id, verified_minutes as minutes, (completed_at AT TIME ZONE 'Asia/Kolkata')::date::text as date, subject, topic, created_at, 'pomodoro' as session_type
        FROM public.focus_sessions
        WHERE (user_id = $1 OR user_id = $2)
          AND status = 'COMPLETED'
@@ -765,6 +765,8 @@ router.get('/api/user/study-sessions', async (req, res) => {
       completedDuration: (Number(r.minutes) || 25) * 60,
       durationSeconds: (Number(r.minutes) || 25) * 60,
       date: r.date,
+      subject: r.subject || undefined,
+      topic: r.topic || undefined,
       status: 'COMPLETED',
       mode: r.session_type || 'study',
       createdAt: r.created_at
@@ -783,7 +785,7 @@ router.post('/api/user/study-sessions', async (req, res) => {
     return res.status(401).json({ error: 'Authentication Required' });
   }
   const userId = verifiedUser.sub!;
-  const { sessionId, id, duration, completedDuration, date } = req.body;
+  const { sessionId, id, duration, completedDuration, date, subject, topic } = req.body;
 
   const targetSessionId = sessionId || id || `pomo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
   const validMinutes = Math.max(1, Math.min(360, Math.round(Number(completedDuration || duration || 25))));
@@ -791,10 +793,14 @@ router.post('/api/user/study-sessions', async (req, res) => {
 
   try {
     await queryPostgres(
-      `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, created_at)
-       VALUES ($1, $2, $3, $4, now())
-       ON CONFLICT (id) DO UPDATE SET minutes = $3, date = $4`,
-      [targetSessionId, userId, validMinutes, sessionDate]
+      `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, subject, topic, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, now())
+       ON CONFLICT (id) DO UPDATE SET 
+         minutes = $3, 
+         date = $4,
+         subject = COALESCE($5, public.user_pomodoro_sessions.subject),
+         topic = COALESCE($6, public.user_pomodoro_sessions.topic)`,
+      [targetSessionId, userId, validMinutes, sessionDate, subject || null, topic || null]
     );
 
     const session = {
@@ -804,6 +810,8 @@ router.post('/api/user/study-sessions', async (req, res) => {
       duration: validMinutes,
       completedDuration: validMinutes,
       date: sessionDate,
+      subject: subject || undefined,
+      topic: topic || undefined,
       status: 'COMPLETED',
       createdAt: new Date().toISOString()
     };
@@ -822,17 +830,21 @@ router.post('/api/user/study-sessions/:id/complete', async (req, res) => {
   }
   const userId = verifiedUser.sub!;
   const { id } = req.params;
-  const { completedDuration, duration, date } = req.body;
+  const { completedDuration, duration, date, subject, topic } = req.body;
 
   const validMinutes = Math.max(1, Math.min(360, Math.round(Number(completedDuration || duration || 25))));
   const sessionDate = date || getISTDateString();
 
   try {
     await queryPostgres(
-      `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, created_at)
-       VALUES ($1, $2, $3, $4, now())
-       ON CONFLICT (id) DO UPDATE SET minutes = $3, date = $4`,
-      [id, userId, validMinutes, sessionDate]
+      `INSERT INTO public.user_pomodoro_sessions (id, user_id, minutes, date, subject, topic, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, now())
+       ON CONFLICT (id) DO UPDATE SET 
+         minutes = $3, 
+         date = $4,
+         subject = COALESCE($5, public.user_pomodoro_sessions.subject),
+         topic = COALESCE($6, public.user_pomodoro_sessions.topic)`,
+      [id, userId, validMinutes, sessionDate, subject || null, topic || null]
     );
 
     // XP calculation

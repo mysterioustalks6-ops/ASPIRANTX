@@ -229,6 +229,7 @@ export interface StudySession {
   id: string;
   userId?: string;
   subject: string;
+  topic?: string;
   durationSeconds: number;
   createdAt: string;
   xpEarned: number;
