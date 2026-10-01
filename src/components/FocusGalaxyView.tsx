@@ -33,6 +33,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { GalaxyCanvas, CelestialBody, CelestialMoon } from './GalaxyCanvas';
+import { ProceduralPlanet, PlanetType } from '../features/focus/galaxy/ProceduralPlanet';
 import { loadStudySessions, getISTDateString } from '../lib/gamification';
 import { PressFeedback, CountUp, SlideUp, triggerConfetti } from '../lib/animations';
 
@@ -269,7 +270,13 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   onStartFocusSession,
 }) => {
   // Navigation tabs matching Penpot screens
-  const [activeSubTab, setActiveSubTab] = useState<'home' | 'galaxy' | 'tasks' | 'history' | 'roadmap' | 'journey' | 'hall_of_fame' | 'settings'>('home');
+  const [activeSubTab, setActiveSubTab] = useState<'home' | 'galaxy' | 'observatory_3d' | 'tasks' | 'history' | 'roadmap' | 'journey' | 'hall_of_fame' | 'settings'>('home');
+  const [heroViewMode, setHeroViewMode] = useState<'3d_planet' | '2d_galaxy'>('3d_planet');
+  const [proceduralType, setProceduralType] = useState<PlanetType>('rocky');
+  const [proceduralSeed, setProceduralSeed] = useState<number>(42);
+  const [proceduralAutoRotate, setProceduralAutoRotate] = useState<boolean>(true);
+  const [proceduralAtmosphere, setProceduralAtmosphere] = useState<boolean>(true);
+  const [proceduralStarfield, setProceduralStarfield] = useState<boolean>(true);
   const [planets, setPlanets] = useState<FocusPlanetRecord[]>([]);
   const [tasks, setTasks] = useState<FocusTaskItem[]>([]);
   const [filterRange, setFilterRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
@@ -762,6 +769,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
         <div className="flex items-center gap-1.5 flex-wrap">
           {([
             { id: 'home', label: 'Focus Home', icon: Orbit },
+            { id: 'observatory_3d', label: '3D Planet Lab', icon: Sparkles },
             { id: 'galaxy', label: 'My Galaxy', icon: Globe2 },
             { id: 'tasks', label: 'Tasks & Days', icon: Calendar },
             { id: 'history', label: 'History & Stats', icon: BarChart3 },
@@ -848,9 +856,65 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               </div>
             </div>
 
-            {/* Central Interactive Galaxy Viewport (Hero Visual) */}
-            <div className="relative w-full h-[360px] sm:h-[420px] my-6 rounded-2xl overflow-hidden border border-slate-800/80 bg-[#04060a]">
-              {planets.length === 0 && !isLoading ? (
+            {/* Central Interactive Galaxy Viewport (Hero Visual with 3D/2D Toggle) */}
+            <div className="relative w-full h-[380px] sm:h-[440px] my-6 rounded-2xl overflow-hidden border border-slate-800/80 bg-[#04060a]">
+              {heroViewMode === '3d_planet' ? (
+                <div className="relative w-full h-full">
+                  <ProceduralPlanet
+                    type={proceduralType}
+                    seed={proceduralSeed}
+                    autoRotate={proceduralAutoRotate}
+                    showAtmosphere={proceduralAtmosphere}
+                    showStarfield={proceduralStarfield}
+                    className="w-full h-full"
+                  />
+
+                  {/* 3D Planet Interactive Control Pill Bar */}
+                  <div className="absolute bottom-4 left-4 right-4 z-10 p-2.5 rounded-2xl bg-slate-950/85 border border-slate-800/90 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 shadow-2xl">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1 hidden sm:inline">Type:</span>
+                      {(['rocky', 'gas', 'lava', 'ice'] as const).map(pType => {
+                        const icons: Record<string, string> = { rocky: '🪨', gas: '🪐', lava: '🌋', ice: '❄️' };
+                        const isActive = proceduralType === pType;
+                        return (
+                          <button
+                            key={pType}
+                            onClick={() => setProceduralType(pType)}
+                            className={`px-2.5 py-1 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer flex items-center gap-1 ${
+                              isActive
+                                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/25 scale-105'
+                                : 'bg-slate-900/90 text-slate-400 hover:text-white border border-slate-800'
+                            }`}
+                          >
+                            <span>{icons[pType]}</span>
+                            <span>{pType}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-xs font-mono text-slate-300 bg-slate-900/90 px-2 py-1 rounded-xl border border-slate-800">
+                        <span className="text-slate-500">Seed:</span>
+                        <input
+                          type="number"
+                          value={proceduralSeed}
+                          onChange={(e) => setProceduralSeed(parseInt(e.target.value, 10) || 1)}
+                          className="w-14 bg-transparent text-sky-400 font-bold focus:outline-none text-center"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setProceduralSeed(Math.floor(Math.random() * 9999) + 1)}
+                        className="px-2.5 py-1 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sky-400 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                        title="Generate new procedural variation"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Mutate</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : planets.length === 0 && !isLoading ? (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-6 bg-slate-950/80 backdrop-blur-sm space-y-4">
                   <div className="w-16 h-16 rounded-3xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-xl shadow-sky-500/10">
                     <Globe2 className="w-8 h-8 animate-pulse" />
@@ -882,21 +946,28 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                 />
               )}
 
-              {/* View Scale Filter Chips */}
-              <div className="absolute top-4 left-4 z-10 flex items-center gap-1 p-1 rounded-xl bg-slate-950/80 border border-slate-800/90 backdrop-blur-md">
-                {(['cluster', 'system', 'arm', 'galaxy'] as const).map(scale => (
-                  <button
-                    key={scale}
-                    onClick={() => setViewScale(scale)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-mono uppercase font-bold transition-all ${
-                      viewScale === scale
-                        ? 'bg-sky-500 text-slate-950 shadow-sm'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {scale}
-                  </button>
-                ))}
+              {/* View Mode Switcher: 3D Planet vs 2D Orbits */}
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-1 p-1 rounded-xl bg-slate-950/85 border border-slate-800/90 backdrop-blur-md shadow-lg">
+                <button
+                  onClick={() => setHeroViewMode('3d_planet')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono uppercase font-bold transition-all cursor-pointer ${
+                    heroViewMode === '3d_planet'
+                      ? 'bg-sky-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🪐 3D Planet
+                </button>
+                <button
+                  onClick={() => setHeroViewMode('2d_galaxy')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono uppercase font-bold transition-all cursor-pointer ${
+                    heroViewMode === '2d_galaxy'
+                      ? 'bg-sky-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  🌌 Orbits
+                </button>
               </div>
 
               {/* Distraction Zero Status Badge */}
@@ -1006,6 +1077,173 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               <div className="absolute bottom-4 right-4 z-10 px-3 py-1.5 rounded-full bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-400 backdrop-blur-md flex items-center gap-2">
                 <Compass className="w-3.5 h-3.5 text-sky-400" />
                 <span>Tap any world to view verified study telemetry</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          SCREEN: 3D PLANET OBSERVATORY (Zero-Asset WebGL Laboratory)
+      ══════════════════════════════════════════════════════════════════ */}
+      {activeSubTab === 'observatory_3d' && (
+        <div className="space-y-6">
+          <div className="p-6 md:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl space-y-6 backdrop-blur-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono font-bold text-sky-400 uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20">
+                    ZERO-ASSET PROCEDURAL WEBGL
+                  </span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-sky-400" />
+                  <span>3D Procedural Planet Observatory</span>
+                </h2>
+                <p className="text-xs text-slate-400">
+                  Real-time Fractional Brownian Motion (fBm) noise synthesis running on memory canvas (0 external .glb or image textures).
+                </p>
+              </div>
+
+              {/* Quick Type Selection Pills */}
+              <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-950 border border-slate-800 flex-wrap">
+                {(['rocky', 'gas', 'lava', 'ice'] as const).map(pType => {
+                  const icons: Record<string, string> = { rocky: '🪨', gas: '🪐', lava: '🌋', ice: '❄️' };
+                  const isActive = proceduralType === pType;
+                  return (
+                    <button
+                      key={pType}
+                      onClick={() => setProceduralType(pType)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isActive
+                          ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20 font-black'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                      }`}
+                    >
+                      <span>{icons[pType]}</span>
+                      <span>{pType}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Giant 3D Viewport */}
+            <div className="relative w-full h-[450px] sm:h-[520px] rounded-3xl overflow-hidden border border-slate-800/90 bg-[#030508] shadow-inner">
+              <ProceduralPlanet
+                type={proceduralType}
+                seed={proceduralSeed}
+                autoRotate={proceduralAutoRotate}
+                showAtmosphere={proceduralAtmosphere}
+                showStarfield={proceduralStarfield}
+                className="w-full h-full"
+              />
+
+              {/* Telemetry overlay pill */}
+              <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-300 backdrop-blur-md flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Procedural 3D • 60 FPS • {proceduralType.toUpperCase()}</span>
+              </div>
+
+              {/* Seed quick-switch on viewport */}
+              <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                <button
+                  onClick={() => setProceduralSeed(Math.floor(Math.random() * 9999) + 1)}
+                  className="px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-xs font-bold text-sky-400 backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Randomize Seed</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Comprehensive Testing & Reactivity Controls */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Seed Control Card */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white">Seed Reactivity</span>
+                  <span className="text-xs font-mono font-bold text-sky-400">#{proceduralSeed}</span>
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="500"
+                  value={proceduralSeed}
+                  onChange={(e) => setProceduralSeed(parseInt(e.target.value, 10))}
+                  className="w-full accent-sky-500 cursor-pointer"
+                />
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Permutation Index</span>
+                  <button
+                    onClick={() => setProceduralSeed(42)}
+                    className="text-sky-400 hover:underline cursor-pointer"
+                  >
+                    Reset (42)
+                  </button>
+                </div>
+              </div>
+
+              {/* Atmosphere & Starfield Toggles */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2.5">
+                <span className="text-xs font-bold text-white block">Visual Shaders & Starfield</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setProceduralAtmosphere(a => !a)}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      proceduralAtmosphere
+                        ? 'bg-sky-500/20 border-sky-500 text-sky-300'
+                        : 'bg-slate-900 border-slate-800 text-slate-500'
+                    }`}
+                  >
+                    Fresnel Glow: {proceduralAtmosphere ? 'ON' : 'OFF'}
+                  </button>
+                  <button
+                    onClick={() => setProceduralStarfield(s => !s)}
+                    className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      proceduralStarfield
+                        ? 'bg-sky-500/20 border-sky-500 text-sky-300'
+                        : 'bg-slate-900 border-slate-800 text-slate-500'
+                    }`}
+                  >
+                    Starfield: {proceduralStarfield ? 'ON' : 'OFF'}
+                  </button>
+                </div>
+                <button
+                  onClick={() => setProceduralAutoRotate(r => !r)}
+                  className={`w-full py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                    proceduralAutoRotate
+                      ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
+                      : 'bg-slate-900 border-slate-800 text-slate-500'
+                  }`}
+                >
+                  Rotation (0.003 rad/frame): {proceduralAutoRotate ? 'ACTIVE' : 'PAUSED'}
+                </button>
+              </div>
+
+              {/* Architecture & Specs */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 text-[11px]">
+                <span className="text-xs font-bold text-white block">WebGL Specs & Android Guard</span>
+                <div className="flex justify-between text-slate-400">
+                  <span>Texture Engine:</span>
+                  <span className="text-white font-mono">512x256 2D Canvas fBm</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Core Geometry:</span>
+                  <span className="text-white font-mono">Sphere (r=1.3, 64 seg)</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Atmosphere:</span>
+                  <span className="text-white font-mono">Fresnel Rim (r=1.36)</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>DPR Cap:</span>
+                  <span className="text-emerald-400 font-mono">min(DPR, 1.5)</span>
+                </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Unmount Safety:</span>
+                  <span className="text-emerald-400 font-mono">100% Disposed</span>
+                </div>
               </div>
             </div>
           </div>
