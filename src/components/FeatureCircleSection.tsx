@@ -237,7 +237,7 @@ export const FeatureCircleSection: React.FC<FeatureCircleSectionProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-black tracking-tight text-white group-hover:text-sky-400 transition-colors">
-                  Aspirant<span className="text-sky-400">X</span>
+                  Study<span className="text-sky-400">Ride</span>
                 </span>
                 <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-300">
                   v2.7.0

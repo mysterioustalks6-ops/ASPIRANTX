@@ -49,8 +49,17 @@ if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
     return originalFetch(input, init);
   };
 
-  // Hardware Android back button handler for native app navigation
+  // Hardware Android back button handler with contextual modal/sheet dismissal
   CapApp.addListener('backButton', ({ canGoBack }) => {
+    const handled = window.dispatchEvent(new CustomEvent('studyride_back_pressed', { cancelable: true }));
+    if (!handled) {
+      return; // Handled by active sheet or modal
+    }
+    const openModals = document.querySelectorAll('[role="dialog"], [data-modal-open="true"], .fixed.inset-0.z-50, .fixed.inset-0.z-\\[100\\]');
+    if (openModals.length > 0) {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
+      return;
+    }
     if (canGoBack) {
       window.history.back();
     } else {

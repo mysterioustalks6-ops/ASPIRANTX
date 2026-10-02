@@ -151,6 +151,35 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     }
   }, [examResult]);
 
+  // Android hardware back button handler for CBT palette, submit modal, pause, and live session protection
+  useEffect(() => {
+    const handleBackPressed = (e: Event) => {
+      if (isMobilePaletteOpen) {
+        e.preventDefault();
+        setIsMobilePaletteOpen(false);
+        return;
+      }
+      if (showSubmitModal) {
+        e.preventDefault();
+        setShowSubmitModal(false);
+        return;
+      }
+      if (isPaused) {
+        e.preventDefault();
+        setIsPaused(false);
+        return;
+      }
+      if (activeTab === 'live') {
+        // Prevent accidental exit during live examination; show submit/confirm modal instead!
+        e.preventDefault();
+        setShowSubmitModal(true);
+        return;
+      }
+    };
+    window.addEventListener('studyride_back_pressed', handleBackPressed);
+    return () => window.removeEventListener('studyride_back_pressed', handleBackPressed);
+  }, [isMobilePaletteOpen, showSubmitModal, isPaused, activeTab]);
+
   // Live exam countdown ticker
   useEffect(() => {
     countdownRef.current = setInterval(() => {
