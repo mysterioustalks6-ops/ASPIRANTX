@@ -144,11 +144,11 @@ app.get('/api/version', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.json({
     version: APP_VERSION,
-    versionCode: Shared.APP_VERSION_CODE || 18,
+    versionCode: Shared.APP_VERSION_CODE || 19,
     apkDownloadUrl: 'https://studyride.in/studyride.apk',
     directApkUrl: 'https://aspirantx.vercel.app/studyride.apk',
     releaseDate: 'October 2, 2026',
-    releaseNotes: 'v2.6.0: De-duplicated high-speed architecture, unified mobile navigation, auto-adaptive 3D viewport, and 25% lighter APK size.',
+    releaseNotes: 'v2.6.1: Instant exam search modal, classic Pomodoro focus sprint with cosmic audio synth, JEE Main & Advanced subtopics syllabus integration, and 10,000 questions question bank.',
     timestamp: new Date().toISOString()
   });
 });
