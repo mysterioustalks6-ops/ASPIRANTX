@@ -1971,9 +1971,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
 
       {/* --- LIVE STOPWATCH (TAB 2) --- */}
       {activeTab === 'stopwatch' && (
-        <div className="p-8 md:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 text-center space-y-8 shadow-2xl">
-          {/* Cosmic Visual for Stopwatch */}
-          <div className="mb-2">
+        <div className="relative w-full p-4 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 text-center flex flex-col items-center justify-between shadow-2xl overflow-hidden min-h-[380px]">
+          {/* Cosmic Visual Backdrop (Accretion) */}
+          <div className="mb-2 w-full max-w-sm">
             <CosmicAccretionVisual
               progressPercent={Math.min(100, Math.round((stopwatchSeconds / 3600) * 100))}
               isPomoActive={isStopwatchActive}
@@ -1982,22 +1982,62 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
             />
           </div>
 
-          <div className="text-6xl sm:text-7xl font-black text-white font-mono tracking-tight">
-            {formatStopwatchTime(stopwatchSeconds)}
+          {/* Center Circular Progress Ring & High-Contrast Digits */}
+          <div className="relative w-[clamp(180px,50vw,240px)] h-[clamp(180px,50vw,240px)] flex items-center justify-center my-auto">
+            {/* Auto-scaling SVG Progress Track */}
+            <svg 
+              className="w-full h-full -rotate-90 pointer-events-none drop-shadow-md"
+              viewBox="0 0 100 100"
+            >
+              <circle
+                cx="50"
+                cy="50"
+                r="44"
+                className="stroke-slate-800/80"
+                strokeWidth="4.5"
+                fill="transparent"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="44"
+                stroke={isDistracted ? '#fbbf24' : '#10b981'}
+                strokeWidth="4.5"
+                strokeLinecap="round"
+                fill="transparent"
+                strokeDasharray={276.46}
+                strokeDashoffset={276.46 - (Math.min(100, (stopwatchSeconds / 3600) * 100) / 100) * 276.46}
+                style={{ transition: 'stroke-dashoffset 0.3s ease' }}
+              />
+            </svg>
+
+            {/* Dead-Center Digits */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
+              <span className="text-[10px] sm:text-xs py-0.5 px-2.5 rounded-full font-mono uppercase tracking-wider backdrop-blur-md border border-slate-800/80 bg-slate-950/70 text-slate-300 mb-1">
+                {isStopwatchActive ? 'Accreting Time' : 'Stopwatch'}
+              </span>
+              <span className="text-[clamp(2rem,8vw,3.25rem)] font-mono font-bold leading-none tracking-tight text-white drop-shadow-lg">
+                {formatStopwatchTime(stopwatchSeconds)}
+              </span>
+              <span className="mt-1 text-[clamp(0.7rem,2.8vw,0.85rem)] font-mono text-slate-400">
+                {Math.min(100, Math.round((stopwatchSeconds / 3600) * 100))}% of 1h
+              </span>
+            </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-4">
+          {/* Action Dock: 44px min touch target, reduced visual padding */}
+          <div className="mt-4 p-1.5 rounded-full bg-slate-950/90 border border-slate-800/90 backdrop-blur-xl shadow-2xl flex items-center justify-center gap-2">
             {!isStopwatchActive ? (
               <button
                 onClick={handleStartStopwatch}
-                className="px-8 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                className="h-[44px] min-h-[44px] px-6 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
               >
                 <Play className="w-4 h-4 fill-current" /> Start Timer
               </button>
             ) : (
               <button
                 onClick={handlePauseStopwatch}
-                className="px-8 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                className="h-[44px] min-h-[44px] px-6 py-2 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
               >
                 <Pause className="w-4 h-4 fill-current" /> Pause
               </button>
@@ -2007,16 +2047,17 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
               <button
                 onClick={handleStopwatchFinish}
                 disabled={isSaving}
-                className="px-6 py-3.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/20"
+                className="h-[44px] min-h-[44px] px-5 py-2 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-lg shadow-cyan-500/20 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
               >
-                <CheckCircle2 className="w-4 h-4" /> Save & Log Time
+                <CheckCircle2 className="w-4 h-4" /> Save
               </button>
             )}
 
             <button
               onClick={handleResetStopwatch}
-              className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300"
+              className="h-[44px] w-[44px] min-h-[44px] min-w-[44px] rounded-full bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer"
               title="Reset Stopwatch"
+              aria-label="Reset Stopwatch"
             >
               <RotateCcw className="w-4 h-4" />
             </button>

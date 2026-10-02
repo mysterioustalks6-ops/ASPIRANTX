@@ -33,8 +33,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { GalaxyCanvas, CelestialBody, CelestialMoon } from './GalaxyCanvas';
-import { ProceduralPlanet, PlanetType } from '../features/focus/galaxy/ProceduralPlanet';
-import { PlanetarySystem } from '../features/focus/galaxy/PlanetarySystem';
+import { PlanetarySystem, PlanetType } from '../features/focus/galaxy/PlanetarySystem';
 import { useFocusProgression } from '../features/focus/progression';
 import { loadStudySessions, getISTDateString } from '../lib/gamification';
 import { PressFeedback, CountUp, SlideUp, triggerConfetti } from '../lib/animations';

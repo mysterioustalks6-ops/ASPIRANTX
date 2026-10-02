@@ -81,18 +81,28 @@ export const GalaxyCanvas: React.FC<GalaxyCanvasProps> = ({
     let animationFrameId: number;
     const rng = createSeededRandom(seed);
 
-    // Setup viewport resolution with DPR for ultra-crisp mobile & retina screens
+    // Setup viewport resolution with DPR cap (1.5) for high performance on mobile & budget devices
     const handleResize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       const rect = canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
+      const w = rect.width || canvas.clientWidth || 300;
+      const h = rect.height || canvas.clientHeight || 300;
+      if (!w || !h) return;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
 
     handleResize();
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    const resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    if (canvas.parentElement) {
+      resizeObserver.observe(canvas.parentElement);
+    }
 
     // Generate persistent starfield (3 parallax layers with realistic color temperature)
     const starCount = Math.min(180, Math.floor(canvas.clientWidth * 0.4));
@@ -466,6 +476,8 @@ export const GalaxyCanvas: React.FC<GalaxyCanvasProps> = ({
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+      resizeObserver.disconnect();
       canvas.removeEventListener('click', handleClick);
       cancelAnimationFrame(animationFrameId);
     };

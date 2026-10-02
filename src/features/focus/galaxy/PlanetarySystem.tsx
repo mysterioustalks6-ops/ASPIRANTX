@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { PlanetType } from './ProceduralPlanet';
+
+export type PlanetType = 'rocky' | 'gas' | 'lava' | 'ice';
 
 export interface PlanetarySystemProps {
   level?: number;
@@ -552,17 +553,27 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
 
     let isMounted = true;
 
-    // 1. Container dimensions with robust fallback
-    const width = container.clientWidth || 350;
-    const height = container.clientHeight || 350;
+    // 1. Container dimensions with robust aspect-aware fallback
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || (window.innerHeight * 0.45);
+    const aspect = width / height;
 
     // 2. Scene & Camera Setup
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.set(0, 0, 4.5);
+    // If aspect ratio is portrait/narrow, push camera back proportionally
+    // Base radius: 1.3
+    const initialTargetDistance = aspect < 0.6 
+      ? 4.2 * (0.6 / Math.max(aspect, 0.42)) 
+      : 4.2;
+
+    const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+    camera.position.set(0, 0, initialTargetDistance);
     cameraRef.current = camera;
+
+    interactionRef.current.cameraDistance = initialTargetDistance;
+    interactionRef.current.targetDistance = initialTargetDistance;
 
     // 3. WebGL Renderer
     const renderer = new THREE.WebGLRenderer({
@@ -1001,28 +1012,50 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
 
     animate();
 
-    // 16. Safe ResizeObserver
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (!isMounted) return;
-      for (const entry of entries) {
-        const { width: newW, height: newH } = entry.contentRect;
-        if (newW > 10 && newH > 10) {
-          camera.aspect = newW / newH;
-          camera.updateProjectionMatrix();
-          renderer.setSize(newW, newH);
-          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-        }
+    // 16. Dynamic Aspect-Ratio-Aware Camera & Viewport Updater
+    const updateCameraPosition = () => {
+      if (!isMounted || !container || !camera || !renderer) return;
+      const w = container.clientWidth || window.innerWidth;
+      const h = container.clientHeight || (window.innerHeight * 0.45);
+      const asp = w / h;
+
+      camera.aspect = asp;
+
+      // If aspect ratio is portrait/narrow, push camera back proportionally
+      // Base radius: 1.3
+      const targetDistance = asp < 0.6 
+        ? 4.2 * (0.6 / Math.max(asp, 0.42)) 
+        : 4.2;
+
+      if (!interactionRef.current.isInteracting) {
+        interactionRef.current.cameraDistance = targetDistance;
+        interactionRef.current.targetDistance = targetDistance;
       }
+
+      camera.position.z = targetDistance;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    };
+
+    // 17. Safe ResizeObserver & Orientation / Window Resize Listener
+    const resizeObserver = new ResizeObserver(() => {
+      if (!isMounted) return;
+      updateCameraPosition();
     });
     resizeObserver.observe(container);
+    window.addEventListener('resize', updateCameraPosition);
+    window.addEventListener('orientationchange', updateCameraPosition);
 
-    // 17. Cleanup Guard
+    // 18. Cleanup Guard
     return () => {
       isMounted = false;
       if (animFrameIdRef.current !== null) {
         cancelAnimationFrame(animFrameIdRef.current);
       }
       resizeObserver.disconnect();
+      window.removeEventListener('resize', updateCameraPosition);
+      window.removeEventListener('orientationchange', updateCameraPosition);
 
       container.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
@@ -1158,7 +1191,7 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
   return (
     <div
       ref={mountRef}
-      className={`relative w-full h-full min-h-[350px] overflow-hidden select-none pointer-events-auto touch-none cursor-grab active:cursor-grabbing ${className}`}
+      className={`relative w-full h-full min-h-0 overflow-hidden select-none pointer-events-auto touch-none cursor-grab active:cursor-grabbing ${className}`}
       aria-label={`Interactive 3D Planetary System (Level ${level}, ${streakDays} Day Streak)`}
     />
   );
