@@ -58,7 +58,7 @@ export const VersionUpdateNotifier: React.FC = () => {
       // Fetch latest version from authoritative production API
       const timestamp = Date.now();
       const apiUrl = isNative 
-        ? `https://aspirantx.vercel.app/api/version?t=${timestamp}` 
+        ? `https://studyride.in/api/version?t=${timestamp}` 
         : `/api/version?t=${timestamp}`;
 
       const res = await fetch(apiUrl, { cache: 'no-store' }).catch(() => null);
@@ -109,7 +109,7 @@ export const VersionUpdateNotifier: React.FC = () => {
   const handleUpdateClick = async () => {
     if (isNative) {
       setIsDownloading(true);
-      const apkUrl = remoteInfo?.directApkUrl || 'https://aspirantx.vercel.app/studyride.apk';
+      const apkUrl = remoteInfo?.directApkUrl || 'https://studyride.in/studyride.apk';
       try {
         await Browser.open({ url: apkUrl });
       } catch {

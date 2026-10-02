@@ -146,7 +146,7 @@ app.get('/api/version', (_req, res) => {
     version: APP_VERSION,
     versionCode: Shared.APP_VERSION_CODE || 21,
     apkDownloadUrl: 'https://studyride.in/studyride.apk',
-    directApkUrl: 'https://aspirantx.vercel.app/studyride.apk',
+    directApkUrl: 'https://studyride.in/studyride.apk',
     releaseDate: 'October 2, 2026',
     releaseNotes: 'v2.7.0: Universal Indian Competitive Exam CBT Engine, multi-timing models, strict section locking, bilingual presentation, virtual numerical keypads, and mobile test engine.',
     timestamp: new Date().toISOString()

@@ -3,7 +3,7 @@
   "versionCode": 21,
   "minSupportedVersion": "2.0.0",
   "apkUrl": "https://studyride.in/studyride.apk",
-  "directApkUrl": "https://aspirantx.vercel.app/studyride.apk",
+  "directApkUrl": "https://studyride.in/studyride.apk",
   "releaseNotes": "v2.7.0: Universal Indian Competitive Exam CBT Engine, multi-timing models, strict section locking, bilingual presentation, virtual numerical keypads, and mobile test engine.",
   "releaseDate": "October 2, 2026",
   "timestamp": "2026-10-02T19:40:00.000Z"

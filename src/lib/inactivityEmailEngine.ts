@@ -184,7 +184,7 @@ export async function checkAndSendInactivityEmails(force = false): Promise<Inact
   let cooldownCount = 0;
   let noEmailCount = 0;
 
-  const appUrl = process.env.VITE_PUBLIC_API_URL || process.env.VITE_API_BASE_URL || 'https://aspirantx.vercel.app';
+  const appUrl = process.env.VITE_PUBLIC_API_URL || process.env.VITE_API_BASE_URL || 'https://studyride.in';
   const COOLDOWN_DAYS = 5; // Do not send another email if one was sent within last 5 days
   const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
   const nowMs = Date.now();

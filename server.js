@@ -8945,7 +8945,7 @@ async function checkAndSendInactivityEmails(force = false) {
   let failedCount = 0;
   let cooldownCount = 0;
   let noEmailCount = 0;
-  const appUrl = process.env.VITE_PUBLIC_API_URL || process.env.VITE_API_BASE_URL || "https://aspirantx.vercel.app";
+  const appUrl = process.env.VITE_PUBLIC_API_URL || process.env.VITE_API_BASE_URL || "https://studyride.in";
   const COOLDOWN_DAYS = 5;
   const COOLDOWN_MS = COOLDOWN_DAYS * 24 * 60 * 60 * 1e3;
   const nowMs = Date.now();
@@ -26078,7 +26078,7 @@ app.get("/api/version", (_req, res) => {
     version: APP_VERSION,
     versionCode: APP_VERSION_CODE || 21,
     apkDownloadUrl: "https://studyride.in/studyride.apk",
-    directApkUrl: "https://aspirantx.vercel.app/studyride.apk",
+    directApkUrl: "https://studyride.in/studyride.apk",
     releaseDate: "October 2, 2026",
     releaseNotes: "v2.7.0: Universal Indian Competitive Exam CBT Engine, multi-timing models, strict section locking, bilingual presentation, virtual numerical keypads, and mobile test engine.",
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
