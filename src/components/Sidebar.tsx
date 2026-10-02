@@ -37,12 +37,14 @@ import {
   Trophy,
   Download,
   RotateCcw,
-  LayoutGrid
+  LayoutGrid,
+  Search
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
+import { ExamSelectModal } from './ExamSelectModal';
 import { AdSenseBanner } from './AdSenseBanner';
 import { 
   ALL_WORKSPACE_FEATURES, 
@@ -113,6 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [clickCount, setClickCount] = React.useState<number>(0);
   const [isMoreFeaturesOpen, setIsMoreFeaturesOpen] = React.useState<boolean>(false);
+  const [isExamModalOpen, setIsExamModalOpen] = useState<boolean>(false);
   const [workspaceConfig, setWorkspaceConfig] = useState<WorkspaceConfig>(() =>
     loadWorkspaceConfig(user?.id)
   );
@@ -391,48 +394,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
 
-            <div className="relative flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl px-3 py-2">
-              <div className="truncate flex-1">
-                <select
-                  value={selectedExam || user?.exam || 'NEET_UG'}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '__CREATE_CUSTOM__') {
-                      if (onOpenProfileModal) onOpenProfileModal();
-                    } else if (onExamChange) {
-                      onExamChange(val);
-                    }
-                  }}
-                  className="w-full bg-transparent text-xs font-semibold text-slate-100 focus:outline-none cursor-pointer border-none p-0 truncate"
-                >
-                  <optgroup label="Preset Exams">
-                    {EXAM_LIST.map((ex) => (
-                      <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200 font-medium">
-                        {ex.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  {getCustomExamsFromStorage().length > 0 && (
-                    <optgroup label="My Custom Exams">
-                      {getCustomExamsFromStorage().map((ce) => (
-                        <option key={ce.id} value={ce.id} className="bg-slate-900 text-sky-300 font-semibold">
-                          ✨ {ce.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
-                    + Create Custom Exam...
-                  </option>
-                </select>
+            <button
+              type="button"
+              onClick={() => setIsExamModalOpen(true)}
+              className="w-full relative flex items-center justify-between bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-sky-500/50 rounded-xl px-3 py-2 transition-all cursor-pointer text-left group"
+              title="Search & Change Target Exam"
+            >
+              <div className="truncate flex-1 pr-2">
+                <span className="text-xs font-semibold text-slate-100 group-hover:text-white truncate block">
+                  {EXAM_LIST.find(e => e.id === (selectedExam || user?.exam))?.label.split(/[–—]/)[0].trim() || (selectedExam || user?.exam || 'NEET_UG')}
+                </span>
+                <span className="text-[10px] text-slate-500 group-hover:text-sky-400 flex items-center gap-1 mt-0.5">
+                  <Search className="w-2.5 h-2.5" /> Search all exams
+                </span>
               </div>
-              <button
-                onClick={onOpenProfileModal}
-                className="text-[10px] text-sky-400 hover:text-sky-300 font-semibold px-1.5 py-0.5 rounded transition-colors shrink-0 ml-1"
-              >
-                Edit
-              </button>
-            </div>
+              <span className="text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-lg border border-sky-500/20 font-bold shrink-0">
+                Change
+              </span>
+            </button>
+
+            <ExamSelectModal
+              isOpen={isExamModalOpen}
+              onClose={() => setIsExamModalOpen(false)}
+              selectedExam={selectedExam || user?.exam || 'NEET_UG'}
+              onExamChange={(val) => {
+                if (onExamChange) onExamChange(val);
+              }}
+              onOpenCustomModal={onOpenProfileModal}
+            />
           </div>
         )}
 

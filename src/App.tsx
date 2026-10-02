@@ -24,6 +24,7 @@ import { DailyQuoteCard } from './components/DailyQuote';
 import { SyllabusTracker } from './components/SyllabusTracker';
 import { PyqEngine } from './components/PyqEngine';
 import { QuestionBankEngine } from './components/QuestionBankEngine';
+import { PomodoroTimer } from './components/PomodoroTimer';
 import { FocusGalaxyScreen } from './features/focus/galaxy/FocusGalaxyScreen';
 import { TaskManager } from './components/TaskManager';
 import { AiStudyChat } from './components/AiStudyChat';
@@ -1264,8 +1265,8 @@ function AppContent() {
 
       {/* Main Content Dashboard Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
-        {/* Sticky Header: Suppressed when Focus Galaxy Screen is active to prevent double HUDs & headers */}
-        {!['timer', 'focus_shield'].includes(activeTab) && (
+        {/* Sticky Header: Suppressed when Focus Shield is active */}
+        {!['focus_shield'].includes(activeTab) && (
           <Header 
             activeTab={activeTab} 
             user={user} 
@@ -1451,11 +1452,9 @@ function AppContent() {
                 onOpenPremium={() => setActiveTab('premium')}
                 onRequireLogin={() => setUser(null)}
               >
-                <FocusGalaxyScreen 
+                <PomodoroTimer 
                   userId={user.id} 
                   selectedExam={selectedExam} 
-                  initialMode="ORBIT"
-                  onBack={() => setActiveTab('dashboard')}
                 />
               </PremiumGate>
             )}

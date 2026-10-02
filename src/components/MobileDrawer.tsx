@@ -28,11 +28,13 @@ import {
   ChevronRight,
   User,
   GraduationCap,
-  Smartphone
+  Smartphone,
+  Search
 } from 'lucide-react';
 import { AppCustomizerSettings } from '../lib/customizer';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
 import { loadWorkspaceConfig, ALL_WORKSPACE_FEATURES } from '../lib/workspacePreferences';
+import { ExamSelectModal } from './ExamSelectModal';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -66,6 +68,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   onExamChange,
 }) => {
   const customExams = getCustomExamsFromStorage();
+  const [isExamModalOpen, setIsExamModalOpen] = React.useState(false);
   const workspaceConfig = loadWorkspaceConfig(user?.id);
 
   const handleNavClick = (tab: ActiveTab) => {
@@ -208,44 +211,42 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 </div>
               )}
 
-              {/* Target Exam Switcher */}
+              {/* Target Exam Switcher with Instant Search */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                   <GraduationCap className="w-3.5 h-3.5 text-sky-400" /> Target Examination
                 </label>
-                <select
-                  value={selectedExam || user?.exam || 'NEET_UG'}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
-                      onClose();
-                      onOpenProfileModal();
-                    } else if (onExamChange) {
-                      onExamChange(val);
-                    }
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-sky-300 focus:outline-none focus:border-sky-500"
+                <button
+                  type="button"
+                  onClick={() => setIsExamModalOpen(true)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-sky-500/50 text-left transition-all cursor-pointer group"
                 >
-                  <optgroup label="Preset Competitive Exams">
-                    {EXAM_LIST.map((ex) => (
-                      <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200">
-                        {ex.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  {customExams.length > 0 && (
-                    <optgroup label="My Custom Exam Roadmaps">
-                      {customExams.map((ce) => (
-                        <option key={ce.id} value={ce.id} className="bg-slate-900 text-purple-300">
-                          {ce.label}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                  <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
-                    + Create Custom Exam...
-                  </option>
-                </select>
+                  <div className="truncate flex-1 pr-2">
+                    <span className="text-xs font-bold text-sky-300 block truncate">
+                      {EXAM_LIST.find(e => e.id === (selectedExam || user?.exam))?.label.split(/[–—]/)[0].trim() || (selectedExam || user?.exam || 'NEET_UG')}
+                    </span>
+                    <span className="text-[10px] text-slate-500 group-hover:text-sky-400 flex items-center gap-1 mt-0.5">
+                      <Search className="w-2.5 h-2.5" /> Tap to search all exams
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-lg border border-sky-500/20 font-bold shrink-0">
+                    Switch
+                  </span>
+                </button>
+
+                <ExamSelectModal
+                  isOpen={isExamModalOpen}
+                  onClose={() => setIsExamModalOpen(false)}
+                  selectedExam={selectedExam || user?.exam || 'NEET_UG'}
+                  onExamChange={(val) => {
+                    if (onExamChange) onExamChange(val);
+                    onClose();
+                  }}
+                  onOpenCustomModal={() => {
+                    onClose();
+                    if (onOpenProfileModal) onOpenProfileModal();
+                  }}
+                />
               </div>
 
               {/* Navigation Sections */}

@@ -1,16 +1,21 @@
 export interface ExamOption {
   id: string;
   label: string;
+  category?: string;
 }
 
 export const EXAM_LIST: ExamOption[] = [
-  { id: 'NEET_UG', label: 'NEET (UG) — National Eligibility Entrance Test' },
-  { id: 'NDA_NA', label: 'NDA & NA — National Defence Academy' },
-  { id: 'UPSC_CSE', label: 'UPSC CSE — Civil Services Examination' },
-  { id: 'SSC_CGL', label: 'SSC CGL — Combined Graduate Level' },
-  { id: 'SSC_CHSL', label: 'SSC CHSL' },
-  { id: 'SSC_MTS', label: 'SSC MTS' },
-  { id: 'SSC_GD', label: 'SSC GD' },
+  { id: 'JEE_MAIN', label: 'JEE Main — Joint Entrance Examination', category: 'Engineering' },
+  { id: 'JEE_ADVANCED', label: 'JEE Advanced — IIT Entrance Examination', category: 'Engineering' },
+  { id: 'NEET_UG', label: 'NEET (UG) — National Eligibility Entrance Test', category: 'Medical' },
+  { id: 'UPSC_CSE', label: 'UPSC CSE — Civil Services Examination', category: 'Civil Services' },
+  { id: 'GATE', label: 'GATE — Graduate Aptitude Test in Engineering', category: 'Engineering' },
+  { id: 'NDA_NA', label: 'NDA & NA — National Defence Academy', category: 'Defence' },
+  { id: 'CDS', label: 'CDS — Combined Defence Services', category: 'Defence' },
+  { id: 'SSC_CGL', label: 'SSC CGL — Combined Graduate Level', category: 'SSC' },
+  { id: 'SSC_CHSL', label: 'SSC CHSL — Combined Higher Secondary', category: 'SSC' },
+  { id: 'SSC_MTS', label: 'SSC MTS', category: 'SSC' },
+  { id: 'SSC_GD', label: 'SSC GD', category: 'SSC' },
   { id: 'UPSC_CAPF', label: 'UPSC CAPF' },
   { id: 'UPPSC_PCS', label: 'UPPSC PCS' },
   { id: 'WBCS', label: 'WBCS' },

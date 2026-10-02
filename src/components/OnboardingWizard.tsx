@@ -11,7 +11,8 @@ import {
   Loader2, 
   CheckCircle2,
   FileText,
-  Award
+  Award,
+  Search
 } from 'lucide-react';
 import { applyWorkspacePreset } from '../lib/workspacePreferences';
 
@@ -21,12 +22,13 @@ interface OnboardingWizardProps {
 }
 
 const POPULAR_EXAMS = [
+  { id: 'JEE_MAIN', label: 'JEE Main', sub: 'Joint Entrance Examination (NTA)' },
+  { id: 'JEE_ADVANCED', label: 'JEE Advanced', sub: 'IIT Joint Entrance Examination' },
   { id: 'NEET_UG', label: 'NEET UG', sub: 'National Eligibility cum Entrance Test' },
-  { id: 'JEE_MAIN', label: 'JEE Main & Advanced', sub: 'Joint Entrance Examination' },
-  { id: 'UPSC_CSE', label: 'UPSC CSE', sub: 'Civil Services Examination' },
+  { id: 'UPSC_CSE', label: 'UPSC CSE', sub: 'Civil Services Examination (IAS/IPS)' },
   { id: 'SSC_CGL', label: 'SSC CGL', sub: 'Staff Selection Commission' },
   { id: 'GATE', label: 'GATE', sub: 'Graduate Aptitude Test in Engineering' },
-  { id: 'CAT', label: 'CAT', sub: 'Common Admission Test' },
+  { id: 'CAT', label: 'CAT', sub: 'Common Admission Test (IIMs)' },
   { id: 'NDA_CDS', label: 'NDA / CDS', sub: 'National Defence Academy' },
   { id: 'CUSTOM', label: 'Other / Custom Exam', sub: 'Define your custom syllabus' },
 ];
@@ -65,6 +67,7 @@ const FOCUS_AREAS = [
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ user, onComplete }) => {
   const [step, setStep] = useState<number>(1);
   const [selectedExamId, setSelectedExamId] = useState<string>('NEET_UG');
+  const [examSearch, setExamSearch] = useState<string>('');
   const [customExamName, setCustomExamName] = useState<string>('');
   const [dailyHours, setDailyHours] = useState<number>(5);
   const [focusArea, setFocusArea] = useState<string>('syllabus');
@@ -183,8 +186,24 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ user, onComp
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
-                {POPULAR_EXAMS.map((exam) => (
+              {/* Search Bar for Exams */}
+              <div className="relative flex items-center">
+                <Search className="w-4 h-4 text-sky-400 absolute left-3 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search exam (e.g. JEE, NEET, UPSC, SSC)..."
+                  value={examSearch}
+                  onChange={(e) => setExamSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[260px] overflow-y-auto pr-1">
+                {POPULAR_EXAMS.filter(e => {
+                  if (!examSearch.trim()) return true;
+                  const q = examSearch.toLowerCase();
+                  return e.label.toLowerCase().includes(q) || e.sub.toLowerCase().includes(q) || e.id.toLowerCase().includes(q);
+                }).map((exam) => (
                   <button
                     key={exam.id}
                     type="button"

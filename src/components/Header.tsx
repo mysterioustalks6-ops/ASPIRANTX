@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { ActiveTab, UserProfile } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { 
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
 import { resolveUserAvatar } from '../lib/avatarStorage';
+import { ExamSelectModal } from './ExamSelectModal';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -51,6 +52,14 @@ export const Header: React.FC<HeaderProps> = ({
   isDemoExpired
 }) => {
   const [isFullscreen, setIsFullscreen] = React.useState(false);
+  const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+
+  const currentExamId = selectedExam || user?.exam || 'NEET_UG';
+  const currentExamLabel = useMemo(() => {
+    const found = EXAM_LIST.find(e => e.id === currentExamId);
+    if (found) return found.label.split(/[–—]/)[0].trim();
+    return currentExamId;
+  }, [currentExamId]);
 
   React.useEffect(() => {
     const handleFsChange = () => {
@@ -287,34 +296,29 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Selected Exam Pill Selector */}
-        <div
-          className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-200 transition-colors"
-          title="Change Target Exam"
+        {/* Selected Exam Pill Selector (Opens Searchable Modal) */}
+        <button
+          onClick={() => setIsExamModalOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800/90 border border-slate-800 hover:border-sky-500/50 text-xs font-semibold text-slate-200 transition-all cursor-pointer shadow-sm group active:scale-95"
+          title="Search & Change Target Exam"
         >
           <GraduationCap className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-          <select
-            value={selectedExam || user?.exam || 'NEET_UG'}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
-                onOpenProfileModal();
-              } else if (onExamChange) {
-                onExamChange(val);
-              }
-            }}
-            className="bg-transparent font-bold text-sky-300 max-w-[85px] sm:max-w-[140px] md:max-w-[180px] truncate focus:outline-none cursor-pointer border-none p-0 text-xs"
-          >
-            {EXAM_LIST.map((ex) => (
-              <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200 font-medium">
-                {ex.label.split(/[–—]/)[0].trim()}
-              </option>
-            ))}
-            <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
-              + Custom...
-            </option>
-          </select>
-        </div>
+          <span className="font-bold text-sky-300 max-w-[80px] sm:max-w-[130px] md:max-w-[170px] truncate text-xs">
+            {currentExamLabel}
+          </span>
+          <Search className="w-3 h-3 text-slate-400 group-hover:text-sky-400 shrink-0 ml-0.5" />
+        </button>
+
+        {/* Global Searchable Exam Modal */}
+        <ExamSelectModal
+          isOpen={isExamModalOpen}
+          onClose={() => setIsExamModalOpen(false)}
+          selectedExam={currentExamId}
+          onExamChange={(val) => {
+            if (onExamChange) onExamChange(val);
+          }}
+          onOpenCustomModal={onOpenProfileModal}
+        />
 
         {/* Workspace Customizer Launcher (Desktop/Tablet) */}
         {onOpenWorkspaceCustomizer && (
