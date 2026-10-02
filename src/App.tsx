@@ -15,6 +15,7 @@ import { LandingPage } from './components/LandingPage';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { FeatureCircleSection } from './components/FeatureCircleSection';
 import { GamificationBar } from './components/GamificationBar';
 import { PracticeHub } from './components/PracticeHub';
 import { ProgressHub } from './components/ProgressHub';
@@ -1245,44 +1246,18 @@ function AppContent() {
         </div>
       )}
 
-      {/* Sidebar Navigation */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={handleSelectTab}
-        user={user}
-        onLogout={handleLogout}
-        isAdminUnlocked={isAdminUnlocked}
-        onTriggerAdminSecret={handleTriggerAdminSecret}
-        onOpenProfileModal={() => setShowProfileModal(true)}
-        onOpenReferralModal={() => setShowReferralModal(true)}
-        onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
-        onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
-        customizer={customizer}
-        selectedExam={selectedExam}
-        onExamChange={handleExamChange}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={handleToggleSidebarCollapse}
-      />
-
-      {/* Main Content Dashboard Area */}
+      {/* Main Content Dashboard Area with Full-Width Screen Workspace */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
-        {/* Sticky Header: Suppressed when Focus Shield or Focus Galaxy is active */}
+        {/* Dedicated Circular Features Section: Replaces legacy sidebar & upper header */}
         {!['focus_shield', 'timer'].includes(activeTab) && (
-          <Header 
-            activeTab={activeTab} 
-            user={user} 
+          <FeatureCircleSection
+            activeTab={activeTab}
+            onSelectTab={handleSelectTab}
             selectedExam={selectedExam}
             onExamChange={handleExamChange}
-            onOpenProfileModal={() => setShowProfileModal(true)} 
-            onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
-            onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+            user={user}
+            onOpenProfile={() => setShowProfileModal(true)}
             onOpenSearch={() => setShowSearchModal(true)}
-            onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
-            onRequireLogin={() => setUser(null)}
-            onNavigate={(t) => setActiveTab(t as ActiveTab)}
-            demoTimeFormatted={formatDemoTime(demoSecondsRemaining)}
-            demoSecondsRemaining={demoSecondsRemaining}
-            isDemoExpired={isDemoExpired}
           />
         )}
 
