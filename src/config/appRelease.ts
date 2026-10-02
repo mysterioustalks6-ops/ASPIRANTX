@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.5.9',
-  versionCode: 17,
+  version: '2.6.0',
+  versionCode: 18,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
   releaseDate: 'October 2, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v2.5.9: Focus Galaxy with persistent 60FPS WebGL planetary system, Web Audio cosmic synth, 1-Click Story Card generator, and Play Store release readiness.',
+  releaseNotes: 'v2.6.0: De-duplicated high-speed architecture, unified mobile navigation, auto-adaptive 3D viewport, and 25% lighter APK size.',
 };
