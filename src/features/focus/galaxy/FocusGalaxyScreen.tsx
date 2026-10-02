@@ -215,7 +215,7 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
   }, [progression.currentLevel]);
 
   return (
-    <div className="w-full max-w-md mx-auto h-[100dvh] max-h-[100dvh] flex flex-col justify-between overflow-hidden select-none touch-none relative bg-slate-950 pt-[env(safe-area-inset-top,0.75rem)] pb-[env(safe-area-inset-bottom,0.75rem)] px-3 sm:px-4 text-slate-100 font-sans">
+    <div className="w-full max-w-md mx-auto min-h-screen flex flex-col justify-between overflow-y-auto relative bg-slate-950 pt-[env(safe-area-inset-top,0.75rem)] pb-[env(safe-area-inset-bottom,2rem)] px-3 sm:px-4 text-slate-100 font-sans">
       {/* ══════════════════════════════════════════════════════════════════
           1. TOP COSMIC HUD (PERSISTENT ACROSS VIEWS, FLEX-SHRINK-0)
       ══════════════════════════════════════════════════════════════════ */}

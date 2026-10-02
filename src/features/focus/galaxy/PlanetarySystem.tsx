@@ -1191,7 +1191,7 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
   return (
     <div
       ref={mountRef}
-      className={`relative w-full h-full min-h-0 overflow-hidden select-none pointer-events-auto touch-none cursor-grab active:cursor-grabbing ${className}`}
+      className={`relative w-full h-full min-h-0 overflow-hidden select-none pointer-events-auto touch-pan-y cursor-grab active:cursor-grabbing ${className}`}
       aria-label={`Interactive 3D Planetary System (Level ${level}, ${streakDays} Day Streak)`}
     />
   );

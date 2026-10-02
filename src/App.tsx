@@ -1296,9 +1296,11 @@ function AppContent() {
 
         {/* Dashboard Main Scroll Workspace */}
         <main className={`flex-1 w-full mx-auto transition-all duration-200 ${
-          ['timer', 'focus_shield'].includes(activeTab)
-            ? 'p-0 space-y-0 pb-16 md:pb-0 h-[100dvh] max-h-[100dvh] overflow-hidden'
-            : `p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8 ${
+          activeTab === 'focus_shield'
+            ? 'p-0 space-y-0 pb-32 md:pb-8 min-h-screen overflow-y-auto'
+            : activeTab === 'timer'
+            ? 'p-2 sm:p-4 md:p-8 space-y-5 pb-32 md:pb-8 min-h-screen overflow-y-auto max-w-5xl'
+            : `p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-32 md:pb-8 min-h-screen overflow-y-auto ${
                 isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
               }`
         }`}>
