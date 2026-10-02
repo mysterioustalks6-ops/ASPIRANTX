@@ -1796,7 +1796,7 @@ function AppContent() {
 
       {/* Friendly Study Companion Widget (Research-tested calm nudge) */}
       {user && showCompanionWidget && (
-        <div className="fixed bottom-16 right-4 z-40 group transition-all">
+        <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-4 z-40 group transition-all">
           {isCompanionMinimized ? (
             <button
               onClick={() => setIsCompanionMinimized(false)}

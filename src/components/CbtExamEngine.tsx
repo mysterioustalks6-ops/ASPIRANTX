@@ -2512,7 +2512,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   return (
     <div id="cbt-live-exam-workspace" className="fixed inset-0 z-50 bg-slate-100 flex flex-col overflow-hidden font-sans select-none">
       {/* CBT HEADER BAR */}
-      <header className="bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between border-b border-slate-800 shadow-md">
+      <header className="bg-slate-900 text-white px-3 sm:px-6 py-2.5 sm:py-3 pt-[max(0.6rem,env(safe-area-inset-top,0px))] md:pt-2.5 flex items-center justify-between border-b border-slate-800 shadow-md">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
           <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-sky-600 text-white font-bold flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
             CBT
@@ -2771,7 +2771,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           </div>
 
           {/* BOTTOM CONTROLS BAR (ALWAYS FIXED, NEVER DISAPPEARS ON SCROLL) */}
-          <div className="p-2.5 sm:p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0 z-10">
+          <div className="p-2.5 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-2 shrink-0 z-10">
             <div className="flex items-center space-x-1.5 sm:space-x-2">
               <button
                 id="cbt-btn-review"

@@ -219,7 +219,7 @@ export const FeatureCircleSection: React.FC<FeatureCircleSectionProps> = ({
   };
 
   return (
-    <section className="w-full bg-[#07090E]/95 border-b border-slate-800/80 backdrop-blur-2xl transition-all shadow-xl">
+    <section className="w-full bg-[#07090E]/95 border-b border-slate-800/80 backdrop-blur-2xl transition-all shadow-xl pt-[max(0.75rem,env(safe-area-inset-top,0px))] md:pt-0">
       {/* ── TOP UTILITY ROW (Minimalist Brand & Exam Pill) ── */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-2">
         {/* Brand / Logo */}
