@@ -1266,8 +1266,8 @@ function AppContent() {
 
       {/* Main Content Dashboard Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
-        {/* Sticky Header: Suppressed when Focus Shield is active */}
-        {!['focus_shield'].includes(activeTab) && (
+        {/* Sticky Header: Suppressed when Focus Shield or Focus Galaxy is active */}
+        {!['focus_shield', 'timer'].includes(activeTab) && (
           <Header 
             activeTab={activeTab} 
             user={user} 
@@ -1299,7 +1299,7 @@ function AppContent() {
           activeTab === 'focus_shield'
             ? 'p-0 space-y-0 pb-32 md:pb-8 min-h-screen overflow-y-auto'
             : activeTab === 'timer'
-            ? 'p-2 sm:p-4 md:p-8 space-y-5 pb-32 md:pb-8 min-h-screen overflow-y-auto max-w-5xl'
+            ? 'p-0 space-y-0 pb-0 min-h-screen'
             : `p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-32 md:pb-8 min-h-screen overflow-y-auto ${
                 isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
               }`
@@ -1455,9 +1455,11 @@ function AppContent() {
                 onOpenPremium={() => setActiveTab('premium')}
                 onRequireLogin={() => setUser(null)}
               >
-                <PomodoroTimer 
+                <FocusGalaxyScreen 
                   userId={user.id} 
                   selectedExam={selectedExam} 
+                  initialMode="ORBIT"
+                  onBack={() => setActiveTab('dashboard')}
                 />
               </PremiumGate>
             )}
