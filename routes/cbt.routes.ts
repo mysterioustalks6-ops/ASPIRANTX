@@ -8,6 +8,7 @@ import { GoogleGenAI } from '@google/genai';
 import { queryPostgres } from '../src/lib/postgres.js';
 import { CbtService } from '../src/lib/cbt/cbtService.js';
 import { getQuestionInventory } from '../src/lib/cbt/questionGenerator.js';
+import { getUniversalExamConfig } from '../src/lib/cbt/universalExamConfig.js';
 import { extractVerifiedUserFromReq } from './shared.js';
 
 const router = Router();
@@ -23,6 +24,20 @@ async function getEffectiveUserId(req: Request): Promise<string> {
   }
   return 'aspirant_anonymous_user';
 }
+
+// ----------------------------------------------------------------------------
+// Universal Exam Configuration (Official Stages, Papers, Sections & Rules)
+// ----------------------------------------------------------------------------
+router.get('/api/cbt/config/:examId', async (req: Request, res: Response) => {
+  try {
+    const examId = req.params.examId;
+    const config = getUniversalExamConfig(examId);
+    res.json({ success: true, config });
+  } catch (err: any) {
+    console.error('[CBT Route Error] GET /config/:examId:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 // ----------------------------------------------------------------------------
 // 1. Question Inventory & Status Transparency
@@ -122,7 +137,7 @@ router.post('/api/cbt/attempts/:id/answer', async (req: Request, res: Response) 
   try {
     const userId = await getEffectiveUserId(req);
     const attemptId = req.params.id;
-    const { questionId, selectedAnswer, confidenceLevel, timeSpentIncrement } = req.body;
+    const { questionId, selectedAnswer, selectedOption, confidenceLevel, timeSpentIncrement } = req.body;
 
     if (!questionId) {
       return res.status(400).json({ success: false, error: 'questionId is required.' });
@@ -133,6 +148,7 @@ router.post('/api/cbt/attempts/:id/answer', async (req: Request, res: Response) 
       userId,
       questionId,
       selectedAnswer,
+      selectedOption,
       confidenceLevel,
       timeSpentIncrement: timeSpentIncrement ? parseInt(timeSpentIncrement, 10) : 0
     });
@@ -142,6 +158,32 @@ router.post('/api/cbt/attempts/:id/answer', async (req: Request, res: Response) 
     console.error('[CBT Route Error] POST /attempts/:id/answer:', err.message);
     const status = err.message.includes('PAUSED') ? 409 : (err.message.includes('expired') ? 410 : 400);
     res.status(status).json({ success: false, error: err.message });
+  }
+});
+
+// ----------------------------------------------------------------------------
+// 5b. Switch Active Section (Atomic & Navigation Rule Safe)
+// ----------------------------------------------------------------------------
+router.post('/api/cbt/attempts/:id/section-switch', async (req: Request, res: Response) => {
+  try {
+    const userId = await getEffectiveUserId(req);
+    const attemptId = req.params.id;
+    const { targetSectionId } = req.body;
+
+    if (!targetSectionId) {
+      return res.status(400).json({ success: false, error: 'targetSectionId is required.' });
+    }
+
+    const result = await CbtService.switchSection({
+      attemptId,
+      userId,
+      targetSectionId
+    });
+
+    res.json({ success: true, ...result });
+  } catch (err: any) {
+    console.error('[CBT Route Error] POST /attempts/:id/section-switch:', err.message);
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 

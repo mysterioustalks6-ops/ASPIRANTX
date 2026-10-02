@@ -2,6 +2,13 @@ import crypto from 'crypto';
 import { queryPostgres, pgPool } from '../postgres.js';
 import { generateExamQuestions, QuestionPublicView } from './questionGenerator.js';
 import { RewardEngine } from '../rewards/rewardEngine.js';
+import { 
+  getUniversalExamConfig, 
+  UniversalExamConfig, 
+  UniversalSectionConfig, 
+  TimingModel, 
+  NavigationRule 
+} from './universalExamConfig.js';
 
 export interface CbtAttemptSummary {
   id: string;
@@ -20,6 +27,10 @@ export interface CbtAttemptSummary {
   submitted_at?: string | null;
   current_question_index: number;
   total_questions: number;
+  timing_model?: TimingModel | string;
+  exam_config?: any;
+  section_states?: Record<string, any>;
+  current_section_id?: string;
 }
 
 export interface CbtAttemptWithQuestions extends CbtAttemptSummary {
@@ -81,11 +92,18 @@ export class CbtService {
     const mode = params.mode || (blueprintId ? 'full' : 'topic');
     const allowPendingReview = params.allowPendingReview ?? true; // defaults to true for mock/study suite
 
-    let durationSeconds = 3600;
-    let title = params.title || `${examId} Mock Exam`;
-    let count = params.count || 20;
+    // Load universal exam configuration
+    const examConfig = getUniversalExamConfig(examId);
+    const primaryStage = examConfig.stages[0];
+    const primaryPaper = primaryStage?.papers?.[0];
+    const sections: UniversalSectionConfig[] = primaryPaper?.sections || [];
 
-    // Load blueprint if provided
+    let durationSeconds = primaryPaper?.totalDurationMinutes ? primaryPaper.totalDurationMinutes * 60 : 3600;
+    let title = params.title || (primaryPaper ? `${examConfig.examName} - ${primaryPaper.paperName}` : `${examConfig.examName} Mock Exam`);
+    let count = params.count || (primaryPaper ? primaryPaper.sections.reduce((acc, s) => acc + s.questionCount, 0) : 20);
+    let timingModel: TimingModel = primaryPaper?.timingModel || 'GLOBAL_TIMER';
+
+    // Load blueprint if provided (blueprint overrides defaults)
     if (blueprintId) {
       const bpRes = await queryPostgres(
         `SELECT * FROM cbt_blueprints WHERE id = $1;`,
@@ -96,13 +114,17 @@ export class CbtService {
         durationSeconds = bp.duration_seconds;
         title = bp.title;
         count = bp.total_questions;
+        if (bp.timing_model) {
+          timingModel = bp.timing_model as TimingModel;
+        }
       }
     }
 
-    // Select questions
+    // Select questions with blueprint awareness
     const gen = await generateExamQuestions({
       examId,
       count,
+      sections: mode === 'full' && sections.length > 0 ? sections : undefined,
       mode,
       subject,
       topic,
@@ -117,6 +139,47 @@ export class CbtService {
 
     const attemptId = `att_${crypto.randomUUID()}`;
 
+    // Setup initial section_states
+    const sectionStates: Record<string, any> = {};
+    const defaultSectionId = sections.length > 0 ? sections[0].id : 'general';
+    const currentSectionId = defaultSectionId;
+
+    if (sections.length > 0) {
+      for (let sIdx = 0; sIdx < sections.length; sIdx++) {
+        const sec = sections[sIdx];
+        const isSectionTimed = timingModel === 'SECTION_TIMER';
+        const secDuration = isSectionTimed 
+          ? (sec.durationMinutes ? sec.durationMinutes * 60 : Math.floor(durationSeconds / sections.length))
+          : durationSeconds;
+
+        sectionStates[sec.id] = {
+          sectionId: sec.id,
+          name: sec.name,
+          subject: sec.subject,
+          status: sIdx === 0 ? 'ACTIVE' : (timingModel === 'SECTION_TIMER' ? 'LOCKED' : 'AVAILABLE'),
+          durationSeconds: secDuration,
+          remainingSeconds: secDuration,
+          isTimed: isSectionTimed,
+          navigationRule: sec.navigationRule || (timingModel === 'SECTION_TIMER' ? 'SEPARATELY_TIMED' : 'FREE_NAVIGATION'),
+          questionCount: sec.questionCount,
+          markingScheme: sec.markingScheme
+        };
+      }
+    } else {
+      sectionStates['general'] = {
+        sectionId: 'general',
+        name: 'General Section',
+        subject: subject || 'General Studies',
+        status: 'ACTIVE',
+        durationSeconds,
+        remainingSeconds: durationSeconds,
+        isTimed: false,
+        navigationRule: 'FREE_NAVIGATION',
+        questionCount: gen.question_ids.length,
+        markingScheme: { positive: 1.0, negative: 0.25, unattempted: 0 }
+      };
+    }
+
     // Execute insertion in a transaction
     const client = await pgPool.connect();
     try {
@@ -125,15 +188,16 @@ export class CbtService {
       const startedAt = new Date();
       const expiresAt = new Date(startedAt.getTime() + durationSeconds * 1000);
 
-      const attemptInsertRes = await client.query(
+      await client.query(
         `INSERT INTO cbt_attempts (
           id, user_id, exam_id, blueprint_id, mode, title, status,
           duration_seconds, remaining_time_seconds, started_at,
-          expires_at, total_questions
+          expires_at, total_questions, timing_model, exam_config,
+          section_states, current_section_id
         ) VALUES (
           $1, $2, $3, $4, $5, $6, 'IN_PROGRESS',
           $7, $7, $8,
-          $9, $10
+          $9, $10, $11, $12, $13, $14
         ) RETURNING *;`,
         [
           attemptId,
@@ -145,17 +209,33 @@ export class CbtService {
           durationSeconds,
           startedAt,
           expiresAt,
-          gen.question_ids.length
+          gen.question_ids.length,
+          timingModel,
+          JSON.stringify(examConfig),
+          JSON.stringify(sectionStates),
+          currentSectionId
         ]
       );
 
-      // Insert attempt questions with fixed positions
-      for (let i = 0; i < gen.question_ids.length; i++) {
+      // Insert attempt questions with fixed positions and section tagging (batch insert)
+      if (gen.question_ids.length > 0) {
+        const values: any[] = [];
+        const valueTuples: string[] = [];
+        let p = 1;
+
+        for (let i = 0; i < gen.question_ids.length; i++) {
+          const qId = gen.question_ids[i];
+          const secId = (gen.question_section_map && gen.question_section_map[qId]) || currentSectionId;
+          valueTuples.push(`($${p}, $${p+1}, $${p+2}, $${p+3}, false, false, 0)`);
+          values.push(attemptId, qId, secId, i);
+          p += 4;
+        }
+
         await client.query(
           `INSERT INTO cbt_attempt_questions (
-            attempt_id, question_id, position, is_answered, is_marked, time_spent_seconds
-          ) VALUES ($1, $2, $3, false, false, 0);`,
-          [attemptId, gen.question_ids[i], i]
+            attempt_id, question_id, section_id, position, is_answered, is_marked, time_spent_seconds
+          ) VALUES ${valueTuples.join(', ')};`,
+          values
         );
       }
 
@@ -176,7 +256,11 @@ export class CbtService {
           started_at: fullAttempt.started_at,
           expires_at: fullAttempt.expires_at,
           current_question_index: fullAttempt.current_question_index,
-          total_questions: fullAttempt.total_questions
+          total_questions: fullAttempt.total_questions,
+          timing_model: fullAttempt.timing_model,
+          exam_config: fullAttempt.exam_config,
+          section_states: fullAttempt.section_states,
+          current_section_id: fullAttempt.current_section_id
         },
         questions: fullAttempt.questions
       };
@@ -227,26 +311,32 @@ export class CbtService {
       `SELECT
          q.id,
          q.exam_id,
+         aq.section_id,
          q.subject,
          q.chapter,
          q.topic,
          q.subtopic,
          q.question_type,
          q.question_text,
+         q.question_text_hi,
          q.passage_text,
          q.assertion_text,
          q.reason_text,
          q.options,
+         q.options_hi,
          q.marks::float as marks,
          q.negative_marks::float as negative_marks,
          q.estimated_time_seconds,
          q.verification_status,
          aq.position,
          aq.selected_answer,
+         aq.selected_option,
          aq.is_answered,
          aq.is_marked,
          aq.confidence_level,
-         aq.time_spent_seconds
+         aq.time_spent_seconds,
+         aq.is_evaluated,
+         aq.marks_obtained::float as marks_obtained
        FROM cbt_attempt_questions aq
        JOIN questions q ON aq.question_id = q.id
        WHERE aq.attempt_id = $1
@@ -257,27 +347,34 @@ export class CbtService {
     const questions: QuestionPublicView[] = qRes.rows.map((q: any) => ({
       id: q.id,
       exam_id: q.exam_id,
+      section_id: q.section_id,
       subject: q.subject,
       chapter: q.chapter,
       topic: q.topic,
       subtopic: q.subtopic,
       question_type: q.question_type,
       question_text: q.question_text,
+      question_text_hi: q.question_text_hi,
       passage_text: q.passage_text,
       assertion_text: q.assertion_text,
       reason_text: q.reason_text,
       options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
+      options_hi: typeof q.options_hi === 'string' ? JSON.parse(q.options_hi) : q.options_hi,
       marks: q.marks,
       negative_marks: q.negative_marks,
       estimated_time_seconds: q.estimated_time_seconds,
       verification_status: q.verification_status,
       position: q.position,
       selected_answer: q.selected_answer,
+      selected_option: q.selected_option,
       is_answered: q.is_answered,
       is_marked: q.is_marked,
       confidence_level: q.confidence_level,
       time_spent_seconds: q.time_spent_seconds
     }));
+
+    const rawExamConfig = typeof row.exam_config === 'string' ? JSON.parse(row.exam_config) : (row.exam_config || getUniversalExamConfig(row.exam_id));
+    const rawSectionStates = typeof row.section_states === 'string' ? JSON.parse(row.section_states) : (row.section_states || {});
 
     return {
       id: row.id,
@@ -296,22 +393,132 @@ export class CbtService {
       submitted_at: row.submitted_at,
       current_question_index: row.current_question_index,
       total_questions: row.total_questions,
+      timing_model: row.timing_model || 'GLOBAL_TIMER',
+      exam_config: rawExamConfig,
+      section_states: rawSectionStates,
+      current_section_id: row.current_section_id || Object.keys(rawSectionStates)[0] || 'general',
       questions
     };
   }
 
   /**
+   * Concurrency-safe section switching.
+   * Enforces navigation rules (FREE_NAVIGATION vs SECTION_LOCKED vs SEPARATELY_TIMED).
+   */
+  static async switchSection(params: {
+    attemptId: string;
+    userId: string;
+    targetSectionId: string;
+  }): Promise<{ success: boolean; current_section_id: string; section_states: Record<string, any> }> {
+    const { attemptId, userId, targetSectionId } = params;
+
+    const client = await pgPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const lockRes = await client.query(
+        `SELECT * FROM cbt_attempts WHERE id = $1 FOR UPDATE;`,
+        [attemptId]
+      );
+
+      if (lockRes.rows.length === 0) {
+        throw new Error(`Attempt ${attemptId} not found.`);
+      }
+
+      const attempt = lockRes.rows[0];
+      if (attempt.user_id !== userId) {
+        throw new Error('Unauthorized');
+      }
+
+      if (attempt.status !== 'IN_PROGRESS') {
+        throw new Error(`Cannot switch section when attempt is ${attempt.status}`);
+      }
+
+      const timingModel = attempt.timing_model || 'GLOBAL_TIMER';
+      const sectionStates = typeof attempt.section_states === 'string' 
+        ? JSON.parse(attempt.section_states) 
+        : (attempt.section_states || {});
+
+      const targetSec = sectionStates[targetSectionId];
+      if (!targetSec) {
+        throw new Error(`Section ${targetSectionId} does not exist in this exam.`);
+      }
+
+      const currentSecId = attempt.current_section_id;
+      const currentSec = sectionStates[currentSecId];
+      
+      const examConfig = attempt.exam_config 
+        ? (typeof attempt.exam_config === 'string' ? JSON.parse(attempt.exam_config) : attempt.exam_config) 
+        : getUniversalExamConfig(attempt.exam_id);
+      const paperSections = examConfig?.stages?.[0]?.papers?.[0]?.sections || [];
+      const orderedSectionIds = paperSections.length > 0 
+        ? paperSections.map((s: any) => s.id) 
+        : Object.keys(sectionStates);
+
+      const currentIdx = orderedSectionIds.indexOf(currentSecId);
+      const targetIdx = orderedSectionIds.indexOf(targetSectionId);
+
+      if (timingModel === 'SECTION_TIMER' || currentSec?.navigationRule === 'SEPARATELY_TIMED' || currentSec?.navigationRule === 'SECTION_LOCKED') {
+        // Disallow returning to completed section
+        if (targetSec.status === 'COMPLETED' || (targetIdx !== -1 && targetIdx < currentIdx)) {
+          throw new Error('Section navigation locked: Cannot return to already completed sections in section-timed exams.');
+        }
+        // Disallow jumping ahead skipping an intermediate section
+        if (targetIdx > currentIdx + 1) {
+          throw new Error('Strict sequence required: Cannot skip intermediate sections in section-timed exams.');
+        }
+        if (currentSec) {
+          currentSec.status = 'COMPLETED';
+        }
+        targetSec.status = 'ACTIVE';
+      } else {
+        // Free navigation (e.g. JEE, NEET, UPSC, SSC)
+        if (currentSec && currentSec.status === 'ACTIVE') {
+          currentSec.status = 'AVAILABLE';
+        }
+        targetSec.status = 'ACTIVE';
+      }
+
+      await client.query(
+        `UPDATE cbt_attempts 
+         SET current_section_id = $1, section_states = $2, updated_at = NOW() 
+         WHERE id = $3;`,
+        [targetSectionId, JSON.stringify(sectionStates), attemptId]
+      );
+
+      await client.query('COMMIT');
+
+      return {
+        success: true,
+        current_section_id: targetSectionId,
+        currentSectionId: targetSectionId,
+        section_states: sectionStates
+      };
+    } catch (err: any) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
    * Concurrency-safe answer recording using atomic row locking.
+   * Supports both numerical input and multiple-choice options.
    */
   static async recordAnswer(params: {
     attemptId: string;
     userId: string;
     questionId: string;
-    selectedAnswer: number | null;
+    selectedAnswer?: number | null;
+    selectedOption?: string | number | null;
+    isReview?: boolean;
     confidenceLevel?: string;
     timeSpentIncrement?: number;
-  }): Promise<{ success: boolean; is_answered: boolean }> {
-    const { attemptId, userId, questionId, selectedAnswer, confidenceLevel, timeSpentIncrement = 0 } = params;
+    timeSpentSeconds?: number;
+  }): Promise<{ success: boolean; is_answered: boolean; selected_option: string | null; status: string }> {
+    const { attemptId, userId, questionId, selectedAnswer, selectedOption, isReview, confidenceLevel } = params;
+    const timeSpentInc = params.timeSpentSeconds ?? params.timeSpentIncrement ?? 0;
 
     const client = await pgPool.connect();
     try {
@@ -347,20 +554,36 @@ export class CbtService {
         throw new Error('Exam time has expired. Attempt has been auto-submitted.');
       }
 
-      const isAnswered = selectedAnswer !== null && selectedAnswer !== undefined;
+      const hasStrOption = selectedOption !== null && selectedOption !== undefined && String(selectedOption).trim() !== '';
+      const isAnswered = (selectedAnswer !== null && selectedAnswer !== undefined) || hasStrOption;
+
+      const optionVal = selectedOption !== null && selectedOption !== undefined 
+        ? String(selectedOption) 
+        : (selectedAnswer !== null && selectedAnswer !== undefined ? String(selectedAnswer) : null);
 
       // Update question state
       await client.query(
         `UPDATE cbt_attempt_questions
          SET
            selected_answer = $1,
-           is_answered = $2,
-           confidence_level = COALESCE($3, confidence_level),
-           time_spent_seconds = time_spent_seconds + $4,
-           answered_at = CASE WHEN $2 THEN NOW() ELSE NULL END,
+           selected_option = $2,
+           is_answered = $3,
+           is_marked = CASE WHEN $4::boolean IS NOT NULL THEN $4::boolean ELSE is_marked END,
+           confidence_level = COALESCE($5, confidence_level),
+           time_spent_seconds = time_spent_seconds + $6,
+           answered_at = CASE WHEN $3 THEN NOW() ELSE NULL END,
            updated_at = NOW()
-         WHERE attempt_id = $5 AND question_id = $6;`,
-        [selectedAnswer, isAnswered, confidenceLevel || null, timeSpentIncrement, attemptId, questionId]
+         WHERE attempt_id = $7 AND question_id = $8;`,
+        [
+          selectedAnswer !== undefined ? selectedAnswer : null,
+          optionVal,
+          isAnswered,
+          isReview !== undefined ? isReview : null,
+          confidenceLevel || null,
+          timeSpentInc,
+          attemptId,
+          questionId
+        ]
       );
 
       await client.query(
@@ -369,7 +592,14 @@ export class CbtService {
       );
 
       await client.query('COMMIT');
-      return { success: true, is_answered: isAnswered };
+      
+      const statusStr = isAnswered && isReview ? 'answered_review' : (isAnswered ? 'answered' : (isReview ? 'marked_review' : 'not_answered'));
+      return { 
+        success: true, 
+        is_answered: isAnswered,
+        selected_option: optionVal,
+        status: statusStr
+      };
     } catch (err: any) {
       await client.query('ROLLBACK');
       throw err;
@@ -536,7 +766,13 @@ export class CbtService {
    * Server-authoritative submission and evaluation.
    * Idempotent: safe against double submissions.
    */
-  static async submitAttempt(attemptId: string, userId: string): Promise<CbtResultAnalysis> {
+  static async submitAttempt(
+    attemptIdOrParams: string | { attemptId: string; userId: string; timeSpentSeconds?: number },
+    userIdParam?: string
+  ): Promise<CbtResultAnalysis & { score_summary?: any }> {
+    const attemptId = typeof attemptIdOrParams === 'string' ? attemptIdOrParams : attemptIdOrParams.attemptId;
+    const userId = typeof attemptIdOrParams === 'string' ? (userIdParam || '') : attemptIdOrParams.userId;
+
     const client = await pgPool.connect();
     try {
       await client.query('BEGIN');
@@ -563,7 +799,20 @@ export class CbtService {
         );
         await client.query('COMMIT');
         if (existingResult.rows.length > 0) {
-          return existingResult.rows[0] as CbtResultAnalysis;
+          const row = existingResult.rows[0];
+          return {
+            ...row,
+            score_summary: {
+              total_score: row.score,
+              max_possible_score: row.max_possible_score,
+              accuracy_pct: row.accuracy_percent,
+              total_questions: row.total_questions,
+              attempted: row.attempted_count,
+              unattempted: row.unattempted_count,
+              correct: row.correct_count,
+              incorrect: row.incorrect_count
+            }
+          } as any;
         }
       }
 
@@ -571,14 +820,17 @@ export class CbtService {
       const qRes = await client.query(
         `SELECT
            aq.question_id,
+           aq.section_id,
            aq.position,
            aq.selected_answer,
+           aq.selected_option,
            aq.is_answered,
            aq.confidence_level,
            aq.time_spent_seconds,
            q.subject,
            q.chapter,
            q.topic,
+           q.question_type,
            q.marks::float as marks,
            q.negative_marks::float as negative_marks,
            q.correct_answer
@@ -599,16 +851,42 @@ export class CbtService {
       let negativeMarksDeducted = 0;
       let totalTimeSpent = 0;
 
+      const examConfig = attempt.exam_config ? (typeof attempt.exam_config === 'string' ? JSON.parse(attempt.exam_config) : attempt.exam_config) : getUniversalExamConfig(attempt.exam_id);
+      const sectionStates = attempt.section_states ? (typeof attempt.section_states === 'string' ? JSON.parse(attempt.section_states) : attempt.section_states) : {};
+
       const subjectStats: Record<string, { total: number; correct: number; incorrect: number; score: number }> = {};
       const topicStats: Record<string, { total: number; correct: number; incorrect: number; subject: string }> = {};
+      const evalUpdates: Array<{ qId: string; marks: number }> = [];
 
       for (const r of rows) {
-        const marks = r.marks || 2.0;
-        const neg = r.negative_marks || 0.66;
-        const subj = r.subject || 'General Studies';
+        const secId = r.section_id || 'general';
+        const secState = sectionStates[secId];
+
+        let positiveMark = r.marks || 1.0;
+        let negativeMark = r.negative_marks || 0.25;
+
+        // Apply section-specific marking scheme if defined
+        if (secState?.markingScheme) {
+          positiveMark = secState.markingScheme.positive ?? positiveMark;
+          negativeMark = secState.markingScheme.negative ?? negativeMark;
+        } else if (examConfig) {
+          const foundSec = examConfig.stages?.[0]?.papers?.[0]?.sections?.find((s: any) => s.id === secId);
+          if (foundSec?.markingScheme) {
+            positiveMark = foundSec.markingScheme.positive ?? positiveMark;
+            negativeMark = foundSec.markingScheme.negative ?? negativeMark;
+          }
+        }
+
+        // Strictly enforce 0 negative mark for CTET and TET exams
+        const examUpper = (attempt.exam_id || '').toUpperCase();
+        if (examUpper.includes('CTET') || examUpper.includes('TET')) {
+          negativeMark = 0.0;
+        }
+
+        const subj = r.subject || secState?.name || 'General Studies';
         const top = r.topic || 'General';
 
-        maxPossibleScore += marks;
+        maxPossibleScore += positiveMark;
         totalTimeSpent += (r.time_spent_seconds || 0);
 
         if (!subjectStats[subj]) {
@@ -621,25 +899,64 @@ export class CbtService {
         }
         topicStats[top].total++;
 
-        if (!r.is_answered || r.selected_answer === null || r.selected_answer === undefined) {
+        let isCorrect = false;
+        let marksObtained = 0;
+
+        const hasAnswer = r.is_answered && (
+          (r.selected_answer !== null && r.selected_answer !== undefined) ||
+          (r.selected_option !== null && r.selected_option !== undefined && String(r.selected_option).trim() !== '')
+        );
+
+        if (!hasAnswer) {
           unattemptedCount++;
         } else {
           attemptedCount++;
-          if (r.selected_answer === r.correct_answer) {
+
+          if (r.question_type === 'NUMERICAL') {
+            const userNum = parseFloat(r.selected_option || String(r.selected_answer));
+            const correctNum = parseFloat(String(r.correct_answer));
+            isCorrect = !isNaN(userNum) && !isNaN(correctNum) && Math.abs(userNum - correctNum) < 0.01;
+          } else {
+            isCorrect = (r.selected_answer === r.correct_answer) || 
+                        (r.selected_option !== null && String(r.selected_option) === String(r.correct_answer));
+          }
+
+          if (isCorrect) {
             correctCount++;
-            score += marks;
+            score += positiveMark;
+            marksObtained = positiveMark;
             subjectStats[subj].correct++;
-            subjectStats[subj].score += marks;
+            subjectStats[subj].score += positiveMark;
             topicStats[top].correct++;
           } else {
             incorrectCount++;
-            score -= neg;
-            negativeMarksDeducted += neg;
+            score -= negativeMark;
+            marksObtained = -negativeMark;
+            negativeMarksDeducted += negativeMark;
             subjectStats[subj].incorrect++;
-            subjectStats[subj].score -= neg;
+            subjectStats[subj].score -= negativeMark;
             topicStats[top].incorrect++;
           }
         }
+
+        evalUpdates.push({ qId: r.question_id, marks: marksObtained });
+      }
+
+      // Batch persist evaluation for all questions
+      if (evalUpdates.length > 0) {
+        const qIds = evalUpdates.map(u => u.qId);
+        const marks = evalUpdates.map(u => u.marks);
+        await client.query(
+          `UPDATE cbt_attempt_questions aq
+           SET is_evaluated = true,
+               marks_obtained = data.marks
+           FROM (
+             SELECT unnest($1::text[]) AS question_id,
+                    unnest($2::numeric[]) AS marks
+           ) data
+           WHERE aq.attempt_id = $3 AND aq.question_id = data.question_id;`,
+          [qIds, marks, attemptId]
+        );
       }
 
       const totalQuestions = rows.length;
@@ -726,7 +1043,20 @@ export class CbtService {
         console.warn('[CbtService.submitAttempt] RewardEngine warning:', rewardErr?.message || rewardErr);
       }
 
-      return insertRes.rows[0] as CbtResultAnalysis;
+      const row = insertRes.rows[0];
+      return {
+        ...row,
+        score_summary: {
+          total_score: row.score,
+          max_possible_score: row.max_possible_score,
+          accuracy_pct: row.accuracy_percent,
+          total_questions: row.total_questions,
+          attempted: row.attempted_count,
+          unattempted: row.unattempted_count,
+          correct: row.correct_count,
+          incorrect: row.incorrect_count
+        }
+      } as any;
     } catch (err: any) {
       await client.query('ROLLBACK');
       throw err;
@@ -879,3 +1209,5 @@ export class CbtService {
     return res.rows;
   }
 }
+
+export const cbtService = CbtService;

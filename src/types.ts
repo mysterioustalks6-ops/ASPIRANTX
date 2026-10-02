@@ -439,8 +439,12 @@ export interface CbtQuestion {
   id: string;
   type: CbtQuestionType;
   section: string;
+  sectionId?: string;
+  question_type?: string;
   questionText: string;
+  questionTextHi?: string;
   options: string[];
+  optionsHi?: string[];
   correctOption?: number;
   passageText?: string;
   assertionText?: string;
@@ -455,9 +459,14 @@ export interface CbtQuestion {
 }
 
 export interface CbtSection {
+  id?: string;
   name: string;
+  subject?: string;
   durationMinutes?: number;
   totalQuestions: number;
+  navigationRule?: string;
+  markingScheme?: { positive: number; negative: number; unattempted?: number };
+  isTimed?: boolean;
 }
 
 export interface CbtTest {
@@ -466,6 +475,7 @@ export interface CbtTest {
   exam: string;
   durationMinutes: number;
   totalMarks: number;
+  timingModel?: 'GLOBAL_TIMER' | 'SECTION_TIMER' | 'MIXED_TIMER' | 'STAGE_WISE' | string;
   sections: CbtSection[];
   questions: CbtQuestion[];
   markingScheme: { correct: number; incorrect: number; unattempted?: number };
@@ -475,6 +485,7 @@ export interface CbtTest {
   isCustom?: boolean;
   sourceType?: 'official' | 'question_bank' | 'ai' | 'admin' | string;
   createdAt?: string;
+  examConfig?: any;
 }
 
 export type CbtQuestionStatus = 'not_visited' | 'not_answered' | 'answered' | 'marked_for_review' | 'answered_and_marked';
@@ -482,6 +493,7 @@ export type CbtQuestionStatus = 'not_visited' | 'not_answered' | 'answered' | 'm
 export interface CbtUserResponse {
   questionId: string;
   selectedOption: number | null;
+  selectedOptionStr?: string | null;
   status: CbtQuestionStatus;
   timeSpentSeconds: number;
 }
@@ -495,7 +507,10 @@ export interface CbtExamSessionState {
   responses: Record<string, CbtUserResponse>;
   isSubmitted: boolean;
   currentSection: string;
+  currentSectionId?: string;
   language: 'English' | 'Hindi';
+  timingModel?: string;
+  sectionStates?: Record<string, any>;
 }
 
 export interface CbtExamResult {

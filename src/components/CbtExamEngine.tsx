@@ -74,6 +74,11 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   const [aiDiscussionLoading, setAiDiscussionLoading] = useState<Record<string, boolean>>({});
   const [loadingReviewId, setLoadingReviewId] = useState<string | null>(null);
 
+  // Universal Indian CBT state
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'hi'>('en');
+  const [activeSectionId, setActiveSectionId] = useState<string>('');
+  const [mobilePaletteSectionFilter, setMobilePaletteSectionFilter] = useState<string>('all');
+
   // Custom Builder
   const [builder, setBuilder] = useState<CustomBuilderState>({
     step: 1, exam: activeExamKey, subject: '', selectedTopics: [],
@@ -299,28 +304,79 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       }
 
       const { attempt, questions } = data;
+      const examConfig = attempt.exam_config || {};
+      const sectionStates = attempt.section_states || {};
+      const rawSections: any[] = examConfig.stages?.[0]?.papers?.[0]?.sections || [];
+
+      // Determine sections for the test dynamically
+      let testSections: CbtSection[] = [];
+      if (rawSections.length > 0) {
+        testSections = rawSections.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          subject: s.subject,
+          durationMinutes: s.durationMinutes,
+          totalQuestions: s.questionCount,
+          navigationRule: s.navigationRule,
+          markingScheme: s.markingScheme,
+          isTimed: attempt.timing_model === 'SECTION_TIMER' || s.timingModel === 'SECTION_TIMER'
+        }));
+      } else if (Object.keys(sectionStates).length > 0) {
+        testSections = Object.values(sectionStates).map((s: any) => ({
+          id: s.sectionId,
+          name: s.name,
+          subject: s.subject,
+          durationMinutes: s.durationSeconds ? Math.ceil(s.durationSeconds / 60) : undefined,
+          totalQuestions: s.questionCount,
+          navigationRule: s.navigationRule,
+          markingScheme: s.markingScheme,
+          isTimed: s.isTimed
+        }));
+      } else {
+        testSections = [{
+          id: 'general',
+          name: 'General',
+          subject: opts.subject || 'General Studies',
+          totalQuestions: questions.length
+        }];
+      }
+
       // Zero cheat leakage: questions do NOT have correctOption or explanation during exam
-      const mappedQuestions: CbtQuestion[] = questions.map((q: any) => ({
-        id: q.id,
-        type: 'single_choice' as const,
-        section: q.section || 'General',
-        questionText: q.question_text,
-        options: Array.isArray(q.options)
-          ? q.options.map((opt: any) => typeof opt === 'string' ? opt : (opt?.text ?? JSON.stringify(opt)))
-          : [],
-        passageText: q.passage_text || undefined,
-        assertionText: q.assertion_text || undefined,
-        reasonText: q.reason_text || undefined,
-        imageUrl: q.image_url || undefined,
-        language: 'English',
-        subject: q.subject || 'General',
-        topic: q.topic || 'General',
-        marks: Number(q.marks) || 2,
-        negativeMarks: Number(q.negative_marks) || 0.66
-      }));
+      const mappedQuestions: CbtQuestion[] = questions.map((q: any) => {
+        const secId = q.section_id;
+        const secInfo = sectionStates[secId] || testSections.find(s => s.id === secId);
+        const posMark = (secInfo?.markingScheme?.positive) ?? (Number(q.marks) || 1);
+        const negMark = (secInfo?.markingScheme?.negative !== undefined) 
+          ? secInfo.markingScheme.negative 
+          : (activeExamKey.includes('CTET') || activeExamKey.includes('TET') ? 0.0 : (Number(q.negative_marks) ?? 0.25));
+
+        return {
+          id: q.id,
+          type: (q.question_type === 'NUMERICAL' ? 'numerical' : 'mcq') as any,
+          sectionId: secId,
+          section: secInfo?.name || q.subject || 'General',
+          questionText: q.question_text,
+          questionTextHi: q.question_text_hi || undefined,
+          options: Array.isArray(q.options)
+            ? q.options.map((opt: any) => typeof opt === 'string' ? opt : (opt?.text ?? JSON.stringify(opt)))
+            : [],
+          optionsHi: Array.isArray(q.options_hi)
+            ? q.options_hi.map((opt: any) => typeof opt === 'string' ? opt : (opt?.text ?? JSON.stringify(opt)))
+            : undefined,
+          passageText: q.passage_text || undefined,
+          assertionText: q.assertion_text || undefined,
+          reasonText: q.reason_text || undefined,
+          imageUrl: q.image_url || undefined,
+          language: 'English',
+          subject: q.subject || secInfo?.subject || 'General',
+          topic: q.topic || 'General Practice',
+          marks: posMark,
+          negativeMarks: negMark
+        };
+      });
 
       const durationMinutes = Math.max(5, Math.ceil((attempt.duration_seconds || 1800) / 60));
-      const totalMarks = mappedQuestions.reduce((sum, q) => sum + (q.marks || 2), 0);
+      const totalMarks = mappedQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
 
       const testPayload: CbtTest = {
         id: attempt.id,
@@ -328,15 +384,13 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         exam: activeExamKey,
         durationMinutes,
         totalMarks,
-        sections: [{
-          name: 'General',
-          totalQuestions: mappedQuestions.length,
-          durationMinutes
-        }],
+        timingModel: attempt.timing_model || 'GLOBAL_TIMER',
+        examConfig,
+        sections: testSections,
         questions: mappedQuestions,
         markingScheme: {
-          correct: mappedQuestions[0]?.marks || 2,
-          incorrect: mappedQuestions[0]?.negativeMarks || 0.66
+          correct: mappedQuestions[0]?.marks || 1,
+          incorrect: mappedQuestions[0]?.negativeMarks !== undefined ? mappedQuestions[0].negativeMarks : 0.25
         },
         sourceType: 'official'
       };
@@ -364,9 +418,13 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
         currentQuestionIndex: 0,
         responses: initialResponses,
         isSubmitted: false,
-        currentSection: mappedQuestions[0]?.section || 'General',
-        language: 'English'
+        currentSection: testSections[0]?.name || mappedQuestions[0]?.section || 'General',
+        currentSectionId: testSections[0]?.id || mappedQuestions[0]?.sectionId || 'general',
+        language: 'English',
+        timingModel: attempt.timing_model || 'GLOBAL_TIMER',
+        sectionStates
       });
+      setActiveSectionId(testSections[0]?.id || mappedQuestions[0]?.sectionId || 'general');
       setExamResult(null);
     } catch (err: any) {
       console.error('Failed to create authoritative CBT attempt:', err);
@@ -763,6 +821,112 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             timeSpentIncrement: 5
           })
         }).catch(err => console.warn('CBT answer server sync failed:', err));
+      }
+    }
+  };
+
+  const handleNumericalKeypadPress = (key: string) => {
+    if (!selectedTest || !sessionState) return;
+    const currentQ = selectedTest.questions[sessionState.currentQuestionIndex];
+    if (!currentQ) return;
+
+    const currResp = sessionState.responses[currentQ.id] || {
+      questionId: currentQ.id, selectedOption: null, status: 'not_answered', timeSpentSeconds: 0
+    };
+
+    const currentVal = currResp.selectedOptionStr || (currResp.selectedOption !== null && currResp.selectedOption !== undefined ? String(currResp.selectedOption) : '') || '';
+
+    let newVal = currentVal;
+    if (key === 'BACKSPACE') {
+      newVal = currentVal.slice(0, -1);
+    } else if (key === 'CLEAR') {
+      newVal = '';
+    } else if (key === '.') {
+      if (!currentVal.includes('.')) {
+        newVal = currentVal === '' ? '0.' : currentVal + '.';
+      }
+    } else if (key === '-') {
+      if (currentVal.startsWith('-')) {
+        newVal = currentVal.slice(1);
+      } else {
+        newVal = '-' + currentVal;
+      }
+    } else {
+      if (currentVal.length < 10) {
+        newVal = currentVal + key;
+      }
+    }
+
+    const isAnswered = newVal.trim().length > 0;
+    const parsedNum = isAnswered && !isNaN(parseFloat(newVal)) ? parseFloat(newVal) : null;
+    const nextStatus: CbtQuestionStatus = currResp.status === 'marked_for_review' || currResp.status === 'answered_and_marked'
+      ? (isAnswered ? 'answered_and_marked' : 'marked_for_review')
+      : (isAnswered ? 'answered' : 'not_answered');
+
+    setSessionState(prev => {
+      if (!prev || prev.isSubmitted) return prev;
+      return {
+        ...prev,
+        responses: {
+          ...prev.responses,
+          [currentQ.id]: {
+            ...currResp,
+            selectedOption: parsedNum,
+            selectedOptionStr: newVal,
+            status: nextStatus
+          }
+        }
+      };
+    });
+
+    // Server Sync
+    if (sessionState.attemptId) {
+      fetch(getApiUrl(`/api/cbt/attempts/${sessionState.attemptId}/answer`), {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          questionId: currentQ.id,
+          selectedAnswer: parsedNum,
+          selectedOption: newVal,
+          confidenceLevel: 'sure',
+          timeSpentIncrement: 2
+        })
+      }).catch(err => console.warn('Numerical answer sync failed:', err));
+    }
+  };
+
+  const handleSectionTabClick = async (sec: CbtSection) => {
+    if (!selectedTest || !sessionState) return;
+
+    // If section timed (e.g. IBPS PO) and locked, prevent switching
+    const isSectionTimed = selectedTest.timingModel === 'SECTION_TIMER' || sec.isTimed;
+    if (isSectionTimed && sessionState.sectionStates) {
+      const targetState = sessionState.sectionStates[sec.id || sec.name];
+      if (targetState?.status === 'LOCKED') {
+        alert(`This section (${sec.name}) is locked. Complete the current active section first as per official exam rules.`);
+        return;
+      }
+    }
+
+    // Find the first question in that section
+    const targetIdx = selectedTest.questions.findIndex(q => 
+      (sec.id && q.sectionId === sec.id) || q.section === sec.name || q.subject === sec.name
+    );
+
+    if (targetIdx !== -1) {
+      handleJumpToQuestion(targetIdx);
+      setActiveSectionId(sec.id || sec.name);
+
+      if (sessionState.attemptId && sec.id) {
+        try {
+          await fetch(getApiUrl(`/api/cbt/attempts/${sessionState.attemptId}/section-switch`), {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ targetSectionId: sec.id })
+          });
+        } catch (e) {
+          console.warn('Section switch sync failed:', e);
+        }
       }
     }
   };
@@ -2411,22 +2575,88 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT / CENTER: QUESTION PAPER VIEW (STABLE LAYOUT: FIXED META BAR, SCROLLABLE QUESTION, FIXED ACTION BAR) */}
         <div className="flex-1 flex flex-col min-w-0 bg-white overflow-hidden">
+          {/* SECTION TABS (DYNAMICALLY RENDERED FOR MULTI-SECTION PAPERS LIKE JEE, NEET, SSC, IBPS) */}
+          {selectedTest.sections && selectedTest.sections.length > 1 && (
+            <div className="bg-slate-100 border-b border-slate-200 px-3 sm:px-6 py-1.5 flex items-center space-x-2 overflow-x-auto no-scrollbar shrink-0">
+              <span className="text-[10px] font-extrabold uppercase text-slate-500 tracking-wider shrink-0 mr-1 hidden sm:inline">
+                Sections:
+              </span>
+              {selectedTest.sections.map((sec) => {
+                const isSecActive = (sec.id && currentQuestion.sectionId === sec.id) ||
+                                    currentQuestion.section === sec.name ||
+                                    currentQuestion.subject === sec.name;
+                const secState = sessionState.sectionStates?.[sec.id || sec.name];
+                const isLocked = (selectedTest.timingModel === 'SECTION_TIMER' || sec.isTimed) && secState?.status === 'LOCKED';
+                const isCompleted = secState?.status === 'COMPLETED';
+
+                return (
+                  <button
+                    key={sec.id || sec.name}
+                    onClick={() => handleSectionTabClick(sec)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shrink-0 cursor-pointer ${
+                      isSecActive
+                        ? 'bg-sky-600 text-white shadow-xs'
+                        : isLocked
+                        ? 'bg-slate-200/80 text-slate-400 cursor-not-allowed border border-slate-300'
+                        : isCompleted
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span>{sec.name}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                      isSecActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                    }`}>
+                      {sec.totalQuestions}
+                    </span>
+                    {isLocked && <span className="text-[10px]">🔒</span>}
+                    {isCompleted && <Check className="w-3 h-3 text-emerald-600" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* SECTION & QUESTION META BAR (FIXED) */}
-          <div className="px-3 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+          <div className="px-3 sm:px-6 py-2.5 sm:py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0 flex-wrap gap-2">
             <div className="flex items-center space-x-2">
               <span className="text-xs font-bold uppercase text-slate-500">Question No.</span>
               <span className="w-7 h-7 bg-sky-600 text-white font-bold rounded-md flex items-center justify-center text-sm">
                 {sessionState.currentQuestionIndex + 1}
               </span>
               <span className="text-xs text-slate-400">/ {selectedTest.questions.length}</span>
+
+              {/* BILINGUAL LANGUAGE SWITCHER */}
+              <div className="ml-2 sm:ml-4 flex items-center bg-white border border-slate-300 rounded-lg p-0.5 text-[11px] font-bold shadow-2xs">
+                <button
+                  onClick={() => setCurrentLanguage('en')}
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    currentLanguage === 'en' ? 'bg-sky-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  English
+                </button>
+                <button
+                  onClick={() => setCurrentLanguage('hi')}
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    currentLanguage === 'hi' ? 'bg-sky-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  हिन्दी
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4 text-xs font-semibold">
               <span className="text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-emerald-200">
                 +{currentQuestion.marks}
               </span>
-              <span className="text-rose-700 bg-rose-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border border-rose-200">
-                -{currentQuestion.negativeMarks}
+              <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md border ${
+                currentQuestion.negativeMarks === 0
+                  ? 'text-slate-600 bg-slate-100 border-slate-200'
+                  : 'text-rose-700 bg-rose-50 border-rose-200'
+              }`}>
+                {currentQuestion.negativeMarks === 0 ? 'No Negative Marking' : `-${currentQuestion.negativeMarks}`}
               </span>
             </div>
           </div>
@@ -2449,38 +2679,94 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 </div>
               )}
 
-              {/* QUESTION MAIN STATEMENT */}
+              {/* QUESTION MAIN STATEMENT (BILINGUAL AWARE) */}
               <div className="text-sm sm:text-base font-semibold text-slate-900 whitespace-pre-line leading-relaxed">
-                {currentQuestion.questionText}
+                {currentLanguage === 'hi' && currentQuestion.questionTextHi ? (
+                  <div>
+                    <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 mr-2 uppercase">हिन्दी</span>
+                    {currentQuestion.questionTextHi}
+                  </div>
+                ) : currentLanguage === 'hi' ? (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block font-medium">
+                      (हिन्दी अनुवाद उपलब्ध नहीं - Displaying English)
+                    </span>
+                    <div>{currentQuestion.questionText}</div>
+                  </div>
+                ) : (
+                  currentQuestion.questionText
+                )}
               </div>
 
-              {/* OPTIONS GRID */}
-              <div className="space-y-2.5 sm:space-y-3 pt-1 sm:pt-2">
-                {currentQuestion.options.map((optText, optIdx) => {
-                  const isSelected = currentResp.selectedOption === optIdx;
-                  const optionLabel = typeof optText === 'string' ? optText : ((optText as any)?.text ?? (typeof optText === 'object' && optText !== null ? JSON.stringify(optText) : ''));
-                  return (
+              {/* OPTIONS OR NUMERICAL KEYPAD */}
+              {currentQuestion.type === 'numerical' ? (
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-6 max-w-sm mx-auto space-y-4 my-2">
+                  <div className="text-xs font-bold text-slate-500 uppercase tracking-wider text-center">
+                    Numerical Value Input
+                  </div>
+                  <div className="bg-white border-2 border-sky-500 rounded-xl p-3 text-center text-xl sm:text-2xl font-black text-slate-900 min-h-[52px] flex items-center justify-center shadow-inner">
+                    {currentResp.selectedOptionStr || (currentResp.selectedOption !== null && currentResp.selectedOption !== undefined ? String(currentResp.selectedOption) : '') || (
+                      <span className="text-slate-300 font-normal text-sm">Enter numerical value</span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', '-'].map(key => (
+                      <button
+                        key={key}
+                        onClick={() => handleNumericalKeypadPress(key)}
+                        className="h-11 sm:h-12 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl font-bold text-base sm:text-lg text-slate-800 shadow-2xs active:scale-95 transition-all cursor-pointer"
+                      >
+                        {key}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
                     <button
-                      key={optIdx}
-                      id={`cbt-option-${optIdx}`}
-                      data-testid={`cbt-option-${optIdx}`}
-                      onClick={() => handleSelectOption(optIdx)}
-                      className={`w-full p-3 sm:p-4 text-left rounded-xl border transition-all flex items-start space-x-3 cursor-pointer ${
-                        isSelected
-                          ? 'bg-sky-50 border-sky-600 text-slate-950 font-semibold ring-2 ring-sky-200'
-                          : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300'
-                      }`}
+                      onClick={() => handleNumericalKeypadPress('BACKSPACE')}
+                      className="py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-xl font-bold text-xs shadow-2xs cursor-pointer transition-all"
                     >
-                      <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
-                        isSelected ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-100 text-slate-600 border-slate-300'
-                      }`}>
-                        {String.fromCharCode(65 + optIdx)}
-                      </span>
-                      <span className="text-xs sm:text-sm pt-0.5 leading-relaxed break-words">{optionLabel}</span>
+                      ⌫ Backspace
                     </button>
-                  );
-                })}
-              </div>
+                    <button
+                      onClick={() => handleNumericalKeypadPress('CLEAR')}
+                      className="py-2.5 bg-rose-100 hover:bg-rose-200 text-rose-900 rounded-xl font-bold text-xs shadow-2xs cursor-pointer transition-all"
+                    >
+                      Clear Value
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* STANDARD OPTIONS GRID (SUPPORTS BILINGUAL) */
+                <div className="space-y-2.5 sm:space-y-3 pt-1 sm:pt-2">
+                  {((currentLanguage === 'hi' && currentQuestion.optionsHi && currentQuestion.optionsHi.length > 0)
+                    ? currentQuestion.optionsHi
+                    : currentQuestion.options
+                  ).map((optText, optIdx) => {
+                    const isSelected = currentResp.selectedOption === optIdx;
+                    const optionLabel = typeof optText === 'string' ? optText : ((optText as any)?.text ?? (typeof optText === 'object' && optText !== null ? JSON.stringify(optText) : ''));
+                    return (
+                      <button
+                        key={optIdx}
+                        id={`cbt-option-${optIdx}`}
+                        data-testid={`cbt-option-${optIdx}`}
+                        onClick={() => handleSelectOption(optIdx)}
+                        className={`w-full p-3 sm:p-4 text-left rounded-xl border transition-all flex items-start space-x-3 cursor-pointer ${
+                          isSelected
+                            ? 'bg-sky-50 border-sky-600 text-slate-950 font-semibold ring-2 ring-sky-200'
+                            : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300'
+                        }`}
+                      >
+                        <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
+                          isSelected ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-100 text-slate-600 border-slate-300'
+                        }`}>
+                          {String.fromCharCode(65 + optIdx)}
+                        </span>
+                        <span className="text-xs sm:text-sm pt-0.5 leading-relaxed break-words">{optionLabel}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2573,6 +2859,12 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 <span>Marked Review</span>
               </div>
               <div className="flex items-center space-x-1.5">
+                <span className="w-5 h-5 bg-purple-700 text-white font-bold text-[10px] rounded ring-2 ring-emerald-400 flex items-center justify-center">
+                  {countAnsweredMarked}
+                </span>
+                <span className="text-[10px]">Answered & Review</span>
+              </div>
+              <div className="flex items-center space-x-1.5 col-span-2">
                 <span className="w-5 h-5 bg-slate-300 text-slate-700 font-bold text-[10px] rounded flex items-center justify-center">
                   {countNotVisited}
                 </span>
@@ -2615,7 +2907,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
           <div className="p-4 bg-white border-t border-slate-200">
             <button
               onClick={() => setShowSubmitModal(true)}
-              className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2"
+              className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center space-x-2 cursor-pointer"
             >
               <Send className="w-4 h-4" />
               <span>Submit Examination</span>
@@ -2632,7 +2924,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               <h3 className="text-xs font-bold uppercase tracking-wider">Question Palette</h3>
               <button 
                 onClick={() => setIsMobilePaletteOpen(false)}
-                className="w-7 h-7 rounded-lg bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-xs"
+                className="w-7 h-7 rounded-lg bg-white/10 text-slate-300 hover:text-white flex items-center justify-center text-xs cursor-pointer"
               >
                 ✕
               </button>
@@ -2653,40 +2945,84 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   <span>Review</span>
                 </div>
                 <div className="flex items-center space-x-1.5">
+                  <span className="w-4 h-4 bg-purple-700 text-white font-bold text-[9px] rounded ring-1 ring-emerald-400 flex items-center justify-center">{countAnsweredMarked}</span>
+                  <span className="text-[9px]">Ans & Rev</span>
+                </div>
+                <div className="flex items-center space-x-1.5 col-span-2">
                   <span className="w-4 h-4 bg-slate-300 text-slate-700 font-bold text-[9px] rounded flex items-center justify-center">{countNotVisited}</span>
                   <span>Not Visited</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 p-3 overflow-y-auto">
-              <div className="grid grid-cols-4 gap-2">
-                {selectedTest.questions.map((q, idx) => {
-                  const resp = sessionState.responses[q.id];
-                  const st = resp?.status || 'not_visited';
-                  const isCurrent = idx === sessionState.currentQuestionIndex;
-
-                  let bgClass = 'bg-slate-200 text-slate-700';
-                  if (st === 'answered') bgClass = 'bg-emerald-600 text-white';
-                  else if (st === 'not_answered') bgClass = 'bg-rose-600 text-white';
-                  else if (st === 'marked_for_review') bgClass = 'bg-purple-600 text-white';
-                  else if (st === 'answered_and_marked') bgClass = 'bg-purple-700 text-white ring-2 ring-emerald-400';
-
+            {/* MOBILE SECTION FILTER CHIPS */}
+            {selectedTest.sections && selectedTest.sections.length > 1 && (
+              <div className="p-2 bg-slate-100 border-b border-slate-200 flex items-center space-x-1 overflow-x-auto no-scrollbar">
+                <button
+                  onClick={() => setMobilePaletteSectionFilter('all')}
+                  className={`px-2 py-1 rounded text-[10px] font-bold shrink-0 cursor-pointer ${
+                    mobilePaletteSectionFilter === 'all'
+                      ? 'bg-sky-600 text-white'
+                      : 'bg-white text-slate-700 border border-slate-200'
+                  }`}
+                >
+                  All ({selectedTest.questions.length})
+                </button>
+                {selectedTest.sections.map(sec => {
+                  const sCount = selectedTest.questions.filter(q => (sec.id && q.sectionId === sec.id) || q.section === sec.name || q.subject === sec.name).length;
                   return (
                     <button
-                      key={q.id}
-                      onClick={() => {
-                        handleJumpToQuestion(idx);
-                        setIsMobilePaletteOpen(false);
-                      }}
-                      className={`h-9 font-bold text-xs rounded flex items-center justify-center ${bgClass} ${
-                        isCurrent ? 'ring-2 ring-slate-900 ring-offset-1 font-black' : ''
+                      key={sec.id || sec.name}
+                      onClick={() => setMobilePaletteSectionFilter(sec.id || sec.name)}
+                      className={`px-2 py-1 rounded text-[10px] font-bold shrink-0 cursor-pointer ${
+                        mobilePaletteSectionFilter === (sec.id || sec.name)
+                          ? 'bg-sky-600 text-white'
+                          : 'bg-white text-slate-700 border border-slate-200'
                       }`}
                     >
-                      {idx + 1}
+                      {sec.name} ({sCount})
                     </button>
                   );
                 })}
+              </div>
+            )}
+
+            <div className="flex-1 p-3 overflow-y-auto">
+              <div className="grid grid-cols-4 gap-2">
+                {selectedTest.questions
+                  .map((q, idx) => ({ q, idx }))
+                  .filter(({ q }) => {
+                    if (mobilePaletteSectionFilter === 'all') return true;
+                    return (q.sectionId && q.sectionId === mobilePaletteSectionFilter) || 
+                           q.section === mobilePaletteSectionFilter || 
+                           q.subject === mobilePaletteSectionFilter;
+                  })
+                  .map(({ q, idx }) => {
+                    const resp = sessionState.responses[q.id];
+                    const st = resp?.status || 'not_visited';
+                    const isCurrent = idx === sessionState.currentQuestionIndex;
+
+                    let bgClass = 'bg-slate-200 text-slate-700';
+                    if (st === 'answered') bgClass = 'bg-emerald-600 text-white';
+                    else if (st === 'not_answered') bgClass = 'bg-rose-600 text-white';
+                    else if (st === 'marked_for_review') bgClass = 'bg-purple-600 text-white';
+                    else if (st === 'answered_and_marked') bgClass = 'bg-purple-700 text-white ring-2 ring-emerald-400';
+
+                    return (
+                      <button
+                        key={q.id}
+                        onClick={() => {
+                          handleJumpToQuestion(idx);
+                          setIsMobilePaletteOpen(false);
+                        }}
+                        className={`h-9 font-bold text-xs rounded flex items-center justify-center ${bgClass} ${
+                          isCurrent ? 'ring-2 ring-slate-900 ring-offset-1 font-black' : ''
+                        }`}
+                      >
+                        {idx + 1}
+                      </button>
+                    );
+                  })}
               </div>
             </div>
 

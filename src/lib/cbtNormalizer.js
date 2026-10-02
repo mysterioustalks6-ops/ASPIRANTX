@@ -53,17 +53,24 @@ export function normalizeCbtQuestion(raw, index) {
   }
 
   const marks = Math.max(0.5, Math.abs(Number(raw?.marks) || 2));
-  const negativeMarks = Math.abs(Number(raw?.negativeMarks) || 0.66);
+  // Preserve explicit 0 negative marking (e.g. CTET, TET, Teaching exams)
+  const rawNeg = raw?.negativeMarks !== undefined ? raw.negativeMarks : raw?.negative_marks;
+  const negativeMarks = (rawNeg !== undefined && rawNeg !== null && !isNaN(Number(rawNeg))) 
+    ? Math.abs(Number(rawNeg)) 
+    : 0.66;
 
   return {
     id,
-    type: raw?.type || 'mcq',
+    type: raw?.question_type || raw?.type || 'mcq',
+    sectionId: raw?.section_id || raw?.sectionId || undefined,
     language: raw?.language === 'Hindi' ? 'Hindi' : 'English',
     questionText,
-    passageText: raw?.passageText || undefined,
-    assertionText: raw?.assertionText || undefined,
-    reasonText: raw?.reasonText || undefined,
+    questionTextHi: raw?.question_text_hi || raw?.questionTextHi || undefined,
+    passageText: raw?.passageText || raw?.passage_text || undefined,
+    assertionText: raw?.assertionText || raw?.assertion_text || undefined,
+    reasonText: raw?.reasonText || raw?.reason_text || undefined,
     options,
+    optionsHi: raw?.options_hi || raw?.optionsHi || undefined,
     correctOption,
     explanation: String(raw?.explanation || 'Refer to syllabus and standard textbooks for detailed breakdown.'),
     subject: String(raw?.subject || 'General'),
@@ -90,25 +97,37 @@ export function normalizeCbtTest(raw, fallbackExam = 'upsc_prelims') {
   let sections = [];
   if (Array.isArray(raw?.sections) && raw.sections.length > 0) {
     sections = raw.sections.map((s) => ({
+      id: s?.id || s?.sectionId || String(s?.name || 'General').toLowerCase().replace(/\s+/g, '_'),
       name: String(s?.name || 'General'),
+      subject: s?.subject || String(s?.name || 'General'),
       durationMinutes: s?.durationMinutes ? Number(s.durationMinutes) : undefined,
-      totalQuestions: Number(s?.totalQuestions) || questions.filter(q => (q.section || q.subject) === s?.name).length
+      totalQuestions: Number(s?.totalQuestions) || questions.filter(q => (q.section || q.subject) === s?.name).length,
+      navigationRule: s?.navigationRule || 'FREE_NAVIGATION',
+      markingScheme: s?.markingScheme
     }));
   } else {
     // Group dynamically from questions
     const distinctSections = Array.from(new Set(questions.map(q => q.section || q.subject || 'General')));
     sections = distinctSections.map(secName => ({
+      id: String(secName).toLowerCase().replace(/\s+/g, '_'),
       name: secName,
-      totalQuestions: questions.filter(q => (q.section || q.subject) === secName).length
+      subject: secName,
+      totalQuestions: questions.filter(q => (q.section || q.subject) === secName).length,
+      navigationRule: 'FREE_NAVIGATION'
     }));
   }
   if (sections.length === 0) {
-    sections = [{ name: 'General', totalQuestions: questions.length }];
+    sections = [{ id: 'general', name: 'General', subject: 'General', totalQuestions: questions.length }];
   }
+
+  const rawInc = raw?.markingScheme?.incorrect;
+  const incorrectMark = (rawInc !== undefined && rawInc !== null && !isNaN(Number(rawInc)))
+    ? Math.abs(Number(rawInc))
+    : 0.66;
 
   const markingScheme = {
     correct: Math.max(0.5, Math.abs(Number(raw?.markingScheme?.correct) || 2)),
-    incorrect: Math.abs(Number(raw?.markingScheme?.incorrect) || 0.66),
+    incorrect: incorrectMark,
     unattempted: 0
   };
 
@@ -123,6 +142,8 @@ export function normalizeCbtTest(raw, fallbackExam = 'upsc_prelims') {
     exam,
     durationMinutes,
     totalMarks,
+    timingModel: raw?.timing_model || raw?.timingModel || 'GLOBAL_TIMER',
+    examConfig: raw?.exam_config || raw?.examConfig || undefined,
     questions,
     sections,
     markingScheme,
