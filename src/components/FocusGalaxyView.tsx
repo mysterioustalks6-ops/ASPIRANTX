@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { GalaxyCanvas, CelestialBody, CelestialMoon } from './GalaxyCanvas';
 import { ProceduralPlanet, PlanetType } from '../features/focus/galaxy/ProceduralPlanet';
+import { PlanetarySystem } from '../features/focus/galaxy/PlanetarySystem';
 import { useFocusProgression } from '../features/focus/progression';
 import { loadStudySessions, getISTDateString } from '../lib/gamification';
 import { PressFeedback, CountUp, SlideUp, triggerConfetti } from '../lib/animations';
@@ -278,6 +279,7 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   const [proceduralAutoRotate, setProceduralAutoRotate] = useState<boolean>(true);
   const [proceduralAtmosphere, setProceduralAtmosphere] = useState<boolean>(true);
   const [proceduralStarfield, setProceduralStarfield] = useState<boolean>(true);
+  const [isCometDelivering, setIsCometDelivering] = useState<boolean>(false);
   const [planets, setPlanets] = useState<FocusPlanetRecord[]>([]);
   const [tasks, setTasks] = useState<FocusTaskItem[]>([]);
   const [filterRange, setFilterRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
@@ -881,11 +883,14 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
             <div className="relative w-full h-[380px] sm:h-[440px] my-6 rounded-2xl overflow-hidden border border-slate-800/80 bg-[#04060a]">
               {heroViewMode === '3d_planet' ? (
                 <div className="relative w-full h-full">
-                  <ProceduralPlanet
+                  <PlanetarySystem
+                    level={cosmicProgression.currentLevel}
+                    streakDays={streakDays}
                     type={proceduralType}
                     seed={proceduralSeed}
+                    isDeliveringReward={isCometDelivering}
+                    onCometAbsorbed={() => setIsCometDelivering(false)}
                     autoRotate={proceduralAutoRotate}
-                    showAtmosphere={proceduralAtmosphere}
                     showStarfield={proceduralStarfield}
                     className="w-full h-full"
                   />
@@ -931,6 +936,15 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                       >
                         <RotateCcw className="w-3 h-3" />
                         <span>Mutate</span>
+                      </button>
+
+                      <button
+                        onClick={() => setIsCometDelivering(true)}
+                        className="px-2.5 py-1 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-300 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
+                        title="Trigger signature comet reward delivery"
+                      >
+                        <span>☄️</span>
+                        <span>Comet</span>
                       </button>
                     </div>
                   </div>
@@ -1151,11 +1165,14 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
 
             {/* Giant 3D Viewport */}
             <div className="relative w-full h-[450px] sm:h-[520px] rounded-3xl overflow-hidden border border-slate-800/90 bg-[#030508] shadow-inner">
-              <ProceduralPlanet
+              <PlanetarySystem
+                level={cosmicProgression.currentLevel}
+                streakDays={streakDays}
                 type={proceduralType}
                 seed={proceduralSeed}
+                isDeliveringReward={isCometDelivering}
+                onCometAbsorbed={() => setIsCometDelivering(false)}
                 autoRotate={proceduralAutoRotate}
-                showAtmosphere={proceduralAtmosphere}
                 showStarfield={proceduralStarfield}
                 className="w-full h-full"
               />
@@ -1163,11 +1180,19 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
               {/* Telemetry overlay pill */}
               <div className="absolute top-4 left-4 z-10 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-300 backdrop-blur-md flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Procedural 3D • 60 FPS • {proceduralType.toUpperCase()}</span>
+                <span>Lv.{cosmicProgression.currentLevel} • {Math.min(Math.floor(streakDays / 3), 5)} Moons • Touch & Pinch Zoom</span>
               </div>
 
-              {/* Seed quick-switch on viewport */}
+              {/* Seed quick-switch & Comet Drop on viewport */}
               <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+                <button
+                  onClick={() => setIsCometDelivering(true)}
+                  className="px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-xs font-bold text-sky-300 backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Deliver Comet"
+                >
+                  <span>☄️</span>
+                  <span>Deliver Comet</span>
+                </button>
                 <button
                   onClick={() => setProceduralSeed(Math.floor(Math.random() * 9999) + 1)}
                   className="px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-slate-800 text-xs font-bold text-sky-400 backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5"

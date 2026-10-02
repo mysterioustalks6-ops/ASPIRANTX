@@ -20,7 +20,7 @@ import {
   getMilestoneEntity 
 } from './progressionEngine';
 import { FocusSessionRewardResult } from './useFocusProgression';
-import { ProceduralPlanet } from '../galaxy/ProceduralPlanet';
+import { PlanetarySystem } from '../galaxy/PlanetarySystem';
 
 export interface SessionCompleteModalProps {
   isOpen: boolean;
@@ -223,13 +223,15 @@ export const SessionCompleteModal: React.FC<SessionCompleteModalProps> = ({
 
           {/* 3. Center Celestial Planet & Cosmic Dust Reward Display */}
           <div className="flex flex-col items-center text-center my-4">
-            {/* Embedded 3D Procedural Planet (160x160 circular viewport) */}
+            {/* Embedded 3D Procedural Planetary System with Comet Delivery */}
             <div className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-full overflow-hidden border-2 border-slate-700/80 shadow-2xl shadow-sky-500/20 bg-slate-950 mb-3 group">
-              <ProceduralPlanet
+              <PlanetarySystem
+                level={reward.newLevel}
+                streakDays={reward.streakDays}
+                isDeliveringReward={true}
                 type={milestone.category}
                 seed={reward.newLevel * 37 + reward.totalDust}
                 autoRotate={true}
-                showAtmosphere={true}
                 showStarfield={false}
                 className="w-full h-full scale-110"
               />
