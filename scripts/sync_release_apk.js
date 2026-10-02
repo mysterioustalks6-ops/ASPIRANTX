@@ -5,9 +5,6 @@ const rootDir = path.resolve();
 const releaseApkPath = path.join(rootDir, 'android', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
 const targets = [
   path.join(rootDir, 'public', 'studyride.apk'),
-  path.join(rootDir, 'public', 'aspirantx.apk'),
-  path.join(rootDir, 'public', 'protrack.apk'),
-  path.join(rootDir, 'AspirantX-Latest-Release.apk'),
 ];
 
 if (fs.existsSync(releaseApkPath)) {
