@@ -26,7 +26,7 @@ import { PlanetarySystem } from './PlanetarySystem';
 import { ConstellationMap } from './ConstellationMap';
 import { useFocusSession } from './useFocusSession';
 import { useFocusProgression, SessionCompleteModal, FocusSessionRewardResult } from '../progression';
-import { useFocusPeripherals } from '../hooks';
+import { useFocusPeripherals, useDeviceOptimization } from '../hooks';
 import { loadStudySessions, getISTDateString } from '../../../lib/gamification';
 
 export type GalaxyViewMode = 'ORBIT' | 'SKY' | 'FOCUS';
@@ -108,7 +108,17 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
     autoDroneOnFocus: true
   });
 
-  // 5. Session Complete Modal & Comet Delivery State
+  // 5. Adaptive Device Optimization (Battery Saver & Frame Throttling)
+  const {
+    isBatterySaverMode,
+    toggleBatterySaver,
+    targetFps,
+    starParticleCount,
+    allowIdleRotation,
+    devicePixelRatio: optimizedDpr
+  } = useDeviceOptimization();
+
+  // 6. Session Complete Modal & Comet Delivery State
   const [isRewardModalOpen, setIsRewardModalOpen] = useState<boolean>(false);
   const [activeReward, setActiveReward] = useState<FocusSessionRewardResult | null>(null);
   const [isCometDelivering, setIsCometDelivering] = useState<boolean>(false);
@@ -252,6 +262,18 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
               </div>
             )}
 
+            {/* Battery Saver ECO Mode Indicator */}
+            {isBatterySaverMode && (
+              <button
+                onClick={toggleBatterySaver}
+                className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-mono shadow-sm cursor-pointer"
+                title="Adaptive Battery Saver Active: 30 FPS, Throttled Particles. Click to toggle."
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span>ECO</span>
+              </button>
+            )}
+
             {/* Zero-Asset Cosmic Audio Mute/Unmute Toggle */}
             <button
               onClick={toggleMute}
@@ -335,6 +357,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
                   isDeliveringReward={isCometDelivering}
                   onCometAbsorbed={() => setIsCometDelivering(false)}
                   autoRotate={true}
+                  allowIdleRotation={allowIdleRotation}
+                  targetFps={targetFps}
+                  starParticleCount={starParticleCount}
+                  devicePixelRatio={optimizedDpr}
                   showStarfield={true}
                   className="w-full h-full"
                 />
@@ -408,6 +434,9 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
                   type={milestone.category}
                   seed={progression.currentLevel * 37 + totalDust}
                   autoRotate={true}
+                  allowIdleRotation={allowIdleRotation}
+                  targetFps={targetFps}
+                  devicePixelRatio={optimizedDpr}
                   showStarfield={false}
                   className="w-full h-full"
                 />

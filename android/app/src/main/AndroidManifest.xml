@@ -8,6 +8,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:hardwareAccelerated="true"
         android:usesCleartextTraffic="false"
         tools:replace="android:usesCleartextTraffic"
         android:theme="@style/AppTheme">
@@ -17,6 +18,7 @@
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:screenOrientation="portrait"
             android:launchMode="singleTask"
             android:exported="true">
 
@@ -93,9 +95,11 @@
         </service>
     </application>
 
-    <!-- Permissions (Standard Usage Access, Wallpaper, Notifications, Overlay & Scoped Foreground Service) -->
+    <!-- Permissions (Standard Usage Access, Wallpaper, Notifications, Overlay, Audio & Screen WakeLock) -->
     <uses-feature android:name="android.software.live_wallpaper" android:required="false" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.SET_WALLPAPER" />
     <uses-permission android:name="android.permission.SET_WALLPAPER_HINTS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

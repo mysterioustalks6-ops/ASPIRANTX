@@ -10,6 +10,10 @@ export interface PlanetarySystemProps {
   seed?: number;
   className?: string;
   autoRotate?: boolean;
+  allowIdleRotation?: boolean;
+  targetFps?: number;
+  starParticleCount?: number;
+  devicePixelRatio?: number;
   showStarfield?: boolean;
   onCometAbsorbed?: () => void;
 }
@@ -414,6 +418,10 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
   seed = 42,
   className = '',
   autoRotate = true,
+  allowIdleRotation = true,
+  targetFps = 60,
+  starParticleCount = 800,
+  devicePixelRatio: customDpr,
   showStarfield = true,
   onCometAbsorbed,
 }) => {
@@ -497,7 +505,7 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
       powerPreference: 'high-performance'
     });
 
-    const maxDpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const maxDpr = customDpr || Math.min(window.devicePixelRatio || 1, 1.5);
     renderer.setPixelRatio(maxDpr);
     renderer.setSize(width, height);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -709,7 +717,7 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
     let starMaterial: THREE.PointsMaterial | null = null;
 
     if (showStarfield) {
-      const starCount = 650;
+      const starCount = starParticleCount || 650;
       const starPositions = new Float32Array(starCount * 3);
       for (let i = 0; i < starCount; i++) {
         const u = Math.random();
@@ -824,10 +832,19 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
 
     // 12. Self-Contained Animation Loop
     let clock = new THREE.Clock();
+    let lastFrameTime = 0;
+    const minFrameInterval = targetFps < 60 ? (1000 / targetFps) : 0;
     const cometHistory: THREE.Vector3[] = [];
 
-    const animate = () => {
+    const animate = (timestamp: number = performance.now()) => {
       animFrameIdRef.current = requestAnimationFrame(animate);
+
+      // Adaptive FPS Throttling for low battery (e.g. 30 FPS mode)
+      if (minFrameInterval > 0) {
+        if (timestamp - lastFrameTime < minFrameInterval) return;
+        lastFrameTime = timestamp;
+      }
+
       const elapsedTime = clock.getElapsedTime();
 
       // Camera Distance Smooth Lerp
@@ -836,9 +853,9 @@ export const PlanetarySystem: React.FC<PlanetarySystemProps> = ({
       // Inactivity Auto-Resume (after 3 seconds)
       const isIdle = Date.now() - interactionRef.current.lastInteractionTime > 3000;
       if (!interactionRef.current.isInteracting) {
-        if (isIdle && autoRotate) {
+        if (isIdle && autoRotate && allowIdleRotation) {
           planetPivot.rotation.y += 0.0035;
-        } else {
+        } else if (!isIdle) {
           // Damping Inertia
           planetPivot.rotation.y += interactionRef.current.velocityX;
           planetPivot.rotation.x += interactionRef.current.velocityY;
