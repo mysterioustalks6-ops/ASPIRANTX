@@ -22,6 +22,7 @@ import {
 import { FocusSessionRewardResult } from './useFocusProgression';
 import { PlanetarySystem } from '../galaxy/PlanetarySystem';
 import { cosmicAudio } from '../services/cosmicAudio';
+import { ShareCosmicCardButton } from '../components/ShareCosmicCard';
 
 export interface SessionCompleteModalProps {
   isOpen: boolean;
@@ -306,15 +307,27 @@ export const SessionCompleteModal: React.FC<SessionCompleteModalProps> = ({
             </div>
           </div>
 
-          {/* 6. Single CTA Button: "Claim to Orbit" */}
-          <button
-            onClick={handleClaim}
-            className="w-full py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider bg-gradient-to-r from-sky-400 via-sky-500 to-indigo-500 text-slate-950 hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-xl shadow-sky-500/25 flex items-center justify-center gap-2 group cursor-pointer"
-          >
-            <Sparkles className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
-            <span>Claim to Orbit</span>
-            <ChevronRight className="w-4 h-4 text-slate-950 group-hover:translate-x-1 transition-transform" />
-          </button>
+          {/* 6. Action Row: Share Story Card & Claim to Orbit */}
+          <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full">
+            <ShareCosmicCardButton
+              durationMinutes={reward.durationMinutes}
+              streakDays={reward.streakDays}
+              earnedDust={reward.totalDust}
+              level={reward.newLevel}
+              subject={subject}
+              topic={topic}
+              className="w-full sm:w-auto flex-1 py-3.5"
+            />
+
+            <button
+              onClick={handleClaim}
+              className="w-full sm:w-auto flex-1 py-3.5 px-6 rounded-2xl font-black text-xs uppercase tracking-wider bg-gradient-to-r from-sky-400 via-sky-500 to-indigo-500 text-slate-950 hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-xl shadow-sky-500/25 flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-slate-950 group-hover:rotate-12 transition-transform" />
+              <span>Claim to Orbit</span>
+              <ChevronRight className="w-4 h-4 text-slate-950 group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
         </motion.div>
       </div>
     </AnimatePresence>

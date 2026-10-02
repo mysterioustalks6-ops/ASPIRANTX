@@ -22,3 +22,4 @@ export {
 export * from './services';
 export * from './hooks';
 export * from './screens';
+export * from './components';

@@ -239,6 +239,10 @@ if (!isServerless) {
       }
     }));
 
+    app.get(['/privacy', '/privacy.html'], (_req, res) => {
+      res.sendFile(path.join(publicPath, 'privacy.html'));
+    });
+
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
