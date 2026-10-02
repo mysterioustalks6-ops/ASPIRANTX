@@ -26,6 +26,7 @@ import { PlanetarySystem } from './PlanetarySystem';
 import { ConstellationMap } from './ConstellationMap';
 import { useFocusSession } from './useFocusSession';
 import { useFocusProgression, SessionCompleteModal, FocusSessionRewardResult } from '../progression';
+import { useFocusPeripherals } from '../hooks';
 import { loadStudySessions, getISTDateString } from '../../../lib/gamification';
 
 export type GalaxyViewMode = 'ORBIT' | 'SKY' | 'FOCUS';
@@ -90,7 +91,24 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
     initialTopic: 'Deep Sprint'
   });
 
-  // 4. Session Complete Modal & Comet Delivery State
+  // 4. Zero-Asset Cosmic Audio Synth, Haptics & Screen Keep-Awake
+  const {
+    isMuted,
+    toggleMute,
+    isDroneActive,
+    isWakeLockActive,
+    onSessionStart,
+    onSessionPause,
+    onSessionResume,
+    onSessionComplete,
+    onButtonTap,
+    triggerHaptic
+  } = useFocusPeripherals({
+    isFocusActive: isTimerActive && !isTimerPaused,
+    autoDroneOnFocus: true
+  });
+
+  // 5. Session Complete Modal & Comet Delivery State
   const [isRewardModalOpen, setIsRewardModalOpen] = useState<boolean>(false);
   const [activeReward, setActiveReward] = useState<FocusSessionRewardResult | null>(null);
   const [isCometDelivering, setIsCometDelivering] = useState<boolean>(false);
@@ -126,11 +144,14 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
     const reward = addSessionReward(duration, streakDays);
     setActiveReward(reward);
 
+    // Audio SFX + Haptic celebration pulse + Screen WakeLock release
+    onSessionComplete(reward.leveledUp);
+
     // Switch to ORBIT view and trigger comet delivery and celebration modal
     setMode('ORBIT');
     setIsCometDelivering(true);
     setIsRewardModalOpen(true);
-  }, [completeSession, addSessionReward, streakDays]);
+  }, [completeSession, addSessionReward, streakDays, onSessionComplete]);
 
   // Predefined subjects for quick selection
   const quickSubjects = useMemo(() => [
@@ -218,16 +239,47 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
             </span>
           </div>
 
-          {/* Right: Cosmic Dust Balance */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-sky-500/10 border border-sky-500/25 text-sky-300 shadow-sm">
-            <Sparkles className="w-4 h-4 text-sky-400 animate-spin" style={{ animationDuration: '10s' }} />
-            <div className="flex flex-col text-right">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline">
-                Cosmic Dust
-              </span>
-              <span className="text-xs font-black font-mono text-sky-200">
-                {totalDust.toLocaleString()}
-              </span>
+          {/* Right: Audio Toggle, WakeLock & Cosmic Dust Balance */}
+          <div className="flex items-center gap-2">
+            {/* Screen WakeLock Indicator */}
+            {isWakeLockActive && (
+              <div 
+                className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono shadow-sm"
+                title="Screen WakeLock Active: Display will not sleep during focus"
+              >
+                <Zap className="w-3 h-3 fill-current animate-pulse text-emerald-400" />
+                <span>AWAKE</span>
+              </div>
+            )}
+
+            {/* Zero-Asset Cosmic Audio Mute/Unmute Toggle */}
+            <button
+              onClick={toggleMute}
+              className="p-2 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 text-slate-300 transition-all cursor-pointer flex items-center gap-1.5"
+              title={isMuted ? "Unmute Cosmic Audio" : "Mute Cosmic Audio"}
+              aria-label="Toggle Cosmic Audio"
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-slate-500" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-sky-400" />
+              )}
+              {isDroneActive && !isMuted && (
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
+              )}
+            </button>
+
+            {/* Cosmic Dust Balance */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-sky-500/10 border border-sky-500/25 text-sky-300 shadow-sm">
+              <Sparkles className="w-4 h-4 text-sky-400 animate-spin" style={{ animationDuration: '10s' }} />
+              <div className="flex flex-col text-right">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 hidden sm:inline">
+                  Cosmic Dust
+                </span>
+                <span className="text-xs font-black font-mono text-sky-200">
+                  {totalDust.toLocaleString()}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -452,7 +504,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
                 <div className="flex items-center justify-center gap-3">
                   {!isTimerActive ? (
                     <button
-                      onClick={startTimer}
+                      onClick={() => {
+                        onSessionStart();
+                        startTimer();
+                      }}
                       className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm flex items-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer transition-all active:scale-95"
                     >
                       <Play className="w-4 h-4 fill-current" />
@@ -462,7 +517,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
                     <>
                       {isTimerPaused ? (
                         <button
-                          onClick={resumeTimer}
+                          onClick={() => {
+                            onSessionResume();
+                            resumeTimer();
+                          }}
                           className="px-6 py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/25 cursor-pointer transition-all active:scale-95"
                         >
                           <Play className="w-4 h-4 fill-current" />
@@ -470,7 +528,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
                         </button>
                       ) : (
                         <button
-                          onClick={pauseTimer}
+                          onClick={() => {
+                            onSessionPause();
+                            pauseTimer();
+                          }}
                           className="px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm flex items-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer transition-all active:scale-95"
                         >
                           <Pause className="w-4 h-4 fill-current" />
@@ -490,7 +551,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
                   )}
 
                   <button
-                    onClick={resetTimer}
+                    onClick={() => {
+                      onButtonTap();
+                      resetTimer();
+                    }}
                     className="p-3.5 rounded-2xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer"
                     title="Reset Timer"
                   >
@@ -513,7 +577,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
         >
           {/* Tab 1: ORBIT */}
           <button
-            onClick={() => setMode('ORBIT')}
+            onClick={() => {
+              onButtonTap();
+              setMode('ORBIT');
+            }}
             className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
               mode === 'ORBIT'
                 ? 'bg-sky-500 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.35)] scale-102'
@@ -526,7 +593,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
 
           {/* Tab 2: FOCUS (Center Hero Glow) */}
           <button
-            onClick={() => setMode('FOCUS')}
+            onClick={() => {
+              onButtonTap();
+              setMode('FOCUS');
+            }}
             className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
               mode === 'FOCUS'
                 ? 'bg-amber-400 text-slate-950 shadow-[0_0_18px_rgba(251,191,36,0.45)] scale-102'
@@ -539,7 +609,10 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
 
           {/* Tab 3: SKY */}
           <button
-            onClick={() => setMode('SKY')}
+            onClick={() => {
+              onButtonTap();
+              setMode('SKY');
+            }}
             className={`flex-1 py-2.5 px-3 rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
               mode === 'SKY'
                 ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.35)] scale-102'

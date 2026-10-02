@@ -21,6 +21,7 @@ import {
 } from './progressionEngine';
 import { FocusSessionRewardResult } from './useFocusProgression';
 import { PlanetarySystem } from '../galaxy/PlanetarySystem';
+import { cosmicAudio } from '../services/cosmicAudio';
 
 export interface SessionCompleteModalProps {
   isOpen: boolean;
@@ -29,46 +30,6 @@ export interface SessionCompleteModalProps {
   subject?: string;
   topic?: string;
   onClaim?: () => void;
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// WEB AUDIO API CELESTIAL SOUND SYNTHESIZER (ZERO EXTERNAL ASSETS)
-// ══════════════════════════════════════════════════════════════════════════════
-function playCelestialChime(isLevelUp: boolean = false) {
-  try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-
-    const now = ctx.currentTime;
-    // Harmonic frequencies (528Hz Solfeggio "Transformation & Miracles" root)
-    const notes = isLevelUp 
-      ? [528, 660, 792, 1056, 1320] // Euphoric ascending pentatonic
-      : [528, 660, 792];            // Calming focus chime
-
-    notes.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = isLevelUp ? 'triangle' : 'sine';
-      osc.frequency.setValueAtTime(freq, now + idx * 0.09);
-
-      gain.gain.setValueAtTime(0.0001, now + idx * 0.09);
-      gain.gain.exponentialRampToValueAtTime(0.12, now + idx * 0.09 + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.09 + (isLevelUp ? 1.4 : 0.9));
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now + idx * 0.09);
-      osc.stop(now + idx * 0.09 + (isLevelUp ? 1.5 : 1.0));
-    });
-  } catch {
-    // Audio contexts may be blocked by autoplay policies on silent clicks
-  }
 }
 
 export const SessionCompleteModal: React.FC<SessionCompleteModalProps> = ({
@@ -102,15 +63,18 @@ export const SessionCompleteModal: React.FC<SessionCompleteModalProps> = ({
       return;
     }
 
-    // Trigger celestial chime and mobile vibration once per modal presentation
+    // Trigger celestial sound and mobile vibration once per modal presentation
     if (!hasTriggeredAudio.current) {
       hasTriggeredAudio.current = true;
-      playCelestialChime(reward.leveledUp);
-      if (typeof navigator !== 'undefined' && navigator.vibrate) {
-        if (reward.leveledUp) {
-          navigator.vibrate([40, 50, 80, 50, 120]);
-        } else {
-          navigator.vibrate([35, 40, 50]);
+      if (reward.leveledUp) {
+        cosmicAudio.playLevelUp();
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([30, 60, 40, 60, 80]);
+        }
+      } else {
+        cosmicAudio.playDustChime();
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          navigator.vibrate([30, 50, 40]);
         }
       }
     }
