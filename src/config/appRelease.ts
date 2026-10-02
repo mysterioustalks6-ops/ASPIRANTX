@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.7.0',
-  versionCode: 21,
+  version: '2.8.0',
+  versionCode: 22,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
-  releaseDate: 'October 2, 2026',
+  releaseDate: 'October 3, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v2.7.0: Universal Indian Competitive Exam CBT Engine, multi-timing models, strict section locking, bilingual presentation, virtual numerical keypads, and mobile test engine.',
+  releaseNotes: 'v2.8.0: Galaxy Pomodoro Analytics HUD (Days & Hours Studied), Interactive Cosmic Activity Charts & Trend Waves, Modern Cosmic Study Checkbox Checklist, and Mobile Auth Deep-Linking Optimization.',
 };

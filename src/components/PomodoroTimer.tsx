@@ -30,6 +30,7 @@ import { saveStudySessionLog, loadStudySessions } from '../lib/gamification';
 import { StudySession, CustomSubject, PomodoroQuestionRef } from '../types';
 import { fetchOfficialSyllabus, OfficialSyllabusNode } from '../lib/unifiedSyllabus';
 import { PomodoroHistoryView } from './PomodoroHistoryView';
+import { GalaxyStudyChecklist } from './GalaxyStudyChecklist';
 import { useFocusProgression, SessionCompleteModal, FocusSessionRewardResult } from '../features/focus/progression';
 import { PlanetarySystem } from '../features/focus/galaxy/PlanetarySystem';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
@@ -952,6 +953,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Galaxy Study Targets & Modern Checklist */}
+          <GalaxyStudyChecklist userId={userId} currentSubject={selectedSubject} />
         </div>
       )}
 
@@ -959,54 +963,59 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           5. TAB 2: STOPWATCH COUNT-UP ENGINE
       ══════════════════════════════════════════════════════════════════ */}
       {activeTab === 'stopwatch' && (
-        <div className="p-8 sm:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 backdrop-blur-2xl text-center shadow-2xl space-y-6">
-          <div className="space-y-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Open-Ended Study Stopwatch</span>
-            <h3 className="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white">
-              {formattedStopwatchTime}
-            </h3>
-            <p className="text-xs text-slate-400">
-              Active Subject: <span className="text-sky-300 font-bold">{selectedSubject}</span>
-            </p>
+        <div className="space-y-5">
+          <div className="p-8 sm:p-12 rounded-3xl bg-slate-900/90 border border-slate-800 backdrop-blur-2xl text-center shadow-2xl space-y-6">
+            <div className="space-y-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Open-Ended Study Stopwatch</span>
+              <h3 className="text-5xl sm:text-6xl font-black font-mono tracking-tight text-white">
+                {formattedStopwatchTime}
+              </h3>
+              <p className="text-xs text-slate-400">
+                Active Subject: <span className="text-sky-300 font-bold">{selectedSubject}</span>
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-3">
+              {!isStopwatchActive ? (
+                <button
+                  onClick={handleStartStopwatch}
+                  className="h-12 px-7 rounded-2xl bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/25 cursor-pointer active:scale-95 transition-all"
+                >
+                  <Play className="w-4 h-4 fill-current" />
+                  <span>Start Stopwatch</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handlePauseStopwatch}
+                  className="h-12 px-7 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer active:scale-95 transition-all"
+                >
+                  <Pause className="w-4 h-4 fill-current" />
+                  <span>Pause</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleResetStopwatch}
+                className="h-12 w-12 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                title="Reset"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+
+              {stopwatchSeconds >= 30 && (
+                <button
+                  onClick={handleFinishStopwatch}
+                  className="h-12 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Save Session</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center justify-center gap-3">
-            {!isStopwatchActive ? (
-              <button
-                onClick={handleStartStopwatch}
-                className="h-12 px-7 rounded-2xl bg-gradient-to-r from-cyan-500 to-sky-600 hover:from-cyan-400 hover:to-sky-500 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-cyan-500/25 cursor-pointer active:scale-95 transition-all"
-              >
-                <Play className="w-4 h-4 fill-current" />
-                <span>Start Stopwatch</span>
-              </button>
-            ) : (
-              <button
-                onClick={handlePauseStopwatch}
-                className="h-12 px-7 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/25 cursor-pointer active:scale-95 transition-all"
-              >
-                <Pause className="w-4 h-4 fill-current" />
-                <span>Pause</span>
-              </button>
-            )}
-
-            <button
-              onClick={handleResetStopwatch}
-              className="h-12 w-12 rounded-2xl bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 flex items-center justify-center cursor-pointer transition-all active:scale-95"
-              title="Reset"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
-
-            {stopwatchSeconds >= 30 && (
-              <button
-                onClick={handleFinishStopwatch}
-                className="h-12 px-5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Save Session</span>
-              </button>
-            )}
-          </div>
+          {/* Galaxy Study Targets & Modern Checklist */}
+          <GalaxyStudyChecklist userId={userId} currentSubject={selectedSubject} />
         </div>
       )}
 

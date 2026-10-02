@@ -4765,8 +4765,8 @@ var init_shared = __esm({
         demoDurationMinutes: 10
       }
     };
-    APP_VERSION = process.env.APP_VERSION || "2.7.0";
-    APP_VERSION_CODE = 21;
+    APP_VERSION = process.env.APP_VERSION || "2.8.0";
+    APP_VERSION_CODE = 22;
     lastGatewaySettingsSync = 0;
     GATEWAY_SETTINGS_CACHE_MS = 1e4;
     serverOrdersDb = /* @__PURE__ */ new Map();
@@ -26092,11 +26092,11 @@ app.get("/api/version", (_req, res) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.json({
     version: APP_VERSION,
-    versionCode: APP_VERSION_CODE || 21,
+    versionCode: APP_VERSION_CODE || 22,
     apkDownloadUrl: "https://studyride.in/studyride.apk",
     directApkUrl: "https://studyride.in/studyride.apk",
-    releaseDate: "October 2, 2026",
-    releaseNotes: "v2.7.0: Universal Indian Competitive Exam CBT Engine, multi-timing models, strict section locking, bilingual presentation, virtual numerical keypads, and mobile test engine.",
+    releaseDate: "October 3, 2026",
+    releaseNotes: "v2.8.0: Galaxy Pomodoro Analytics HUD (Days & Hours Studied), Interactive Cosmic Activity Charts & Trend Waves, Modern Cosmic Study Checkbox Checklist, and Mobile Auth Deep-Linking Optimization.",
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });

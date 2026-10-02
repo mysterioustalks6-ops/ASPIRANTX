@@ -8,11 +8,18 @@ import {
   BookOpen, 
   BarChart2, 
   Sparkles,
-  RotateCcw
+  RotateCcw,
+  TrendingUp,
+  Award,
+  Layers,
+  CheckCircle2,
+  PieChart
 } from 'lucide-react';
 import { 
   BarChart, 
   Bar, 
+  AreaChart,
+  Area,
   XAxis, 
   YAxis, 
   Tooltip, 
@@ -21,6 +28,7 @@ import {
 } from 'recharts';
 import { StudySession } from '../types';
 import { loadStudySessions } from '../lib/gamification';
+import { GalaxyStudyChecklist } from './GalaxyStudyChecklist';
 
 interface PomodoroHistoryViewProps {
   userId?: string;
@@ -44,6 +52,7 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
   const [historyRange, setHistoryRange] = useState<HistoryRange>('Week');
   const [periodOffset, setPeriodOffset] = useState<number>(0);
   const [selectedBarIndex, setSelectedBarIndex] = useState<number | null>(null);
+  const [chartType, setChartType] = useState<'bar' | 'area'>('bar');
   
   const [sessions, setSessions] = useState<NormalizedSession[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -212,7 +221,6 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
     }
 
     if (historyRange === 'Week') {
-      // d is Monday
       const sunday = new Date(d);
       sunday.setDate(sunday.getDate() + 6);
 
@@ -347,7 +355,7 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
       }
     }
 
-    // Default bar selection (e.g. today or latest bar with data)
+    // Default bar selection
     let defIndex = 0;
     if (historyRange === 'Day') {
       defIndex = new Date().getHours();
@@ -384,10 +392,73 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
     };
   }, [sessions, historyRange, referenceDate, selectedBarIndex]);
 
-  // Total duration across period
+  // Total duration across period (Kitne Hours Padha)
   const totalPeriodSeconds = useMemo(() => {
     return periodSessions.reduce((acc, s) => acc + s.completedDuration, 0);
   }, [periodSessions]);
+
+  // Active study days in this period (Kitne Din Padha)
+  const activeStudyDaysCount = useMemo(() => {
+    const daysSet = new Set<string>();
+    periodSessions.forEach((s) => {
+      if (s.completedDuration > 0) {
+        daysSet.add(s.dateStr);
+      }
+    });
+    return daysSet.size;
+  }, [periodSessions]);
+
+  // All-time active study days
+  const allTimeActiveStudyDays = useMemo(() => {
+    const daysSet = new Set<string>();
+    sessions.forEach((s) => {
+      if (s.completedDuration > 0) {
+        daysSet.add(s.dateStr);
+      }
+    });
+    return daysSet.size;
+  }, [sessions]);
+
+  // Average daily study time
+  const averageDailySeconds = useMemo(() => {
+    if (activeStudyDaysCount === 0) return 0;
+    return Math.round(totalPeriodSeconds / activeStudyDaysCount);
+  }, [totalPeriodSeconds, activeStudyDaysCount]);
+
+  // Consistency percentage
+  const totalDaysInPeriod = useMemo(() => {
+    if (historyRange === 'Day') return 1;
+    if (historyRange === 'Week') return 7;
+    if (historyRange === 'Month') {
+      const year = referenceDate.getFullYear();
+      const month = referenceDate.getMonth();
+      return new Date(year, month + 1, 0).getDate();
+    }
+    return 365;
+  }, [historyRange, referenceDate]);
+
+  const consistencyRate = Math.min(100, Math.round((activeStudyDaysCount / totalDaysInPeriod) * 100));
+
+  // Subject-wise study distribution
+  const subjectBreakdown = useMemo(() => {
+    const map = new Map<string, number>();
+    periodSessions.forEach((s) => {
+      const sub = s.subject || 'General Study';
+      map.set(sub, (map.get(sub) || 0) + s.completedDuration);
+    });
+
+    const list: { subject: string; seconds: number; percentage: number }[] = [];
+    const total = totalPeriodSeconds || 1;
+    map.forEach((secs, sub) => {
+      list.push({
+        subject: sub,
+        seconds: secs,
+        percentage: Math.round((secs / total) * 100)
+      });
+    });
+
+    return list.sort((a, b) => b.seconds - a.seconds);
+  }, [periodSessions, totalPeriodSeconds]);
 
   // Selected bar duration
   const selectedBarSeconds = selectedBarDetail ? selectedBarDetail.seconds : 0;
@@ -415,7 +486,7 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  // Filtered session logs list (show sessions for selected bar/date, or period if no selection)
+  // Filtered session logs list
   const displaySessions = useMemo(() => {
     if (selectedBarDetail && selectedBarDetail.sessions) {
       return selectedBarDetail.sessions;
@@ -426,7 +497,6 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
   // Group displaySessions by date for list rendering
   const groupedSessions = useMemo(() => {
     const map = new Map<string, NormalizedSession[]>();
-    // Sort sessions descending by date/time
     const sorted = [...displaySessions].sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
 
     sorted.forEach((s) => {
@@ -470,9 +540,9 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
                 setHistoryRange(range);
                 setPeriodOffset(0);
               }}
-              className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-lg text-xs font-black transition-all ${
+              className={`flex-1 sm:flex-initial px-4 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                 historyRange === range
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -483,7 +553,7 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
 
         <button
           onClick={fetchSessions}
-          className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition-all hidden sm:flex items-center gap-1.5 text-xs font-semibold"
+          className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-400 hover:text-white transition-all hidden sm:flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
           title="Refresh History Data"
         >
           <RotateCcw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -520,117 +590,298 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
         </button>
       </div>
 
-      {/* 3. SUMMARY NUMBERS STATS */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Total Duration */}
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800/80 space-y-1 backdrop-blur-xl shadow-lg">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-purple-400" /> Total duration
+      {/* 3. GALAXY ANALYTICS 4-METRIC HUD CARDS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Card 1: Kitne Hour Padha (Total Duration) */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-indigo-950/40 via-slate-900/90 to-slate-950 border border-indigo-500/25 space-y-1.5 backdrop-blur-xl shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+          <span className="text-[10px] sm:text-[11px] font-black text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-indigo-400" /> Kitne Hour Padha
           </span>
-          <div className="text-2xl sm:text-3xl font-black text-white font-mono tracking-tight">
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono tracking-tight">
             {formatDurationHM(totalPeriodSeconds)}
           </div>
-          <p className="text-[10px] font-medium text-slate-500">Across full {historyRange.toLowerCase()} period</p>
+          <p className="text-[10px] font-medium text-slate-400">
+            {periodSessions.length} focus sprint(s) in {historyRange.toLowerCase()}
+          </p>
         </div>
 
-        {/* Selected Bar Duration */}
-        <div className="p-5 rounded-2xl bg-slate-900/90 border border-purple-500/30 space-y-1 backdrop-blur-xl shadow-lg">
-          <span className="text-[11px] font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
-            <Flame className="w-3.5 h-3.5 text-pink-400" /> Duration
+        {/* Card 2: Kitne Din Padha (Active Study Days) */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-cyan-950/40 via-slate-900/90 to-slate-950 border border-cyan-500/25 space-y-1.5 backdrop-blur-xl shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
+          <span className="text-[10px] sm:text-[11px] font-black text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-cyan-400" /> Kitne Din Padha
           </span>
-          <div className="text-2xl sm:text-3xl font-black text-purple-300 font-mono tracking-tight">
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-cyan-300 font-mono tracking-tight flex items-baseline gap-1.5">
+            <span>{activeStudyDaysCount}</span>
+            <span className="text-xs sm:text-sm font-bold text-slate-400">
+              {historyRange === 'Week' ? '/ 7 Days' : 'Days Active'}
+            </span>
+          </div>
+          <p className="text-[10px] font-medium text-slate-400">
+            {consistencyRate}% consistency • {allTimeActiveStudyDays} all-time days
+          </p>
+        </div>
+
+        {/* Card 3: Daily Average Study Time */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-emerald-950/40 via-slate-900/90 to-slate-950 border border-emerald-500/25 space-y-1.5 backdrop-blur-xl shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+          <span className="text-[10px] sm:text-[11px] font-black text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Rozana Average
+          </span>
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-emerald-300 font-mono tracking-tight">
+            {formatDurationHM(averageDailySeconds)}
+            <span className="text-xs font-semibold text-slate-400">/day</span>
+          </div>
+          <p className="text-[10px] font-medium text-slate-400">
+            Per active study day
+          </p>
+        </div>
+
+        {/* Card 4: Selected Interval Focus Time */}
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-br from-purple-950/40 via-slate-900/90 to-slate-950 border border-purple-500/25 space-y-1.5 backdrop-blur-xl shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+          <span className="text-[10px] sm:text-[11px] font-black text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+            <Flame className="w-3.5 h-3.5 text-pink-400" /> Selected Focus
+          </span>
+          <div className="text-xl sm:text-2xl lg:text-3xl font-black text-purple-300 font-mono tracking-tight">
             {formatDurationHM(selectedBarSeconds)}
           </div>
           <p className="text-[10px] font-bold text-purple-400/80 truncate">
-            {selectedBarDetail ? selectedBarDetail.fullLabel : 'Selected Bar'}
+            {selectedBarDetail ? selectedBarDetail.fullLabel : 'Current selection'}
           </p>
         </div>
       </div>
 
-      {/* 4. BAR CHART */}
-      <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-slate-300 flex items-center gap-2 uppercase tracking-wider">
-            <BarChart2 className="w-4 h-4 text-purple-400" /> Study Activity Breakdown ({historyRange})
-          </h4>
-          <span className="text-[11px] font-medium text-slate-500">Tap bar to view specific log</span>
+      {/* 4. GRAPHS & CHARTS SECTION */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl backdrop-blur-xl relative">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <h4 className="text-xs sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider">
+              <BarChart2 className="w-4 h-4 text-purple-400" />
+              Cosmic Study Activity Graph ({historyRange})
+            </h4>
+            <p className="text-[11px] text-slate-400">
+              Interactive breakdown of your daily/hourly study patterns
+            </p>
+          </div>
+
+          {/* Chart Type Toggle (Bar vs Area) */}
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setChartType('bar')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                chartType === 'bar'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <BarChart2 className="w-3 h-3" />
+              <span>Bar Chart</span>
+            </button>
+            <button
+              onClick={() => setChartType('area')}
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                chartType === 'area'
+                  ? 'bg-cyan-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-3 h-3" />
+              <span>Trend Wave</span>
+            </button>
+          </div>
         </div>
 
-        <div className="h-64 w-full pt-4">
+        <div className="h-64 sm:h-72 w-full pt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={chartData}
-              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-              onClick={(state) => {
-                if (state && typeof state.activeTooltipIndex === 'number') {
-                  setSelectedBarIndex(state.activeTooltipIndex);
-                }
-              }}
-            >
-              <XAxis
-                dataKey="label"
-                stroke="#64748b"
-                fontSize={11}
-                tickLine={false}
-                axisLine={{ stroke: '#334155' }}
-                interval={historyRange === 'Day' ? 2 : historyRange === 'Month' ? 4 : 0}
-              />
-              <YAxis
-                stroke="#64748b"
-                fontSize={10}
-                tickLine={false}
-                axisLine={{ stroke: '#334155' }}
-                tickFormatter={formatYAxis}
-              />
-              <Tooltip
-                cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                      <div className="bg-slate-950 border border-slate-800 p-2.5 rounded-xl shadow-xl text-xs space-y-1">
-                        <p className="font-bold text-white">{data.fullLabel}</p>
-                        <p className="text-purple-400 font-mono font-bold">
-                          Study Time: {formatDurationHM(data.seconds)}
-                        </p>
-                        <p className="text-[10px] text-slate-400">
-                          {data.sessions ? data.sessions.length : 0} session(s)
-                        </p>
-                      </div>
-                    );
+            {chartType === 'bar' ? (
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                onClick={(state) => {
+                  if (state && typeof state.activeTooltipIndex === 'number') {
+                    setSelectedBarIndex(state.activeTooltipIndex);
                   }
-                  return null;
                 }}
-              />
-              <Bar dataKey="seconds" radius={[6, 6, 0, 0]} cursor="pointer">
-                {chartData.map((entry, index) => {
-                  const activeIdx = selectedBarIndex !== null ? selectedBarIndex : defaultSelectedBarIndex;
-                  const isSelected = index === activeIdx;
-                  return (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        isSelected
-                          ? '#c084fc' // Bright vibrant purple for active/selected bar
-                          : entry.seconds > 0
-                          ? '#475569' // Muted slate gray for non-zero bars
-                          : '#1e293b' // Dark background bar for zero bars
-                      }
-                      className="transition-all duration-200 hover:opacity-80"
-                    />
-                  );
-                })}
-              </Bar>
-            </BarChart>
+              >
+                <XAxis
+                  dataKey="label"
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155' }}
+                  interval={historyRange === 'Day' ? 2 : historyRange === 'Month' ? 4 : 0}
+                />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155' }}
+                  tickFormatter={formatYAxis}
+                />
+                <Tooltip
+                  cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-slate-950 border border-purple-500/40 p-3 rounded-2xl shadow-2xl text-xs space-y-1.5 backdrop-blur-xl">
+                          <p className="font-black text-white flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3 text-cyan-400" />
+                            {data.fullLabel}
+                          </p>
+                          <p className="text-cyan-300 font-mono font-bold">
+                            Study Time: {formatDurationHM(data.seconds)}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {data.sessions ? data.sessions.length : 0} focus session(s)
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Bar dataKey="seconds" radius={[6, 6, 0, 0]} cursor="pointer">
+                  {chartData.map((entry, index) => {
+                    const activeIdx = selectedBarIndex !== null ? selectedBarIndex : defaultSelectedBarIndex;
+                    const isSelected = index === activeIdx;
+                    return (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          isSelected
+                            ? '#c084fc'
+                            : entry.seconds > 0
+                            ? '#38bdf8'
+                            : '#1e293b'
+                        }
+                        className="transition-all duration-200 hover:opacity-80"
+                      />
+                    );
+                  })}
+                </Bar>
+              </BarChart>
+            ) : (
+              <AreaChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                onClick={(state) => {
+                  if (state && typeof state.activeTooltipIndex === 'number') {
+                    setSelectedBarIndex(state.activeTooltipIndex);
+                  }
+                }}
+              >
+                <defs>
+                  <linearGradient id="cosmicTrendGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <XAxis
+                  dataKey="label"
+                  stroke="#64748b"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155' }}
+                  interval={historyRange === 'Day' ? 2 : historyRange === 'Month' ? 4 : 0}
+                />
+                <YAxis
+                  stroke="#64748b"
+                  fontSize={10}
+                  tickLine={false}
+                  axisLine={{ stroke: '#334155' }}
+                  tickFormatter={formatYAxis}
+                />
+                <Tooltip
+                  cursor={{ stroke: '#38bdf8', strokeWidth: 1, strokeDasharray: '3 3' }}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="bg-slate-950 border border-cyan-500/40 p-3 rounded-2xl shadow-2xl text-xs space-y-1.5 backdrop-blur-xl">
+                          <p className="font-black text-white">{data.fullLabel}</p>
+                          <p className="text-cyan-300 font-mono font-bold">
+                            Study Time: {formatDurationHM(data.seconds)}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {data.sessions ? data.sessions.length : 0} session(s)
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="seconds"
+                  stroke="#38bdf8"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#cosmicTrendGradient)"
+                />
+              </AreaChart>
+            )}
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* 5. SESSION LOG LIST (below chart) */}
+      {/* 5. SUBJECT-WISE STUDY DISTRIBUTION */}
+      {subjectBreakdown.length > 0 && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl backdrop-blur-xl">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs sm:text-sm font-black text-white flex items-center gap-2 uppercase tracking-wider">
+              <PieChart className="w-4 h-4 text-cyan-400" />
+              Subject-wise Study Time Distribution
+            </h4>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              {subjectBreakdown.length} Subject(s)
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {subjectBreakdown.map((item, idx) => (
+              <div key={item.subject} className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-slate-200 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                    {item.subject}
+                  </span>
+                  <div className="flex items-center gap-2 font-mono text-xs">
+                    <span className="text-cyan-300 font-bold">{formatDurationHM(item.seconds)}</span>
+                    <span className="text-slate-500 font-semibold">({item.percentage}%)</span>
+                  </div>
+                </div>
+                <div className="w-full h-2 rounded-full bg-slate-950 border border-slate-800/80 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      idx === 0
+                        ? 'bg-gradient-to-r from-cyan-400 to-sky-500'
+                        : idx === 1
+                        ? 'bg-gradient-to-r from-purple-400 to-indigo-500'
+                        : idx === 2
+                        ? 'bg-gradient-to-r from-emerald-400 to-teal-500'
+                        : 'bg-gradient-to-r from-amber-400 to-orange-500'
+                    }`}
+                    style={{ width: `${item.percentage}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 6. GALAXY STUDY TARGETS CHECKLIST (Modern Checkboxes) */}
+      <GalaxyStudyChecklist userId={userId} />
+
+      {/* 7. DETAILED SESSION LOG LIST */}
       <div className="space-y-4 pt-2">
         <div className="flex items-center justify-between">
           <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-cyan-400" /> Session Logs ({displaySessions.length})
+            <BookOpen className="w-4 h-4 text-cyan-400" /> Detailed Session Logs ({displaySessions.length})
           </h4>
           {selectedBarIndex !== null && (
             <button
@@ -643,7 +894,6 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
         </div>
 
         {isLoading ? (
-          /* Loading Skeletons */
           <div className="space-y-3">
             {[1, 2, 3].map((k) => (
               <div key={k} className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 animate-pulse flex items-center justify-between">
@@ -656,7 +906,6 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
             ))}
           </div>
         ) : groupedSessions.length === 0 ? (
-          /* Empty State */
           <div className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800/80 text-center space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto">
               <Clock className="w-6 h-6" />
@@ -669,17 +918,14 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
             </div>
           </div>
         ) : (
-          /* Session Groups */
           <div className="space-y-4">
             {groupedSessions.map((group) => (
               <div key={group.dateStr} className="space-y-2">
-                {/* Date Sub-header */}
                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1 flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                   {group.formattedHeader}
                 </div>
 
-                {/* Session Rows */}
                 <div className="space-y-2">
                   {group.items.map((session) => (
                     <div
@@ -687,14 +933,12 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
                       className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-4 transition-all hover:border-slate-700"
                     >
                       <div className="space-y-1">
-                        {/* Time Range */}
                         <div className="text-xs font-bold text-white font-mono flex items-center gap-2">
                           <span>{session.startTime}</span>
                           <span className="text-slate-500">–</span>
                           <span>{session.endTime}</span>
                         </div>
 
-                        {/* Subject / Topic Subtitle */}
                         <p className="text-xs text-slate-400 font-medium line-clamp-1">
                           <span className="text-purple-300 font-semibold">{session.subject}</span>
                           {session.topic && (
@@ -706,7 +950,6 @@ export const PomodoroHistoryView: React.FC<PomodoroHistoryViewProps> = ({ userId
                         </p>
                       </div>
 
-                      {/* Duration HH:MM:SS */}
                       <div className="text-right shrink-0">
                         <span className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-cyan-300 font-mono">
                           {formatDurationHMS(session.completedDuration)}

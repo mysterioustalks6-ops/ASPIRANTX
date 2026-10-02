@@ -240,7 +240,7 @@ export const FeatureCircleSection: React.FC<FeatureCircleSectionProps> = ({
                   Study<span className="text-sky-400">Ride</span>
                 </span>
                 <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-300">
-                  v2.7.0
+                  v2.8.0
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-medium leading-none">
