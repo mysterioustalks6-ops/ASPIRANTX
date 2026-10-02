@@ -81,6 +81,7 @@ const TeacherBlogSubmit = lazy(() => import('./components/TeacherBlogSubmit').th
 const RewardsHub = lazy(() => import('./components/RewardsHub').then(m => ({ default: m.RewardsHub })));
 const FocusShieldView = lazy(() => import('./components/FocusShieldView').then(m => ({ default: m.FocusShieldView })));
 const DownloadPage = lazy(() => import('./components/DownloadPage').then(m => ({ default: m.DownloadPage })));
+const GalaxyDebugScreen = lazy(() => import('./features/focus/screens/GalaxyDebugScreen').then(m => ({ default: m.GalaxyDebugScreen })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
 
@@ -207,16 +208,18 @@ function AppContent() {
     })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    if (typeof window !== 'undefined' && window.location.pathname === '/download') {
+    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy')) {
+      if (window.location.pathname.startsWith('/debug')) return 'debug_galaxy';
       return 'download';
     }
     const hash = window.location.hash.replace('#', '');
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
+    if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') return 'debug_galaxy';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
-      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub'];
+      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy'];
     return (validTabs.includes(hash) ? hash : 'syllabus') as ActiveTab;
   });
   const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
@@ -242,6 +245,8 @@ function AppContent() {
         setActiveTab('blog_submit');
       } else if (hash.startsWith('blog')) {
         setActiveTab('blog');
+      } else if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') {
+        setActiveTab('debug_galaxy');
       } else if (hash) {
         setActiveTab(hash as ActiveTab);
       }
@@ -1450,6 +1455,15 @@ function AppContent() {
               >
                 <PomodoroTimer userId={user.id} selectedExam={selectedExam} />
               </PremiumGate>
+            )}
+
+            {activeTab === 'debug_galaxy' && (
+              <Suspense fallback={<SuspenseFallback />}>
+                <GalaxyDebugScreen
+                  onBack={() => setActiveTab('timer')}
+                  onOpenGalaxy={() => setActiveTab('timer')}
+                />
+              </Suspense>
             )}
 
             {activeTab === 'tasks' && (
