@@ -21,9 +21,39 @@ export interface SyncState {
 }
 
 /**
- * Loads checked subtopic IDs from local storage or Supabase partitioned by user + exam
+ * Loads checked subtopic IDs from Neon PostgreSQL Cloud API, Supabase, or LocalStorage partitioned by user + exam
  */
 export async function loadCompletedSubtopicIds(userId?: string, examId?: string): Promise<Set<string>> {
+  const normExam = (examId || 'ALL').toUpperCase();
+  const key = getProgressKey(userId, normExam);
+
+  // 1. Authoritative Neon PostgreSQL Cloud API fetch for authenticated users
+  if (userId && userId !== 'guest' && userId !== 'usr_guest_101') {
+    try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('aspirantx_auth_token') : null;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/user/syllabus-progress?exam=${encodeURIComponent(normExam)}`, { headers }).catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data && data.success && data.progress) {
+          const ids = data.progress.completed_subtopic_ids || data.progress.completedSubtopics;
+          if (Array.isArray(ids)) {
+            // Update local storage so cache stays synchronized with cloud
+            try {
+              localStorage.setItem(key, JSON.stringify(ids));
+            } catch (e) {}
+            return new Set(ids);
+          }
+        }
+      }
+    } catch (apiErr) {
+      console.warn('[syllabusStorage] Backend syllabus progress fetch error:', apiErr);
+    }
+  }
+
+  // 2. Fallback check Supabase partitioned by user + exam
   try {
     if (isSupabaseConfigured && userId) {
       let query = supabase
@@ -31,8 +61,8 @@ export async function loadCompletedSubtopicIds(userId?: string, examId?: string)
         .select('completed_subtopic_ids')
         .eq('user_id', userId);
 
-      if (examId) {
-        query = query.eq('exam_id', examId);
+      if (normExam) {
+        query = query.eq('exam_id', normExam);
       }
 
       const { data, error } = await query.maybeSingle();
@@ -43,7 +73,7 @@ export async function loadCompletedSubtopicIds(userId?: string, examId?: string)
 
       // Fallback check user metadata in Supabase Auth if table returned null
       const { data: authUser } = await supabase.auth.getUser();
-      const metaKey = examId ? `completed_subtopic_ids_${examId}` : 'completed_subtopic_ids';
+      const metaKey = normExam ? `completed_subtopic_ids_${normExam}` : 'completed_subtopic_ids';
       if (authUser?.user?.user_metadata?.[metaKey] && Array.isArray(authUser.user.user_metadata[metaKey])) {
         return new Set(authUser.user.user_metadata[metaKey]);
       }
@@ -52,9 +82,8 @@ export async function loadCompletedSubtopicIds(userId?: string, examId?: string)
     console.warn('Supabase fetch progress error, falling back to localStorage:', err);
   }
 
-  // LocalStorage partitioned by exam
-  const key = getProgressKey(userId, examId);
-  const raw = localStorage.getItem(key);
+  // 3. LocalStorage partitioned by exam (offline instant cache)
+  const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
@@ -73,7 +102,8 @@ export async function loadCompletedSubtopicIds(userId?: string, examId?: string)
  * Fast synchronous reader for locally cached completed subtopics partitioned by user + exam
  */
 export function getLocalCompletedSubtopicIds(userId?: string, examId?: string): Set<string> {
-  const key = getProgressKey(userId, examId);
+  const normExam = (examId || 'ALL').toUpperCase();
+  const key = getProgressKey(userId, normExam);
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null;
     if (raw) {
@@ -87,32 +117,39 @@ export function getLocalCompletedSubtopicIds(userId?: string, examId?: string): 
 }
 
 /**
- * Saves completed subtopic IDs to Supabase and LocalStorage partitioned by user + exam
+ * Saves completed subtopic IDs to Neon PostgreSQL Cloud, IndexedDB Queue, and LocalStorage partitioned by user + exam
  */
 export async function saveCompletedSubtopicIds(
   completedIds: Set<string>,
   userId?: string,
   examId?: string
 ): Promise<SyncState> {
+  const normExam = (examId || 'ALL').toUpperCase();
   const idsArray = Array.from(completedIds);
 
-  // Always save locally first with user + exam scoping for instant offline responsiveness
-  const key = getProgressKey(userId, examId);
-  localStorage.setItem(key, JSON.stringify(idsArray));
+  // 1. Always save locally first with user + exam scoping for instant offline responsiveness
+  const key = getProgressKey(userId, normExam);
+  try {
+    localStorage.setItem(key, JSON.stringify(idsArray));
+  } catch (e) {}
 
-  // Durable IndexedDB Queue for batched low-cloud sync
-  syncWorker.enqueueSyllabusProgress(userId || 'guest', examId || 'UPSC_CSE', idsArray).catch(() => {});
+  // 2. Durable IndexedDB Queue for batched low-cloud sync
+  syncWorker.enqueueSyllabusProgress(userId || 'guest', normExam, idsArray).catch(() => {});
 
-  // Update native Android Live Wallpaper with new syllabus completion %
-  syncAuthoritativeWallpaperToNative(userId, examId).catch(() => {});
+  // 3. Update native Android Live Wallpaper with new syllabus completion %
+  syncAuthoritativeWallpaperToNative(userId, normExam).catch(() => {});
 
-  // If subtopics are completed, trigger streak update on server
+  // 4. If subtopics are completed, trigger streak update on server
   if (completedIds.size > 0) {
     try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('aspirantx_auth_token') : null;
+      const streakHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) streakHeaders['Authorization'] = `Bearer ${token}`;
+
       fetch('/api/user/streak/trigger', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userId || 'guest', activityType: 'syllabus_progress', examId })
+        headers: streakHeaders,
+        body: JSON.stringify({ userId: userId || 'guest', activityType: 'syllabus_progress', examId: normExam })
       })
         .then((res) => res.json())
         .then((data) => {
@@ -128,49 +165,70 @@ export async function saveCompletedSubtopicIds(
     } catch (e) {}
   }
 
-  if (!isSupabaseConfigured || !userId) {
-    return {
-      status: 'synced',
-      lastSavedAt: new Date().toLocaleTimeString(),
-      message: 'Saved locally (Cloud setup optional)',
-    };
-  }
+  // 5. Authoritative Direct Neon PostgreSQL Cloud Sync
+  if (userId && userId !== 'guest' && userId !== 'usr_guest_101') {
+    try {
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('aspirantx_auth_token') : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  try {
-    const payload: any = {
-      user_id: userId,
-      completed_subtopic_ids: idsArray,
-      updated_at: new Date().toISOString(),
-    };
-    if (examId) {
-      payload.exam_id = examId;
-    }
-
-    const { error } = await supabase
-      .from('user_syllabus_progress')
-      .upsert(payload, { onConflict: examId ? 'user_id,exam_id' : 'user_id' });
-
-    if (error) {
-      // If table doesn't have exam_id column or conflict fails, save with user_id or metadata
-      const metaKey = examId ? `completed_subtopic_ids_${examId}` : 'completed_subtopic_ids';
-      await supabase.auth.updateUser({
-        data: { [metaKey]: idsArray },
+      const res = await fetch('/api/user/syllabus-progress', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          exam: normExam,
+          progress: {
+            completed_subtopic_ids: idsArray,
+            completedSubtopics: idsArray.length,
+            updatedAt: new Date().toISOString()
+          }
+        })
       });
-    }
 
-    return {
-      status: 'synced',
-      lastSavedAt: new Date().toLocaleTimeString(),
-      message: 'Saved to Supabase Cloud',
-    };
-  } catch (err: any) {
-    console.warn('Failed to sync progress to Supabase:', err);
-    return {
-      status: 'offline',
-      lastSavedAt: new Date().toLocaleTimeString(),
-      message: 'Saved locally (Supabase offline)',
-    };
+      if (res.ok) {
+        return {
+          status: 'synced',
+          lastSavedAt: new Date().toLocaleTimeString(),
+          message: 'Saved to Cloud (StudyRide Neon DB)',
+        };
+      }
+    } catch (cloudErr) {
+      console.warn('[syllabusStorage] Neon cloud sync fetch error:', cloudErr);
+    }
   }
+
+  // 6. Optional Supabase sync for backward compatibility
+  if (isSupabaseConfigured && userId) {
+    try {
+      const payload: any = {
+        user_id: userId,
+        completed_subtopic_ids: idsArray,
+        updated_at: new Date().toISOString(),
+      };
+      if (normExam) {
+        payload.exam_id = normExam;
+      }
+
+      const { error } = await supabase
+        .from('user_syllabus_progress')
+        .upsert(payload, { onConflict: normExam ? 'user_id,exam_id' : 'user_id' });
+
+      if (error) {
+        const metaKey = normExam ? `completed_subtopic_ids_${normExam}` : 'completed_subtopic_ids';
+        await supabase.auth.updateUser({
+          data: { [metaKey]: idsArray },
+        });
+      }
+    } catch (err: any) {
+      console.warn('Failed to sync progress to Supabase:', err);
+    }
+  }
+
+  return {
+    status: 'synced',
+    lastSavedAt: new Date().toLocaleTimeString(),
+    message: 'Saved locally',
+  };
 }
 
 /**

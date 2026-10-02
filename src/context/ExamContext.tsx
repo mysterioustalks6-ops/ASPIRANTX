@@ -185,7 +185,7 @@ export const ExamProvider: React.FC<ExamProviderProps> = ({ children, initialExa
             fetch('/api/user/set-exam', {
               method: 'POST',
               headers,
-              body: JSON.stringify({ userId: targetUserId, examId: normId }),
+              body: JSON.stringify({ userId: targetUserId, exam: normId, examId: normId }),
             }).catch(() => {});
           } catch (netErr) {}
         }

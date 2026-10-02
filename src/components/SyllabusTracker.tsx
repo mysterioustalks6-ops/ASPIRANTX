@@ -253,12 +253,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   // Load completion state
   useEffect(() => {
     async function init() {
-      const savedIds = await loadCompletedSubtopicIds(userId);
+      const savedIds = await loadCompletedSubtopicIds(userId, selectedExam);
       setCompletedSubtopicIds(savedIds);
       setPredictorSettings(loadPredictorSettings(userId));
     }
     init();
-  }, [userId]);
+  }, [userId, selectedExam]);
 
   // Load syllabus nodes and time summary
   const loadData = async () => {
@@ -430,7 +430,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     });
     setCompletedSubtopicIds(nextSet);
     setSyncState({ status: 'saving', message: 'Syncing progress...' });
-    const res = await saveCompletedSubtopicIds(nextSet, userId);
+    const res = await saveCompletedSubtopicIds(nextSet, userId, selectedExam);
     setSyncState(res);
     if (!allCurrentlyDone) {
       await awardXPAndCoins(30, 10, 'Checked off Syllabus Topic', userId);
@@ -454,7 +454,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
     setCompletedSubtopicIds(nextSet);
     setSyncState({ status: 'saving', message: 'Syncing progress...' });
-    const res = await saveCompletedSubtopicIds(nextSet, userId);
+    const res = await saveCompletedSubtopicIds(nextSet, userId, selectedExam);
     setSyncState(res);
   };
 
@@ -479,7 +479,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       const emptySet = new Set<string>();
       setCompletedSubtopicIds(emptySet);
       setSyncState({ status: 'saving', message: 'Resetting...' });
-      const res = await saveCompletedSubtopicIds(emptySet, userId);
+      const res = await saveCompletedSubtopicIds(emptySet, userId, selectedExam);
       setSyncState(res);
     }
   };

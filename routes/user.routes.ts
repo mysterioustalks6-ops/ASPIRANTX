@@ -236,6 +236,7 @@ router.post('/api/sync/batch', async (req, res) => {
       try {
         if (item.type === 'SYLLABUS_PROGRESS') {
           const targetExam = String(item.examId || item.exam || 'ALL').toUpperCase();
+          const canonicalUserId = toCanonicalUuid(effectiveUserId);
           const rowId = `${effectiveUserId}_${targetExam}`;
           const progressPayload = item.payload || {};
 
@@ -244,7 +245,7 @@ router.post('/api/sync/batch', async (req, res) => {
              VALUES ($1, $2, $3, $4, now())
              ON CONFLICT (id)
              DO UPDATE SET progress = $4, updated_at = now()`,
-            [rowId, effectiveUserId, targetExam, JSON.stringify(progressPayload)]
+            [rowId, canonicalUserId, targetExam, JSON.stringify(progressPayload)]
           );
         } else if (item.type === 'TELEMETRY') {
           const { studyMinutesIncrement } = item.payload || {};
@@ -279,13 +280,16 @@ router.get('/api/user/syllabus-progress', async (req, res) => {
     return res.status(401).json({ error: 'Authentication Required' });
   }
   const userId = verifiedUser.sub!;
+  const canonicalUserId = toCanonicalUuid(userId);
   const targetExam = String(req.query.exam || 'ALL').toUpperCase();
   const rowId = `${userId}_${targetExam}`;
 
   try {
     const dbRes = await queryPostgres(
-      `SELECT progress, updated_at FROM public.user_syllabus_progress WHERE id = $1 LIMIT 1`,
-      [rowId]
+      `SELECT progress, updated_at FROM public.user_syllabus_progress 
+       WHERE id = $1 OR (user_id = $2 AND exam = $3) 
+       ORDER BY updated_at DESC LIMIT 1`,
+      [rowId, canonicalUserId, targetExam]
     );
 
     if (dbRes.rows.length > 0) {
@@ -315,6 +319,7 @@ router.post('/api/user/syllabus-progress', async (req, res) => {
     return res.status(401).json({ error: 'Authentication Required' });
   }
   const userId = verifiedUser.sub!;
+  const canonicalUserId = toCanonicalUuid(userId);
   const targetExam = String(req.body.exam || req.body.examId || 'ALL').toUpperCase();
   const rowId = `${userId}_${targetExam}`;
   const progress = req.body.progress || {};
@@ -325,7 +330,7 @@ router.post('/api/user/syllabus-progress', async (req, res) => {
        VALUES ($1, $2, $3, $4, now())
        ON CONFLICT (id)
        DO UPDATE SET progress = $4, updated_at = now()`,
-      [rowId, userId, targetExam, JSON.stringify(progress)]
+      [rowId, canonicalUserId, targetExam, JSON.stringify(progress)]
     );
 
     return res.json({
@@ -2478,8 +2483,18 @@ router.post('/api/buddy/leave', async (req, res) => {
 router.post('/api/user/set-exam', async (req, res) => {
   try {
     const verifiedUser = await extractVerifiedUserFromReq(req);
-    const email = verifiedUser?.email || req.body?.email?.trim()?.toLowerCase();
-    const { exam } = req.body;
+    let email = verifiedUser?.email || req.body?.email?.trim()?.toLowerCase();
+    const exam = req.body.exam || req.body.examId || req.body.targetExam;
+    const userId = verifiedUser?.sub || req.body?.userId;
+
+    if (!email && userId && pgPool) {
+      try {
+        const uRes = await queryPostgres('SELECT email FROM admin_users WHERE id = $1 LIMIT 1', [userId]);
+        if (uRes.rows.length > 0 && uRes.rows[0].email) {
+          email = uRes.rows[0].email;
+        }
+      } catch (e) {}
+    }
 
     if (!email || !exam) {
       return res.status(400).json({ error: 'Email and exam are required' });
@@ -2487,14 +2502,14 @@ router.post('/api/user/set-exam', async (req, res) => {
 
     const cleanEmail = String(email).trim().toLowerCase();
     await upsertUserToNeon({
-      id: verifiedUser?.sub,
+      id: verifiedUser?.sub || userId,
       email: cleanEmail,
       exam
     });
     saveAdminStoreToDisk();
 
-    if (supabaseServer && verifiedUser?.sub) {
-      await supabaseServer.from('user_profiles').update({ exam, updated_at: new Date().toISOString() }).eq('id', verifiedUser.sub);
+    if (supabaseServer && (verifiedUser?.sub || userId)) {
+      await supabaseServer.from('user_profiles').update({ exam, updated_at: new Date().toISOString() }).eq('id', verifiedUser?.sub || userId);
     }
 
     res.json({ success: true, exam });
@@ -2532,11 +2547,12 @@ router.post('/api/user/update-profile', async (req, res) => {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
+    const chosenExam = exam || req.body.targetExam;
     await upsertUserToNeon({
       id: verifiedUser?.sub,
       email: cleanEmail,
       name,
-      exam,
+      exam: chosenExam,
       stateName,
       educationCategory,
       boardOrUniversity,

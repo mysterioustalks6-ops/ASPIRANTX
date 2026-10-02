@@ -796,8 +796,11 @@ function AppContent() {
           // Exchange Supabase Access Token with Server to obtain verified Application JWT
           if (session.access_token) {
             try {
+              if (!localStorage.getItem('aspirantx_auth_token')) {
+                localStorage.setItem('aspirantx_auth_token', session.access_token);
+              }
               const controller = new AbortController();
-              const fetchTimer = setTimeout(() => controller.abort(), 1000);
+              const fetchTimer = setTimeout(() => controller.abort(), 8000);
               const res = await fetch('/api/auth/token', {
                 method: 'POST',
                 headers: {

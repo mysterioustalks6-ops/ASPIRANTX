@@ -93,6 +93,7 @@ export class SyncWorker {
       examId,
       type: 'SYLLABUS_PROGRESS',
       payload: {
+        completed_subtopic_ids: completedSubtopicIds,
         completedSubtopicIds,
         completedCount: completedSubtopicIds.length,
         timestamp: Date.now()
@@ -228,9 +229,13 @@ export class SyncWorker {
         items: allItems.slice(0, 50) // Process up to 50 items per batch
       };
 
+      const token = typeof localStorage !== 'undefined' ? localStorage.getItem('aspirantx_auth_token') : null;
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('/api/sync/batch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       }).catch(() => null);
 
