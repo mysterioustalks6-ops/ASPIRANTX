@@ -45,12 +45,14 @@ const connectionString = findDatabaseUrl();
 let poolInstance: pg.Pool | null = null;
 
 if (connectionString) {
+  const isServerlessEnv = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME);
   poolInstance = new Pool({
     connectionString,
     ssl: { rejectUnauthorized: false },
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    max: isServerlessEnv ? 3 : 20,
+    idleTimeoutMillis: isServerlessEnv ? 1000 : 30000,
+    connectionTimeoutMillis: 5000,
+    allowExitOnIdle: true,
   });
 
   poolInstance.on('error', (err) => {

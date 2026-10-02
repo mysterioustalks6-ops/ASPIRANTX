@@ -2805,12 +2805,14 @@ var init_postgres = __esm({
     connectionString = findDatabaseUrl();
     poolInstance = null;
     if (connectionString) {
+      const isServerlessEnv = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME);
       poolInstance = new Pool({
         connectionString,
         ssl: { rejectUnauthorized: false },
-        max: 20,
-        idleTimeoutMillis: 3e4,
-        connectionTimeoutMillis: 1e4
+        max: isServerlessEnv ? 3 : 20,
+        idleTimeoutMillis: isServerlessEnv ? 1e3 : 3e4,
+        connectionTimeoutMillis: 5e3,
+        allowExitOnIdle: true
       });
       poolInstance.on("error", (err) => {
         console.error("[PostgreSQL Pool Error]:", err.message);
