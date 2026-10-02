@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.6.1',
-  versionCode: 19,
+  version: '2.6.2',
+  versionCode: 20,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
   releaseDate: 'October 2, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v2.6.1: Instant exam search modal, classic Pomodoro focus sprint with cosmic audio synth, JEE Main & Advanced subtopics syllabus integration, and 10,000 questions question bank.',
+  releaseNotes: 'v2.6.2: Restored original native Focus Shield with app & shorts blocker, instant exam search modal, classic Pomodoro timer, and complete JEE syllabus.',
 };
