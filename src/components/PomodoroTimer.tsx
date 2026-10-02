@@ -45,6 +45,7 @@ import { INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK } from '../data/academicDa
 import { fetchOfficialSyllabus, fetchPersonalSyllabus } from '../lib/unifiedSyllabus';
 import { PomodoroHistoryView } from './PomodoroHistoryView';
 import { FocusGalaxyView, COSMIC_TIERS, CosmicTier, FocusPlanetRecord } from './FocusGalaxyView';
+import { useFocusProgression, SessionCompleteModal, FocusSessionRewardResult } from '../features/focus/progression';
 import { GalaxyCanvas } from './GalaxyCanvas';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
@@ -510,6 +511,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
 
   // Session Completion Modal
   const [completionSummary, setCompletionSummary] = useState<any | null>(null);
+  const [sessionReward, setSessionReward] = useState<FocusSessionRewardResult | null>(null);
+  const [isRewardModalOpen, setIsRewardModalOpen] = useState<boolean>(false);
+  const { addSessionReward, totalDust, progression: cosmicProgression, milestone: cosmicMilestone } = useFocusProgression(userId);
 
   // --- Session & Heartbeat ID ---
   const sessionIdRef = useRef<string>('session_' + Date.now());
@@ -1149,6 +1153,15 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
         mode: 'pomodoro',
       });
 
+      // Trigger Cosmic Dust Progression Reward & Celebration Modal
+      try {
+        const rewardResult = addSessionReward(selectedPomoDuration);
+        setSessionReward(rewardResult);
+        setIsRewardModalOpen(true);
+      } catch (e) {
+        console.warn('Error calculating focus progression reward:', e);
+      }
+
       setIsSaving(false);
 
       // Clear active timer state in localStorage
@@ -1306,6 +1319,16 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
       durationSeconds,
       mode: 'stopwatch'
     });
+
+    // Trigger Cosmic Dust Progression Reward & Celebration Modal for Stopwatch
+    try {
+      const durationMins = Math.round(durationSeconds / 60) || 1;
+      const rewardResult = addSessionReward(durationMins);
+      setSessionReward(rewardResult);
+      setIsRewardModalOpen(true);
+    } catch (e) {
+      console.warn('Error calculating focus progression reward for stopwatch:', e);
+    }
 
     handleResetStopwatch();
 
@@ -1465,7 +1488,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              {totalFocusHours} Total Hours in Orbit • {sessions.length} Worlds Accreted
+              {totalFocusHours} Total Hours in Orbit • {sessions.length} Worlds Accreted • <span className="text-sky-300 font-bold">{totalDust.toLocaleString()} Cosmic Dust (Lv. {cosmicProgression.currentLevel})</span>
             </p>
           </div>
         </div>
@@ -1895,6 +1918,22 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
                   <RotateCcw className="w-5 h-5" />
                 </button>
               </PressFeedback>
+
+              {(isPomoActive || pomoMinutes < selectedPomoDuration) && (
+                <PressFeedback>
+                  <button
+                    onClick={() => {
+                      setIsPomoActive(false);
+                      handlePomodoroFinish();
+                    }}
+                    className="p-4 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-pointer flex items-center gap-2 text-xs font-bold"
+                    title="Stop session and claim cosmic rewards"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span className="hidden sm:inline">Finish & Claim</span>
+                  </button>
+                </PressFeedback>
+              )}
             </div>
 
             {/* Feature: Focus Shield Integration Callout */}
@@ -2328,6 +2367,19 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ userId, topicId, s
           </div>
         )}
       </ModalTransition>
+
+      {/* ── COSMIC DUST CELEBRATION REWARD MODAL (LEVELS 1 TO 1000) ── */}
+      <SessionCompleteModal
+        isOpen={isRewardModalOpen}
+        onClose={() => setIsRewardModalOpen(false)}
+        reward={sessionReward}
+        subject={selectedSubject}
+        topic={topicText || 'Study Sprint'}
+        onClaim={() => {
+          setIsRewardModalOpen(false);
+          setActiveTab('galaxy');
+        }}
+      />
     </div>
   );
 };

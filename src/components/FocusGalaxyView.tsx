@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { GalaxyCanvas, CelestialBody, CelestialMoon } from './GalaxyCanvas';
 import { ProceduralPlanet, PlanetType } from '../features/focus/galaxy/ProceduralPlanet';
+import { useFocusProgression } from '../features/focus/progression';
 import { loadStudySessions, getISTDateString } from '../lib/gamification';
 import { PressFeedback, CountUp, SlideUp, triggerConfetti } from '../lib/animations';
 
@@ -290,6 +291,9 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
   const [totalSessionsCount, setTotalSessionsCount] = useState<number>(0);
   const [streakDays, setStreakDays] = useState<number>(1);
   const [rawSessions, setRawSessions] = useState<any[]>([]);
+
+  // Cosmic Dust Progression Engine (Levels 1 to 1000)
+  const { totalDust, progression: cosmicProgression, milestone: cosmicMilestone } = useFocusProgression(userId, streakDays);
 
   // Modals
   const [showShareModal, setShowShareModal] = useState<boolean>(false);
@@ -820,24 +824,29 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span 
-                    className="text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-0.5 rounded-full border"
+                    className="text-[11px] font-mono font-bold tracking-widest uppercase px-3 py-0.5 rounded-full border flex items-center gap-1.5"
                     style={{
-                      color: currentTier.accentColor,
-                      borderColor: `${currentTier.accentColor}50`,
-                      backgroundColor: `${currentTier.accentColor}15`
+                      color: cosmicMilestone.accentColor,
+                      borderColor: `${cosmicMilestone.accentColor}50`,
+                      backgroundColor: `${cosmicMilestone.accentColor}15`
                     }}
                   >
-                    {currentTier.badge} • LVL {modeLevel} / 1000
+                    <span>{cosmicMilestone.icon}</span>
+                    <span>{cosmicMilestone.badge} • LVL {cosmicProgression.currentLevel} / 1000</span>
                   </span>
                   <span className="text-xs font-bold text-amber-400 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center gap-1">
                     <Flame className="w-3 h-3 fill-current" /> {streakDays} {streakDays === 1 ? 'Day' : 'Days'} Streak
+                  </span>
+                  <span className="text-xs font-bold text-sky-300 px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center gap-1.5 shadow-sm">
+                    <Sparkles className="w-3 h-3 text-sky-400" />
+                    <span className="font-mono">{totalDust.toLocaleString()}</span> Cosmic Dust
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
                   {planetProfile.name}
                 </h1>
                 <p className="text-xs text-slate-400 mt-1 max-w-lg leading-relaxed">
-                  {currentTier.description}
+                  {cosmicMilestone.description}
                 </p>
               </div>
 
@@ -852,6 +861,18 @@ export const FocusGalaxyView: React.FC<FocusGalaxyViewProps> = ({
                     className="h-full bg-sky-400 rounded-full transition-all duration-500" 
                     style={{ width: `${Math.min(100, Math.round((todayMinutes / (dailyGoalHours * 60)) * 100))}%` }} 
                   />
+                </div>
+                <div className="w-44 mt-2">
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono mb-1">
+                    <span className="text-sky-300 font-bold">Lv. {cosmicProgression.currentLevel}</span>
+                    <span>{cosmicProgression.isMaxLevel ? 'MAX' : `${cosmicProgression.dustToNextLevel} to next`}</span>
+                  </div>
+                  <div className="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                    <div 
+                      className="h-full bg-gradient-to-r from-sky-400 via-indigo-400 to-purple-400 rounded-full transition-all duration-700" 
+                      style={{ width: `${cosmicProgression.progressPercentage}%` }} 
+                    />
+                  </div>
                 </div>
               </div>
             </div>
