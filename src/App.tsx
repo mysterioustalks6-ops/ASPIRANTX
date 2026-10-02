@@ -1648,7 +1648,7 @@ function AppContent() {
               )}
 
               {activeTab === 'admin' && (
-                isAdminUnlocked || user.email === DESIGNATED_ADMIN_EMAIL || user.role === 'ADMIN' ? (
+                isAdminUnlocked || user?.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase() || user?.role === 'ADMIN' ? (
                   <AdminPanel
                     user={user}
                     onUpdateRole={(role) => setUser((prev) => (prev ? { ...prev, role } : null))}

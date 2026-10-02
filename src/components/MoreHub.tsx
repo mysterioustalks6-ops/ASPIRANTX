@@ -437,7 +437,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
             <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-sky-400 transition-all" />
           </button>
 
-          {(isAdminUnlocked || user.role === 'ADMIN' || user.role === 'DEVELOPER') && (
+          {(isAdminUnlocked || user.role === 'ADMIN' || user.role === 'DEVELOPER' || user.email?.trim().toLowerCase() === 'ambujyadav0010@gmail.com') && (
             <button
               onClick={() => onNavigate('admin')}
               className="p-3.5 rounded-2xl bg-rose-950/20 border border-rose-500/30 hover:border-rose-500/60 transition-all text-left flex items-center justify-between group"
