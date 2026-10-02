@@ -22,9 +22,10 @@ if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
 
     const prepareInit = (urlStr: string, baseInit?: RequestInit): RequestInit | undefined => {
       if (!urlStr.includes('/api/')) return baseInit;
-      const nextInit: RequestInit = { ...(baseInit || {}), credentials: baseInit?.credentials || 'include' };
+      const nextInit: RequestInit = { ...(baseInit || {}) };
       const headers = new Headers(nextInit.headers || {});
-      if (token && !headers.has('Authorization') && !headers.has('authorization')) {
+      const isAuthRoute = urlStr.includes('/api/auth/login') || urlStr.includes('/api/auth/register') || urlStr.includes('/api/auth/google');
+      if (token && !isAuthRoute && !headers.has('Authorization') && !headers.has('authorization')) {
         headers.set('Authorization', `Bearer ${token}`);
       }
       nextInit.headers = headers;
@@ -50,14 +51,14 @@ if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
         const parsedUrl = new URL(input.url, window.location.href);
         if (parsedUrl.pathname.startsWith('/api/')) {
           const targetUrl = `${BACKEND_API_ROOT}${parsedUrl.pathname}${parsedUrl.search}`;
+          const isAuthRoute = targetUrl.includes('/api/auth/login') || targetUrl.includes('/api/auth/register') || targetUrl.includes('/api/auth/google');
           const newHeaders = new Headers(input.headers);
-          if (token && !newHeaders.has('Authorization') && !newHeaders.has('authorization')) {
+          if (token && !isAuthRoute && !newHeaders.has('Authorization') && !newHeaders.has('authorization')) {
             newHeaders.set('Authorization', `Bearer ${token}`);
           }
           const newReq = new Request(targetUrl, {
             ...input,
-            headers: newHeaders,
-            credentials: input.credentials || 'include'
+            headers: newHeaders
           });
           return originalFetch(newReq, init);
         }

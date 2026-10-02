@@ -44,32 +44,82 @@
       font-weight: 700;
       font-size: 14px;
       box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+      cursor: pointer;
     }
   </style>
-  <script>
-    (function() {
-      var h = window.location.hash || '';
-      var s = window.location.search || '';
-      var target = 'com.aspirantx.app://auth' + s + h;
-
-      // Attempt instant redirection into native Android app
-      try {
-        window.location.replace(target);
-      } catch (e) {
-        window.location.href = target;
-      }
-
-      window.addEventListener('DOMContentLoaded', function() {
-        var btn = document.getElementById('open-app-btn');
-        if (btn) btn.href = target;
-      });
-    })();
-  </script>
 </head>
 <body>
   <div class="spinner"></div>
-  <h2>Returning to ProTrack App...</h2>
-  <p>Your authentication is complete. If the app does not open automatically, tap below:</p>
-  <a id="open-app-btn" class="btn" href="com.aspirantx.app://auth">Open ProTrack App</a>
+  <h2 id="status-title">Signing into StudyRide...</h2>
+  <p id="status-sub">Please wait, completing your authentication...</p>
+  <a id="open-app-btn" class="btn" style="display:none;" href="#">Open StudyRide App</a>
+
+  <script>
+    (function() {
+      var hash = window.location.hash ? window.location.hash.substring(1) : '';
+      var search = window.location.search ? window.location.search.substring(1) : '';
+      var rawString = search || hash;
+      var params = new URLSearchParams(rawString);
+
+      var idToken = params.get('id_token');
+      var accessToken = params.get('access_token');
+      var btn = document.getElementById('open-app-btn');
+      var title = document.getElementById('status-title');
+      var sub = document.getElementById('status-sub');
+
+      function openApp(targetUrl, intentUrl) {
+        if (btn) {
+          btn.style.display = 'inline-block';
+          btn.href = intentUrl || targetUrl;
+          btn.onclick = function() {
+            window.location.href = intentUrl || targetUrl;
+          };
+        }
+        try {
+          if (intentUrl) {
+            window.location.href = intentUrl;
+          } else {
+            window.location.href = targetUrl;
+          }
+        } catch (e) {
+          window.location.href = targetUrl;
+        }
+      }
+
+      function fallbackDirect() {
+        var combined = [search, hash].filter(Boolean).join('&');
+        var target = 'com.aspirantx.app://auth' + (combined ? '?' + combined : '');
+        var intent = 'intent://auth' + (combined ? '?' + combined : '') + '#Intent;scheme=com.aspirantx.app;package=com.aspirantx.app;end;';
+        openApp(target, intent);
+      }
+
+      if (idToken || accessToken) {
+        // Exchange token with backend server
+        fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: idToken, accessToken: accessToken })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.success && data.token) {
+            title.innerText = 'Authenticated Successfully!';
+            sub.innerText = 'Redirecting back to StudyRide App...';
+            var query = 'token=' + encodeURIComponent(data.token) + '&user=' + encodeURIComponent(JSON.stringify(data.user || {}));
+            var target = 'com.aspirantx.app://auth?' + query;
+            var intent = 'intent://auth?' + query + '#Intent;scheme=com.aspirantx.app;package=com.aspirantx.app;end;';
+            openApp(target, intent);
+          } else {
+            fallbackDirect();
+          }
+        })
+        .catch(function(err) {
+          fallbackDirect();
+        });
+      } else {
+        fallbackDirect();
+      }
+    })();
+  </script>
 </body>
 </html>

@@ -35,20 +35,34 @@ if (Capacitor.isNativePlatform()) {
     try {
       await Browser.close().catch(() => {});
 
-      let idToken: string | null = null;
-      let accessToken: string | null = null;
+      const rawQuery = data.url.includes('?') ? data.url.split('?')[1].split('#')[0] : '';
+      const rawHash = data.url.includes('#') ? data.url.split('#')[1] : '';
+      const params = new URLSearchParams(rawQuery || rawHash);
 
-      if (data.url.includes('#')) {
-        const hashParams = new URLSearchParams(data.url.split('#')[1]);
-        idToken = hashParams.get('id_token');
-        accessToken = hashParams.get('access_token');
+      // 1. Direct ready token from server callback
+      const directToken = params.get('token');
+      if (directToken) {
+        localStorage.setItem('aspirantx_auth_token', directToken);
+        const userParam = params.get('user');
+        if (userParam) {
+          try {
+            const u = JSON.parse(decodeURIComponent(userParam));
+            if (u.id) {
+              localStorage.setItem(`aspirantx_profile_cache_${u.id}`, JSON.stringify(u));
+            }
+            if (u.email) {
+              document.cookie = `user_email=${u.email}; path=/; max-age=86400`;
+            }
+            document.cookie = `user_role=${u.role || 'USER'}; path=/; max-age=86400`;
+          } catch (e) {}
+        }
+        window.location.reload();
+        return;
       }
 
-      if (!idToken && !accessToken && data.url.includes('?')) {
-        const queryParams = new URLSearchParams(data.url.split('?')[1]);
-        idToken = queryParams.get('id_token');
-        accessToken = queryParams.get('access_token');
-      }
+      // 2. Fallback: Raw Google OAuth tokens exchange
+      const idToken = params.get('id_token') || params.get('credential');
+      const accessToken = params.get('access_token');
 
       if (idToken || accessToken) {
         const res = await fetch('/api/auth/google', {
@@ -62,8 +76,10 @@ if (Capacitor.isNativePlatform()) {
           if (resData.user?.id) {
             localStorage.setItem(`aspirantx_profile_cache_${resData.user.id}`, JSON.stringify(resData.user));
           }
-          document.cookie = `user_email=${resData.user.email}; path=/; max-age=86400`;
-          document.cookie = `user_role=${resData.user.role}; path=/; max-age=86400`;
+          if (resData.user?.email) {
+            document.cookie = `user_email=${resData.user.email}; path=/; max-age=86400`;
+          }
+          document.cookie = `user_role=${resData.user?.role || 'USER'}; path=/; max-age=86400`;
           window.location.reload();
         }
       }
