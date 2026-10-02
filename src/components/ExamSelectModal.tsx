@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -136,14 +137,19 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md overflow-hidden">
+  const modalNode = (
+    <div 
+      className="fixed inset-0 z-[999999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md overflow-hidden"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        initial={{ opacity: 0, scale: 0.95, y: 16 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        exit={{ opacity: 0, scale: 0.95, y: 16 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl h-[90vh] sm:h-[84vh] flex flex-col rounded-3xl bg-slate-900 border border-slate-700/80 shadow-2xl overflow-hidden relative"
       >
         {/* Modal Header */}
         <div className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between gap-3">
@@ -232,7 +238,7 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
         </div>
 
         {/* Exams List Scrollable Container */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 max-h-[50vh] scrollbar-thin scrollbar-thumb-slate-800">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-2 scrollbar-thin scrollbar-thumb-slate-800">
           {/* Custom Exams Section */}
           {filteredCustomExams.length > 0 && (
             <div className="space-y-1.5 mb-3">
@@ -357,4 +363,6 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
       </motion.div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalNode, document.body) : modalNode;
 };
