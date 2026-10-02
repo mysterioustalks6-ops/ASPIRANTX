@@ -334,6 +334,54 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
             />
           </div>
         </div>
+
+        {/* View Mode Segment Control (Orbit | Focus | Sky) */}
+        <div className="flex items-center justify-between p-1 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl gap-1">
+          <button
+            onClick={() => {
+              onButtonTap();
+              setMode('ORBIT');
+            }}
+            className={`flex-1 h-8 min-h-[32px] py-1 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mode === 'ORBIT'
+                ? 'bg-sky-500 text-slate-950 shadow-[0_0_12px_rgba(56,189,248,0.4)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Orbit className="w-3.5 h-3.5" />
+            <span>Orbit</span>
+          </button>
+
+          <button
+            onClick={() => {
+              onButtonTap();
+              setMode('FOCUS');
+            }}
+            className={`flex-1 h-8 min-h-[32px] py-1 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mode === 'FOCUS'
+                ? 'bg-amber-400 text-slate-950 shadow-[0_0_12px_rgba(251,191,36,0.4)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 fill-current text-slate-950" />
+            <span>Focus</span>
+          </button>
+
+          <button
+            onClick={() => {
+              onButtonTap();
+              setMode('SKY');
+            }}
+            className={`flex-1 h-8 min-h-[32px] py-1 px-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+              mode === 'SKY'
+                ? 'bg-purple-500 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Sky</span>
+          </button>
+        </div>
       </header>
 
       {/* ══════════════════════════════════════════════════════════════════
@@ -473,63 +521,6 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
         </AnimatePresence>
       </main>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          3. BOTTOM NAVIGATION & ACTION DOCK (FLEX-SHRINK-0 Z-20)
-      ══════════════════════════════════════════════════════════════════ */}
-      <footer className="relative z-30 w-full flex-shrink-0 pt-1 pb-[env(safe-area-inset-bottom,0.75rem)]">
-        <nav 
-          className="p-1 sm:p-1.5 rounded-full sm:rounded-3xl bg-slate-900/90 border border-slate-800/90 backdrop-blur-2xl shadow-2xl flex items-center justify-around gap-1"
-          aria-label="Cosmic Navigation Dock"
-        >
-          {/* Tab 1: ORBIT */}
-          <button
-            onClick={() => {
-              onButtonTap();
-              setMode('ORBIT');
-            }}
-            className={`flex-1 h-[44px] min-h-[44px] py-2 px-3 rounded-full sm:rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mode === 'ORBIT'
-                ? 'bg-sky-500 text-slate-950 shadow-[0_0_15px_rgba(56,189,248,0.35)] scale-102'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-          >
-            <Orbit className="w-4 h-4" />
-            <span>Orbit</span>
-          </button>
-
-          {/* Tab 2: FOCUS */}
-          <button
-            onClick={() => {
-              onButtonTap();
-              setMode('FOCUS');
-            }}
-            className={`flex-1 h-[44px] min-h-[44px] py-2 px-3 rounded-full sm:rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mode === 'FOCUS'
-                ? 'bg-amber-400 text-slate-950 shadow-[0_0_18px_rgba(251,191,36,0.45)] scale-102'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-          >
-            <Flame className="w-4 h-4 fill-current text-slate-950" />
-            <span>Focus</span>
-          </button>
-
-          {/* Tab 3: SKY */}
-          <button
-            onClick={() => {
-              onButtonTap();
-              setMode('SKY');
-            }}
-            className={`flex-1 h-[44px] min-h-[44px] py-2 px-3 rounded-full sm:rounded-2xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              mode === 'SKY'
-                ? 'bg-purple-500 text-white shadow-[0_0_15px_rgba(168,85,247,0.35)] scale-102'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Sky</span>
-          </button>
-        </nav>
-      </footer>
 
       {/* ══════════════════════════════════════════════════════════════════
           4. SESSION COMPLETE CELEBRATION REWARD MODAL

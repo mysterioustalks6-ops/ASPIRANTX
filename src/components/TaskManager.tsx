@@ -27,7 +27,6 @@ import {
   CountUp,
   ProgressAnimation
 } from '../lib/animations';
-import { ContextualTour } from './ContextualTour';
 
 interface TaskManagerProps {
   userId?: string;
@@ -238,26 +237,6 @@ export const TaskManager: React.FC<TaskManagerProps> = ({ userId, selectedExam =
 
   return (
     <div className="space-y-6">
-      <ContextualTour
-        featureKey="tasks"
-        steps={[
-          {
-            title: 'Daily Study Goals',
-            description: 'Break your syllabus into manageable micro-tasks with estimated completion minutes.',
-            badge: 'Step 1 of 3'
-          },
-          {
-            title: 'Kanban Progress Flow',
-            description: 'Drag cards or tap the directional arrows to move goals through To Do, In Progress, and Completed.',
-            badge: 'Step 2 of 3'
-          },
-          {
-            title: 'Study XP & Persistence',
-            description: 'Completed tasks award study XP and coins, building your daily productivity streak.',
-            badge: 'Step 3 of 3'
-          }
-        ]}
-      />
 
       {/* Top Banner & Daily Progress */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl">

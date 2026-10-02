@@ -17,7 +17,6 @@ import { AdSenseBanner } from './AdSenseBanner';
 import { DailyStudySummaryCard } from './DailyStudySummaryCard';
 import { CircularPerformanceHub } from './CircularPerformanceMeter';
 import { loadWorkspaceConfig, getActiveFeaturesInOrder, WorkspaceConfig, recordFeatureUsage } from '../lib/workspacePreferences';
-import { ContextualTour } from './ContextualTour';
 
 interface StudentDashboardProps {
   userProfile: UserProfile;
@@ -343,20 +342,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   return (
     <div id="student-dashboard" className="w-full space-y-5 pb-24 md:pb-8 font-sans">
-      {/* Contextual Product Tour (First-use guidance with Skip) */}
-      <ContextualTour
-        featureKey="dashboard"
-        steps={[
-          {
-            title: "Today's Study Focus",
-            description: "Pick up directly where you left off in your syllabus, or launch your recommended high-yield practice session.",
-          },
-          {
-            title: "Live Study Telemetry",
-            description: "Track your real daily quota, mock test accuracy, and real syllabus milestone progress in real time.",
-          },
-        ]}
-      />
 
       {/* ── 1. HEADER & GREETING (Above the Fold) ─────────────────────────── */}
       <SlideUp className="ax-card p-4 sm:p-6 border-slate-800 bg-slate-900/90">

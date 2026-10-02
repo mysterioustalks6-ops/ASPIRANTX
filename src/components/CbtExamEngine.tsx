@@ -23,7 +23,6 @@ export { normalizeCbtQuestion, normalizeCbtTest };
 import { 
   FadeIn, SlideUp, ScaleIn, PressFeedback, CountUp, triggerConfetti, ModalTransition 
 } from '../lib/animations';
-import { ContextualTour } from './ContextualTour';
 
 
 interface CbtExamEngineProps {
@@ -1281,27 +1280,6 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             ))}
           </div>
         </div>
-
-        <ContextualTour
-          featureKey="cbt"
-          steps={[
-            {
-              title: 'Authentic Exam Atmosphere',
-              description: 'Experience official NTA/UPSC style CBT tests with real countdown timers and negative marking rules.',
-              badge: 'Step 1 of 3'
-            },
-            {
-              title: 'Color-Coded Question Palette',
-              description: 'Use the side palette to track answered, unvisited, and marked-for-review questions during the exam.',
-              badge: 'Step 2 of 3'
-            },
-            {
-              title: 'Instant In-Depth Analysis',
-              description: 'Upon submission, review question-by-question explanations, subject percentiles, and accuracy benchmarks.',
-              badge: 'Step 3 of 3'
-            }
-          ]}
-        />
 
         {/* ── AVAILABLE MOCK TESTS ── */}
         {activeTab === 'available' && (

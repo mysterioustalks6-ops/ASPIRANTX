@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SlideUp, PressFeedback, ErrorShake, Stagger, StaggerItem, FadeIn } from '../lib/animations';
-import { ContextualTour } from './ContextualTour';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -741,29 +740,6 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
               </button>
             );
           })}
-        </div>
-
-        <div className="px-4 pt-3">
-          <ContextualTour
-            featureKey="ai_mentor"
-            steps={[
-              {
-                title: 'Specialized Academic Mentors',
-                description: 'Select NCERT Master, PYQ Solver, Mains Evaluator, or Ethics Specialist to get exam-tailored depth.',
-                badge: 'Step 1 of 3'
-              },
-              {
-                title: 'Full LaTeX & Math Support',
-                description: 'Equations, reaction mechanisms, and constitutional articles format with crisp mathematical typography.',
-                badge: 'Step 2 of 3'
-              },
-              {
-                title: 'Pin & Export Workspaces',
-                description: 'Pin vital mentor answers to your drawer or export complete sessions to Markdown for your notes.',
-                badge: 'Step 3 of 3'
-              }
-            ]}
-          />
         </div>
 
         {/* 📜 MESSAGES STREAM VIEW */}

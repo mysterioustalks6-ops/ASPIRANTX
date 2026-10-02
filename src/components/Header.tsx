@@ -329,11 +329,13 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
-        {/* Streak Badge */}
-        <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
-          <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
-          <span className="font-semibold text-slate-200">{user?.streakDays ?? 1}d</span>
-        </div>
+        {/* Streak Badge (suppressed on focus screens & student dashboard to prevent double badges) */}
+        {!['timer', 'focus_shield', 'student_dashboard', 'dashboard'].includes(activeTab) && (
+          <div className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+            <Flame className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30" />
+            <span className="font-semibold text-slate-200">{user?.streakDays ?? 1}d</span>
+          </div>
+        )}
 
         {/* Global Search Trigger */}
         {onOpenSearch && (

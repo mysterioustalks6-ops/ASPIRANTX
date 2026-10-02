@@ -22,7 +22,7 @@ import { PredictorEngineWidget } from './PredictorEngineWidget';
 import { GoogleSheetImportModal } from './GoogleSheetImportModal';
 import { PremiumGate, FeatureFlagsMap } from './PremiumGate';
 import { AcademicBulkImportModal } from './AcademicBulkImportModal';
-import { AcademicGlobalSearchModal } from './AcademicGlobalSearchModal';
+import { GlobalSearchModal } from './GlobalSearchModal';
 import { MySyllabusUploadModal } from './MySyllabusUploadModal';
 import { 
   loadCompletedSubtopicIds, 
@@ -1450,8 +1450,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         onClose={() => setIsBulkImportOpen(false)}
       />
 
-      {/* Phase 4 Academic Global Search Modal */}
-      <AcademicGlobalSearchModal
+      {/* Global Search Modal */}
+      <GlobalSearchModal
         isOpen={isGlobalSearchOpen}
         onClose={() => setIsGlobalSearchOpen(false)}
       />

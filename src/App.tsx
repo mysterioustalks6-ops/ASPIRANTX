@@ -24,7 +24,7 @@ import { DailyQuoteCard } from './components/DailyQuote';
 import { SyllabusTracker } from './components/SyllabusTracker';
 import { PyqEngine } from './components/PyqEngine';
 import { QuestionBankEngine } from './components/QuestionBankEngine';
-import { PomodoroTimer } from './components/PomodoroTimer';
+import { FocusGalaxyScreen } from './features/focus/galaxy/FocusGalaxyScreen';
 import { TaskManager } from './components/TaskManager';
 import { AiStudyChat } from './components/AiStudyChat';
 import { CommunityChat } from './components/CommunityChat';
@@ -43,7 +43,6 @@ import { NetworkStatusIndicator } from './components/NetworkStatusIndicator';
 import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { VersionUpdateNotifier } from './components/VersionUpdateNotifier';
 import { WorkspaceCustomizer } from './components/WorkspaceCustomizer';
-import { OnboardingTour } from './components/OnboardingTour';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileDrawer } from './components/MobileDrawer';
 import { ReminderSettingsModal } from './components/ReminderSettingsModal';
@@ -79,7 +78,6 @@ const FeedbackEngine = lazy(() => import('./components/FeedbackEngine').then(m =
 const BlogView = lazy(() => import('./components/BlogView').then(m => ({ default: m.BlogView })));
 const TeacherBlogSubmit = lazy(() => import('./components/TeacherBlogSubmit').then(m => ({ default: m.TeacherBlogSubmit })));
 const RewardsHub = lazy(() => import('./components/RewardsHub').then(m => ({ default: m.RewardsHub })));
-const FocusShieldView = lazy(() => import('./components/FocusShieldView').then(m => ({ default: m.FocusShieldView })));
 const DownloadPage = lazy(() => import('./components/DownloadPage').then(m => ({ default: m.DownloadPage })));
 const GalaxyDebugScreen = lazy(() => import('./features/focus/screens/GalaxyDebugScreen').then(m => ({ default: m.GalaxyDebugScreen })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
@@ -1266,23 +1264,25 @@ function AppContent() {
 
       {/* Main Content Dashboard Area */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
-        {/* Sticky Header */}
-        <Header 
-          activeTab={activeTab} 
-          user={user} 
-          selectedExam={selectedExam}
-          onExamChange={handleExamChange}
-          onOpenProfileModal={() => setShowProfileModal(true)} 
-          onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
-          onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
-          onOpenSearch={() => setShowSearchModal(true)}
-          onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
-          onRequireLogin={() => setUser(null)}
-          onNavigate={(t) => setActiveTab(t as ActiveTab)}
-          demoTimeFormatted={formatDemoTime(demoSecondsRemaining)}
-          demoSecondsRemaining={demoSecondsRemaining}
-          isDemoExpired={isDemoExpired}
-        />
+        {/* Sticky Header: Suppressed when Focus Galaxy Screen is active to prevent double HUDs & headers */}
+        {!['timer', 'focus_shield'].includes(activeTab) && (
+          <Header 
+            activeTab={activeTab} 
+            user={user} 
+            selectedExam={selectedExam}
+            onExamChange={handleExamChange}
+            onOpenProfileModal={() => setShowProfileModal(true)} 
+            onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
+            onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+            onOpenSearch={() => setShowSearchModal(true)}
+            onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
+            onRequireLogin={() => setUser(null)}
+            onNavigate={(t) => setActiveTab(t as ActiveTab)}
+            demoTimeFormatted={formatDemoTime(demoSecondsRemaining)}
+            demoSecondsRemaining={demoSecondsRemaining}
+            isDemoExpired={isDemoExpired}
+          />
+        )}
 
         {/* Gamification Bar: Relocated from global header to dedicated Rewards & Milestones experience to eliminate cognitive clutter */}
         {activeTab === 'reward_milestones' && (
@@ -1293,17 +1293,15 @@ function AppContent() {
         )}
 
         {/* Dashboard Main Scroll Workspace */}
-        <main className={`flex-1 p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8 w-full mx-auto transition-all duration-200 ${
-          isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
+        <main className={`flex-1 w-full mx-auto transition-all duration-200 ${
+          ['timer', 'focus_shield'].includes(activeTab)
+            ? 'p-0 space-y-0 pb-16 md:pb-0 h-[100dvh] max-h-[100dvh] overflow-hidden'
+            : `p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-24 md:pb-8 ${
+                isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
+              }`
         }`}>
           {(activeTab === 'dashboard' || activeTab === 'student_dashboard') && (
             <>
-              {/* Onboarding Tour (Dashboard onboarding checklist) */}
-              <OnboardingTour
-                onNavigate={(t) => setActiveTab(t as ActiveTab)}
-                onOpenProfileModal={() => setShowProfileModal(true)}
-                onToggleSidebar={handleToggleSidebarCollapse}
-              />
               {/* Top Announcement Ticker (Desktop only to prevent mobile clutter) */}
               {customizer.showAnnouncementTicker && (
                 <div className="hidden md:flex w-full px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 border border-amber-500/30 items-center justify-between gap-3 text-xs shadow-md">
@@ -1453,7 +1451,12 @@ function AppContent() {
                 onOpenPremium={() => setActiveTab('premium')}
                 onRequireLogin={() => setUser(null)}
               >
-                <PomodoroTimer userId={user.id} selectedExam={selectedExam} />
+                <FocusGalaxyScreen 
+                  userId={user.id} 
+                  selectedExam={selectedExam} 
+                  initialMode="ORBIT"
+                  onBack={() => setActiveTab('dashboard')}
+                />
               </PremiumGate>
             )}
 
@@ -1559,12 +1562,12 @@ function AppContent() {
               )}
 
               {activeTab === 'focus_shield' && (
-                <Suspense fallback={<SuspenseFallback />}>
-                  <FocusShieldView 
-                    user={{...user, exam: selectedExam}} 
-                    onTrophyUnlock={(unlocked) => setTrophyQueue(prev => [...prev, unlocked])}
-                  />
-                </Suspense>
+                <FocusGalaxyScreen 
+                  userId={user.id} 
+                  selectedExam={selectedExam} 
+                  initialMode="FOCUS"
+                  onBack={() => setActiveTab('dashboard')}
+                />
               )}
 
               {activeTab === 'download' && (
