@@ -1061,6 +1061,59 @@ router.post('/api/academic/syllabus/calculate-prediction', async (req, res) => {
   }
 });
 
+// ============================================================================
+// DYNAMIC SUBJECTS ENDPOINT FOR EXAMS
+// ============================================================================
+router.get('/api/academic/subjects', async (req, res) => {
+  try {
+    const rawExam = (req.query.exam as string) || '';
+    if (!rawExam) {
+      return res.json({ success: true, subjects: [], subjectCounts: {} });
+    }
+    const aliases = getExamAliases(rawExam);
+    const upperAliases = aliases.map((a: string) => a.toUpperCase());
+
+    const subjects: string[] = [];
+    const subjectCounts: Record<string, number> = {};
+
+    if (process.env.DATABASE_URL) {
+      try {
+        const qRes = await queryPostgres(
+          `SELECT DISTINCT subject, count(*) as count FROM questions WHERE UPPER(exam_id) = ANY($1) AND subject IS NOT NULL AND TRIM(subject) != '' GROUP BY subject ORDER BY count DESC;`,
+          [upperAliases]
+        );
+        for (const r of qRes.rows) {
+          const s = String(r.subject).trim();
+          if (s && !subjectCounts[s]) {
+            subjects.push(s);
+            subjectCounts[s] = parseInt(r.count || '0', 10);
+          }
+        }
+
+        if (subjects.length === 0) {
+          const pyqRes = await queryPostgres(
+            `SELECT DISTINCT data->>'subject' as subject, count(*) as count FROM pyqs WHERE UPPER(data->>'exam') = ANY($1) AND data->>'subject' IS NOT NULL AND TRIM(data->>'subject') != '' GROUP BY data->>'subject' ORDER BY count DESC;`,
+            [upperAliases]
+          );
+          for (const r of pyqRes.rows) {
+            const s = String(r.subject).trim();
+            if (s && !subjectCounts[s]) {
+              subjects.push(s);
+              subjectCounts[s] = parseInt(r.count || '0', 10);
+            }
+          }
+        }
+      } catch (dbErr: any) {
+        console.warn('[ACADEMIC NOTICE] subjects query notice:', dbErr?.message);
+      }
+    }
+
+    return res.json({ success: true, exam: rawExam, subjects, subjectCounts });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err?.message || 'Failed to fetch subjects' });
+  }
+});
+
 router.get('/api/academic/pyqs', async (req, res) => {
   try {
     const exam = (req.query.exam as string) || '';
@@ -1108,7 +1161,7 @@ router.get('/api/academic/pyqs', async (req, res) => {
           pIdx++;
         }
         if (subject && subject !== 'All') {
-          whereClauses.push(`data->>'subject' ILIKE $${pIdx}`);
+          whereClauses.push(`(data->>'subject' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx} OR data->>'paper' ILIKE $${pIdx})`);
           params.push(`%${subject}%`);
           pIdx++;
         }
@@ -1135,9 +1188,29 @@ router.get('/api/academic/pyqs', async (req, res) => {
 
         const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
         const countRes = await queryPostgres(`SELECT count(*) FROM pyqs ${whereSql};`, params);
-        const dbTotal = parseInt(countRes.rows[0]?.count || '0', 10);
+        let dbTotal = parseInt(countRes.rows[0]?.count || '0', 10);
 
-        if (dbTotal > 0) {
+        // Fallback: If strict subject filter returned 0 for this exam, relax subject so user gets questions
+        if (dbTotal === 0 && subject && subject !== 'All' && exam) {
+          const examOnlyAliases = getExamAliases(exam).map((a: string) => a.toUpperCase());
+          const broadRes = await queryPostgres(
+            `SELECT count(*) FROM pyqs WHERE UPPER(data->>'exam') = ANY($1);`,
+            [examOnlyAliases]
+          );
+          const broadTotal = parseInt(broadRes.rows[0]?.count || '0', 10);
+          if (broadTotal > 0) {
+            const offset = (pageNum - 1) * pageLimit;
+            const broadData = await queryPostgres(
+              `SELECT id, data FROM pyqs WHERE UPPER(data->>'exam') = ANY($1) ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $2 OFFSET $3;`,
+              [examOnlyAliases, pageLimit, offset]
+            );
+            if (broadData.rows.length > 0) {
+              fetchedFromDb = true;
+              total = broadTotal;
+              items = broadData.rows.map(normalizePyqItem).filter(Boolean);
+            }
+          }
+        } else if (dbTotal > 0) {
           const offset = (pageNum - 1) * pageLimit;
           const dataRes = await queryPostgres(
             `SELECT id, data FROM pyqs ${whereSql} ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $${pIdx} OFFSET $${pIdx + 1};`,
@@ -1876,7 +1949,7 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
           pIdx++;
         }
         if (subject && subject !== 'All') {
-          whereClauses.push(`subject ILIKE $${pIdx}`);
+          whereClauses.push(`(subject ILIKE $${pIdx} OR topic ILIKE $${pIdx})`);
           params.push(`%${subject}%`);
           pIdx++;
         }
@@ -1939,7 +2012,7 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
             pbIdx++;
           }
           if (subject && subject !== 'All') {
-            pbClauses.push(`data->>'subject' ILIKE $${pbIdx}`);
+            pbClauses.push(`(data->>'subject' ILIKE $${pbIdx} OR data->>'topic' ILIKE $${pbIdx})`);
             pbParams.push(`%${subject}%`);
             pbIdx++;
           }
@@ -1971,6 +2044,44 @@ router.get(['/api/academic/questions', '/api/academic/question-bank'], async (re
               fetchedFromDb = true;
               total = pbTotal;
               items = pbDataRes.rows.map(normalizeQuestionItem).filter(Boolean);
+            }
+          }
+        }
+
+        // Broad fallback: if strict subject filter returned 0, relax subject for this exam
+        if (!fetchedFromDb && exam) {
+          const examOnlyAliases = getExamAliases(exam).map((a: string) => a.toUpperCase());
+          const broadRes = await queryPostgres(
+            `SELECT count(*) FROM questions WHERE UPPER(exam_id) = ANY($1);`,
+            [examOnlyAliases]
+          );
+          const broadTotal = parseInt(broadRes.rows[0]?.count || '0', 10);
+          if (broadTotal > 0) {
+            const offset = (pageNum - 1) * pageLimit;
+            const dataRes = await queryPostgres(
+              `SELECT * FROM questions WHERE UPPER(exam_id) = ANY($1) ORDER BY id ASC LIMIT $2 OFFSET $3;`,
+              [examOnlyAliases, pageLimit, offset]
+            );
+            if (dataRes.rows.length > 0) {
+              fetchedFromDb = true;
+              total = broadTotal;
+              items = dataRes.rows.map((r: any) => normalizeQuestionItem({
+                id: r.id,
+                exam: r.exam_id,
+                subject: r.subject,
+                topic: r.topic,
+                type: r.question_type || 'mcq',
+                questionText: r.question_text,
+                options: typeof r.options === 'string' ? JSON.parse(r.options) : (Array.isArray(r.options) ? r.options : []),
+                correctOption: typeof r.correct_answer === 'number' ? r.correct_answer : (typeof r.correct_option === 'number' ? r.correct_option : 0),
+                explanation: r.explanation || '',
+                solutionText: r.explanation || '',
+                difficulty: r.difficulty || 'Medium',
+                marks: parseFloat(r.marks) || 2.0,
+                negativeMarks: parseFloat(r.negative_marks) || 0.66,
+                status: 'published',
+                verification_status: r.verification_status || 'verified'
+              }));
             }
           }
         }

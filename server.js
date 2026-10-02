@@ -5417,6 +5417,9 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
       if (raw === "NEET" || raw === "NEET_UG" || raw.includes("NEET UG") || raw.includes("NATIONAL ELIGIBILITY CUM ENTRANCE")) return "NEET_UG";
       if (raw === "UPSC" || raw === "UPSC_CSE" || raw === "UPSC_PRELIMS" || raw.includes("CIVIL SERVICES") || raw.includes("PRELIMS")) return "UPSC_CSE";
       if (raw === "SSC" || raw === "SSC_CGL" || raw.includes("COMBINED GRADUATE LEVEL")) return "SSC_CGL";
+      if (raw === "SSC_CHSL" || raw.includes("COMBINED HIGHER SECONDARY")) return "SSC_CHSL";
+      if (raw === "SSC_GD" || raw.includes("GENERAL DUTY")) return "SSC_GD";
+      if (raw === "SSC_MTS" || raw.includes("MULTI TASKING")) return "SSC_MTS";
       if (raw === "NDA" || raw === "NDA_NA" || raw.includes("NATIONAL DEFENCE ACADEMY")) return "NDA_NA";
       if (raw === "JEE_ADVANCED" || raw === "JEE_ADV" || raw.includes("ADVANCED") || raw.includes("ADVANCE") || raw.includes("IIT_JEE") || raw.includes("IIT JEE")) return "JEE_ADVANCED";
       if (raw === "JEE_MAIN" || raw === "JEE" || raw.includes("JOINT ENTRANCE EXAMINATION") || raw.includes("JEE MAIN") || raw.includes("JEE_MAIN")) return "JEE_MAIN";
@@ -5424,13 +5427,17 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
       if (raw === "CAT" || raw.includes("COMMON ADMISSION TEST")) return "CAT";
       if (raw === "CDS" || raw.includes("COMBINED DEFENCE SERVICES")) return "CDS";
       if (raw === "AFCAT") return "AFCAT";
-      if (raw === "CAPF") return "CAPF_AC";
+      if (raw === "CAPF" || raw === "UPSC_CAPF" || raw === "CAPF_AC") return "UPSC_CAPF";
       if (raw === "IBPS_PO" || raw === "IBPS") return "IBPS_PO";
+      if (raw === "IBPS_CLERK") return "IBPS_CLERK";
       if (raw === "SBI_PO") return "SBI_PO";
       if (raw === "RRB_NTPC" || raw === "RRB") return "RRB_NTPC";
+      if (raw === "RRB_JE") return "RRB_JE";
       if (raw === "UPPSC_PCS" || raw === "UPPSC") return "UPPSC_PCS";
-      if (raw === "BPSC" || raw.includes("BIHAR PUBLIC SERVICE")) return "BPSC";
+      if (raw === "BPSC" || raw === "BPSC_PCS" || raw.includes("BIHAR PUBLIC SERVICE")) return "BPSC_PCS";
       if (raw === "WBCS") return "WBCS";
+      if (raw === "CTET") return "CTET";
+      if (raw === "UGC_NET") return "UGC_NET";
       if (raw === "CLAT") return "CLAT_UG";
       return raw.replace(/[^A-Z0-9]/g, "_").replace(/_+/g, "_").replace(/^_|_$/g, "");
     };
@@ -5443,19 +5450,37 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         aliases.add("UPSC_CSE");
         aliases.add("UPSC_PRELIMS");
         aliases.add("CIVIL_SERVICES");
+        aliases.add("UPSC-CSE");
       } else if (norm === "NEET_UG") {
         aliases.add("NEET");
         aliases.add("NEET_UG");
+        aliases.add("NEET-UG");
       } else if (norm === "SSC_CGL") {
         aliases.add("SSC");
         aliases.add("SSC_CGL");
+        aliases.add("SSC-CGL");
+      } else if (norm === "SSC_CHSL") {
+        aliases.add("SSC_CHSL");
+        aliases.add("CHSL");
+        aliases.add("SSC-CHSL");
+      } else if (norm === "SSC_GD") {
+        aliases.add("SSC_GD");
+        aliases.add("GD");
+        aliases.add("SSC-GD");
+      } else if (norm === "SSC_MTS") {
+        aliases.add("SSC_MTS");
+        aliases.add("MTS");
+        aliases.add("SSC-MTS");
       } else if (norm === "NDA_NA") {
         aliases.add("NDA");
         aliases.add("NDA_NA");
+        aliases.add("NDA-NA");
+        aliases.add("NDA/NA");
       } else if (norm === "JEE_MAIN") {
         aliases.add("JEE");
         aliases.add("JEE_MAIN");
         aliases.add("JEE MAIN");
+        aliases.add("JEE-MAIN");
       } else if (norm === "JEE_ADVANCED") {
         aliases.add("JEE_ADV");
         aliases.add("JEE_ADVANCED");
@@ -5463,18 +5488,47 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         aliases.add("JEE ADVANCE");
         aliases.add("IIT_JEE");
         aliases.add("IIT JEE");
+        aliases.add("JEE-ADVANCED");
       } else if (norm === "IBPS_PO") {
         aliases.add("IBPS");
         aliases.add("IBPS_PO");
+        aliases.add("IBPS-PO");
+      } else if (norm === "IBPS_CLERK") {
+        aliases.add("IBPS_CLERK");
+        aliases.add("IBPS-CLERK");
+      } else if (norm === "SBI_PO") {
+        aliases.add("SBI");
+        aliases.add("SBI_PO");
+        aliases.add("SBI-PO");
       } else if (norm === "RRB_NTPC") {
         aliases.add("RRB");
         aliases.add("RRB_NTPC");
+        aliases.add("RRB-NTPC");
+        aliases.add("NTPC");
+      } else if (norm === "RRB_JE") {
+        aliases.add("RRB_JE");
+        aliases.add("RRB-JE");
       } else if (norm === "UPPSC_PCS") {
         aliases.add("UPPSC");
         aliases.add("UPPSC_PCS");
-      } else if (norm === "BPSC") {
+        aliases.add("UPPSC-PCS");
+      } else if (norm === "BPSC_PCS") {
         aliases.add("BPSC");
         aliases.add("BPSC_PCS");
+        aliases.add("BPSC-PCS");
+      } else if (norm === "UPSC_CAPF") {
+        aliases.add("CAPF");
+        aliases.add("UPSC_CAPF");
+        aliases.add("CAPF_AC");
+      } else if (norm === "UGC_NET") {
+        aliases.add("UGC");
+        aliases.add("UGC_NET");
+        aliases.add("UGC-NET");
+        aliases.add("NET");
+      } else if (norm === "CDS") {
+        aliases.add("CDS");
+        aliases.add("CDS_OTA");
+        aliases.add("CDS-OTA");
       }
       return Array.from(aliases);
     };
@@ -10195,6 +10249,51 @@ router.post("/api/academic/syllabus/calculate-prediction", async (req, res) => {
     res.status(500).json({ error: "Failed to calculate syllabus prediction analytics", details: err.message });
   }
 });
+router.get("/api/academic/subjects", async (req, res) => {
+  try {
+    const rawExam = req.query.exam || "";
+    if (!rawExam) {
+      return res.json({ success: true, subjects: [], subjectCounts: {} });
+    }
+    const aliases = getExamAliases(rawExam);
+    const upperAliases = aliases.map((a) => a.toUpperCase());
+    const subjects = [];
+    const subjectCounts = {};
+    if (process.env.DATABASE_URL) {
+      try {
+        const qRes = await queryPostgres(
+          `SELECT DISTINCT subject, count(*) as count FROM questions WHERE UPPER(exam_id) = ANY($1) AND subject IS NOT NULL AND TRIM(subject) != '' GROUP BY subject ORDER BY count DESC;`,
+          [upperAliases]
+        );
+        for (const r of qRes.rows) {
+          const s = String(r.subject).trim();
+          if (s && !subjectCounts[s]) {
+            subjects.push(s);
+            subjectCounts[s] = parseInt(r.count || "0", 10);
+          }
+        }
+        if (subjects.length === 0) {
+          const pyqRes = await queryPostgres(
+            `SELECT DISTINCT data->>'subject' as subject, count(*) as count FROM pyqs WHERE UPPER(data->>'exam') = ANY($1) AND data->>'subject' IS NOT NULL AND TRIM(data->>'subject') != '' GROUP BY data->>'subject' ORDER BY count DESC;`,
+            [upperAliases]
+          );
+          for (const r of pyqRes.rows) {
+            const s = String(r.subject).trim();
+            if (s && !subjectCounts[s]) {
+              subjects.push(s);
+              subjectCounts[s] = parseInt(r.count || "0", 10);
+            }
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[ACADEMIC NOTICE] subjects query notice:", dbErr?.message);
+      }
+    }
+    return res.json({ success: true, exam: rawExam, subjects, subjectCounts });
+  } catch (err) {
+    return res.status(500).json({ success: false, error: err?.message || "Failed to fetch subjects" });
+  }
+});
 router.get("/api/academic/pyqs", async (req, res) => {
   try {
     const exam = req.query.exam || "";
@@ -10232,7 +10331,7 @@ router.get("/api/academic/pyqs", async (req, res) => {
           pIdx++;
         }
         if (subject && subject !== "All") {
-          whereClauses.push(`data->>'subject' ILIKE $${pIdx}`);
+          whereClauses.push(`(data->>'subject' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx} OR data->>'paper' ILIKE $${pIdx})`);
           params.push(`%${subject}%`);
           pIdx++;
         }
@@ -10258,8 +10357,27 @@ router.get("/api/academic/pyqs", async (req, res) => {
         }
         const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
         const countRes = await queryPostgres(`SELECT count(*) FROM pyqs ${whereSql};`, params);
-        const dbTotal = parseInt(countRes.rows[0]?.count || "0", 10);
-        if (dbTotal > 0) {
+        let dbTotal = parseInt(countRes.rows[0]?.count || "0", 10);
+        if (dbTotal === 0 && subject && subject !== "All" && exam) {
+          const examOnlyAliases = getExamAliases(exam).map((a) => a.toUpperCase());
+          const broadRes = await queryPostgres(
+            `SELECT count(*) FROM pyqs WHERE UPPER(data->>'exam') = ANY($1);`,
+            [examOnlyAliases]
+          );
+          const broadTotal = parseInt(broadRes.rows[0]?.count || "0", 10);
+          if (broadTotal > 0) {
+            const offset = (pageNum - 1) * pageLimit;
+            const broadData = await queryPostgres(
+              `SELECT id, data FROM pyqs WHERE UPPER(data->>'exam') = ANY($1) ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $2 OFFSET $3;`,
+              [examOnlyAliases, pageLimit, offset]
+            );
+            if (broadData.rows.length > 0) {
+              fetchedFromDb = true;
+              total = broadTotal;
+              items = broadData.rows.map(normalizePyqItem).filter(Boolean);
+            }
+          }
+        } else if (dbTotal > 0) {
           const offset = (pageNum - 1) * pageLimit;
           const dataRes = await queryPostgres(
             `SELECT id, data FROM pyqs ${whereSql} ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $${pIdx} OFFSET $${pIdx + 1};`,
@@ -10900,7 +11018,7 @@ router.get(["/api/academic/questions", "/api/academic/question-bank"], async (re
           pIdx++;
         }
         if (subject && subject !== "All") {
-          whereClauses.push(`subject ILIKE $${pIdx}`);
+          whereClauses.push(`(subject ILIKE $${pIdx} OR topic ILIKE $${pIdx})`);
           params.push(`%${subject}%`);
           pIdx++;
         }
@@ -10960,7 +11078,7 @@ router.get(["/api/academic/questions", "/api/academic/question-bank"], async (re
             pbIdx++;
           }
           if (subject && subject !== "All") {
-            pbClauses.push(`data->>'subject' ILIKE $${pbIdx}`);
+            pbClauses.push(`(data->>'subject' ILIKE $${pbIdx} OR data->>'topic' ILIKE $${pbIdx})`);
             pbParams.push(`%${subject}%`);
             pbIdx++;
           }
@@ -10992,6 +11110,42 @@ router.get(["/api/academic/questions", "/api/academic/question-bank"], async (re
               fetchedFromDb = true;
               total = pbTotal;
               items = pbDataRes.rows.map(normalizeQuestionItem).filter(Boolean);
+            }
+          }
+        }
+        if (!fetchedFromDb && exam) {
+          const examOnlyAliases = getExamAliases(exam).map((a) => a.toUpperCase());
+          const broadRes = await queryPostgres(
+            `SELECT count(*) FROM questions WHERE UPPER(exam_id) = ANY($1);`,
+            [examOnlyAliases]
+          );
+          const broadTotal = parseInt(broadRes.rows[0]?.count || "0", 10);
+          if (broadTotal > 0) {
+            const offset = (pageNum - 1) * pageLimit;
+            const dataRes = await queryPostgres(
+              `SELECT * FROM questions WHERE UPPER(exam_id) = ANY($1) ORDER BY id ASC LIMIT $2 OFFSET $3;`,
+              [examOnlyAliases, pageLimit, offset]
+            );
+            if (dataRes.rows.length > 0) {
+              fetchedFromDb = true;
+              total = broadTotal;
+              items = dataRes.rows.map((r) => normalizeQuestionItem({
+                id: r.id,
+                exam: r.exam_id,
+                subject: r.subject,
+                topic: r.topic,
+                type: r.question_type || "mcq",
+                questionText: r.question_text,
+                options: typeof r.options === "string" ? JSON.parse(r.options) : Array.isArray(r.options) ? r.options : [],
+                correctOption: typeof r.correct_answer === "number" ? r.correct_answer : typeof r.correct_option === "number" ? r.correct_option : 0,
+                explanation: r.explanation || "",
+                solutionText: r.explanation || "",
+                difficulty: r.difficulty || "Medium",
+                marks: parseFloat(r.marks) || 2,
+                negativeMarks: parseFloat(r.negative_marks) || 0.66,
+                status: "published",
+                verification_status: r.verification_status || "verified"
+              }));
             }
           }
         }

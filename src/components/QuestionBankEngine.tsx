@@ -74,6 +74,35 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
   const [showSolutionId, setShowSolutionId] = useState<string | null>(null);
   const [similarToId, setSimilarToId] = useState<string | null>(null);
 
+  // Dynamic Subjects from authoritative database
+  const [dbSubjects, setDbSubjects] = useState<string[]>([]);
+  const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let active = true;
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch(getApiUrl(`/api/academic/subjects?exam=${encodeURIComponent(selectedExam)}`));
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data.success && Array.isArray(data.subjects) && data.subjects.length > 0) {
+            setDbSubjects(data.subjects);
+            setSubjectCounts(data.subjectCounts || {});
+          }
+        }
+      } catch (e) {
+        // Fallback
+      }
+    };
+    fetchSubjects();
+    return () => { active = false; };
+  }, [selectedExam]);
+
+  const displaySubjects = React.useMemo(() => {
+    if (dbSubjects.length > 0) return dbSubjects;
+    return getExamSubjects(selectedExam);
+  }, [dbSubjects, selectedExam]);
+
   // Backend Pagination States
   const [page, setPage] = useState<number>(1);
   const [limit] = useState<number>(20);
@@ -193,6 +222,10 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.questions)) {
+            if (data.questions.length === 0 && selectedSubject !== 'All') {
+              setSelectedSubject('All');
+              return;
+            }
             setQuestions(data.questions);
             setTotal(data.total !== undefined ? data.total : data.questions.length);
             setTotalPages(data.totalPages || 1);
@@ -465,9 +498,9 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-semibold cursor-pointer"
                 >
                   <option value="All">📖 All Subjects ({total} Qs)</option>
-                  {getExamSubjects(selectedExam).map(s => (
+                  {displaySubjects.map(s => (
                     <option key={s} value={s}>
-                      {s}
+                      {s} {subjectCounts[s] !== undefined ? `(${subjectCounts[s]} Qs)` : ''}
                     </option>
                   ))}
                 </select>

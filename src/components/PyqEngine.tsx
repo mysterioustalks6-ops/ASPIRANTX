@@ -147,6 +147,35 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
   const [minRepeats, setMinRepeats] = useState<number>(1);
   const [minYears, setMinYears] = useState<number>(1);
 
+  // Dynamic Subjects from authoritative database
+  const [dbSubjects, setDbSubjects] = useState<string[]>([]);
+  const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let active = true;
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch(getApiUrl(`/api/academic/subjects?exam=${encodeURIComponent(selectedExam)}`));
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data.success && Array.isArray(data.subjects) && data.subjects.length > 0) {
+            setDbSubjects(data.subjects);
+            setSubjectCounts(data.subjectCounts || {});
+          }
+        }
+      } catch (e) {
+        // Fallback to static config
+      }
+    };
+    fetchSubjects();
+    return () => { active = false; };
+  }, [selectedExam]);
+
+  const displaySubjects = React.useMemo(() => {
+    if (dbSubjects.length > 0) return dbSubjects;
+    return getExamSubjects(selectedExam);
+  }, [dbSubjects, selectedExam]);
+
   // Compute available topics based on selectedExam and selectedSubject
   const availableTopics = React.useMemo(() => {
     const config = getExamConfig(selectedExam);
@@ -172,6 +201,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
     setLanguageFilter('All');
     setPage(1);
   }, [selectedExam]);
+
 
   // Reset topic & page when selectedSubject changes
   useEffect(() => {
@@ -238,6 +268,10 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         if (res.ok) {
           const data = await res.json();
           if ((!signal || !signal.aborted) && data.success && Array.isArray(data.pyqs)) {
+            if (data.pyqs.length === 0 && selectedSubject !== 'All') {
+              setSelectedSubject('All');
+              return;
+            }
             setPyqs(data.pyqs);
             setTotal(data.total !== undefined ? data.total : 0);
             setTotalPages(data.totalPages || 1);
@@ -545,9 +579,9 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                   className="w-full px-3 py-2 rounded-xl bg-black/60 border border-cyan-500/40 text-xs text-cyan-300 focus:outline-none focus:border-cyan-400 font-extrabold cursor-pointer"
                 >
                   <option value="All">📖 All Subjects ({total} Qs)</option>
-                  {getExamSubjects(selectedExam).map((s) => (
+                  {displaySubjects.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {s} {subjectCounts[s] !== undefined ? `(${subjectCounts[s]} Qs)` : ''}
                     </option>
                   ))}
                 </select>
