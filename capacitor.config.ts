@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.aspirantx.app',
-  appName: 'AspirantX',
+  appName: 'StudyRide',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: false // Disable for production release
+    webContentsDebuggingEnabled: true
   },
   plugins: {
     SplashScreen: {

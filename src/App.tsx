@@ -325,69 +325,6 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Android hardware back button handler for top-level modals and navigation stack
-  useEffect(() => {
-    const handleBackPressed = (e: Event) => {
-      if (showSearchModal) {
-        e.preventDefault();
-        setShowSearchModal(false);
-        return;
-      }
-      if (showProfileModal) {
-        e.preventDefault();
-        setShowProfileModal(false);
-        return;
-      }
-      if (showReferralModal) {
-        e.preventDefault();
-        setShowReferralModal(false);
-        return;
-      }
-      if (showCustomizerModal) {
-        e.preventDefault();
-        setShowCustomizerModal(false);
-        return;
-      }
-      if (showWorkspaceCustomizer) {
-        e.preventDefault();
-        setShowWorkspaceCustomizer(false);
-        return;
-      }
-      if (showReminderSettingsModal) {
-        e.preventDefault();
-        setShowReminderSettingsModal(false);
-        return;
-      }
-      if (showWallpaperSetupModal) {
-        e.preventDefault();
-        setShowWallpaperSetupModal(false);
-        return;
-      }
-      if (showPasscodeModal) {
-        e.preventDefault();
-        setShowPasscodeModal(false);
-        return;
-      }
-      // If on a sub-view on mobile and not in CBT test, return to dashboard
-      if (activeTab !== 'dashboard' && activeTab !== 'student_dashboard' && activeTab !== 'cbt' && activeTab !== 'cbt_exam') {
-        e.preventDefault();
-        setActiveTab('dashboard');
-        return;
-      }
-    };
-    window.addEventListener('studyride_back_pressed', handleBackPressed);
-    return () => window.removeEventListener('studyride_back_pressed', handleBackPressed);
-  }, [
-    showSearchModal,
-    showProfileModal,
-    showReferralModal,
-    showCustomizerModal,
-    showWorkspaceCustomizer,
-    showReminderSettingsModal,
-    showWallpaperSetupModal,
-    showPasscodeModal,
-    activeTab
-  ]);
 
   // User Presence Heartbeat (with 10s AbortController timeout & visibilitychange pause)
   useEffect(() => {
@@ -643,6 +580,70 @@ function AppContent() {
   };
 
   const { completionStats, loadingStats } = useSyllabusCompletionStats(user);
+
+  // Android hardware back button handler for top-level modals and navigation stack
+  useEffect(() => {
+    const handleBackPressed = (e: Event) => {
+      if (showSearchModal) {
+        e.preventDefault();
+        setShowSearchModal(false);
+        return;
+      }
+      if (showProfileModal) {
+        e.preventDefault();
+        setShowProfileModal(false);
+        return;
+      }
+      if (showReferralModal) {
+        e.preventDefault();
+        setShowReferralModal(false);
+        return;
+      }
+      if (showCustomizerModal) {
+        e.preventDefault();
+        setShowCustomizerModal(false);
+        return;
+      }
+      if (showWorkspaceCustomizer) {
+        e.preventDefault();
+        setShowWorkspaceCustomizer(false);
+        return;
+      }
+      if (showReminderSettingsModal) {
+        e.preventDefault();
+        setShowReminderSettingsModal(false);
+        return;
+      }
+      if (showWallpaperSetupModal) {
+        e.preventDefault();
+        setShowWallpaperSetupModal(false);
+        return;
+      }
+      if (showPasscodeModal) {
+        e.preventDefault();
+        setShowPasscodeModal(false);
+        return;
+      }
+      // If on a sub-view on mobile and not in CBT test, return to dashboard
+      if (activeTab !== 'dashboard' && activeTab !== 'student_dashboard' && activeTab !== 'cbt' && activeTab !== 'cbt_exam') {
+        e.preventDefault();
+        setActiveTab('dashboard');
+        return;
+      }
+    };
+    window.addEventListener('studyride_back_pressed', handleBackPressed);
+    return () => window.removeEventListener('studyride_back_pressed', handleBackPressed);
+  }, [
+    showSearchModal,
+    showProfileModal,
+    showReferralModal,
+    showCustomizerModal,
+    showWorkspaceCustomizer,
+    showReminderSettingsModal,
+    showWallpaperSetupModal,
+    showPasscodeModal,
+    activeTab
+  ]);
 
   const fetchFeatureFlags = async () => {
     try {

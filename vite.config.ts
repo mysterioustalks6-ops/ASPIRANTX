@@ -17,6 +17,15 @@ export default defineConfig(() => {
         output: {
           manualChunks(id) {
             if (id.includes('node_modules')) {
+              if (id.includes('three')) {
+                return 'vendor-three';
+              }
+              if (id.includes('katex')) {
+                return 'vendor-katex';
+              }
+              if (id.includes('recharts') || id.includes('d3-')) {
+                return 'vendor-charts';
+              }
               if (id.includes('lucide-react')) {
                 return 'vendor-icons';
               }

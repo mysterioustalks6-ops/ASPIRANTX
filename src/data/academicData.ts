@@ -103,39 +103,108 @@ export const INITIAL_SYLLABUS_HIERARCHY: SyllabusHierarchyNode[] = [
   }
 ];
 
-import allQuestionsJson from './allQuestionsData.json';
+export const INITIAL_PYQS_DATABASE: any[] = [
+  {
+    id: 'pyq_upsc_1',
+    exam: 'UPSC_CSE',
+    subject: 'Indian Polity & Governance',
+    topic: 'Fundamental Rights',
+    year: 2023,
+    stage: 'Prelims',
+    paper: 'General Studies - 2',
+    difficulty: 'Medium',
+    language: 'English',
+    questionText: 'Which Article of the Constitution guarantees right to equality before law?',
+    options: ['Article 14', 'Article 19', 'Article 21', 'Article 32'],
+    correctOption: 0,
+    explanation: 'Article 14 ensures that the State shall not deny to any person equality before the law or the equal protection of the laws within the territory of India.',
+    qualityStatus: 'readable',
+    answerVerified: true
+  },
+  {
+    id: 'pyq_ssc_1',
+    exam: 'SSC_CGL',
+    subject: 'Quantitative Aptitude',
+    topic: 'Number System',
+    year: 2023,
+    stage: 'Tier-1',
+    paper: 'Tier-1 Quant',
+    difficulty: 'Easy',
+    language: 'English',
+    questionText: 'What is the unit digit in the product (784 * 618 * 917 * 463)?',
+    options: ['2', '4', '6', '8'],
+    correctOption: 0,
+    explanation: 'Unit digit calculation: (4 * 8 * 7 * 3) -> 32 -> 2; 2 * 7 = 14 -> 4; 4 * 3 = 12 -> 2. The unit digit is 2.',
+    qualityStatus: 'readable',
+    answerVerified: true
+  },
+  {
+    id: 'pyq_neet_1',
+    exam: 'NEET',
+    subject: 'Biology',
+    topic: 'Cell Biology',
+    year: 2023,
+    stage: 'NEET UG',
+    paper: 'Biology',
+    difficulty: 'Medium',
+    language: 'English',
+    questionText: 'Which organelle is known as the powerhouse of the cell?',
+    options: ['Mitochondria', 'Chloroplast', 'Ribosome', 'Golgi apparatus'],
+    correctOption: 0,
+    explanation: 'Mitochondria generate most of the chemical energy needed to power the cell biochemical reactions, stored in adenosine triphosphate (ATP).',
+    qualityStatus: 'readable',
+    answerVerified: true
+  }
+];
 
-export const INITIAL_PYQS_DATABASE: any[] = (allQuestionsJson as any[]).map((q) => ({
-  id: q.id,
-  exam: q.exam,
-  subject: q.subject,
-  topic: q.topic,
-  year: q.year || 2023,
-  stage: q.stage || 'Prelims',
-  difficulty: q.difficulty || 'Medium',
-  language: 'English',
-  questionText: q.questionText,
-  options: q.options,
-  correctOption: q.correctOption,
-  explanation: q.explanation,
-  qualityStatus: 'readable',
-  answerVerified: true
-}));
-
-export const INITIAL_QUESTION_BANK: any[] = (allQuestionsJson as any[]).map((q) => ({
-  id: q.id,
-  exam: q.exam,
-  subject: q.subject,
-  topic: q.topic,
-  type: q.type || 'mcq',
-  questionText: q.questionText,
-  options: q.options,
-  correctOption: q.correctOption,
-  explanation: q.explanation,
-  solutionText: q.explanation,
-  difficulty: q.difficulty || 'Medium',
-  status: 'published',
-  verification_status: 'verified',
-  language: 'English'
-}));
+export const INITIAL_QUESTION_BANK: any[] = [
+  {
+    id: 'qb_1',
+    exam: 'UPSC_CSE',
+    subject: 'Indian Polity & Governance',
+    topic: 'Fundamental Rights',
+    type: 'mcq',
+    questionText: 'Which Article of the Constitution guarantees right to equality before law?',
+    options: ['Article 14', 'Article 19', 'Article 21', 'Article 32'],
+    correctOption: 0,
+    explanation: 'Article 14 ensures that the State shall not deny to any person equality before the law or the equal protection of the laws within the territory of India.',
+    solutionText: 'Article 14 ensures that the State shall not deny to any person equality before the law or the equal protection of the laws within the territory of India.',
+    difficulty: 'Medium',
+    status: 'published',
+    verification_status: 'verified',
+    language: 'English'
+  },
+  {
+    id: 'qb_2',
+    exam: 'UPSC_CSE',
+    subject: 'Modern Indian History',
+    topic: 'Gandhian Era',
+    type: 'mcq',
+    questionText: 'In which year was the Non-Cooperation Movement launched by Mahatma Gandhi?',
+    options: ['1919', '1920', '1922', '1930'],
+    correctOption: 1,
+    explanation: 'The Non-Cooperation Movement was officially launched in September 1920 at the Calcutta special session of the Indian National Congress.',
+    solutionText: 'The Non-Cooperation Movement was officially launched in September 1920 at the Calcutta special session of the Indian National Congress.',
+    difficulty: 'Easy',
+    status: 'published',
+    verification_status: 'verified',
+    language: 'English'
+  },
+  {
+    id: 'qb_3',
+    exam: 'UPSC_CSE',
+    subject: 'Indian Economy',
+    topic: 'Monetary Policy',
+    type: 'mcq',
+    questionText: 'Who regulates the monetary policy framework in India?',
+    options: ['Ministry of Finance', 'SEBI', 'Reserve Bank of India (RBI)', 'NITI Aayog'],
+    correctOption: 2,
+    explanation: 'Reserve Bank of India (RBI) is entrusted with the responsibility of monetary policy formulation and maintaining price stability in India.',
+    solutionText: 'Reserve Bank of India (RBI) is entrusted with the responsibility of monetary policy formulation and maintaining price stability in India.',
+    difficulty: 'Easy',
+    status: 'published',
+    verification_status: 'verified',
+    language: 'English'
+  }
+];
 
