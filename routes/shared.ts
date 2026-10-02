@@ -2747,8 +2747,8 @@ export const normalizeExam = (e: string): string => {
   if (raw === 'UPSC' || raw === 'UPSC_CSE' || raw === 'UPSC_PRELIMS' || raw.includes('CIVIL SERVICES') || raw.includes('PRELIMS')) return 'UPSC_CSE';
   if (raw === 'SSC' || raw === 'SSC_CGL' || raw.includes('COMBINED GRADUATE LEVEL')) return 'SSC_CGL';
   if (raw === 'NDA' || raw === 'NDA_NA' || raw.includes('NATIONAL DEFENCE ACADEMY')) return 'NDA_NA';
-  if (raw === 'JEE_MAIN' || raw === 'JEE' || raw.includes('JOINT ENTRANCE EXAMINATION')) return 'JEE_MAIN';
-  if (raw === 'JEE_ADVANCED' || raw === 'JEE_ADV') return 'JEE_ADVANCED';
+  if (raw === 'JEE_ADVANCED' || raw === 'JEE_ADV' || raw.includes('ADVANCED') || raw.includes('ADVANCE') || raw.includes('IIT_JEE') || raw.includes('IIT JEE')) return 'JEE_ADVANCED';
+  if (raw === 'JEE_MAIN' || raw === 'JEE' || raw.includes('JOINT ENTRANCE EXAMINATION') || raw.includes('JEE MAIN') || raw.includes('JEE_MAIN')) return 'JEE_MAIN';
   if (raw === 'GATE_CS' || raw === 'GATE') return 'GATE_CS';
   if (raw === 'CAT' || raw.includes('COMMON ADMISSION TEST')) return 'CAT';
   if (raw === 'CDS' || raw.includes('COMBINED DEFENCE SERVICES')) return 'CDS';
@@ -2788,6 +2788,14 @@ export const getExamAliases = (e: string): string[] => {
   } else if (norm === 'JEE_MAIN') {
     aliases.add('JEE');
     aliases.add('JEE_MAIN');
+    aliases.add('JEE MAIN');
+  } else if (norm === 'JEE_ADVANCED') {
+    aliases.add('JEE_ADV');
+    aliases.add('JEE_ADVANCED');
+    aliases.add('JEE ADVANCED');
+    aliases.add('JEE ADVANCE');
+    aliases.add('IIT_JEE');
+    aliases.add('IIT JEE');
   } else if (norm === 'IBPS_PO') {
     aliases.add('IBPS');
     aliases.add('IBPS_PO');
@@ -3617,6 +3625,205 @@ export const DEFAULT_CBT_MOCKS = [
         marks: 2.5,
         negativeMarks: 0.83,
         explanation: 'The small critical angle of diamond (24.4°) ensures multiple total internal reflections of trapped light.'
+      }
+    ]
+  },
+  {
+    id: 'jee_main_cbt_mock_01',
+    title: 'JEE Main 2026 All India Full Syllabus Grand Mock Test (Session-1)',
+    exam: 'JEE_MAIN',
+    durationMinutes: 180,
+    totalMarks: 300,
+    sections: [
+      { name: 'Physics', durationMinutes: 60, totalQuestions: 5 },
+      { name: 'Chemistry', durationMinutes: 60, totalQuestions: 5 },
+      { name: 'Mathematics', durationMinutes: 60, totalQuestions: 5 }
+    ],
+    markingScheme: { correct: 4.0, incorrect: 1.0 },
+    questions: [
+      {
+        id: 'q_jee_m_p1',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'A particle of mass m moves under a central conservative force field with potential energy V(r) = -k / r. The radius of the circular orbit with angular momentum L is:',
+        options: ['L² / (m k)', 'm k / L²', 'L / (m k)', 'L² / (2 m k)'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Rotational & Central Dynamics',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'For circular orbit in central field: m v² / r = dV/dr = k / r². Since L = m v r, v = L / (m r). Substituting gives r = L² / (m k).'
+      },
+      {
+        id: 'q_jee_m_p2',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'In a Young\'s double slit experiment, if the distance between slits is halved and distance from slits to screen is doubled, the fringe width will:',
+        options: ['Increase 4 times', 'Double', 'Become one-fourth', 'Remain unchanged'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Wave Optics',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Fringe width β = λD/d. If D becomes 2D and d becomes d/2, new β\' = λ(2D)/(d/2) = 4(λD/d) = 4β.'
+      },
+      {
+        id: 'q_jee_m_c1',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'Which of the following coordination compounds exhibits optical isomerism?',
+        options: ['cis-[Co(en)2Cl2]+', '[Co(NH3)4Cl2]+', 'trans-[Co(en)2Cl2]+', '[Pt(NH3)2Cl2]'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Coordination Chemistry',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'cis-[Co(en)2Cl2]+ is chiral and lacks a plane of symmetry, thereby displaying non-superimposable mirror images.'
+      },
+      {
+        id: 'q_jee_m_m1',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'The value of the definite integral ∫[0 to π/2] (sin³(x) / (sin³(x) + cos³(x))) dx is equal to:',
+        options: ['π / 4', 'π / 2', 'π / 3', '0'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Definite Integration',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'By King\'s property ∫[0 to a] f(x)dx = ∫[0 to a] f(a-x)dx, 2I = ∫[0 to π/2] 1 dx = π/2 => I = π/4.'
+      },
+      {
+        id: 'q_jee_m_m2',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'If A is a 3 × 3 non-singular matrix such that |A| = 3, then what is the determinant |adj(adj(A))|?',
+        options: ['81', '27', '243', '9'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Matrices & Determinants',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'For an n × n matrix, |adj(adj(A))| = |A|^{(n - 1)²}. Here n = 3, so (3 - 1)² = 4. Thus |adj(adj(A))| = 3⁴ = 81.'
+      }
+    ]
+  },
+  {
+    id: 'jee_adv_cbt_mock_paper_1',
+    title: 'JEE Advanced 2026 All India Grand Mock Test (Paper-1)',
+    exam: 'JEE_ADVANCED',
+    durationMinutes: 180,
+    totalMarks: 180,
+    sections: [
+      { name: 'Physics', durationMinutes: 60, totalQuestions: 4 },
+      { name: 'Chemistry', durationMinutes: 60, totalQuestions: 4 },
+      { name: 'Mathematics', durationMinutes: 60, totalQuestions: 4 }
+    ],
+    markingScheme: { correct: 4.0, incorrect: 1.0 },
+    questions: [
+      {
+        id: 'q_ja_p1_1',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'A solid cylinder of mass M and radius R rolls without slipping down an inclined plane of inclination θ. The acceleration of its centre of mass is:',
+        options: ['(2/3) g sin θ', '(1/2) g sin θ', '(3/4) g sin θ', 'g sin θ'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Rigid Body Dynamics',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'For pure rolling on incline: a_cm = (g sin θ) / (1 + I_cm / (MR²)). For solid cylinder, I_cm = 1/2 MR². Hence a_cm = (2/3) g sin θ.'
+      },
+      {
+        id: 'q_ja_p1_5',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'What is the spin-only magnetic moment of [Fe(CN)6]³⁻ complex ion?',
+        options: ['1.73 BM', '5.92 BM', '2.83 BM', '3.87 BM'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Coordination Chemistry',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Fe³⁺ is 3d⁵. CN⁻ causes pairing: t2g⁵ eg⁰ with n = 1 unpaired electron. μ = √(1(3)) = √3 ≈ 1.73 BM.'
+      },
+      {
+        id: 'q_ja_p1_9',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'If z is a complex number satisfying |z - 2/z| = 1, then the maximum possible value of |z| is:',
+        options: ['(1 + √17) / 2', '(1 + √5) / 2', '2', '√5'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: 'Complex Numbers',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'By triangle inequality: |z| ≤ 1 + 2/|z| => |z|² - |z| - 2 ≤ 0 => |z| ≤ (1 + √17) / 2.'
+      }
+    ]
+  },
+  {
+    id: 'jee_adv_cbt_mock_paper_2',
+    title: 'JEE Advanced 2026 All India Grand Mock Test (Paper-2)',
+    exam: 'JEE_ADVANCED',
+    durationMinutes: 180,
+    totalMarks: 180,
+    sections: [
+      { name: 'Physics', durationMinutes: 60, totalQuestions: 4 },
+      { name: 'Chemistry', durationMinutes: 60, totalQuestions: 4 },
+      { name: 'Mathematics', durationMinutes: 60, totalQuestions: 4 }
+    ],
+    markingScheme: { correct: 4.0, incorrect: 1.0 },
+    questions: [
+      {
+        id: 'q_ja_p2_1',
+        type: 'mcq',
+        section: 'Physics',
+        questionText: 'A circular loop of radius R carrying current I is placed in the xy-plane. The magnetic field at a point on its axis at distance x = R from the center is B1, and at the center is B0. The ratio B1 / B0 is:',
+        options: ['1 / (2√2)', '1 / 2', '1 / 4', '1 / (3√3)'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Physics',
+        topic: 'Magnetic Effects of Current',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'B(x) = (μ0 I R²) / [2(R² + x²)^(3/2)]. At x = R, B1 / B0 = 1 / (2√2).'
+      },
+      {
+        id: 'q_ja_p2_5',
+        type: 'mcq',
+        section: 'Chemistry',
+        questionText: 'In qualitative inorganic analysis, which group reagent is used to precipitate Group III cations (Fe³⁺, Al³⁺, Cr³⁺) as their hydroxides?',
+        options: ['NH4OH in presence of NH4Cl', 'H2S in presence of dilute HCl', 'H2S in presence of NH4OH', '(NH4)2CO3 in presence of NH4OH'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Chemistry',
+        topic: 'Qualitative Salt Analysis',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'NH4Cl suppresses the ionization of NH4OH by the common ion effect to precipitate Group III hydroxides.'
+      },
+      {
+        id: 'q_ja_p2_9',
+        type: 'mcq',
+        section: 'Mathematics',
+        questionText: 'The shortest distance between the two skew lines r = (î + 2ĵ + 3k̂) + λ(2î + 3ĵ + 4k̂) and r = (2î + 4ĵ + 5k̂) + μ(3î + 4ĵ + 5k̂) is:',
+        options: ['1 / √6', '1 / 6', '√6', '2 / √6'],
+        correctOption: 0,
+        language: 'English',
+        subject: 'Mathematics',
+        topic: '3D Geometry',
+        marks: 4.0,
+        negativeMarks: 1.0,
+        explanation: 'Shortest distance d = |(a2 - a1) · (b1 × b2)| / |b1 × b2| = 1 / √6.'
       }
     ]
   }

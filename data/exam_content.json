@@ -14254,5 +14254,138 @@
     "sections": [],
     "questions": [],
     "review_reason": "false_official_placeholder: Manufactured 3-topic dummy payload from scale-up script. Quarantined."
+  },
+  "JEE_MAIN::syllabus": {
+    "exam_id": "JEE_MAIN",
+    "type": "syllabus",
+    "fetched_at": "2026-10-02T10:32:21.369Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Physics",
+        "topics": [
+          "Units and Dimensions",
+          "Motion in One and Two Dimensions",
+          "Newton Laws of Motion & Friction",
+          "Work-Energy Theorem & Collisions",
+          "Centre of Mass & Rigid Body Dynamics",
+          "Gravitational Fields & Planetary Motion",
+          "Elasticity, Viscosity & Hydrodynamics",
+          "Thermal Physics & Thermodynamic Processes",
+          "Simple Harmonic Motion & Wave Propagation",
+          "Electric Charges, Field, Potential & Capacitance",
+          "Electric Current, Circuits & Instruments",
+          "Magnetic Force, Biot-Savart Law & Magnetic Materials",
+          "Faraday's Law, Inductance & AC Circuits",
+          "Ray Optics, Wave Optics & Optical Instruments",
+          "Dual Nature, Atoms, Nuclei & Semiconductors"
+        ]
+      },
+      {
+        "title": "Chemistry",
+        "topics": [
+          "Mole Concept & Stoichiometry",
+          "Bohr Model & Quantum Mechanical Model",
+          "VSEPR Theory, Hybridization & Molecular Orbitals",
+          "First and Second Laws of Thermodynamics",
+          "Chemical & Ionic Equilibrium",
+          "Electrochemical Cells & Nernst Equation",
+          "Rate Laws, Order of Reaction & Arrhenius Equation",
+          "Vapour Pressure & Colligative Properties",
+          "Periodic Table Trends",
+          "Groups 13 to 18 Elements",
+          "Transition Metals & Coordination Complexes",
+          "Electronic Effects & Reaction Intermediates",
+          "Alkanes, Alkenes, Alkynes & Arenes",
+          "Haloalkanes, Alcohols, Carbonyls & Carboxylic Acids",
+          "Amines, Diazonium Salts & Carbohydrates/Proteins"
+        ]
+      },
+      {
+        "title": "Mathematics",
+        "topics": [
+          "Types of Relations & Functions",
+          "Complex Algebra & Theory of Equations",
+          "Matrix Algebra, Determinant Properties & Linear Systems",
+          "Counting Principles & Arrangements",
+          "Binomial Expansion & Series",
+          "AP, GP & Special Series",
+          "Limits, Continuity & Differential Calculus",
+          "Monotonicity, Maxima-Minima & Tangents",
+          "Indefinite & Definite Integrals",
+          "First Order DEs & Curve Areas",
+          "Straight Lines & Circles",
+          "Parabola, Ellipse and Hyperbola",
+          "Vectors & 3D Lines/Planes",
+          "Trigonometric Identities & Equations",
+          "Bayes' Theorem & Measures of Dispersion"
+        ]
+      }
+    ]
+  },
+  "JEE_ADVANCED::syllabus": {
+    "exam_id": "JEE_ADVANCED",
+    "type": "syllabus",
+    "fetched_at": "2026-10-02T10:32:21.370Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Physics",
+        "topics": [
+          "Units, Error Analysis & 2D Motion",
+          "Rotational Dynamics & Rolling Motion",
+          "Variable Forces & Non-Inertial Frames",
+          "Keplerian Orbits & Gravitational Self-Energy",
+          "Fluid Dynamics, Viscosity & Advanced Thermodynamics",
+          "Coupled Oscillations, Standing Waves & Sound Dynamics",
+          "Conductors, Electrostatic Energy & Dielectrics",
+          "Complex DC/RC Circuits & Symmetry Methods",
+          "Magnetic Vector Potential, Motional EMF & Inductance",
+          "Matrix Optics, Wave Interference & Diffraction",
+          "Photons, Matter Waves & Nuclear Reactions",
+          "Kinetic Theory & Heat Transfer Mechanisms"
+        ]
+      },
+      {
+        "title": "Chemistry",
+        "topics": [
+          "Radial/Angular Wave Functions & Orbitals",
+          "Entropy, Gibbs Free Energy & Phase Transitions",
+          "Simultaneous Equilibrium & Polyprotic Acids",
+          "Concentration Cells & Complex Reaction Mechanisms",
+          "Molecular Orbital Theory & Berry Pseudorotation",
+          "Crystal Field Theory, Jahn-Teller Effect & Synergic Bonding",
+          "Conformations, Chirality & Stereoselective Additions",
+          "Named Condensations & Rearrangements",
+          "Electrophilic & Nucleophilic Aromatic Substitution",
+          "Phosphorus/Sulphur Oxoacids & Interhalogens",
+          "Stereochemistry of Carbohydrates & Analytical Tests",
+          "Ellingham Diagram & Cation/Anion Separation"
+        ]
+      },
+      {
+        "title": "Mathematics",
+        "topics": [
+          "Argand Plane Geometry & Roots of Unity",
+          "Matrix Characteristics & System Consistency",
+          "Advanced Counting & Conditional Probability",
+          "Intermediate Value Theorem & Non-Differentiability",
+          "Monotonicity, Point of Inflection & Global Extrema",
+          "Definite Integrals & Leibniz Differentiation",
+          "Exact Differential Equations & Advanced Areas",
+          "Radical Axis, Coaxial Systems & Polar Coordinates",
+          "Advanced Conics & Normal Equations",
+          "Vector Triple Product & Reciprocal Vectors",
+          "Lines, Planes & Spheres in Space",
+          "Trigonometric Series & Summation"
+        ]
+      }
+    ]
   }
 }

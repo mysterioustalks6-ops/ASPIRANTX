@@ -1,7 +1,11 @@
 import { SyllabusHierarchyNode } from '../types';
+import { JEE_MAIN_SYLLABUS, JEE_ADVANCED_SYLLABUS } from './jeeSyllabusData.js';
 
+export { JEE_MAIN_SYLLABUS, JEE_ADVANCED_SYLLABUS };
 
 export const INITIAL_SYLLABUS_HIERARCHY: SyllabusHierarchyNode[] = [
+  ...JEE_MAIN_SYLLABUS,
+  ...JEE_ADVANCED_SYLLABUS,
   {
     id: 'u1-1',
     exam: 'UPSC_CSE',

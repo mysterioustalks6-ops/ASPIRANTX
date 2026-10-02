@@ -138,10 +138,10 @@ export interface Quote {
 
 export interface SubTopic {
   id: string;
-  topicId: string;
+  topicId?: string;
   title: string;
-  completed: boolean;
-  estimatedHours: number; // Default 2.5 hours
+  completed?: boolean;
+  estimatedHours?: number; // Default 2.5 hours
   weightage?: 'High' | 'Medium' | 'Low';
   notes?: string;
   origin_official_id?: string;
@@ -313,7 +313,7 @@ export interface SyllabusHierarchyNode {
   topic: string; // e.g. 'Preamble & Fundamental Rights', 'HCF & LCM'
   subtopic: string; // e.g. 'Article 14 - Right to Equality', 'Divisibility Rules'
   title: string;
-  stage: 'Prelims' | 'Mains' | 'Tier-1' | 'Tier-2' | 'Interview' | 'All';
+  stage: 'Prelims' | 'Mains' | 'Tier-1' | 'Tier-2' | 'Interview' | 'Paper 1' | 'Paper 2' | 'All';
   weightage: 'High' | 'Medium' | 'Low';
   estimatedHours: number;
   completed?: boolean;
