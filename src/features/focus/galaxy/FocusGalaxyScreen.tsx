@@ -203,6 +203,16 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
 
   const unlockedMoonsCount = Math.min(Math.floor(streakDays / 3), 5);
 
+  // Stable Comet Absorbed Handler
+  const handleCometAbsorbed = useCallback(() => {
+    setIsCometDelivering(false);
+  }, []);
+
+  // Stable Planet Seed (changes only on level progression, not every timer tick)
+  const planetSeed = useMemo(() => {
+    return progression.currentLevel * 37 + 101;
+  }, [progression.currentLevel]);
+
   return (
     <div className="relative w-full h-screen min-h-[600px] overflow-hidden select-none bg-[#020408] text-slate-100 font-sans flex flex-col justify-between">
       {/* ══════════════════════════════════════════════════════════════════
@@ -348,25 +358,25 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
               className="relative w-full h-full flex flex-col items-center justify-center"
             >
               {/* Active 3D WebGL Canvas */}
-              <div className="relative w-full h-[360px] sm:h-[460px] max-h-[62vh] rounded-3xl overflow-hidden border border-slate-800/60 shadow-2xl bg-gradient-to-b from-[#050812] to-[#020306]">
+              <div className="relative w-full h-[360px] sm:h-[460px] max-h-[62vh] min-h-[350px] rounded-3xl overflow-hidden border border-slate-800/60 shadow-2xl bg-gradient-to-b from-[#050812] to-[#020306]">
                 <PlanetarySystem
                   level={progression.currentLevel}
                   streakDays={streakDays}
                   type={milestone.category}
-                  seed={progression.currentLevel * 37 + totalDust}
+                  seed={planetSeed}
                   isDeliveringReward={isCometDelivering}
-                  onCometAbsorbed={() => setIsCometDelivering(false)}
+                  onCometAbsorbed={handleCometAbsorbed}
                   autoRotate={true}
                   allowIdleRotation={allowIdleRotation}
                   targetFps={targetFps}
                   starParticleCount={starParticleCount}
                   devicePixelRatio={optimizedDpr}
                   showStarfield={true}
-                  className="w-full h-full"
+                  className="w-full h-full pointer-events-auto"
                 />
 
-                {/* Overlaid Planet Details Badge */}
-                <div className="absolute top-4 left-4 z-10 px-3.5 py-1.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-300 backdrop-blur-md flex items-center gap-2">
+                {/* Overlaid Planet Details Badge (pointer-events-none so touches pass to 3D canvas) */}
+                <div className="absolute top-4 left-4 z-10 px-3.5 py-1.5 rounded-2xl bg-slate-950/80 border border-slate-800 text-[11px] font-mono text-slate-300 backdrop-blur-md flex items-center gap-2 pointer-events-none">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>{milestone.name}</span>
                 </div>
@@ -378,7 +388,7 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
               </div>
 
               {/* Planet Stats Pill Bar Below */}
-              <div className="mt-3 w-full grid grid-cols-3 gap-2 text-center max-w-xl">
+              <div className="mt-3 w-full grid grid-cols-3 gap-2 text-center max-w-xl pointer-events-none">
                 <div className="p-2.5 rounded-2xl bg-slate-900/60 border border-slate-800/60 backdrop-blur-md">
                   <span className="text-[10px] uppercase font-bold text-slate-400">Class</span>
                   <p className="text-xs font-black text-sky-400 capitalize">{milestone.category}</p>
@@ -408,8 +418,8 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
               transition={{ duration: 0.3 }}
               className="relative w-full h-full flex flex-col items-center justify-center"
             >
-              <div className="w-full h-[400px] sm:h-[480px] max-h-[66vh] rounded-3xl overflow-hidden shadow-2xl">
-                <ConstellationMap userId={userId} className="w-full h-full" />
+              <div className="w-full h-[400px] sm:h-[480px] max-h-[66vh] min-h-[350px] rounded-3xl overflow-hidden shadow-2xl">
+                <ConstellationMap userId={userId} className="w-full h-full pointer-events-auto" />
               </div>
             </motion.div>
           )}
@@ -427,23 +437,23 @@ export const FocusGalaxyScreen: React.FC<FocusGalaxyScreenProps> = ({
               className="relative w-full h-full flex flex-col items-center justify-center"
             >
               {/* Dimmed 3D Backdrop */}
-              <div className="absolute inset-0 z-0 pointer-events-none opacity-30 scale-90 sm:scale-100 flex items-center justify-center">
+              <div className="absolute inset-0 z-0 pointer-events-none opacity-30 scale-90 sm:scale-100 flex items-center justify-center overflow-hidden">
                 <PlanetarySystem
                   level={progression.currentLevel}
                   streakDays={streakDays}
                   type={milestone.category}
-                  seed={progression.currentLevel * 37 + totalDust}
+                  seed={planetSeed}
                   autoRotate={true}
                   allowIdleRotation={allowIdleRotation}
                   targetFps={targetFps}
                   devicePixelRatio={optimizedDpr}
                   showStarfield={false}
-                  className="w-full h-full"
+                  className="w-full h-full pointer-events-none"
                 />
               </div>
 
               {/* Foreground Floating Minimalist Timer HUD */}
-              <div className="relative z-10 w-full max-w-md p-6 sm:p-8 rounded-3xl bg-slate-900/85 border border-slate-700/80 backdrop-blur-2xl shadow-2xl text-center space-y-6">
+              <div className="relative z-10 w-full max-w-md p-6 sm:p-8 rounded-3xl bg-slate-900/85 border border-slate-700/80 backdrop-blur-2xl shadow-2xl text-center space-y-6 pointer-events-auto">
                 {/* Mode Selector Pill (Pomodoro / Stopwatch) */}
                 <div className="inline-flex p-1 rounded-2xl bg-slate-950 border border-slate-800">
                   <button

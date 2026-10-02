@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 export type PlanetType = 'rocky' | 'gas' | 'lava' | 'ice';
@@ -13,7 +13,7 @@ export interface ProceduralPlanetProps {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════════
-// 1. FAST DETERMINISTIC PRNG & 3D FRACTIONAL BROWNIAN MOTION (fBm) NOISE GENERATOR
+// 1. DETERMINISTIC PRNG & 3D FRACTIONAL BROWNIAN MOTION (fBm) NOISE
 // ══════════════════════════════════════════════════════════════════════════════════
 
 function mulberry32(a: number) {
@@ -127,18 +127,16 @@ function generatePlanetTexture(type: PlanetType, seed: number): THREE.CanvasText
   const data = imgData.data;
   const perm = buildPermutation(seed);
 
-  // Precompute trigonometric latitude/longitude mappings for seamless 3D spherical wrap
   for (let y = 0; y < height; y++) {
     const v = y / (height - 1);
-    const phi = v * Math.PI; // 0 to PI
+    const phi = v * Math.PI;
     const sinPhi = Math.sin(phi);
     const cosPhi = Math.cos(phi);
 
     for (let x = 0; x < width; x++) {
       const u = x / width;
-      const theta = u * Math.PI * 2; // 0 to 2*PI
+      const theta = u * Math.PI * 2;
 
-      // Seamless 3D point on unit sphere
       const nx = sinPhi * Math.cos(theta);
       const ny = cosPhi;
       const nz = sinPhi * Math.sin(theta);
@@ -148,51 +146,42 @@ function generatePlanetTexture(type: PlanetType, seed: number): THREE.CanvasText
       let b = 0;
 
       if (type === 'rocky') {
-        // Terrestrial world with oceans, continents, mountain ridges, and polar snow
         const continentNoise = fbm3D(nx * 2.2, ny * 2.2, nz * 2.2, perm, 5);
         const detailNoise = fbm3D(nx * 7.5, ny * 7.5, nz * 7.5, perm, 4);
         const elevation = continentNoise * 0.7 + detailNoise * 0.3;
         const polar = Math.abs(ny);
 
         if (polar > 0.88 || elevation > 0.48) {
-          // Polar ice / snowy peaks
           r = 240 + Math.floor(detailNoise * 15);
           g = 248 + Math.floor(detailNoise * 7);
           b = 255;
         } else if (elevation < -0.05) {
-          // Deep Abyss ocean
           r = 10;
           g = 45 + Math.floor((elevation + 1) * 30);
           b = 105 + Math.floor((elevation + 1) * 50);
         } else if (elevation < 0.08) {
-          // Coastal waters / continental shelf
           r = 14;
           g = 120 + Math.floor(elevation * 200);
           b = 165 + Math.floor(elevation * 220);
         } else if (elevation < 0.22) {
-          // Fertile lowlands / coast
           r = 34 + Math.floor(detailNoise * 30);
           g = 139 + Math.floor(detailNoise * 40);
           b = 64 + Math.floor(detailNoise * 20);
         } else if (elevation < 0.38) {
-          // Savanna / arid foothills
           r = 175 + Math.floor(detailNoise * 40);
           g = 135 + Math.floor(detailNoise * 30);
           b = 85 + Math.floor(detailNoise * 20);
         } else {
-          // Mountain basalt
           r = 110 + Math.floor(detailNoise * 30);
           g = 95 + Math.floor(detailNoise * 25);
           b = 85 + Math.floor(detailNoise * 20);
         }
       } else if (type === 'gas') {
-        // Jovian atmospheric latitudinal bands + swirling turbulence
         const bandNoise = fbm3D(nx * 1.2, ny * 4.0, nz * 1.2, perm, 4);
         const lat = Math.sin(ny * 22.0 + bandNoise * 3.5);
         const turbulence = fbm3D(nx * 6.0, ny * 8.0, nz * 6.0, perm, 5);
         const mixVal = (lat * 0.5 + 0.5) * 0.65 + (turbulence * 0.5 + 0.5) * 0.35;
 
-        // Rich warm amber, ochre, terracotta, and cream bands
         if (mixVal < 0.25) {
           r = 180 + Math.floor(mixVal * 120);
           g = 90 + Math.floor(mixVal * 90);
@@ -211,59 +200,48 @@ function generatePlanetTexture(type: PlanetType, seed: number): THREE.CanvasText
           b = 190 + Math.floor(turbulence * 40);
         }
       } else if (type === 'lava') {
-        // Charred obsidian tectonic crust with fiery molten magma fissures
         const crust = fbm3D(nx * 2.8, ny * 2.8, nz * 2.8, perm, 5);
         const crack = 1.0 - Math.abs(fbm3D(nx * 6.5, ny * 6.5, nz * 6.5, perm, 4));
 
         if (crack > 0.68 || crust < -0.32) {
-          // Active molten fissure
           const intensity = Math.min(1, Math.max(0, (crack - 0.68) / 0.32));
           if (intensity > 0.65) {
-            // White-hot molten core
             r = 255;
             g = 235 + Math.floor(intensity * 20);
             b = 120 + Math.floor(intensity * 80);
           } else if (intensity > 0.3) {
-            // Blazing orange
             r = 255;
             g = 110 + Math.floor(intensity * 120);
             b = 15;
           } else {
-            // Deep crimson magma
             r = 190 + Math.floor(intensity * 60);
             g = 25;
             b = 5;
           }
         } else {
-          // Dark obsidian/basalt tectonic plates
           const c = Math.max(10, Math.min(45, Math.floor(25 + crust * 20)));
           r = c + 5;
           g = c;
           b = c + 3;
         }
       } else if (type === 'ice') {
-        // Crystalline glacial plains, arctic ice ridges, deep cyan abyssal rifts
         const glacier = fbm3D(nx * 3.2, ny * 3.2, nz * 3.2, perm, 5);
         const crevasse = Math.abs(fbm3D(nx * 7.0, ny * 7.0, nz * 7.0, perm, 4));
         const elevation = glacier * 0.7 + crevasse * 0.3;
 
         if (elevation < -0.15) {
-          // Deep subglacial oceanic rift
           r = 6;
           g = 55 + Math.floor((elevation + 1) * 35);
           b = 95 + Math.floor((elevation + 1) * 60);
         } else if (elevation < 0.2) {
-          // Aquamarine blue ice plain
           r = 30 + Math.floor(elevation * 60);
           g = 145 + Math.floor(elevation * 90);
           b = 215 + Math.floor(elevation * 40);
         } else if (elevation < 0.45) {
-          // Frosted ice shelf
           r = 140 + Math.floor(elevation * 80);
           g = 215 + Math.floor(elevation * 35);
           b = 245 + Math.floor(elevation * 10);
         } else {
-          // Crisp glacial crystal peak
           r = 245;
           g = 252;
           b = 255;
@@ -290,7 +268,7 @@ function generatePlanetTexture(type: PlanetType, seed: number): THREE.CanvasText
 }
 
 // ══════════════════════════════════════════════════════════════════════════════════
-// 3. ATMOSPHERE FRESNEL RIM SHADER & PALETTE DEFINITIONS
+// 3. ATMOSPHERE FRESNEL RIM SHADER & PALETTES
 // ══════════════════════════════════════════════════════════════════════════════════
 
 const ATMOSPHERE_PALETTES: Record<PlanetType, { color: string; power: number; glowIntensity: number; emissive: number }> = {
@@ -316,19 +294,21 @@ const AtmosphereFragmentShader = `
   uniform vec3 uColor;
   uniform float uPower;
   uniform float uIntensity;
+  uniform float uTime;
   varying vec3 vNormal;
   varying vec3 vViewPosition;
 
   void main() {
     vec3 normal = normalize(vNormal);
     vec3 viewDir = normalize(vViewPosition);
+    float pulse = 0.95 + 0.05 * sin(uTime * 2.0);
     float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), uPower);
-    gl_FragColor = vec4(uColor, fresnel * uIntensity);
+    gl_FragColor = vec4(uColor, fresnel * uIntensity * pulse);
   }
 `;
 
 // ══════════════════════════════════════════════════════════════════════════════════
-// 4. MAIN PROCEDURAL PLANET COMPONENT
+// 4. MAIN PROCEDURAL PLANET COMPONENT (PERSISTENT 60 FPS PIPELINE)
 // ══════════════════════════════════════════════════════════════════════════════════
 
 export const ProceduralPlanet: React.FC<ProceduralPlanetProps> = ({
@@ -340,34 +320,59 @@ export const ProceduralPlanet: React.FC<ProceduralPlanetProps> = ({
   showStarfield = true,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const animFrameIdRef = useRef<number | null>(null);
 
-  const atmosphereConfig = useMemo(() => ATMOSPHERE_PALETTES[type], [type]);
+  // Mesh & Material persistent refs
+  const planetMeshRef = useRef<THREE.Mesh | null>(null);
+  const planetMaterialRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const planetTextureRef = useRef<THREE.CanvasTexture | null>(null);
+  const atmosphereMeshRef = useRef<THREE.Mesh | null>(null);
+  const atmosphereMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
+  const starsMeshRef = useRef<THREE.Points | null>(null);
 
+  // Dynamic props ref (avoids tearing down scene on prop change)
+  const propsRef = useRef({
+    type,
+    seed,
+    autoRotate,
+    showAtmosphere,
+    showStarfield
+  });
+
+  useEffect(() => {
+    propsRef.current = {
+      type,
+      seed,
+      autoRotate,
+      showAtmosphere,
+      showStarfield
+    };
+  }, [type, seed, autoRotate, showAtmosphere, showStarfield]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 1. ONE-TIME INITIALIZATION EFFECT (Mount once, zero rebuild on prop change)
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const container = mountRef.current;
     if (!container) return;
 
-    // 1. Scene setup
+    let isMounted = true;
+
+    // 1. Container dimensions with robust fallback (prevents 0x0 collapse)
+    const width = container.clientWidth || 350;
+    const height = container.clientHeight || 350;
+
+    // 2. Scene & Camera Setup
     const scene = new THREE.Scene();
-    sceneRef.current = scene;
-
-    const width = container.clientWidth || 300;
-    const height = container.clientHeight || 300;
-
-    // 2. Camera setup
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
     camera.position.set(0, 0, 4.2);
 
-    // 3. WebGL Renderer with strict mobile performance cap
+    // 3. WebGL Renderer with mobile DPR clamp (max 1.5)
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
       antialias: true,
       powerPreference: 'high-performance'
     });
-    rendererRef.current = renderer;
 
     const maxDpr = Math.min(window.devicePixelRatio || 1, 1.5);
     renderer.setPixelRatio(maxDpr);
@@ -375,13 +380,13 @@ export const ProceduralPlanet: React.FC<ProceduralPlanetProps> = ({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
 
-    // Clear existing children in container
+    // Clear and attach domElement
     while (container.firstChild) {
       container.removeChild(container.firstChild);
     }
     container.appendChild(renderer.domElement);
 
-    // 4. Lighting - Directional light for crisp day/night terminator line + ambient
+    // 4. Lights
     const dirLight = new THREE.DirectionalLight(0xffffff, 2.2);
     dirLight.position.set(4.5, 2.8, 3.8);
     scene.add(dirLight);
@@ -389,122 +394,140 @@ export const ProceduralPlanet: React.FC<ProceduralPlanetProps> = ({
     const ambientLight = new THREE.AmbientLight(0x111625, 0.45);
     scene.add(ambientLight);
 
-    // 5. Procedural Planet Texture & Core Mesh (SphereGeometry radius 1.3, 64 segments)
+    // 5. Core Planet Mesh
+    const initialConfig = ATMOSPHERE_PALETTES[type];
     const planetTexture = generatePlanetTexture(type, seed);
+    planetTextureRef.current = planetTexture;
+
     const planetGeometry = new THREE.SphereGeometry(1.3, 64, 64);
     const planetMaterial = new THREE.MeshStandardMaterial({
       map: planetTexture,
       roughness: type === 'ice' ? 0.25 : type === 'gas' ? 0.4 : type === 'lava' ? 0.88 : 0.8,
       metalness: type === 'ice' ? 0.2 : 0.05,
-      emissive: new THREE.Color(atmosphereConfig.emissive),
+      emissive: new THREE.Color(initialConfig.emissive),
       emissiveIntensity: type === 'lava' ? 0.35 : 0.05
     });
+    planetMaterialRef.current = planetMaterial;
 
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+    planetMeshRef.current = planetMesh;
     scene.add(planetMesh);
 
-    // 6. Atmosphere Glow Mesh (SphereGeometry radius 1.36) with custom ShaderMaterial
-    let atmosphereMesh: THREE.Mesh | null = null;
-    let atmosphereGeometry: THREE.SphereGeometry | null = null;
-    let atmosphereMaterial: THREE.ShaderMaterial | null = null;
+    // 6. Atmosphere Fresnel Glow Mesh
+    const atmosphereGeometry = new THREE.SphereGeometry(1.36, 64, 64);
+    const atmosphereMaterial = new THREE.ShaderMaterial({
+      vertexShader: AtmosphereVertexShader,
+      fragmentShader: AtmosphereFragmentShader,
+      uniforms: {
+        uColor: { value: new THREE.Color(initialConfig.color) },
+        uPower: { value: initialConfig.power },
+        uIntensity: { value: initialConfig.glowIntensity },
+        uTime: { value: 0 }
+      },
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.FrontSide
+    });
+    atmosphereMaterialRef.current = atmosphereMaterial;
 
-    if (showAtmosphere) {
-      atmosphereGeometry = new THREE.SphereGeometry(1.36, 64, 64);
-      atmosphereMaterial = new THREE.ShaderMaterial({
-        vertexShader: AtmosphereVertexShader,
-        fragmentShader: AtmosphereFragmentShader,
-        uniforms: {
-          uColor: { value: new THREE.Color(atmosphereConfig.color) },
-          uPower: { value: atmosphereConfig.power },
-          uIntensity: { value: atmosphereConfig.glowIntensity }
-        },
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        depthWrite: false,
-        side: THREE.FrontSide
-      });
+    const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+    atmosphereMeshRef.current = atmosphereMesh;
+    atmosphereMesh.visible = showAtmosphere;
+    scene.add(atmosphereMesh);
 
-      atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
-      scene.add(atmosphereMesh);
+    // 7. Background Starfield
+    const starCount = 800;
+    const starPositions = new Float32Array(starCount * 3);
+    const starColors = new Float32Array(starCount * 3);
+
+    for (let i = 0; i < starCount; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * Math.PI * 2;
+      const phi = Math.acos(2 * v - 1);
+      const r = 20.0 + Math.random() * 25.0;
+
+      starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      starPositions[i * 3 + 2] = r * Math.cos(phi);
+
+      const spectral = Math.random();
+      if (spectral < 0.65) {
+        starColors[i * 3] = 0.95;
+        starColors[i * 3 + 1] = 0.95;
+        starColors[i * 3 + 2] = 1.0;
+      } else if (spectral < 0.85) {
+        starColors[i * 3] = 0.65;
+        starColors[i * 3 + 1] = 0.85;
+        starColors[i * 3 + 2] = 1.0;
+      } else {
+        starColors[i * 3] = 1.0;
+        starColors[i * 3 + 1] = 0.85;
+        starColors[i * 3 + 2] = 0.6;
+      }
     }
 
-    // 7. Background Starfield (800 random points with THREE.Points, BufferGeometry)
-    let starsMesh: THREE.Points | null = null;
-    let starGeometry: THREE.BufferGeometry | null = null;
-    let starMaterial: THREE.PointsMaterial | null = null;
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
-    if (showStarfield) {
-      const starCount = 800;
-      const starPositions = new Float32Array(starCount * 3);
-      const starColors = new Float32Array(starCount * 3);
+    const starMaterial = new THREE.PointsMaterial({
+      size: 0.65,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false
+    });
 
-      for (let i = 0; i < starCount; i++) {
-        const u = Math.random();
-        const v = Math.random();
-        const theta = u * Math.PI * 2;
-        const phi = Math.acos(2 * v - 1);
-        const r = 20.0 + Math.random() * 25.0;
+    const starsMesh = new THREE.Points(starGeometry, starMaterial);
+    starsMeshRef.current = starsMesh;
+    starsMesh.visible = showStarfield;
+    scene.add(starsMesh);
 
-        starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-        starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-        starPositions[i * 3 + 2] = r * Math.cos(phi);
+    // 8. Persistent 60 FPS Render Loop (Zero Vector Allocations)
+    let startTime = performance.now();
 
-        // Subtle stellar spectral diversity
-        const spectral = Math.random();
-        if (spectral < 0.65) {
-          starColors[i * 3] = 0.95;
-          starColors[i * 3 + 1] = 0.95;
-          starColors[i * 3 + 2] = 1.0;
-        } else if (spectral < 0.85) {
-          starColors[i * 3] = 0.65;
-          starColors[i * 3 + 1] = 0.85;
-          starColors[i * 3 + 2] = 1.0;
-        } else {
-          starColors[i * 3] = 1.0;
-          starColors[i * 3 + 1] = 0.85;
-          starColors[i * 3 + 2] = 0.6;
+    const animate = () => {
+      if (!isMounted) return;
+      animFrameIdRef.current = requestAnimationFrame(animate);
+
+      const currentTime = performance.now();
+      const elapsedSeconds = (currentTime - startTime) * 0.001;
+
+      const currentProps = propsRef.current;
+
+      // Continuous Planet Rotation
+      if (currentProps.autoRotate && planetMeshRef.current) {
+        planetMeshRef.current.rotation.y += 0.003;
+      }
+
+      // Atmosphere Pulsing & Rotation
+      if (atmosphereMeshRef.current && atmosphereMaterialRef.current) {
+        atmosphereMeshRef.current.visible = currentProps.showAtmosphere;
+        atmosphereMaterialRef.current.uniforms.uTime.value = elapsedSeconds;
+        if (currentProps.autoRotate) {
+          atmosphereMeshRef.current.rotation.y += 0.0025;
         }
       }
 
-      starGeometry = new THREE.BufferGeometry();
-      starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-      starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-
-      starMaterial = new THREE.PointsMaterial({
-        size: 0.65,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.85,
-        depthWrite: false
-      });
-
-      starsMesh = new THREE.Points(starGeometry, starMaterial);
-      scene.add(starsMesh);
-    }
-
-    // 8. Self-Contained Animation Loop (Slow Y-axis rotation 0.003 rad/frame)
-    const animate = () => {
-      animFrameIdRef.current = requestAnimationFrame(animate);
-
-      if (autoRotate && planetMesh) {
-        planetMesh.rotation.y += 0.003;
-      }
-      if (autoRotate && atmosphereMesh) {
-        atmosphereMesh.rotation.y += 0.0025;
-      }
-      if (starsMesh) {
-        starsMesh.rotation.y += 0.00015;
+      // Starfield Rotation
+      if (starsMeshRef.current) {
+        starsMeshRef.current.visible = currentProps.showStarfield;
+        starsMeshRef.current.rotation.y += 0.00015;
       }
 
       renderer.render(scene, camera);
     };
+
     animate();
 
-    // 9. ResizeObserver with dynamic aspect ratio updates
+    // 9. Debounced ResizeObserver with Zero 0x0 Division Protection
     const resizeObserver = new ResizeObserver((entries) => {
+      if (!isMounted) return;
       for (const entry of entries) {
         const { width: newW, height: newH } = entry.contentRect;
-        if (newW > 0 && newH > 0) {
+        if (newW > 10 && newH > 10) {
           camera.aspect = newW / newH;
           camera.updateProjectionMatrix();
           renderer.setSize(newW, newH);
@@ -514,46 +537,76 @@ export const ProceduralPlanet: React.FC<ProceduralPlanetProps> = ({
     });
     resizeObserver.observe(container);
 
-    // 10. Strict Cleanup to prevent WebGL memory leaks on Android / WebView
+    // 10. Strict Cleanup Guard
     return () => {
+      isMounted = false;
       if (animFrameIdRef.current !== null) {
         cancelAnimationFrame(animFrameIdRef.current);
       }
       resizeObserver.disconnect();
 
-      // Dispose Core Planet
       planetGeometry.dispose();
       planetMaterial.dispose();
-      planetTexture.dispose();
-      scene.remove(planetMesh);
+      if (planetTextureRef.current) planetTextureRef.current.dispose();
 
-      // Dispose Atmosphere
-      if (atmosphereGeometry) atmosphereGeometry.dispose();
-      if (atmosphereMaterial) atmosphereMaterial.dispose();
-      if (atmosphereMesh) scene.remove(atmosphereMesh);
+      atmosphereGeometry.dispose();
+      atmosphereMaterial.dispose();
 
-      // Dispose Starfield
-      if (starGeometry) starGeometry.dispose();
-      if (starMaterial) starMaterial.dispose();
-      if (starsMesh) scene.remove(starsMesh);
+      starGeometry.dispose();
+      starMaterial.dispose();
 
-      // Dispose Renderer & Force Context Loss
       renderer.dispose();
       if (renderer.domElement && renderer.domElement.parentElement) {
         renderer.domElement.parentElement.removeChild(renderer.domElement);
       }
       renderer.forceContextLoss();
 
-      sceneRef.current = null;
-      rendererRef.current = null;
+      planetMeshRef.current = null;
+      planetMaterialRef.current = null;
+      atmosphereMeshRef.current = null;
+      atmosphereMaterialRef.current = null;
+      starsMeshRef.current = null;
     };
-  }, [type, seed, autoRotate, showAtmosphere, showStarfield, atmosphereConfig]);
+  }, []); // Run ONCE on mount
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2. DYNAMIC UPDATES EFFECT (Updates textures/materials WITHOUT rebuilding scene)
+  // ─────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!planetMaterialRef.current || !atmosphereMaterialRef.current) return;
+
+    // 1. Re-generate texture seamlessly on type or seed change
+    const newTexture = generatePlanetTexture(type, seed);
+    if (planetTextureRef.current) {
+      planetTextureRef.current.dispose();
+    }
+    planetTextureRef.current = newTexture;
+    planetMaterialRef.current.map = newTexture;
+    planetMaterialRef.current.roughness = type === 'ice' ? 0.25 : type === 'gas' ? 0.4 : type === 'lava' ? 0.88 : 0.8;
+    planetMaterialRef.current.metalness = type === 'ice' ? 0.2 : 0.05;
+
+    const atmoConfig = ATMOSPHERE_PALETTES[type];
+    planetMaterialRef.current.emissive.set(atmoConfig.emissive);
+    planetMaterialRef.current.emissiveIntensity = type === 'lava' ? 0.35 : 0.05;
+    planetMaterialRef.current.needsUpdate = true;
+
+    // 2. Update Atmosphere Uniforms
+    atmosphereMaterialRef.current.uniforms.uColor.value.set(atmoConfig.color);
+    atmosphereMaterialRef.current.uniforms.uPower.value = atmoConfig.power;
+    atmosphereMaterialRef.current.uniforms.uIntensity.value = atmoConfig.glowIntensity;
+
+    if (atmosphereMeshRef.current) {
+      atmosphereMeshRef.current.visible = showAtmosphere;
+    }
+    if (starsMeshRef.current) {
+      starsMeshRef.current.visible = showStarfield;
+    }
+  }, [type, seed, showAtmosphere, showStarfield]);
 
   return (
     <div
       ref={mountRef}
-      className={`relative w-full h-full overflow-hidden select-none pointer-events-auto ${className}`}
-      style={{ minHeight: '260px' }}
+      className={`relative w-full h-full min-h-[350px] overflow-hidden select-none pointer-events-auto ${className}`}
       aria-label={`Procedural 3D ${type} planet visualization`}
     />
   );
