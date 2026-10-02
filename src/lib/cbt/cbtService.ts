@@ -409,7 +409,7 @@ export class CbtService {
     attemptId: string;
     userId: string;
     targetSectionId: string;
-  }): Promise<{ success: boolean; current_section_id: string; section_states: Record<string, any> }> {
+  }): Promise<{ success: boolean; current_section_id: string; currentSectionId?: string; section_states: Record<string, any> }> {
     const { attemptId, userId, targetSectionId } = params;
 
     const client = await pgPool.connect();
