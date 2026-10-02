@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.5.8',
-  versionCode: 16,
+  version: '2.5.9',
+  versionCode: 17,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
-  releaseDate: 'September 30, 2026',
+  releaseDate: 'October 2, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v2.5.8: Live Study Battle Arena with real-time study stopwatch & leaderboards, Avatar sync persistence, and Focus Shield digital wellbeing.',
+  releaseNotes: 'v2.5.9: Focus Galaxy with persistent 60FPS WebGL planetary system, Web Audio cosmic synth, 1-Click Story Card generator, and Play Store release readiness.',
 };

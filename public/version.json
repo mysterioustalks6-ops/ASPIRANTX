@@ -1,10 +1,10 @@
 {
-  "version": "2.5.8",
-  "versionCode": 16,
+  "version": "2.5.9",
+  "versionCode": 17,
   "minSupportedVersion": "2.0.0",
   "apkUrl": "https://studyride.in/studyride.apk",
   "directApkUrl": "https://aspirantx.vercel.app/studyride.apk",
-  "releaseNotes": "Live Study Battle Arena with real-time study stopwatch & leaderboards, Avatar sync persistence, and Focus Shield digital wellbeing.",
-  "releaseDate": "September 30, 2026",
-  "timestamp": "2026-09-30T10:00:00.000Z"
+  "releaseNotes": "v2.5.9: Focus Galaxy with persistent 60FPS WebGL planetary system, Web Audio cosmic synth, 1-Click Story Card generator, and Play Store release readiness.",
+  "releaseDate": "October 2, 2026",
+  "timestamp": "2026-10-02T12:00:00.000Z"
 }
