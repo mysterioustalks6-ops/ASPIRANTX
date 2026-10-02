@@ -79,6 +79,7 @@ const FeedbackEngine = lazy(() => import('./components/FeedbackEngine').then(m =
 const BlogView = lazy(() => import('./components/BlogView').then(m => ({ default: m.BlogView })));
 const TeacherBlogSubmit = lazy(() => import('./components/TeacherBlogSubmit').then(m => ({ default: m.TeacherBlogSubmit })));
 const RewardsHub = lazy(() => import('./components/RewardsHub').then(m => ({ default: m.RewardsHub })));
+const FocusShieldView = lazy(() => import('./components/FocusShieldView').then(m => ({ default: m.FocusShieldView })));
 const DownloadPage = lazy(() => import('./components/DownloadPage').then(m => ({ default: m.DownloadPage })));
 const GalaxyDebugScreen = lazy(() => import('./features/focus/screens/GalaxyDebugScreen').then(m => ({ default: m.GalaxyDebugScreen })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
@@ -1561,12 +1562,12 @@ function AppContent() {
               )}
 
               {activeTab === 'focus_shield' && (
-                <FocusGalaxyScreen 
-                  userId={user.id} 
-                  selectedExam={selectedExam} 
-                  initialMode="FOCUS"
-                  onBack={() => setActiveTab('dashboard')}
-                />
+                <Suspense fallback={<SuspenseFallback />}>
+                  <FocusShieldView 
+                    user={{...user, exam: selectedExam}} 
+                    onTrophyUnlock={(unlocked) => setTrophyQueue(prev => [...prev, unlocked])}
+                  />
+                </Suspense>
               )}
 
               {activeTab === 'download' && (
