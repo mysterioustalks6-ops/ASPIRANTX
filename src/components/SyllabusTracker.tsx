@@ -42,6 +42,8 @@ import { MySyllabusDndTree } from './MySyllabusDndTree';
 import { OpenKoshExamDirectory } from './OpenKoshExamDirectory';
 import { convertOpenKoshToSyllabusNodes } from '../data/openkoshData';
 import { getExamConfig } from '../lib/examRegistry';
+import { SyllabusVelocityHud } from './SyllabusVelocityHud';
+import { AddCustomTopicModal } from './AddCustomTopicModal';
 
 // ── Exam Forecasting Engine Domain Imports ──────────────────────────────────
 import {
@@ -184,6 +186,43 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   const [inputSubtopic, setInputSubtopic] = useState<string>('');
   const [inputStage, setInputStage] = useState<string>('Prelims');
   const [inputWeightage, setInputWeightage] = useState<string>('Medium');
+  const [isAddCustomTopicOpen, setIsAddCustomTopicOpen] = useState<boolean>(false);
+
+  const handleAddCustomTopic = async (newNode: PersonalSyllabusNode) => {
+    // 1. Add to personalRawNodes
+    const updatedPersonal = [...personalRawNodes, newNode];
+    setPersonalRawNodes(updatedPersonal);
+
+    // 2. Also add to officialRawNodes so it immediately appears in the active checklist
+    const updatedOfficial = [...officialRawNodes, {
+      id: newNode.id,
+      exam: selectedExam,
+      subject: newNode.subject,
+      chapter: newNode.chapter || newNode.subject,
+      topic: newNode.topic || newNode.chapter,
+      subtopic: newNode.subtopic || newNode.topic,
+      title: newNode.topic || newNode.chapter,
+      stage: newNode.stage || 'Prelims',
+      weightage: newNode.weightage || 'Medium',
+      estimatedHours: 4,
+      completed: false,
+      description: `${newNode.subject} - ${newNode.topic}`,
+      difficulty: 'Medium'
+    }];
+    setOfficialRawNodes(updatedOfficial);
+
+    // 3. Persist to storage & cloud
+    try {
+      await saveAllPersonalSyllabusNodes(userId, selectedExam, updatedPersonal);
+    } catch (e) {
+      console.warn('Failed to save custom syllabus node:', e);
+    }
+
+    awardXPAndCoins(25, 5, 'Added Custom Syllabus Topic', userId);
+    triggerConfetti();
+    setImportNotification(`✨ Topic "${newNode.chapter || newNode.topic}" added! Total workload & target days recalculated.`);
+    setTimeout(() => setImportNotification(null), 5000);
+  };
 
   // ── FORECASTING & MASTERY STATE ───────────────────────────────────────────
   const progressStorageKey = `studyride_forecast_mastery_${userId || 'guest'}_${selectedExam}`;
@@ -743,200 +782,56 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
-      {/* ── TOP HERO: UNIFIED EXAM FORECAST HUD ───────────────────────────── */}
-      <div className="rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl p-5 sm:p-7 relative overflow-hidden backdrop-blur-xl">
-        {/* Glowing Background Gradients */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* ── TOP HERO: UNIFIED EXAM FORECAST HUD WITH ANIMATED VELOCITY RADAR ── */}
+      <SyllabusVelocityHud
+        forecast={currentForecast}
+        whatIfConfig={whatIfConfig}
+        onUpdateWhatIf={(updater) => setWhatIfConfig(updater)}
+        defaultDailyHours={examDefinition.defaultDailyProductiveHours}
+        examDateStr={examDefinition.examDate}
+        selectedExam={selectedExam}
+        setSelectedExam={setSelectedExam}
+        examName={examDefinition.name}
+        onOpenSimulatorDrawer={() => setActiveForecastDrawer(d => d === 'simulator' ? 'none' : 'simulator')}
+        isSimulatorOpen={activeForecastDrawer === 'simulator'}
+        onOpenTargetDrawer={() => setActiveForecastDrawer(d => d === 'target' ? 'none' : 'target')}
+        isTargetOpen={activeForecastDrawer === 'target'}
+        onOpenTimerDrawer={() => setActiveForecastDrawer(d => d === 'timer' ? 'none' : 'timer')}
+        isTimerRunning={isTimerRunning}
+        timerSeconds={timerSeconds}
+        onOpenAddCustomTopic={() => setIsAddCustomTopicOpen(true)}
+      />
 
-        {/* Top Header Row: Exam Title, Target Exam Countdown & Actions */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 border-b border-slate-800/80 relative z-10">
-          <div>
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                Dynamic Exam Forecast Engine
+      {/* ── EXPANDABLE TOOL DRAWERS (WHAT-IF, TARGET DATE, FOCUS TIMER) ── */}
+      <AnimatePresence>
+        {activeForecastDrawer !== 'none' && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -10, height: 0 }}
+            className="rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl p-5 sm:p-6 relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs">
+              <span className="font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-sky-400" />
+                <span>
+                  {activeForecastDrawer === 'simulator'
+                    ? 'What-If Schedule Simulator'
+                    : activeForecastDrawer === 'target'
+                    ? 'Target Date Feasibility Calculator'
+                    : 'Live Study Focus Stopwatch'}
+                </span>
               </span>
-              <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 border border-slate-800">
-                Confidence: <strong className="text-emerald-400">{currentForecast.confidenceLevel}</strong>
-              </span>
-            </div>
-
-            <div className="flex items-center gap-3 mt-2 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
-                <span>{examDefinition.name}</span>
-                <span className="text-sky-400 text-lg font-bold">Preparation Hub</span>
-              </h1>
-
-              {/* Exam Selector Dropdown */}
-              <select
-                value={selectedExam}
-                onChange={(e) => setSelectedExam(e.target.value as ExamType)}
-                className="bg-slate-900 hover:bg-slate-850 border border-slate-700 text-sky-300 text-xs font-bold rounded-xl px-3 py-1.5 outline-none cursor-pointer transition shadow-sm"
-                title="Switch target exam"
+              <button
+                onClick={() => setActiveForecastDrawer('none')}
+                className="text-slate-400 hover:text-white px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold cursor-pointer transition"
               >
-                {EXAM_LIST.map((ex) => (
-                  <option key={ex.id} value={ex.id}>
-                    {ex.label}
-                  </option>
-                ))}
-              </select>
+                Close Drawer ✕
+              </button>
             </div>
 
-            <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-              Continuously predicts realistic completion dates based on your empirical productive study hours, 
-              chapter difficulty, prerequisite chains, and 3 cycles of spaced revision.
-            </p>
-          </div>
-
-          {/* Quick Tool Drawer Toggles */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setActiveForecastDrawer(d => d === 'simulator' ? 'none' : 'simulator')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                activeForecastDrawer === 'simulator'
-                  ? 'bg-amber-500 text-slate-950 font-black'
-                  : 'bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-800'
-              }`}
-            >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>What-If Simulator</span>
-            </button>
-
-            <button
-              onClick={() => setActiveForecastDrawer(d => d === 'target' ? 'none' : 'target')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                activeForecastDrawer === 'target'
-                  ? 'bg-indigo-600 text-white font-black'
-                  : 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-800'
-              }`}
-            >
-              <Target className="w-3.5 h-3.5" />
-              <span>Target Date</span>
-            </button>
-
-            <button
-              onClick={() => setActiveForecastDrawer(d => d === 'timer' ? 'none' : 'timer')}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
-                activeForecastDrawer === 'timer' || isTimerRunning
-                  ? 'bg-emerald-500 text-slate-950 font-black'
-                  : 'bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              <span>{isTimerRunning ? `${Math.floor(timerSeconds / 60)}m Focus` : 'Study Timer'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* ── 3 FORECAST SCENARIO CARDS ───────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 relative z-10">
-          {/* 1. Fast Scenario */}
-          <div className="bg-gradient-to-b from-indigo-950/40 to-slate-950/80 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-indigo-400/50 transition">
-            <div className="flex items-center justify-between text-xs text-indigo-300 font-semibold mb-2">
-              <span className="flex items-center gap-1.5">
-                <Flame className="w-4 h-4 text-amber-400" /> FAST SCENARIO
-              </span>
-              <span className="text-[11px] text-indigo-400/80">Upper Pace (~115%)</span>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              {formatNiceDate(currentForecast.fastDate)}
-            </div>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Disciplined upper bound. Requires peak focus consistency and zero unrecovered disruptions.
-            </p>
-          </div>
-
-          {/* 2. Realistic Scenario (Authoritative / Highlighted) */}
-          <div className="bg-gradient-to-b from-emerald-950/50 to-slate-950/90 border-2 border-emerald-500/60 rounded-2xl p-4 sm:p-5 relative overflow-hidden shadow-xl shadow-emerald-500/10">
-            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-              Most Likely
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-bold mb-2">
-              <Target className="w-4 h-4 text-emerald-400" /> REALISTIC COMPLETION
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-emerald-200 tracking-tight">
-              {formatNiceDate(currentForecast.realisticDate)}
-            </div>
-            <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-              Expected Range: <strong className="text-white">{formatNiceDate(currentForecast.expectedRangeStart)}</strong> – <strong className="text-white">{formatNiceDate(currentForecast.expectedRangeEnd)}</strong>
-            </p>
-          </div>
-
-          {/* 3. Slow Scenario */}
-          <div className="bg-gradient-to-b from-slate-900/60 to-slate-950/80 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-slate-700 transition">
-            <div className="flex items-center justify-between text-xs text-slate-400 font-semibold mb-2">
-              <span className="flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-slate-400" /> SLOW SCENARIO
-              </span>
-              <span className="text-[11px] text-slate-500">Plausible Lower (~82%)</span>
-            </div>
-            <div className="text-2xl sm:text-3xl font-black text-slate-200 tracking-tight">
-              {formatNiceDate(currentForecast.slowDate)}
-            </div>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              Disruption-tolerant projection. Accounts for unexpected sick days, difficult topics, and college duties.
-            </p>
-          </div>
-        </div>
-
-        {/* ── METRICS STRIP: PACE, SYLLABUS VS MASTERY, WORKLOAD, BUFFER ──── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-800/80 relative z-10 text-xs">
-          {/* Syllabus vs True Mastery */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
-            <span className="text-slate-400 text-[11px]">Syllabus vs Mastered</span>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-lg font-black text-white">{currentForecast.syllabusCompletionPercentage}%</span>
-              <span className="text-[11px] text-emerald-400 font-bold">{currentForecast.masteryCoveragePercentage}% Mastered</span>
-            </div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
-              <div className="bg-gradient-to-r from-sky-500 to-emerald-400 h-full rounded-full" style={{ width: `${currentForecast.syllabusCompletionPercentage}%` }} />
-            </div>
-          </div>
-
-          {/* Sustainable Pace */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
-            <span className="text-slate-400 text-[11px]">Sustainable Pace</span>
-            <div className="text-lg font-black text-white mt-1">
-              {currentForecast.currentPaceHoursPerWeek} <span className="text-xs font-normal text-slate-400">h/week</span>
-            </div>
-            <span className="text-[10px] text-slate-400 mt-0.5 block truncate">
-              {currentForecast.currentDailyProductiveAverage}h/day productive focus
-            </span>
-          </div>
-
-          {/* Remaining Workload */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
-            <span className="text-slate-400 text-[11px]">Remaining Workload</span>
-            <div className="text-lg font-black text-indigo-300 mt-1">
-              {currentForecast.remainingWorkloadHours} <span className="text-xs font-normal text-slate-400">eff. hours</span>
-            </div>
-            <span className="text-[10px] text-slate-400 mt-0.5 block truncate">
-              Theory + Practice + PYQs + 3 Rev
-            </span>
-          </div>
-
-          {/* Revision Buffer Cushion */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
-            <span className="text-slate-400 text-[11px]">Revision Cushion</span>
-            <div className="text-lg font-black text-amber-300 mt-1">
-              {currentForecast.revisionBufferDays} <span className="text-xs font-normal text-slate-400">days buffer</span>
-            </div>
-            <span className="text-[10px] text-slate-400 mt-0.5 block truncate">
-              {currentForecast.mockTestWindowDays}d dedicated full mocks
-            </span>
-          </div>
-        </div>
-
-        {/* ── EXPANDABLE DRAWER 1: WHAT-IF SIMULATOR ───────────────────────── */}
-        <AnimatePresence>
-          {activeForecastDrawer === 'simulator' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-5 pt-5 border-t border-slate-800 relative z-10"
-            >
+            {/* Drawer 1: Simulator */}
+            {activeForecastDrawer === 'simulator' && (
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-amber-500/30 space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -959,7 +854,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  {/* Daily Hours Delta */}
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <div className="flex justify-between font-semibold mb-1 text-slate-300">
                       <span>Daily Study Adjustment:</span>
@@ -976,7 +870,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     />
                   </div>
 
-                  {/* Missed Days Streak */}
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
                     <div className="flex justify-between font-semibold mb-1 text-slate-300">
                       <span>Simulate Missed Days:</span>
@@ -993,7 +886,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     />
                   </div>
 
-                  {/* Rest & Test Toggles */}
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-around gap-2">
                     <label className="flex items-center gap-2 cursor-pointer text-slate-300">
                       <input
@@ -1026,19 +918,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                   </span>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
 
-        {/* ── EXPANDABLE DRAWER 2: TARGET DATE CALCULATOR ─────────────────── */}
-        <AnimatePresence>
-          {activeForecastDrawer === 'target' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-5 pt-5 border-t border-slate-800 relative z-10"
-            >
+            {/* Drawer 2: Target Date */}
+            {activeForecastDrawer === 'target' && (
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1083,19 +966,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                   </div>
                 )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            )}
 
-        {/* ── EXPANDABLE DRAWER 3: LIVE STUDY FOCUS STOPWATCH ──────────────── */}
-        <AnimatePresence>
-          {activeForecastDrawer === 'timer' && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-5 pt-5 border-t border-slate-800 relative z-10"
-            >
+            {/* Drawer 3: Timer */}
+            {activeForecastDrawer === 'timer' && (
               <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1148,10 +1022,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                   </div>
                 </div>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── NOTIFICATION BANNER ────────────────────────────────────────────── */}
       {importNotification && (
@@ -1274,12 +1148,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
             </div>
             <button
               onClick={() => {
-                setBuilderMode('subject');
-                setIsBuilderModalOpen(true);
+                setTargetSubject('');
+                setIsAddCustomTopicOpen(true);
               }}
               className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-600/25"
             >
-              <Plus className="w-4 h-4" /> Add Subject
+              <Plus className="w-4 h-4" /> Add Subject / Chapter
             </button>
           </div>
 
@@ -1303,19 +1177,17 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               await saveCompletedSubtopicIds(newSet, userId, selectedExam);
             }}
             onOpenAddSubject={() => {
-              setBuilderMode('subject');
-              setIsBuilderModalOpen(true);
+              setTargetSubject('');
+              setIsAddCustomTopicOpen(true);
             }}
             onOpenAddTopic={(subj) => {
               setTargetSubject(subj);
-              setBuilderMode('topic');
-              setIsBuilderModalOpen(true);
+              setIsAddCustomTopicOpen(true);
             }}
             onOpenAddSubtopic={(subj, chap) => {
               setTargetSubject(subj);
               setTargetChapter(chap);
-              setBuilderMode('subtopic');
-              setIsBuilderModalOpen(true);
+              setIsAddCustomTopicOpen(true);
             }}
             onDeleteSubject={async (subj) => {
               await removePersonalSubject(selectedExam, subj, userId);
@@ -1382,6 +1254,15 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 hover:text-white shrink-0 cursor-pointer"
               >
                 Expand/Collapse
+              </button>
+
+              <button
+                onClick={() => setIsAddCustomTopicOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white shrink-0 cursor-pointer flex items-center gap-1.5 shadow-md shadow-sky-600/20"
+                title="Add your own custom chapter or topic"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Custom Topic</span>
               </button>
             </div>
           </div>
@@ -1736,6 +1617,17 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           onClose={() => setIsGlobalSearchOpen(false)}
         />
       )}
+
+      {/* ── ADD CUSTOM SYLLABUS TOPIC MODAL (APNE HISAAB SE SYLLABUS DALEIN) ── */}
+      <AddCustomTopicModal
+        isOpen={isAddCustomTopicOpen}
+        onClose={() => setIsAddCustomTopicOpen(false)}
+        selectedExam={selectedExam}
+        availableSubjects={availableSubjects.map(s => s.name)}
+        initialSubject={targetSubject}
+        initialChapter={targetChapter}
+        onAddCustomTopic={handleAddCustomTopic}
+      />
     </div>
   );
 };
