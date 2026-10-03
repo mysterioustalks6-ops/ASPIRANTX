@@ -288,7 +288,8 @@ function projectCompletionDate(
   sundayRest: boolean = true
 ): { completionDate: string; calendarDaysNeeded: number; effectiveStudyDaysNeeded: number } {
   let remainingHours = workloadHours;
-  const curDate = new Date(startDateStr);
+  const parsedStart = startDateStr && !isNaN(new Date(startDateStr).getTime()) ? new Date(startDateStr) : new Date();
+  const curDate = new Date(parsedStart);
   let calendarDaysNeeded = 0;
   let effectiveStudyDaysNeeded = 0;
 
@@ -420,8 +421,12 @@ export function generateExamForecast(
   availabilityMap: Map<string, CalendarAvailability> = new Map(),
   tests: TestRecord[] = [],
   whatIf?: WhatIfConfig,
-  currentDateStr: string = new Date().toISOString().split('T')[0]
+  currentDateStr?: string
 ): ForecastResult {
+  const safeCurrentDateStr = (currentDateStr && !isNaN(new Date(currentDateStr).getTime()))
+    ? currentDateStr
+    : new Date().toISOString().split('T')[0];
+
   // 1. Observed Velocity & Pace
   const observed = calculateObservedProductivity(sessionLogs, exam.defaultDailyProductiveHours);
   
@@ -460,7 +465,7 @@ export function generateExamForecast(
   // 3. Project Scenarios
   // Realistic Scenario: based on observed pace and standard calendar
   const realisticProj = projectCompletionDate(
-    currentDateStr,
+    safeCurrentDateStr,
     effectiveWorkload,
     effectiveDailyPace,
     availabilityMap,
@@ -470,7 +475,7 @@ export function generateExamForecast(
 
   // Fast Scenario: 15% pace expansion, disciplined execution, no bottlenecks
   const fastProj = projectCompletionDate(
-    currentDateStr,
+    safeCurrentDateStr,
     effectiveWorkload,
     effectiveDailyPace,
     availabilityMap,
@@ -480,7 +485,7 @@ export function generateExamForecast(
 
   // Slow Scenario: 18% pace contraction, factoring in minor disruptions and extra consolidation
   const slowProj = projectCompletionDate(
-    currentDateStr,
+    safeCurrentDateStr,
     effectiveWorkload,
     effectiveDailyPace,
     availabilityMap,
@@ -493,20 +498,26 @@ export function generateExamForecast(
   const rangeEnd = slowProj.completionDate;
 
   // 4. Milestone & Buffer calculations
-  const examDate = new Date(exam.examDate);
-  const curDate = new Date(currentDateStr);
-  const realisticDate = new Date(realisticProj.completionDate);
+  const safeExamDate = (exam.examDate && !isNaN(new Date(exam.examDate).getTime()))
+    ? new Date(exam.examDate)
+    : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000);
+  const curDate = new Date(safeCurrentDateStr);
+  const realisticDate = (!isNaN(new Date(realisticProj.completionDate).getTime()))
+    ? new Date(realisticProj.completionDate)
+    : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
 
-  const daysUntilExam = Math.max(0, Math.ceil((examDate.getTime() - curDate.getTime()) / (1000 * 60 * 60 * 24)));
-  const revisionBufferDays = Math.ceil((examDate.getTime() - realisticDate.getTime()) / (1000 * 60 * 60 * 24));
+  const daysUntilExam = Math.max(0, Math.ceil((safeExamDate.getTime() - curDate.getTime()) / (1000 * 60 * 60 * 24)));
+  const revisionBufferDays = Math.ceil((safeExamDate.getTime() - realisticDate.getTime()) / (1000 * 60 * 60 * 24));
 
   // Revision Completion Date: Realistic completion + remaining revision
   const revDate = new Date(realisticDate);
   revDate.setDate(revDate.getDate() + Math.ceil(workload.remainingRevisionHours / (effectiveDailyPace || 4)));
-  const plannedRevisionCompletionDate = revDate.toISOString().split('T')[0];
+  const plannedRevisionCompletionDate = (!isNaN(revDate.getTime()))
+    ? revDate.toISOString().split('T')[0]
+    : safeExamDate.toISOString().split('T')[0];
 
   // Mock test window: Days between revision completion and exam
-  const mockTestWindowDays = Math.max(0, Math.ceil((examDate.getTime() - revDate.getTime()) / (1000 * 60 * 60 * 24)));
+  const mockTestWindowDays = Math.max(0, Math.ceil((safeExamDate.getTime() - revDate.getTime()) / (1000 * 60 * 60 * 24)));
 
   // 5. Confidence Calculation
   let confidenceLevel: 'Low' | 'Medium' | 'High' = 'Low';
@@ -532,7 +543,7 @@ export function generateExamForecast(
   // 7. Target Date Calculation (if exam has target completion date)
   let targetCalculation = undefined;
   const targetDateStr = exam.targetSyllabusCompletionDate;
-  if (targetDateStr) {
+  if (targetDateStr && !isNaN(new Date(targetDateStr).getTime())) {
     const targetDate = new Date(targetDateStr);
     const daysToTarget = Math.max(1, Math.ceil((targetDate.getTime() - curDate.getTime()) / (1000 * 60 * 60 * 24)));
     const studyDaysToTarget = Math.floor(daysToTarget * (sundayRest ? 6 / 7 : 1));

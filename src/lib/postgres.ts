@@ -51,7 +51,7 @@ if (connectionString) {
     ssl: { rejectUnauthorized: false },
     max: isServerlessEnv ? 3 : 20,
     idleTimeoutMillis: isServerlessEnv ? 1000 : 30000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 15000,
     allowExitOnIdle: true,
   });
 

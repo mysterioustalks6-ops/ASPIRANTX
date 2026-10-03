@@ -2811,7 +2811,7 @@ var init_postgres = __esm({
         ssl: { rejectUnauthorized: false },
         max: isServerlessEnv ? 3 : 20,
         idleTimeoutMillis: isServerlessEnv ? 1e3 : 3e4,
-        connectionTimeoutMillis: 5e3,
+        connectionTimeoutMillis: 15e3,
         allowExitOnIdle: true
       });
       poolInstance.on("error", (err) => {

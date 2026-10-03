@@ -464,17 +464,18 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   // Canonical Exam Definition
   const examDefinition: ExamDefinition = useMemo(() => {
     const config = getExamConfig(selectedExam);
+    const selectedItem = EXAM_LIST.find(e => e.id.toLowerCase() === (selectedExam || '').toLowerCase());
     return {
-      id: selectedExam,
-      name: config?.name || selectedExam.replace(/_/g, ' '),
+      id: selectedExam || 'JEE_MAIN',
+      name: config?.displayName || config?.name || selectedItem?.label || (selectedExam ? String(selectedExam).replace(/_/g, ' ') : 'Exam'),
       category: 'Engineering',
       examDate: '2027-01-24',
-      targetSyllabusCompletionDate: '2027-01-24',
+      targetSyllabusCompletionDate: targetDateInput && !isNaN(new Date(targetDateInput).getTime()) ? targetDateInput : '2027-01-24',
       defaultDailyProductiveHours: 5.5,
       minRevisionBufferDays: 14,
       subjects: Array.from(new Set(examTasks.map(t => t.subject)))
     };
-  }, [selectedExam, examTasks]);
+  }, [selectedExam, examTasks, targetDateInput]);
 
   // Generate live mathematical forecast
   const currentForecast: ForecastResult = useMemo(() => {
@@ -486,8 +487,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         studyLogs,
         calendarMap,
         [],
-        whatIfConfig,
-        targetDateInput
+        whatIfConfig
       );
     }
 
@@ -525,10 +525,9 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       studyLogs,
       calendarMap,
       [],
-      whatIfConfig,
-      targetDateInput
+      whatIfConfig
     );
-  }, [examDefinition, examTasks, taskProgressMap, currentTopics, studyLogs, calendarMap, whatIfConfig, targetDateInput]);
+  }, [examDefinition, examTasks, taskProgressMap, currentTopics, studyLogs, calendarMap, whatIfConfig]);
 
   // Topic mastery update helpers
   const updateTaskProgress = (taskId: string, updater: (prev: StudentTaskProgress) => StudentTaskProgress) => {
