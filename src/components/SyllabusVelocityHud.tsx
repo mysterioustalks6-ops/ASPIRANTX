@@ -28,16 +28,13 @@ interface SyllabusVelocityHudProps {
   onUpdateWhatIf: (updater: (prev: WhatIfConfig) => WhatIfConfig) => void;
   defaultDailyHours: number;
   examDateStr?: string;
-  selectedExam: ExamType;
-  setSelectedExam: (exam: ExamType) => void;
+  selectedExam: string;
+  setSelectedExam: (exam: string) => void;
   examName: string;
   onOpenSimulatorDrawer: () => void;
   isSimulatorOpen: boolean;
   onOpenTargetDrawer: () => void;
   isTargetOpen: boolean;
-  onOpenTimerDrawer: () => void;
-  isTimerRunning: boolean;
-  timerSeconds: number;
   onOpenAddCustomTopic: () => void;
 }
 
@@ -138,9 +135,6 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
   isSimulatorOpen,
   onOpenTargetDrawer,
   isTargetOpen,
-  onOpenTimerDrawer,
-  isTimerRunning,
-  timerSeconds,
   onOpenAddCustomTopic
 }) => {
   const [hudViewMode, setHudViewMode] = useState<'radar' | 'analytics'>('radar');
@@ -370,20 +364,6 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             }`}
           >
             <Target className="w-3.5 h-3.5" />
-            <span>Target</span>
-          </button>
-
-          {/* Stopwatch Focus Timer */}
-          <button
-            onClick={onOpenTimerDrawer}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
-              isTimerRunning
-                ? 'bg-emerald-500 text-slate-950 font-black animate-pulse'
-                : 'bg-slate-900 hover:bg-slate-850 text-emerald-400 border border-slate-800'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>{isTimerRunning ? `${Math.floor(timerSeconds / 60)}m Focus` : 'Study Timer'}</span>
           </button>
         </div>
       </div>

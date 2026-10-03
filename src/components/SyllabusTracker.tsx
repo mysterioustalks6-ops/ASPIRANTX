@@ -44,6 +44,7 @@ import { convertOpenKoshToSyllabusNodes } from '../data/openkoshData';
 import { getExamConfig } from '../lib/examRegistry';
 import { SyllabusVelocityHud } from './SyllabusVelocityHud';
 import { AddCustomTopicModal } from './AddCustomTopicModal';
+import { useExam } from '../context/ExamContext';
 
 // ── Exam Forecasting Engine Domain Imports ──────────────────────────────────
 import {
@@ -145,14 +146,15 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   featureFlags = {},
   onOpenPremium
 }) => {
-  const [selectedExam, setSelectedExam] = useState<ExamType>(initialExam || 'JEE_MAIN');
-  const [activeTab, setActiveTab] = useState<'official' | 'personal' | 'directory'>('official');
+  const { selectedExamId, setSelectedExamId } = useExam();
+  // Universal exam state: automatically syncs with central ExamContext, header, and all modules
+  const selectedExam = (selectedExamId || initialExam || 'JEE_MAIN') as ExamType;
 
-  useEffect(() => {
-    if (initialExam) {
-      setSelectedExam(initialExam);
-    }
-  }, [initialExam]);
+  const handleUniversalExamChange = (newExam: string) => {
+    setSelectedExamId(newExam, { persist: true, syncUser: true, userId });
+  };
+
+  const [activeTab, setActiveTab] = useState<'official' | 'personal' | 'directory'>('official');
 
   // Raw syllabus nodes and derived topics for both tabs
   const [officialRawNodes, setOfficialRawNodes] = useState<any[]>([]);
@@ -244,8 +246,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     } catch {}
   }, [taskProgressMap, progressStorageKey]);
 
-  // Forecast Interactive Drawers
-  const [activeForecastDrawer, setActiveForecastDrawer] = useState<'none' | 'simulator' | 'target' | 'timer'>('none');
+  // Forecast Interactive Drawers (Timer removed as Pomodoro is already dedicated)
+  const [activeForecastDrawer, setActiveForecastDrawer] = useState<'none' | 'simulator' | 'target'>('none');
 
   // What-If Simulator configuration state
   const [whatIfConfig, setWhatIfConfig] = useState<WhatIfConfig>({
@@ -260,7 +262,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   // Target Date Calculator state
   const [targetDateInput, setTargetDateInput] = useState<string>('');
 
-  // Study Session Logs & Live Stopwatch Timer
+  // Study Session Logs
   const [studyLogs, setStudyLogs] = useState<StudySessionLog[]>(() => {
     try {
       const saved = localStorage.getItem(`studyride_study_logs_${userId || 'guest'}`);
@@ -275,23 +277,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     DEFAULT_CALENDAR_AVAILABILITY.forEach(c => map.set(c.date, c));
     return map;
   });
-
-  // Live Timer State
-  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
-  const [timerSeconds, setTimerSeconds] = useState<number>(0);
-  const [timerSubject, setTimerSubject] = useState<string>('');
-
-  useEffect(() => {
-    let interval: any = null;
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setTimerSeconds(s => s + 1);
-      }, 1000);
-    } else {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning]);
 
   // Grouping helper for hierarchy
   const groupHierarchyNodes = (nodes: any[], completedSet: Set<string> = completedSubtopicIds) => {
@@ -738,38 +723,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     });
   }, [currentTopics, activeStageFilter, selectedSubjectFilter, masteryFilter, searchQuery, taskProgressMap]);
 
-  // Stop study timer & log session
-  const stopAndLogTimer = () => {
-    if (timerSeconds < 60) {
-      setIsTimerRunning(false);
-      setTimerSeconds(0);
-      return;
-    }
-
-    const hours = Math.round((timerSeconds / 3600) * 10) / 10;
-    const newLog: StudySessionLog = {
-      id: `log_${Date.now()}`,
-      date: new Date().toISOString().split('T')[0],
-      dayType: 'NORMAL',
-      plannedHours: hours,
-      actualHours: hours,
-      productiveHours: Math.round(hours * 0.9 * 10) / 10,
-      topicsCovered: timerSubject ? [timerSubject] : [],
-      createdAt: new Date().toISOString()
-    };
-
-    const updated = [newLog, ...studyLogs];
-    setStudyLogs(updated);
-    try {
-      localStorage.setItem(`studyride_study_logs_${userId || 'guest'}`, JSON.stringify(updated));
-    } catch {}
-
-    setIsTimerRunning(false);
-    setTimerSeconds(0);
-    setImportNotification(`Logged ${hours}h study session! Forecast updated.`);
-    setTimeout(() => setImportNotification(null), 4000);
-  };
-
   // Reset progress confirmation
   const handleResetProgress = async () => {
     if (window.confirm(`Are you sure you want to reset all progress for ${selectedExam}?`)) {
@@ -790,15 +743,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         defaultDailyHours={examDefinition.defaultDailyProductiveHours}
         examDateStr={examDefinition.examDate}
         selectedExam={selectedExam}
-        setSelectedExam={setSelectedExam}
+        setSelectedExam={handleUniversalExamChange}
         examName={examDefinition.name}
         onOpenSimulatorDrawer={() => setActiveForecastDrawer(d => d === 'simulator' ? 'none' : 'simulator')}
         isSimulatorOpen={activeForecastDrawer === 'simulator'}
         onOpenTargetDrawer={() => setActiveForecastDrawer(d => d === 'target' ? 'none' : 'target')}
         isTargetOpen={activeForecastDrawer === 'target'}
-        onOpenTimerDrawer={() => setActiveForecastDrawer(d => d === 'timer' ? 'none' : 'timer')}
-        isTimerRunning={isTimerRunning}
-        timerSeconds={timerSeconds}
         onOpenAddCustomTopic={() => setIsAddCustomTopicOpen(true)}
       />
 
@@ -968,61 +918,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               </div>
             )}
 
-            {/* Drawer 3: Timer */}
-            {activeForecastDrawer === 'timer' && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-emerald-400" />
-                    <h3 className="text-sm font-bold text-white">Live Study Focus Timer</h3>
-                  </div>
-                  <span className="text-xs text-slate-400">Productive time logs directly into forecast velocity</span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-slate-950 border border-slate-800">
-                  <div className="flex items-center gap-3">
-                    <div className="text-3xl font-black font-mono text-emerald-400 tracking-wider">
-                      {String(Math.floor(timerSeconds / 3600)).padStart(2, '0')}:
-                      {String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0')}:
-                      {String(timerSeconds % 60).padStart(2, '0')}
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Subject / Topic note (optional)..."
-                      value={timerSubject}
-                      onChange={e => setTimerSubject(e.target.value)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none w-48 sm:w-64"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {!isTimerRunning ? (
-                      <button
-                        onClick={() => setIsTimerRunning(true)}
-                        className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Play className="w-3.5 h-3.5 fill-current" /> Start Session
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setIsTimerRunning(false)}
-                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Pause className="w-3.5 h-3.5 fill-current" /> Pause
-                      </button>
-                    )}
-
-                    <button
-                      onClick={stopAndLogTimer}
-                      disabled={timerSeconds === 0}
-                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white font-bold text-xs transition cursor-pointer"
-                    >
-                      Save & Log to Forecast
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1130,7 +1025,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           <OpenKoshExamDirectory 
             selectedExamId={selectedExam}
             onSelectExam={(e) => {
-              setSelectedExam(e as ExamType);
+              handleUniversalExamChange(e);
               setActiveTab('official');
             }}
           />
