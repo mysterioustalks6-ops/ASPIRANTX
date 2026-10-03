@@ -143,6 +143,74 @@
     border-radius: var(--ax-radius-lg);
   }
 
+  /* Gen Z Playful Tactile 3D Buttons (Duolingo Style Physics) */
+  .btn-3d {
+    position: relative;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s ease;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.45);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-3d:hover {
+    filter: brightness(1.05);
+  }
+  .btn-3d:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.45) !important;
+  }
+  .btn-3d-primary {
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+    box-shadow: 0 4px 0 #0369a1;
+    color: #ffffff;
+  }
+  .btn-3d-primary:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 #0369a1 !important;
+  }
+  .btn-3d-emerald {
+    background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+    box-shadow: 0 4px 0 #047857;
+    color: #ffffff;
+  }
+  .btn-3d-emerald:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 #047857 !important;
+  }
+  .btn-3d-amber {
+    background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+    box-shadow: 0 4px 0 #b45309;
+    color: #ffffff;
+  }
+  .btn-3d-amber:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 #b45309 !important;
+  }
+  .btn-3d-slate {
+    background: #0f172a;
+    box-shadow: 0 4px 0 #020617;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f1f5f9;
+  }
+  .btn-3d-slate:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 #020617 !important;
+  }
+  .btn-3d-white {
+    background: #ffffff;
+    box-shadow: 0 4px 0 #cbd5e1;
+    color: #0f172a;
+  }
+  .btn-3d-white:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 #cbd5e1 !important;
+  }
+
+  /* Safe tap target size for mobile ergonomic precision */
+  .tap-target-44 {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
   /* List Item System */
   .ax-list-item {
     display: flex;

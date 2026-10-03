@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '../lib/supabase';
 import { UserProfile } from '../types';
 import { resolveUserAvatar } from '../lib/avatarStorage';
@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Mail,
   User as UserIcon,
-  Lock as LockIcon,
   Loader2,
   Download,
   AlertCircle,
@@ -24,7 +23,11 @@ import {
   Smartphone,
   ChevronDown,
   Layers,
-  Zap
+  Zap,
+  Flame,
+  Award,
+  Check,
+  Compass
 } from 'lucide-react';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
@@ -37,7 +40,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
   
-  // Auth Mode State: direct inline toggle between 'quick' (Google + Guest), 'signin', 'signup'
+  // Auth Mode State: direct inline toggle between 'quick', 'signin', 'signup'
   const [activeAuthMethod, setActiveAuthMethod] = useState<'options' | 'signin' | 'signup'>('options');
   const [emailInput, setEmailInput] = useState<string>('');
   const [passwordInput, setPasswordInput] = useState<string>('');
@@ -123,7 +126,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             isPremium: isAdminUser ? true : false,
             studyHoursToday: isAdminUser ? 6.0 : 0,
             xp: isAdminUser ? 2500 : 0,
-            coins: isAdminUser ? 999 : 0,
+            coins: isAdminUser ? 999 : 100,
             level: isAdminUser ? 10 : 1,
             role: isAdminUser ? 'ADMIN' : 'USER',
             isProfileComplete: true,
@@ -155,7 +158,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       isGuest: true,
       studyHoursToday: 0,
       xp: 0,
-      coins: 0,
+      coins: 50,
       level: 1,
       role: 'USER',
       isProfileComplete: false,
@@ -165,20 +168,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
     onLoginSuccess(demoUser);
   };
 
-  // Motion variants with reduced motion support
+  // Motion physics
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.08,
-        delayChildren: 0.05,
+        staggerChildren: 0.06,
+        delayChildren: 0.04,
       },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 12 },
+    hidden: { opacity: 0, y: 14 },
     visible: {
       opacity: 1,
       y: 0,
@@ -187,374 +190,522 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#06080d] text-slate-100 flex flex-col justify-between font-sans selection:bg-sky-500 selection:text-white relative overflow-hidden">
-      {/* Subtle Ambient Background Gradient */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-sky-600/8 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-[100dvh] w-full bg-[#06080d] text-slate-100 flex flex-col justify-between font-sans selection:bg-sky-500 selection:text-white relative overflow-x-hidden pb-24 md:pb-6">
+      {/* Ambient Cosmos Glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] max-w-full h-[320px] bg-gradient-to-b from-sky-600/15 via-indigo-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Header Navigation */}
-      <header className="w-full max-w-5xl mx-auto px-5 py-4 sm:py-6 flex items-center justify-between relative z-10">
+      <header className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-3.5 sm:py-5 flex items-center justify-between relative z-10">
         <div className="flex items-center gap-2.5">
-          <img 
-            src="/logo.png" 
-            alt="App Logo" 
-            className="w-9 h-9 rounded-xl object-cover border border-slate-800 shadow-md shadow-emerald-500/20 shrink-0" 
-          />
+          <div className="relative">
+            <img 
+              src="/logo.png" 
+              alt="StudyRide Logo" 
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl object-cover border border-white/[0.12] shadow-lg shadow-sky-500/20 shrink-0" 
+            />
+            <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-[#06080d] rounded-full" />
+          </div>
           <div>
-            <h1 className="font-extrabold text-sm sm:text-base tracking-wider text-white">
-              STUDY<span className="text-sky-400">RIDE</span>
-            </h1>
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-extrabold text-base sm:text-lg tracking-wider text-white">
+                STUDY<span className="text-sky-400">RIDE</span>
+              </h1>
+              <span className="px-1.5 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/25 text-[10px] font-bold text-sky-400">
+                PRO
+              </span>
+            </div>
             <p className="text-[10px] text-slate-400 font-medium">Precision Exam Suite</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Desktop Quick Header CTAs */}
+        <div className="hidden sm:flex items-center gap-2.5">
           {!Capacitor.isNativePlatform() && (
             <a
               id="landing-download-app-btn"
               href={CANONICAL_APP_RELEASE.apkDownloadUrl}
               download={CANONICAL_APP_RELEASE.apkFileName}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs transition-colors"
-              title={`Download Android App v${CANONICAL_APP_RELEASE.version}`}
+              className="btn-3d btn-3d-slate flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tap-target-44"
+              title={`Download Android APK v${CANONICAL_APP_RELEASE.version}`}
             >
               <Download className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span className="hidden sm:inline">Download App</span>
-              <span className="sm:hidden">App</span>
+              <span>Android APK</span>
             </a>
           )}
 
           <button
             id="landing-guest-demo-btn"
             onClick={handleGuestLogin}
-            className="px-3.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 text-slate-300 font-medium text-xs border border-slate-800 transition-colors"
+            className="btn-3d btn-3d-emerald px-4 py-2 rounded-xl text-xs font-bold tap-target-44 flex items-center gap-1.5 shadow-sm"
           >
-            Guest Demo
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Guest Demo</span>
           </button>
         </div>
       </header>
 
-      {/* Main Focus Area (No Marketing Wall Before Login) */}
-      <main className="w-full max-w-md mx-auto px-4 py-8 sm:py-12 relative z-10 flex-1 flex flex-col justify-center">
+      {/* Main Hero & Auth Cockpit (Stage 1 & 2: App-First, Zero Clutter) */}
+      <main className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-4 sm:py-8 relative z-10 flex-1 flex flex-col justify-center">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="w-full space-y-6"
+          className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center"
         >
-          {/* Brand Emblem & Headline */}
-          <motion.div variants={itemVariants} className="text-center space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-semibold tracking-wide mb-1">
-              <Sparkles className="w-3 h-3" />
-              <span>Built for Serious Aspirants</span>
+          {/* Left Column: Visual Punch & Gen Z Value Proposition */}
+          <motion.div variants={itemVariants} className="lg:col-span-7 space-y-4 text-center lg:text-left">
+            {/* Pill Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500/15 via-indigo-500/15 to-purple-500/15 border border-sky-500/30 text-sky-300 text-xs font-bold tracking-wide shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
+              <span>India's #1 Gen Z Study Cockpit</span>
+              <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase">
+                100% Free
+              </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
-              One Workspace. Master Any Exam.
+
+            {/* 3-Word Bold Title (Content Diet) */}
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.12]">
+              Study Smarter. <br className="hidden sm:inline" />
+              <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
+                Rank Faster.
+              </span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 font-normal max-w-sm mx-auto leading-relaxed">
-              Precision syllabus tracking, 35-year PYQ archive, and official CBT simulation.
+
+            {/* Micro 1-Line Subtitle */}
+            <p className="text-xs sm:text-sm text-slate-300 font-medium max-w-lg mx-auto lg:mx-0 leading-relaxed">
+              No boring walls of text. Precision syllabus radar, 35-yr official PYQs, distraction-blocking focus shield & live countdown.
             </p>
+
+            {/* 3 Visual Micro-Stats (Stage 2 Visual Formula) */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2 max-w-md mx-auto lg:mx-0">
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-[#0c1017]/90 border border-white/[0.08] text-center shadow-sm">
+                <div className="text-sm sm:text-base font-extrabold text-sky-400 flex items-center justify-center gap-1">
+                  <span>35+</span>
+                  <Award className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Years PYQs</div>
+              </div>
+
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-[#0c1017]/90 border border-white/[0.08] text-center shadow-sm">
+                <div className="text-sm sm:text-base font-extrabold text-emerald-400 flex items-center justify-center gap-1">
+                  <span>100%</span>
+                  <Shield className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">Free Access</div>
+              </div>
+
+              <div className="p-2.5 sm:p-3 rounded-2xl bg-[#0c1017]/90 border border-white/[0.08] text-center shadow-sm">
+                <div className="text-sm sm:text-base font-extrabold text-amber-400 flex items-center justify-center gap-1">
+                  <span>60 FPS</span>
+                  <Zap className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">App Speed</div>
+              </div>
+            </div>
+
+            {/* Target Exams Supported Ticker */}
+            <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-1.5 text-[11px] font-bold text-slate-400">
+              <span className="text-slate-500 uppercase text-[10px] mr-1">Target Exams:</span>
+              <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-white/[0.08] text-slate-200">UPSC CSE</span>
+              <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-white/[0.08] text-slate-200">NEET UG</span>
+              <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-white/[0.08] text-slate-200">SSC CGL</span>
+              <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-white/[0.08] text-slate-200">JEE Main</span>
+              <span className="px-2 py-0.5 rounded-lg bg-slate-900 border border-white/[0.08] text-slate-200">+ State PSC</span>
+            </div>
           </motion.div>
 
-          {/* Feedback Alerts */}
-          {authError && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5"
-            >
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-              <span className="leading-snug">{authError}</span>
-            </motion.div>
-          )}
-
-          {authSuccess && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5"
-            >
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span className="leading-snug">{authSuccess}</span>
-            </motion.div>
-          )}
-
-          {/* Central Auth Surface */}
-          <motion.div
-            variants={itemVariants}
-            className="p-5 sm:p-6 rounded-2xl bg-[#0c1017] border border-white/[0.08] shadow-xl space-y-4"
-          >
-            {activeAuthMethod === 'options' ? (
-              /* State A: Primary Single-Tap Google Auth + Direct Choices */
-              <div className="space-y-3">
-                <button
-                  id="hero-signin-btn"
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-sm flex items-center justify-center gap-3 transition-colors shadow-sm cursor-pointer disabled:opacity-60"
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-slate-700" />
-                  ) : (
-                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      />
-                    </svg>
-                  )}
-                  <span>Continue with Google</span>
-                </button>
-
-                <div className="relative flex items-center justify-center my-3">
-                  <div className="border-t border-white/[0.08] w-full" />
-                  <span className="bg-[#0c1017] px-2.5 text-[11px] text-slate-500 font-medium uppercase tracking-wider">
-                    or
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    id="landing-signin-btn"
-                    onClick={() => {
-                      setActiveAuthMethod('signin');
-                      setAuthError(null);
-                    }}
-                    className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-white/[0.06] text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <Mail className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Email Sign In</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setActiveAuthMethod('signup');
-                      setAuthError(null);
-                    }}
-                    className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-850 border border-white/[0.06] text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                  >
-                    <UserIcon className="w-3.5 h-3.5 text-slate-400" />
-                    <span>Create Account</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* State B: Direct Clean Email / Password Form */
-              <form onSubmit={handleEmailAuthSubmit} className="space-y-3.5">
-                <div className="flex items-center justify-between pb-1 border-b border-white/[0.06]">
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveAuthMethod('signin')}
-                      className={`text-xs font-bold pb-1 transition-colors ${
-                        activeAuthMethod === 'signin'
-                          ? 'text-sky-400 border-b-2 border-sky-400'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      Sign In
-                    </button>
-                    <span className="text-slate-600 text-xs">•</span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveAuthMethod('signup')}
-                      className={`text-xs font-bold pb-1 transition-colors ${
-                        activeAuthMethod === 'signup'
-                          ? 'text-sky-400 border-b-2 border-sky-400'
-                          : 'text-slate-400 hover:text-slate-200'
-                      }`}
-                    >
-                      Create Account
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveAuthMethod('options')}
-                    className="text-[11px] text-slate-400 hover:text-slate-200"
-                  >
-                    ← Back
-                  </button>
-                </div>
-
-                {activeAuthMethod === 'signup' && (
-                  <div>
-                    <label className="block text-[11px] font-medium text-slate-400 mb-1">Full Name</label>
-                    <input
-                      type="text"
-                      value={nameInput}
-                      onChange={(e) => setNameInput(e.target.value)}
-                      placeholder="e.g. Rahul Sharma"
-                      className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
-                    placeholder="student@example.com"
-                    className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-slate-400 mb-1">Password</label>
-                  <input
-                    type="password"
-                    required
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="••••••••••••"
-                    className="w-full px-3 py-2 rounded-lg bg-[#06080d] border border-white/[0.1] text-xs text-white focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60"
-                >
-                  {loading ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <span>{activeAuthMethod === 'signup' ? 'Create Account' : 'Sign In'}</span>
-                  )}
-                </button>
-              </form>
+          {/* Right Column: Tactile Auth Card (Bento App Style) */}
+          <motion.div variants={itemVariants} className="lg:col-span-5 w-full max-w-md mx-auto">
+            {/* Feedback Alerts */}
+            {authError && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-3 p-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5 shadow-sm"
+              >
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span className="leading-snug">{authError}</span>
+              </motion.div>
             )}
 
-            {/* Guest Entry Trigger */}
-            <div className="pt-2 text-center">
-              <button
-                id="hero-guest-btn"
-                type="button"
-                onClick={handleGuestLogin}
-                className="text-xs text-slate-400 hover:text-slate-200 transition-colors inline-flex items-center gap-1"
+            {authSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-3 p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-start gap-2.5 shadow-sm"
               >
-                <span>Continue as Guest</span>
-                <ArrowRight className="w-3 h-3 text-slate-500" />
-              </button>
-            </div>
-          </motion.div>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span className="leading-snug">{authSuccess}</span>
+              </motion.div>
+            )}
 
-          {/* Trust Footnote */}
-          <motion.div
-            variants={itemVariants}
-            className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500"
-          >
-            <Shield className="w-3.5 h-3.5 text-emerald-400" />
-            <span>256-bit Encrypted • Powered by Neon Secure Auth</span>
+            {/* Central Bento Auth Surface */}
+            <div className="p-5 sm:p-6 rounded-3xl bg-[#0c1017]/95 border border-white/[0.12] shadow-2xl backdrop-blur-xl relative space-y-4">
+              <div className="flex items-center justify-between pb-1">
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-white flex items-center gap-1.5">
+                    <span>Instant Access</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  </h3>
+                  <p className="text-[11px] text-slate-400">One-tap login or instant guest demo</p>
+                </div>
+                <div className="px-2 py-0.5 rounded-full bg-slate-900 border border-white/[0.08] text-[10px] font-bold text-sky-400">
+                  ⚡ 100% Free
+                </div>
+              </div>
+
+              {activeAuthMethod === 'options' ? (
+                /* Primary Duolingo-Style 3D Button Actions */
+                <div className="space-y-3">
+                  <button
+                    id="hero-signin-btn"
+                    onClick={handleGoogleSignIn}
+                    disabled={loading}
+                    className="btn-3d btn-3d-white w-full py-3 px-4 rounded-2xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-3 cursor-pointer disabled:opacity-60 tap-target-44"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-800" />
+                    ) : (
+                      <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                    )}
+                    <span>Continue with Google</span>
+                  </button>
+
+                  <div className="relative flex items-center justify-center my-2">
+                    <div className="border-t border-white/[0.08] w-full" />
+                    <span className="bg-[#0c1017] px-2 text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                      or
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      id="landing-signin-btn"
+                      onClick={() => {
+                        setActiveAuthMethod('signin');
+                        setAuthError(null);
+                      }}
+                      className="btn-3d btn-3d-slate py-2.5 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 tap-target-44"
+                    >
+                      <Mail className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Email Sign In</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setActiveAuthMethod('signup');
+                        setAuthError(null);
+                      }}
+                      className="btn-3d btn-3d-slate py-2.5 px-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 tap-target-44"
+                    >
+                      <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Create Account</span>
+                    </button>
+                  </div>
+
+                  {/* 1-Tap Guest Access */}
+                  <button
+                    id="hero-guest-btn"
+                    onClick={handleGuestLogin}
+                    className="btn-3d btn-3d-emerald w-full py-2.5 px-4 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 tap-target-44 shadow-sm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Try Instant Guest Demo (No Sign Up)</span>
+                  </button>
+                </div>
+              ) : (
+                /* State B: Direct Clean Email / Password Form */
+                <form onSubmit={handleEmailAuthSubmit} className="space-y-3">
+                  <div className="flex items-center justify-between pb-1 border-b border-white/[0.08]">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveAuthMethod('signin')}
+                        className={`text-xs font-bold pb-1 transition-colors ${
+                          activeAuthMethod === 'signin'
+                            ? 'text-sky-400 border-b-2 border-sky-400'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Sign In
+                      </button>
+                      <span className="text-slate-600 text-xs">•</span>
+                      <button
+                        type="button"
+                        onClick={() => setActiveAuthMethod('signup')}
+                        className={`text-xs font-bold pb-1 transition-colors ${
+                          activeAuthMethod === 'signup'
+                            ? 'text-sky-400 border-b-2 border-sky-400'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Create Account
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveAuthMethod('options')}
+                      className="text-[11px] text-slate-400 hover:text-slate-200 font-semibold"
+                    >
+                      ← Back
+                    </button>
+                  </div>
+
+                  {activeAuthMethod === 'signup' && (
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        value={nameInput}
+                        onChange={(e) => setNameInput(e.target.value)}
+                        placeholder="e.g. Rahul Sharma"
+                        className="w-full px-3 py-2.5 rounded-xl bg-[#06080d] border border-white/[0.12] text-xs text-white focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      value={emailInput}
+                      onChange={(e) => setEmailInput(e.target.value)}
+                      placeholder="student@example.com"
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#06080d] border border-white/[0.12] text-xs text-white focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Password</label>
+                    <input
+                      type="password"
+                      required
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#06080d] border border-white/[0.12] text-xs text-white focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-3d btn-3d-primary w-full py-2.5 rounded-2xl text-xs font-bold flex items-center justify-center gap-1.5 tap-target-44 disabled:opacity-60 cursor-pointer"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <span>{activeAuthMethod === 'signup' ? 'Create Free Account' : 'Sign In Now'}</span>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {/* Security Pill */}
+              <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                <Shield className="w-3 h-3 text-emerald-400" />
+                <span>256-Bit Encrypted • Verified Neon Auth</span>
+              </div>
+            </div>
           </motion.div>
         </motion.div>
       </main>
 
-      {/* SEO Powerhouse: Feature Showcase Section */}
-      <section className="w-full max-w-5xl mx-auto px-5 py-12 border-t border-white/[0.06] relative z-10 space-y-8">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
-            <Zap className="w-3.5 h-3.5" />
-            <span>Academic Performance Infrastructure</span>
+      {/* Stage 2 Content Diet: 3 Visual Interactive Step Cards ("How It Works") */}
+      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 border-t border-white/[0.06] relative z-10 space-y-6">
+        <div className="text-center space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">
+            <Zap className="w-3 h-3" />
+            <span>High Velocity System</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            Complete Study Tracking, Syllabus Tracker & Pomodoro Suite
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
-            Everything serious aspirants need to maintain high-rank discipline, master vast exam syllabi, and achieve peak focus.
+          <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+            How It Works
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            3 simple steps to transform your exam preparation from chaotic to high rank certainty.
           </p>
         </div>
 
-        {/* 6 Feature Pillars Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Feature 1: Study Tracking */}
-          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-sky-500/40 transition-colors space-y-3">
-            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {/* Step 1 */}
+          <div className="p-4 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-sky-500/30 transition-all space-y-2.5 relative group">
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-2xl bg-sky-500/15 border border-sky-500/25 text-sky-400 flex items-center justify-center font-extrabold text-sm">
+                🎯
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 text-[10px] font-extrabold uppercase">
+                1 Tap
+              </span>
             </div>
-            <h3 className="font-bold text-sm text-white">Precision Study Tracking</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Log daily study hours, monitor subject distribution percentages, track active study streaks, and visualize productivity heatmaps to build unstoppable study momentum.
+            <h4 className="font-extrabold text-sm text-white">Pick Your Exam</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Select UPSC, NEET, SSC or JEE. The entire official micro-syllabus loads instantly into your workspace.
             </p>
           </div>
 
-          {/* Feature 2: Syllabus Tracker */}
-          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-emerald-500/40 transition-colors space-y-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-              <Layers className="w-4 h-4" />
+          {/* Step 2 */}
+          <div className="p-4 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-emerald-500/30 transition-all space-y-2.5 relative group">
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center font-extrabold text-sm">
+                ⚡
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-extrabold uppercase">
+                Smart Pacing
+              </span>
             </div>
-            <h3 className="font-bold text-sm text-white">Interactive Syllabus Tracker</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Granular micro-topic checklists for UPSC CSE (Prelims & Mains), NEET UG, SSC CGL, JEE Main/Adv & State PSCs. Mark topics completed and track real-time completion percentage.
+            <h4 className="font-extrabold text-sm text-white">Study With Radar</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Speedometer tracks study velocity in background. Days & finish countdown update live with zero mental fatigue.
             </p>
           </div>
 
-          {/* Feature 3: Pomodoro Focus Timer */}
-          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-amber-500/40 transition-colors space-y-3">
-            <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-              <Target className="w-4 h-4" />
+          {/* Step 3 */}
+          <div className="p-4 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-amber-500/30 transition-all space-y-2.5 relative group">
+            <div className="flex items-center justify-between">
+              <div className="w-9 h-9 rounded-2xl bg-amber-500/15 border border-amber-500/25 text-amber-400 flex items-center justify-center font-extrabold text-sm">
+                🚀
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-extrabold uppercase">
+                AIR 1 Ready
+              </span>
             </div>
-            <h3 className="font-bold text-sm text-white">Scientific Pomodoro Technique</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Research-backed 25/5 and 50/10 deep focus intervals. Defeat procrastination and study exhaustion with customized study sprints, background soundscapes, and live wallpaper sync.
+            <h4 className="font-extrabold text-sm text-white">Crack High Rank</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Official CBT simulator, 35-yr archives, and automated revision alerts guarantee peak exam-day mastery.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Stage 2 Bento Feature Grid (The exact formula: [Micro-Icon] + [Bold 3-Word Title] + [1 Pill Badge]) */}
+      <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 border-t border-white/[0.06] relative z-10 space-y-6">
+        <div className="text-center space-y-1.5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-bold">
+            <Compass className="w-3 h-3" />
+            <span>Powerhouse Features</span>
+          </div>
+          <h3 className="text-xl sm:text-2xl font-extrabold text-white">
+            Engineered For Serious Aspirants
+          </h3>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Everything you need, zero distractions. Clean, fast, and 60fps responsive on all screens.
+          </p>
+        </div>
+
+        {/* 6 Bento Grid Cards: Formula [Micro-Icon] + [Bold 3-Word Title] + [1 Pill Badge] */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+          {/* Card 1 */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-sky-500/40 transition-colors space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-500/25 text-sky-400 flex items-center justify-center text-lg">
+                ⏱️
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 text-[10px] font-extrabold">
+                ⚡ Auto Streak
+              </span>
+            </div>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">Track Study Time</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              1-tap daily hour logs, heatmap streaks, and subject distribution charts.
             </p>
           </div>
 
-          {/* Feature 4: Focus Shield */}
-          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-purple-500/40 transition-colors space-y-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
-              <Shield className="w-4 h-4" />
+          {/* Card 2 */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-emerald-500/40 transition-colors space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 flex items-center justify-center text-lg">
+                🎯
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-extrabold">
+                🚀 Smart Forecast
+              </span>
             </div>
-            <h3 className="font-bold text-sm text-white">Distraction Focus Shield</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Built-in Android app blocker that restricts social media, short-video feeds, and notifications during active study intervals to maintain deep cognitive immersion.
+            <h4 className="font-extrabold text-sm sm:text-base text-white">Syllabus Speedometer HUD</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Animated velocity gauge, live finish countdown, and custom topic addition.
             </p>
           </div>
 
-          {/* Feature 5: CBT Exam Simulator & PYQs */}
-          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-rose-500/40 transition-colors space-y-3">
-            <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
-              <BookOpen className="w-4 h-4" />
+          {/* Card 3 */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-purple-500/40 transition-colors space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/25 text-purple-400 flex items-center justify-center text-lg">
+                🛡️
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 text-[10px] font-extrabold">
+                🧘 App Blocker
+              </span>
             </div>
-            <h3 className="font-bold text-sm text-white">Official CBT Simulator & PYQs</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Practice 35 years of past year question papers in a real NTA/UPSC examination interface with official question palettes, negative marking, and national percentile benchmarking.
+            <h4 className="font-extrabold text-sm sm:text-base text-white">Distraction Focus Shield</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Blocks social media and doom-scrolling during Pomodoro focus sessions.
             </p>
           </div>
 
-          {/* Feature 6: AI Study Mentor */}
-          <div className="p-5 rounded-2xl bg-[#0c1017] border border-white/[0.08] hover:border-cyan-500/40 transition-colors space-y-3">
-            <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
-              <Brain className="w-4 h-4" />
+          {/* Card 4 */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-rose-500/40 transition-colors space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-rose-500/15 border border-rose-500/25 text-rose-400 flex items-center justify-center text-lg">
+                📝
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 text-[10px] font-extrabold">
+                🏆 35-Yr Archive
+              </span>
             </div>
-            <h3 className="font-bold text-sm text-white">24/7 AI Study Mentor</h3>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Instant doubt resolution, intelligent answer explanations, adaptive flashcards, and personalized revision schedules generated specifically for your target competitive exam.
+            <h4 className="font-extrabold text-sm sm:text-base text-white">Official CBT Simulator</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Practice exact NTA/UPSC examination screens with negative marking calculation.
+            </p>
+          </div>
+
+          {/* Card 5 */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-amber-500/40 transition-colors space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/25 text-amber-400 flex items-center justify-center text-lg">
+                🤖
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-extrabold">
+                💡 Instant Solves
+              </span>
+            </div>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">24/7 AI Mentor</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Smart doubt resolution, memory mnemonics, and adaptive flashcard generation.
+            </p>
+          </div>
+
+          {/* Card 6 */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-[#0c1017] border border-white/[0.08] hover:border-cyan-500/40 transition-colors space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 rounded-2xl bg-cyan-500/15 border border-cyan-500/25 text-cyan-400 flex items-center justify-center text-lg">
+                🎁
+              </div>
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 text-[10px] font-extrabold">
+                💎 100% Free
+              </span>
+            </div>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">Earn Free PRO</h4>
+            <p className="text-xs text-slate-400 leading-snug">
+              Answer peer doubts, complete daily streaks, and unlock PRO features for free.
             </p>
           </div>
         </div>
 
-        {/* Interactive FAQ Section for Google Rich Snippets */}
-        <div className="pt-8 border-t border-white/[0.06] space-y-4">
+        {/* Collapsible FAQ Drawer for Full Google SEO Rich Snippets without visual clutter */}
+        <div className="pt-6 border-t border-white/[0.06] space-y-3">
           <div className="text-center space-y-1">
-            <h3 className="text-lg sm:text-xl font-extrabold text-white">Frequently Asked Questions</h3>
+            <h4 className="text-base sm:text-lg font-extrabold text-white">Frequently Asked Questions</h4>
             <p className="text-xs text-slate-400">Everything you need to know about StudyRide and study tracking.</p>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-2.5">
+          <div className="max-w-3xl mx-auto space-y-2">
             {[
               {
                 q: "What is StudyRide and how does it help with study tracking?",
@@ -562,47 +713,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               },
               {
                 q: "How does the StudyRide Syllabus Tracker work for competitive exams?",
-                a: "The StudyRide Syllabus Tracker breaks down complex exam curricula (such as UPSC Prelims and Mains, NEET Physics, Chemistry and Biology, and SSC CGL Tiers) into granular micro-topics. As you complete each chapter or topic, you can mark it completed, log revisions, and instantly view your overall syllabus completion percentage."
+                a: "The StudyRide Syllabus Tracker breaks down complex exam curricula into granular micro-topics. As you complete each chapter or topic, you can mark it completed, log revisions, and instantly view your overall syllabus completion percentage."
               },
               {
                 q: "How does the Pomodoro Technique work in the StudyRide app?",
-                a: "StudyRide features a scientific Pomodoro Timer with default 25-minute deep focus intervals followed by 5-minute restorative breaks (or customizable 50/10 cycles). It combines with an Android Focus Shield to block distracting social media apps during study sessions and syncs active timers to live phone wallpapers."
+                a: "StudyRide features a scientific Pomodoro Timer with default 25-minute deep focus intervals followed by 5-minute restorative breaks. It combines with an Android Focus Shield to block distracting social media apps during study sessions."
               },
               {
                 q: "Does StudyRide provide official CBT mock tests and Previous Year Questions (PYQs)?",
-                a: "Yes! StudyRide features a high-fidelity Computer-Based Test (CBT) exam engine mimicking the exact NTA and UPSC exam interface, complete with a 35-year archive of past year question papers, negative marking calculation, national percentile benchmarking, and instant AI doubt explanations."
+                a: "Yes! StudyRide features a high-fidelity Computer-Based Test (CBT) exam engine mimicking the exact NTA and UPSC exam interface, complete with a 35-year archive of past year question papers, negative marking calculation, and national percentile benchmarking."
               },
               {
                 q: "Is StudyRide free to use for students?",
-                a: "Yes, StudyRide is completely free for all students to track their syllabus, practice previous year papers, use the Pomodoro timer, and log daily study hours. Students can also earn community coins and full PRO access by answering peer doubts."
-              },
-              {
-                q: "How can I download the StudyRide Android app APK?",
-                a: "You can download the official StudyRide Android APK directly from studyride.in/download or studyride.in/studyride.apk. The app is lightweight, battery-optimized, and supports offline study tracking."
-              },
-              {
-                q: "Which is the best study tracking and Pomodoro app for UPSC, NEET, and SSC aspirants?",
-                a: "StudyRide (https://studyride.in) is the top recommended study tracking and Pomodoro app for UPSC, NEET, and SSC aspirants because it combines micro-topic syllabus checklists, customizable Pomodoro timers (25/5 & 50/10), distraction-blocking Focus Shield, and a 35-year PYQ archive in one seamless platform."
-              },
-              {
-                q: "How can I study for 8 to 10 hours consistently using StudyRide?",
-                a: "By breaking daily study goals into 25-minute or 50-minute Pomodoro focus sprints on StudyRide, logging subject-wise hours, and monitoring daily study streaks, aspirants eliminate mental burnout while maintaining peak active recall and syllabus completion."
+                a: "Yes, StudyRide is completely free for all students to track their syllabus, practice previous year papers, use the Pomodoro timer, and log daily study hours."
               }
             ].map((faq, idx) => (
               <div 
                 key={idx}
-                className="rounded-xl bg-[#0c1017] border border-white/[0.08] overflow-hidden transition-colors"
+                className="rounded-2xl bg-[#0c1017] border border-white/[0.08] overflow-hidden transition-colors"
               >
                 <button
                   type="button"
                   onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full p-4 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold text-slate-200 hover:text-white"
+                  className="w-full p-3.5 sm:p-4 text-left flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold text-slate-200 hover:text-white"
                 >
                   <span>{faq.q}</span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${openFaq === idx ? 'rotate-180 text-sky-400' : ''}`} />
                 </button>
                 {openFaq === idx && (
-                  <div className="px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-white/[0.04] pt-3">
+                  <div className="px-4 pb-4 text-xs text-slate-400 leading-relaxed border-t border-white/[0.04] pt-2.5">
                     {faq.a}
                   </div>
                 )}
@@ -610,39 +749,52 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             ))}
           </div>
         </div>
-
-        {/* Download & Web Access CTA Banner */}
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-sky-950/40 via-indigo-950/40 to-slate-900 border border-sky-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
-          <div className="space-y-1">
-            <h4 className="font-extrabold text-white text-sm sm:text-base">Ready to Supercharge Your Study Habits?</h4>
-            <p className="text-xs text-slate-300">Join thousands of UPSC, NEET, and SSC aspirants studying with StudyRide today.</p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <a
-              href={CANONICAL_APP_RELEASE.apkDownloadUrl}
-              download={CANONICAL_APP_RELEASE.apkFileName}
-              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-sky-600/30 transition-colors"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Download Android App</span>
-            </a>
-            <button
-              onClick={handleGuestLogin}
-              className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-white/[0.1] font-semibold text-xs transition-colors"
-            >
-              Try Web Demo
-            </button>
-          </div>
-        </div>
       </section>
 
       {/* Footer Minimalist Strip */}
-      <footer className="w-full max-w-5xl mx-auto px-5 py-6 text-center text-[11px] text-slate-500 border-t border-white/[0.06] relative z-10 space-y-2">
-        <p className="font-medium text-slate-400">© 2026 StudyRide Technologies. India's #1 Study Tracking, Syllabus Tracker & Pomodoro Platform.</p>
-        <p className="text-[10px] text-slate-600 max-w-2xl mx-auto">
-          Optimized for UPSC Civil Services (IAS/IPS), NEET UG, SSC CGL/CHSL, JEE Main & Advanced, NDA, CDS, and State Public Service Commissions.
+      <footer className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 py-6 text-center text-[11px] text-slate-500 border-t border-white/[0.06] relative z-10 space-y-2">
+        <p className="font-semibold text-slate-400">© 2026 StudyRide Technologies • India's #1 Precision Exam Suite</p>
+        <p className="text-[10px] text-slate-600 max-w-xl mx-auto">
+          Optimized for UPSC CSE, NEET UG, SSC CGL/CHSL, JEE Main/Adv & State PSC exams.
         </p>
       </footer>
+
+      {/* Stage 1: Mobile Floating App Dock (Bottom Navigation Bar) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 p-2.5 px-3 bg-[#0c1017]/95 backdrop-blur-xl border-t border-white/[0.1] shadow-2xl flex items-center gap-2 pb-[calc(0.65rem+env(safe-area-inset-bottom,0px))]">
+        <button
+          onClick={handleGuestLogin}
+          className="btn-3d btn-3d-emerald flex-1 py-2.5 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-1.5 tap-target-44"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Guest Demo</span>
+        </button>
+
+        <button
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="btn-3d btn-3d-white flex-1 py-2.5 rounded-2xl text-xs font-extrabold flex items-center justify-center gap-1.5 tap-target-44"
+        >
+          {loading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <>
+              <Zap className="w-3.5 h-3.5 text-sky-600" />
+              <span>Google Login</span>
+            </>
+          )}
+        </button>
+
+        {!Capacitor.isNativePlatform() && (
+          <a
+            href={CANONICAL_APP_RELEASE.apkDownloadUrl}
+            download={CANONICAL_APP_RELEASE.apkFileName}
+            className="btn-3d btn-3d-slate p-2.5 rounded-2xl text-sky-400 flex items-center justify-center tap-target-44 shrink-0"
+            title="Download APK"
+          >
+            <Download className="w-4 h-4" />
+          </a>
+        )}
+      </div>
     </div>
   );
 };
