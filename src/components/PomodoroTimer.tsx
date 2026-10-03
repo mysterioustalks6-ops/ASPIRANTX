@@ -24,12 +24,14 @@ import {
   Compass, 
   Tag,
   Zap,
-  Award
+  Award,
+  PieChart
 } from 'lucide-react';
 import { saveStudySessionLog, loadStudySessions } from '../lib/gamification';
 import { StudySession, CustomSubject, PomodoroQuestionRef } from '../types';
 import { fetchOfficialSyllabus, OfficialSyllabusNode } from '../lib/unifiedSyllabus';
 import { PomodoroHistoryView } from './PomodoroHistoryView';
+import { PomodoroAnalytics } from './PomodoroAnalytics';
 import { GalaxyStudyChecklist } from './GalaxyStudyChecklist';
 import { useFocusProgression, SessionCompleteModal, FocusSessionRewardResult } from '../features/focus/progression';
 import { PlanetarySystem } from '../features/focus/galaxy/PlanetarySystem';
@@ -163,8 +165,8 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const activeExamId = normalizeExamId(selectedExam || selectedExamId);
   const examConfig = getExamConfig(activeExamId);
 
-  // 1. Navigation View Tabs (Pomodoro, Stopwatch, History, Galaxy)
-  const [activeTab, setActiveTab] = useState<'pomodoro' | 'stopwatch' | 'history' | 'galaxy'>('pomodoro');
+  // 1. Navigation View Tabs (Pomodoro, Analytics, Stopwatch, History, Galaxy)
+  const [activeTab, setActiveTab] = useState<'pomodoro' | 'analytics' | 'stopwatch' | 'history' | 'galaxy'>('pomodoro');
 
   // 2. Progression Hook (Levels 1 to 1000)
   const [streakDays, setStreakDays] = useState<number>(() => {
@@ -369,11 +371,44 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   }, [stopwatchSeconds]);
 
+  // Dynamic Browser Tab Countdown Title
+  useEffect(() => {
+    if (isPomoActive) {
+      document.title = `(${formattedPomoTime}) ${selectedSubject || 'Focus'} • StudyRide`;
+    } else if (isStopwatchActive) {
+      document.title = `(${formattedStopwatchTime}) ${selectedSubject || 'Focus'} • StudyRide`;
+    } else {
+      document.title = 'StudyRide • Precision Exam Suite';
+    }
+    return () => {
+      document.title = 'StudyRide • Precision Exam Suite';
+    };
+  }, [isPomoActive, isStopwatchActive, formattedPomoTime, formattedStopwatchTime, selectedSubject]);
+
   // Handle Finish Pomodoro Session
   const handlePomodoroFinish = async () => {
     if (pomoMode === 'focus') {
       triggerConfetti();
       const durationSeconds = selectedPomoDuration * 60;
+
+      // Harmonic completion chime via Web Audio API
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const actx = new AudioCtx();
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(528, actx.currentTime); // 528Hz Solfeggio miracle tone
+          osc.frequency.exponentialRampToValueAtTime(1056, actx.currentTime + 0.5);
+          gain.gain.setValueAtTime(0.3, actx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.001, actx.currentTime + 1.2);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 1.2);
+        }
+      } catch {}
 
       // Log study session
       await saveStudySessionLog({
@@ -382,6 +417,17 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         durationSeconds,
         mode: 'pomodoro',
       });
+
+      // Dispatch real-time session logged event to sync Pie Chart & Analytics
+      window.dispatchEvent(
+        new CustomEvent('aspirantx_study_session_logged', {
+          detail: {
+            subject: selectedSubject,
+            durationSeconds,
+            mode: 'pomodoro'
+          }
+        })
+      );
 
       // Award XP & Dust via progression engine
       try {
@@ -442,6 +488,16 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       durationSeconds: stopwatchSeconds,
       mode: 'stopwatch',
     });
+
+    window.dispatchEvent(
+      new CustomEvent('aspirantx_study_session_logged', {
+        detail: {
+          subject: selectedSubject,
+          durationSeconds: stopwatchSeconds,
+          mode: 'stopwatch'
+        }
+      })
+    );
 
     try {
       const reward = addSessionReward(durationMinutes, streakDays);
@@ -540,6 +596,17 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" /> Pomodoro Timer
+          </button>
+
+          <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+              activeTab === 'analytics'
+                ? 'bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-sky-500/25'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <PieChart className="w-3.5 h-3.5 text-sky-400" /> Focus Analytics & Pie Chart 📊
           </button>
 
           <button
@@ -956,6 +1023,19 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
 
           {/* Galaxy Study Targets & Modern Checklist */}
           <GalaxyStudyChecklist userId={userId} currentSubject={selectedSubject} />
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          4B. TAB: ADVANCED FOCUS ANALYTICS & PIE CHARTS (DIRECT LINKAGE)
+      ══════════════════════════════════════════════════════════════════ */}
+      {activeTab === 'analytics' && (
+        <div className="space-y-5">
+          <PomodoroAnalytics 
+            userId={userId} 
+            onStartPomodoro={() => setActiveTab('pomodoro')} 
+            activeExamId={activeExamId}
+          />
         </div>
       )}
 
