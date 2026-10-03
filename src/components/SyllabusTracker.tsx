@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   SlideUp, 
@@ -10,15 +10,12 @@ import {
   triggerConfetti, 
   AccordionTransition, 
   ModalTransition,
-  CheckmarkPop,
-  FloatingRewardBadge,
-  ProgressiveDiscoveryCard
+  CheckmarkPop
 } from '../lib/animations';
 import { SyllabusTopic, SubTopic, ExamType, PredictorSettings } from '../types';
 import { INITIAL_SYLLABUS_HIERARCHY } from '../data/academicData';
 import { EXAM_LIST } from '../lib/examList';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
-import { PredictorEngineWidget } from './PredictorEngineWidget';
 import { GoogleSheetImportModal } from './GoogleSheetImportModal';
 import { PremiumGate, FeatureFlagsMap } from './PremiumGate';
 import { AcademicBulkImportModal } from './AcademicBulkImportModal';
@@ -28,7 +25,6 @@ import {
   loadCompletedSubtopicIds, 
   saveCompletedSubtopicIds, 
   loadPredictorSettings, 
-  calculatePredictorStats,
   SyncState 
 } from '../lib/syllabusStorage';
 import { awardXPAndCoins } from '../lib/gamification';
@@ -44,10 +40,31 @@ import {
 import { PersonalSyllabusNode } from '../lib/personalSyllabus';
 import { MySyllabusDndTree } from './MySyllabusDndTree';
 import { OpenKoshExamDirectory } from './OpenKoshExamDirectory';
-import { OpenKoshExamFrame } from './OpenKoshExamFrame';
 import { convertOpenKoshToSyllabusNodes } from '../data/openkoshData';
 import { getExamConfig } from '../lib/examRegistry';
-import { ExamForecastTracker } from './forecast/ExamForecastTracker';
+
+// ── Exam Forecasting Engine Domain Imports ──────────────────────────────────
+import {
+  ExamDefinition,
+  ExamTask,
+  StudentTaskProgress,
+  StudySessionLog,
+  TestRecord,
+  CalendarAvailability,
+  ForecastResult,
+  WhatIfConfig,
+  TaskStatus,
+  RevisionCycle,
+  MasteryRating
+} from '../lib/forecast/types';
+import { generateExamForecast } from '../lib/forecast/forecastingEngine';
+import {
+  DEFAULT_JEE_EXAM,
+  DEFAULT_STUDY_LOGS,
+  DEFAULT_TEST_RECORDS,
+  DEFAULT_CALENDAR_AVAILABILITY
+} from '../data/forecastDefaultData';
+
 import { 
   CheckCircle2, 
   Circle, 
@@ -63,15 +80,29 @@ import {
   Layers, 
   Check, 
   Clock, 
-  Plus,
-  Trash2,
-  Edit2,
-  Download,
-  User,
-  Tag,
-  Info,
-  Lock as LockIcon,
-  X
+  Plus, 
+  Trash2, 
+  Edit2, 
+  Download, 
+  User, 
+  Tag, 
+  Info, 
+  Lock as LockIcon, 
+  X,
+  Flame,
+  Target,
+  Award,
+  Sliders,
+  Play,
+  Pause,
+  Calendar,
+  AlertTriangle,
+  Star,
+  Zap,
+  TrendingUp,
+  HelpCircle,
+  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 
 interface SyllabusTrackerProps {
@@ -83,6 +114,13 @@ interface SyllabusTrackerProps {
   isUserPremium?: boolean;
   featureFlags?: FeatureFlagsMap;
   onOpenPremium?: () => void;
+}
+
+function formatNiceDate(isoDateStr: string): string {
+  if (!isoDateStr) return 'TBD';
+  const d = new Date(isoDateStr);
+  if (isNaN(d.getTime())) return isoDateStr;
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatStudiedTime(seconds: number): string {
@@ -105,8 +143,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   featureFlags = {},
   onOpenPremium
 }) => {
-  const [selectedExam, setSelectedExam] = useState<ExamType>(initialExam || 'UPSC_CSE');
-  const [viewMode, setViewMode] = useState<'forecast' | 'tracker' | 'directory'>('forecast');
+  const [selectedExam, setSelectedExam] = useState<ExamType>(initialExam || 'JEE_MAIN');
+  const [activeTab, setActiveTab] = useState<'official' | 'personal' | 'directory'>('official');
 
   useEffect(() => {
     if (initialExam) {
@@ -114,43 +152,32 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     }
   }, [initialExam]);
 
-  // Tab State: 'official' vs 'personal'
-  const [activeTab, setActiveTab] = useState<'official' | 'personal'>('official');
-
   // Raw syllabus nodes and derived topics for both tabs
   const [officialRawNodes, setOfficialRawNodes] = useState<any[]>([]);
   const [personalRawNodes, setPersonalRawNodes] = useState<PersonalSyllabusNode[]>([]);
-  
-  // Time summary map (nodeId or key -> seconds)
   const [timeSummary, setTimeSummary] = useState<Record<string, number>>({});
-
-  // Expanded topics state
   const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({});
 
+  // Filtering & Search
   const [activeStageFilter, setActiveStageFilter] = useState<string>('All');
+  const [masteryFilter, setMasteryFilter] = useState<'All' | 'NeedsRevision' | 'Weak' | 'HighWeightage' | 'Completed' | 'Pending'>('All');
+  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [searchBothTabs, setSearchBothTabs] = useState<boolean>(false);
 
+  // Completed subtopics set
   const [completedSubtopicIds, setCompletedSubtopicIds] = useState<Set<string>>(new Set());
   const [recentlyCheckedSubId, setRecentlyCheckedSubId] = useState<string | null>(null);
-  const [predictorSettings, setPredictorSettings] = useState<PredictorSettings>(() => loadPredictorSettings(userId));
-  const [syncState, setSyncState] = useState<SyncState>({ status: 'synced', message: 'Ready' });
-  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-  const [importNotification, setImportNotification] = useState<string | null>(null);
 
   // Modals
-  const [isBulkImportOpen, setIsBulkImportOpen] = useState<boolean>(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [importNotification, setImportNotification] = useState<string | null>(null);
   const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState<boolean>(false);
-  const [isMySyllabusModalOpen, setIsMySyllabusModalOpen] = useState<boolean>(false);
 
-  // Hierarchy Builder Modal / Form State for My Syllabus Tab
+  // Hierarchy Builder Modal
   const [isBuilderModalOpen, setIsBuilderModalOpen] = useState<boolean>(false);
   const [builderMode, setBuilderMode] = useState<'subject' | 'topic' | 'subtopic' | 'edit'>('subject');
   const [targetSubject, setTargetSubject] = useState<string>('');
   const [targetChapter, setTargetChapter] = useState<string>('');
-  const [editNodeId, setEditNodeId] = useState<string | null>(null);
-  
-  // Builder form inputs
   const [inputSubject, setInputSubject] = useState<string>('');
   const [inputChapter, setInputChapter] = useState<string>('');
   const [inputTopic, setInputTopic] = useState<string>('');
@@ -158,15 +185,80 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   const [inputStage, setInputStage] = useState<string>('Prelims');
   const [inputWeightage, setInputWeightage] = useState<string>('Medium');
 
-  // Importing state
-  const [importingNodeId, setImportingNodeId] = useState<string | null>(null);
+  // ── FORECASTING & MASTERY STATE ───────────────────────────────────────────
+  const progressStorageKey = `studyride_forecast_mastery_${userId || 'guest'}_${selectedExam}`;
+  const [taskProgressMap, setTaskProgressMap] = useState<Map<string, StudentTaskProgress>>(() => {
+    try {
+      const saved = localStorage.getItem(progressStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return new Map(Array.isArray(parsed) ? parsed : Object.entries(parsed));
+      }
+    } catch {}
+    return new Map();
+  });
 
-  // Grouping helper
+  // Save progress changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(progressStorageKey, JSON.stringify(Array.from(taskProgressMap.entries())));
+    } catch {}
+  }, [taskProgressMap, progressStorageKey]);
+
+  // Forecast Interactive Drawers
+  const [activeForecastDrawer, setActiveForecastDrawer] = useState<'none' | 'simulator' | 'target' | 'timer'>('none');
+
+  // What-If Simulator configuration state
+  const [whatIfConfig, setWhatIfConfig] = useState<WhatIfConfig>({
+    dailyHourDelta: 0,
+    removeSundayStudy: false,
+    weeklyTestCount: 0,
+    extraRestDaysPerMonth: 0,
+    missedDaysToSimulate: 0,
+    revisionMultiplier: 1.0
+  });
+
+  // Target Date Calculator state
+  const [targetDateInput, setTargetDateInput] = useState<string>('');
+
+  // Study Session Logs & Live Stopwatch Timer
+  const [studyLogs, setStudyLogs] = useState<StudySessionLog[]>(() => {
+    try {
+      const saved = localStorage.getItem(`studyride_study_logs_${userId || 'guest'}`);
+      return saved ? JSON.parse(saved) : DEFAULT_STUDY_LOGS;
+    } catch {
+      return DEFAULT_STUDY_LOGS;
+    }
+  });
+
+  const [calendarMap] = useState<Map<string, CalendarAvailability>>(() => {
+    const map = new Map<string, CalendarAvailability>();
+    DEFAULT_CALENDAR_AVAILABILITY.forEach(c => map.set(c.date, c));
+    return map;
+  });
+
+  // Live Timer State
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
+  const [timerSeconds, setTimerSeconds] = useState<number>(0);
+  const [timerSubject, setTimerSubject] = useState<string>('');
+
+  useEffect(() => {
+    let interval: any = null;
+    if (isTimerRunning) {
+      interval = setInterval(() => {
+        setTimerSeconds(s => s + 1);
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning]);
+
+  // Grouping helper for hierarchy
   const groupHierarchyNodes = (nodes: any[], completedSet: Set<string> = completedSubtopicIds) => {
     const topicsMap: Record<string, SyllabusTopic> = {};
     
     nodes.forEach((node) => {
-      // Array subtopics
       if (Array.isArray(node.subtopics)) {
         const topicKey = node.id || `topic_${node.title}`;
         const subList: SubTopic[] = node.subtopics.map((sub: any, idx: number) => ({
@@ -197,7 +289,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         return;
       }
 
-      // Flat node handling
       const key = `${node.subject || node.category || 'General'}::${node.chapter || node.topic || 'General Chapter'}`;
       if (!topicsMap[key]) {
         topicsMap[key] = {
@@ -240,7 +331,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     return result;
   };
 
-  // Derived topics via useMemo
   const officialTopics = useMemo(
     () => groupHierarchyNodes(officialRawNodes, completedSubtopicIds),
     [officialRawNodes, completedSubtopicIds]
@@ -251,28 +341,24 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     [personalRawNodes, completedSubtopicIds]
   );
 
-  // Load completion state
+  // Load completion state from storage
   useEffect(() => {
     async function init() {
       const savedIds = await loadCompletedSubtopicIds(userId, selectedExam);
       setCompletedSubtopicIds(savedIds);
-      setPredictorSettings(loadPredictorSettings(userId));
     }
     init();
   }, [userId, selectedExam]);
 
   // Load syllabus nodes and time summary
-  const loadData = async () => {
-    // 1. Authoritative OpenKosh Detailed Syllabus (45 Comprehensive National & State Exams)
+  const loadData = useCallback(async () => {
     const openkoshNodes = convertOpenKoshToSyllabusNodes(selectedExam);
     let offNodes: any[] = openkoshNodes && openkoshNodes.length > 0 ? openkoshNodes : [];
 
-    // 2. Fallback to API if OpenKosh doesn't cover this exam
     if (offNodes.length === 0) {
       offNodes = await fetchOfficialSyllabus(selectedExam);
     }
 
-    // 3. Check custom user-created exams from storage
     if (offNodes.length === 0) {
       const customExams = getCustomExamsFromStorage();
       const customMatch = customExams.find(c => c.id === selectedExam || c.id.toLowerCase() === (selectedExam || '').toLowerCase());
@@ -281,10 +367,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       } else {
         const normalizeKey = (e: string) => {
           const s = (e || '').toLowerCase().replace(/[\s\-_]/g, '');
-          if (s.includes('nda') || s.includes('defence') || s.includes('naval')) return 'nda';
-          if (s.includes('neet') || s.includes('medical') || s.includes('eligibilitycum')) return 'neet';
-          if (s.includes('upsc') || s.includes('civil') || s.includes('cse')) return 'upsc';
-          if (s.includes('ssc') || s.includes('cgl') || s.includes('staffselection')) return 'ssc';
+          if (s.includes('nda') || s.includes('defence')) return 'nda';
+          if (s.includes('neet') || s.includes('medical')) return 'neet';
+          if (s.includes('upsc') || s.includes('cse')) return 'upsc';
+          if (s.includes('ssc') || s.includes('cgl')) return 'ssc';
           return s;
         };
         offNodes = INITIAL_SYLLABUS_HIERARCHY.filter(
@@ -293,7 +379,6 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       }
     }
 
-    // 4. Synthesize from EXAM_REGISTRY if still empty
     if (offNodes.length === 0) {
       const config = getExamConfig(selectedExam);
       if (config && config.syllabusTree) {
@@ -324,584 +409,752 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         offNodes = synthesized;
       }
     }
+
     setOfficialRawNodes(offNodes);
 
-    // 2. Fetch Personal Syllabus
-    const pNodes = await fetchPersonalSyllabus(userId, selectedExam);
-    setPersonalRawNodes(pNodes);
+    try {
+      const persNodes = await fetchPersonalSyllabus(selectedExam, userId);
+      setPersonalRawNodes(persNodes);
+    } catch {
+      setPersonalRawNodes([]);
+    }
 
-    // 3. Fetch Time Summary
-    const summary = await fetchSyllabusTimeSummary(userId);
-    setTimeSummary(summary);
-  };
+    try {
+      const timeMap = await fetchSyllabusTimeSummary(userId, activeTab === 'personal' ? 'personal' : 'official');
+      setTimeSummary(timeMap);
+    } catch {
+      setTimeSummary({});
+    }
+  }, [selectedExam, userId, activeTab]);
 
   useEffect(() => {
     loadData();
+  }, [loadData]);
 
-    const handleSyllabusUpdate = () => {
-      loadData();
+  // Calculate current active topics
+  const currentTopics = useMemo(() => {
+    return activeTab === 'official' ? officialTopics : personalTopics;
+  }, [activeTab, officialTopics, personalTopics]);
+
+  // Convert current topics into ExamTask for forecasting
+  const examTasks: ExamTask[] = useMemo(() => {
+    if (!currentTopics || currentTopics.length === 0) return [];
+    return currentTopics.map((t, idx) => {
+      const estHours = t.subtopics && t.subtopics.length > 0
+        ? t.subtopics.reduce((acc, s) => acc + (s.estimatedHours || 2.5), 0)
+        : (t.weightage === 'High' ? 18 : (t.weightage === 'Low' ? 8 : 12));
+
+      const difficulty: 'Easy' | 'Medium' | 'Hard' | 'Very Hard' = 
+        t.weightage === 'High' ? 'Hard' : (t.weightage === 'Low' ? 'Easy' : 'Medium');
+
+      return {
+        id: t.id,
+        examId: selectedExam,
+        subject: t.category || 'General',
+        title: t.title,
+        categoryType: 'Chapter',
+        estimatedHours: Math.round(estHours),
+        difficulty,
+        weightagePercentage: t.weightage === 'High' ? 8 : (t.weightage === 'Low' ? 3 : 5),
+        orderIndex: idx
+      };
+    });
+  }, [currentTopics, selectedExam]);
+
+  // Canonical Exam Definition
+  const examDefinition: ExamDefinition = useMemo(() => {
+    const config = getExamConfig(selectedExam);
+    return {
+      id: selectedExam,
+      name: config?.name || selectedExam.replace(/_/g, ' '),
+      category: 'Engineering',
+      examDate: '2027-01-24',
+      targetSyllabusCompletionDate: '2027-01-24',
+      defaultDailyProductiveHours: 5.5,
+      minRevisionBufferDays: 14,
+      subjects: Array.from(new Set(examTasks.map(t => t.subject)))
     };
+  }, [selectedExam, examTasks]);
 
-    const handleTimeUpdate = (e: CustomEvent) => {
-      if (e.detail) {
-        const { nodeId, secondsLogged, subject, topic, subtopic } = e.detail;
-        setTimeSummary((prev) => {
-          const next = { ...prev };
-          if (nodeId) {
-            next[nodeId] = (next[nodeId] || 0) + secondsLogged;
-          }
-          const key = `${subject}|||${topic}|||${subtopic}`;
-          next[key] = (next[key] || 0) + secondsLogged;
-          return next;
+  // Generate live mathematical forecast
+  const currentForecast: ForecastResult = useMemo(() => {
+    if (examTasks.length === 0) {
+      return generateExamForecast(
+        DEFAULT_JEE_EXAM,
+        [],
+        new Map(),
+        studyLogs,
+        calendarMap,
+        [],
+        whatIfConfig,
+        targetDateInput
+      );
+    }
+
+    // Synthesize progress map combining completedSubtopicIds and taskProgressMap
+    const synthesizedProgress = new Map<string, StudentTaskProgress>();
+    examTasks.forEach(task => {
+      const existing = taskProgressMap.get(task.id);
+      const topic = currentTopics.find(t => t.id === task.id);
+      const isCompletedInClassic = topic?.completed || false;
+
+      if (existing) {
+        synthesizedProgress.set(task.id, {
+          ...existing,
+          learningStatus: isCompletedInClassic ? 'completed' : existing.learningStatus,
+          practiceStatus: isCompletedInClassic ? (existing.practiceStatus === 'pending' ? 'completed' : existing.practiceStatus) : existing.practiceStatus
+        });
+      } else {
+        synthesizedProgress.set(task.id, {
+          taskId: task.id,
+          learningStatus: isCompletedInClassic ? 'completed' : 'pending',
+          practiceStatus: isCompletedInClassic ? 'completed' : 'pending',
+          pyqPercentage: isCompletedInClassic ? 80 : 0,
+          revisionCycle: (isCompletedInClassic ? 1 : 0) as RevisionCycle,
+          masteryLevel: isCompletedInClassic ? 4 : 1,
+          plannedHours: 10,
+          actualHoursSpent: 0
         });
       }
-    };
-
-    window.addEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdate);
-    window.addEventListener('aspirantx_syllabus_time_updated', handleTimeUpdate as EventListener);
-    return () => {
-      window.removeEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdate);
-      window.removeEventListener('aspirantx_syllabus_time_updated', handleTimeUpdate as EventListener);
-    };
-  }, [selectedExam, userId]);
-
-  // Set of imported official IDs
-  const importedOfficialIds = new Set(
-    personalRawNodes.map((n) => n.origin_official_id).filter(Boolean) as string[]
-  );
-
-  // Toggle completion
-  const toggleSubtopicCompletion = async (
-    subtopicId: string,
-    subject?: string,
-    chapter?: string,
-    subtopicTitle?: string
-  ) => {
-    const nextSet = new Set<string>(completedSubtopicIds);
-    const isNowChecking = !nextSet.has(subtopicId);
-
-    if (nextSet.has(subtopicId)) {
-      nextSet.delete(subtopicId);
-    } else {
-      nextSet.add(subtopicId);
-    }
-
-    setCompletedSubtopicIds(nextSet);
-
-    // Save as last studied topic for the "Continue Studying" dashboard card
-    if (subject && (subtopicTitle || chapter)) {
-      try {
-        const histKey = `aspirantx_last_topic_${userId || 'guest'}_${selectedExam || 'UPSC_CSE'}`;
-        localStorage.setItem(
-          histKey,
-          JSON.stringify({
-            subject,
-            chapter: chapter || 'Chapter 1',
-            subtopic: subtopicTitle || chapter || 'Overview',
-            tab: 'syllabus',
-          })
-        );
-      } catch {}
-    }
-    
-    setSyncState({ status: 'saving', message: 'Syncing progress...' });
-    const res = await saveCompletedSubtopicIds(nextSet, userId, selectedExam);
-    setSyncState(res);
-
-    if (isNowChecking && res.status === 'synced') {
-      setRecentlyCheckedSubId(subtopicId);
-      // Check if this subtopic check completes all subtopics of this topic
-      const pool = activeTab === 'official' ? officialTopics : personalTopics;
-      const parentTopic = pool.find(t => t.subtopics?.some(s => s.id === subtopicId));
-      const topicJustCompleted = parentTopic && parentTopic.subtopics && parentTopic.subtopics.length > 0 && parentTopic.subtopics.every(s => nextSet.has(s.id));
-      if (topicJustCompleted) {
-        triggerConfetti({ particleCount: 30, spread: 55 });
-      }
-      await awardXPAndCoins(30, 10, 'Checked off Syllabus Sub-topic', userId);
-    }
-  };
-
-  const toggleParentTopicNodes = async (subtopicNodes: PersonalSyllabusNode[]) => {
-    if (!subtopicNodes || subtopicNodes.length === 0) return;
-    const allCurrentlyDone = subtopicNodes.every((n) => completedSubtopicIds.has(n.id));
-    const nextSet = new Set<string>(completedSubtopicIds);
-    subtopicNodes.forEach((n) => {
-      if (allCurrentlyDone) nextSet.delete(n.id);
-      else nextSet.add(n.id);
-    });
-    setCompletedSubtopicIds(nextSet);
-    setSyncState({ status: 'saving', message: 'Syncing progress...' });
-    const res = await saveCompletedSubtopicIds(nextSet, userId, selectedExam);
-    setSyncState(res);
-    if (!allCurrentlyDone) {
-      await awardXPAndCoins(30, 10, 'Checked off Syllabus Topic', userId);
-    }
-  };
-
-  const toggleParentTopicCompletion = async (topicList: SyllabusTopic[], topicId: string) => {
-    const targetTopic = topicList.find((t) => t.id === topicId);
-    if (!targetTopic || !targetTopic.subtopics) return;
-
-    const allCurrentlyDone = targetTopic.subtopics.every((s) => completedSubtopicIds.has(s.id));
-    const nextSet = new Set<string>(completedSubtopicIds);
-
-    targetTopic.subtopics.forEach((s) => {
-      if (allCurrentlyDone) {
-        nextSet.delete(s.id);
-      } else {
-        nextSet.add(s.id);
-      }
     });
 
-    setCompletedSubtopicIds(nextSet);
-    setSyncState({ status: 'saving', message: 'Syncing progress...' });
-    const res = await saveCompletedSubtopicIds(nextSet, userId, selectedExam);
-    setSyncState(res);
+    return generateExamForecast(
+      examDefinition,
+      examTasks,
+      synthesizedProgress,
+      studyLogs,
+      calendarMap,
+      [],
+      whatIfConfig,
+      targetDateInput
+    );
+  }, [examDefinition, examTasks, taskProgressMap, currentTopics, studyLogs, calendarMap, whatIfConfig, targetDateInput]);
+
+  // Topic mastery update helpers
+  const updateTaskProgress = (taskId: string, updater: (prev: StudentTaskProgress) => StudentTaskProgress) => {
+    setTaskProgressMap(prev => {
+      const next = new Map(prev);
+      const current = next.get(taskId) || {
+        taskId,
+        learningStatus: 'pending' as TaskStatus,
+        practiceStatus: 'pending' as TaskStatus,
+        pyqPercentage: 0,
+        revisionCycle: 0 as RevisionCycle,
+        masteryLevel: 1 as MasteryRating,
+        plannedHours: 10,
+        actualHoursSpent: 0
+      };
+      next.set(taskId, updater(current));
+      return next;
+    });
   };
 
-  const toggleAccordion = (topicId: string) => {
-    setExpandedTopics((prev) => ({
-      ...prev,
-      [topicId]: !prev[topicId],
+  const toggleLearning = (taskId: string) => {
+    updateTaskProgress(taskId, p => ({
+      ...p,
+      learningStatus: (p.learningStatus === 'completed' ? 'pending' : 'completed') as TaskStatus
     }));
   };
 
-  const toggleExpandAll = (currentTopics: SyllabusTopic[]) => {
-    const allExpanded = currentTopics.every((t) => expandedTopics[t.id]);
-    const nextState: Record<string, boolean> = {};
-    currentTopics.forEach((t) => {
-      nextState[t.id] = !allExpanded;
+  const cyclePractice = (taskId: string) => {
+    updateTaskProgress(taskId, p => {
+      const nextStatus: TaskStatus = p.practiceStatus === 'completed' ? 'pending' : p.practiceStatus === 'in_progress' ? 'completed' : 'in_progress';
+      return { ...p, practiceStatus: nextStatus };
     });
-    setExpandedTopics(nextState);
   };
 
-  const handleResetProgress = async () => {
-    if (window.confirm('Are you sure you want to reset all checked progress for this syllabus?')) {
-      const emptySet = new Set<string>();
-      setCompletedSubtopicIds(emptySet);
-      setSyncState({ status: 'saving', message: 'Resetting...' });
-      const res = await saveCompletedSubtopicIds(emptySet, userId, selectedExam);
-      setSyncState(res);
+  const cyclePyq = (taskId: string) => {
+    updateTaskProgress(taskId, p => {
+      const steps = [0, 50, 80, 100];
+      const currentIdx = steps.indexOf(p.pyqPercentage);
+      const nextPyq = currentIdx >= 0 && currentIdx < steps.length - 1 ? steps[currentIdx + 1] : 0;
+      return { ...p, pyqPercentage: nextPyq };
+    });
+  };
+
+  const cycleRevision = (taskId: string) => {
+    updateTaskProgress(taskId, p => {
+      const nextCycle = ((p.revisionCycle + 1) % 4) as RevisionCycle;
+      return { ...p, revisionCycle: nextCycle };
+    });
+  };
+
+  const setMasteryRating = (taskId: string, stars: MasteryRating) => {
+    updateTaskProgress(taskId, p => ({ ...p, masteryLevel: stars }));
+  };
+
+  // Toggle subtopic completion
+  const toggleSubtopicCompletion = async (subId: string) => {
+    const newCompleted = new Set(completedSubtopicIds);
+    const isNowDone = !newCompleted.has(subId);
+
+    if (isNowDone) {
+      newCompleted.add(subId);
+      awardXPAndCoins(10, 2, 'Completed Syllabus Subtopic', userId);
+      setRecentlyCheckedSubId(subId);
+      setTimeout(() => setRecentlyCheckedSubId(null), 1000);
+    } else {
+      newCompleted.delete(subId);
     }
+
+    setCompletedSubtopicIds(newCompleted);
+    await saveCompletedSubtopicIds(newCompleted, userId, selectedExam);
   };
 
-  // Import handler for Official Syllabus Tab
-  const handleImportNode = async (
-    items: Array<{ subject: string; topic?: string; subtopic?: string; officialNodeId: string; stage?: string; weightage?: string }>
-  ) => {
-    if (items.length === 0) return;
-    setImportingNodeId(items[0].officialNodeId);
-    const res = await importFromOfficial(userId || 'guest', selectedExam, items);
-    setImportingNodeId(null);
-    if (res.imported.length > 0) {
-      setImportNotification(`Successfully imported ${res.imported.length} topic(s) to My Syllabus!`);
-      setTimeout(() => setImportNotification(null), 4000);
-      loadData();
-    } else if (res.alreadyImported.length > 0) {
-      setImportNotification(`Selected items are already in My Syllabus.`);
-      setTimeout(() => setImportNotification(null), 3000);
+  // Toggle entire parent topic completion
+  const toggleParentTopicCompletion = async (topicId: string) => {
+    const topic = currentTopics.find(t => t.id === topicId);
+    if (!topic || !topic.subtopics) return;
+
+    const newCompleted = new Set(completedSubtopicIds);
+    const shouldCompleteAll = !topic.completed;
+
+    topic.subtopics.forEach(sub => {
+      if (shouldCompleteAll) {
+        newCompleted.add(sub.id);
+      } else {
+        newCompleted.delete(sub.id);
+      }
+    });
+
+    if (shouldCompleteAll) {
+      awardXPAndCoins(topic.subtopics.length * 10, topic.subtopics.length * 2, 'Completed Syllabus Topic', userId);
+      triggerConfetti();
     }
+
+    setCompletedSubtopicIds(newCompleted);
+    await saveCompletedSubtopicIds(newCompleted, userId, selectedExam);
+
+    // Sync to forecasting mastery state
+    updateTaskProgress(topicId, p => ({
+      ...p,
+      learningStatus: (shouldCompleteAll ? 'completed' : 'pending') as TaskStatus,
+      practiceStatus: (shouldCompleteAll ? 'completed' : 'pending') as TaskStatus,
+      pyqPercentage: shouldCompleteAll ? Math.max(p.pyqPercentage, 80) : p.pyqPercentage,
+      masteryLevel: (shouldCompleteAll ? (p.masteryLevel < 3 ? 4 : p.masteryLevel) : 1) as MasteryRating
+    }));
   };
 
-  // Import handler for Google Sheet Import Success
-  const handleGoogleSheetImportSuccess = async (topics: SyllabusTopic[], message: string) => {
-    if (!topics || topics.length === 0) return;
+  // Accordion toggle
+  const toggleAccordion = (topicId: string) => {
+    setExpandedTopics(prev => ({
+      ...prev,
+      [topicId]: !prev[topicId]
+    }));
+  };
 
-    try {
-      // Group topics by category (subject name)
-      const groupedBySubject: Record<string, SyllabusTopic[]> = {};
-      topics.forEach((t) => {
-        const subjectName = (t.category || t.title || 'Imported Subject').trim();
-        if (!groupedBySubject[subjectName]) {
-          groupedBySubject[subjectName] = [];
-        }
-        groupedBySubject[subjectName].push(t);
-      });
+  const toggleExpandAll = (topicsToToggle: SyllabusTopic[]) => {
+    const allExpanded = topicsToToggle.every(t => expandedTopics[t.id]);
+    const newState: Record<string, boolean> = {};
+    topicsToToggle.forEach(t => {
+      newState[t.id] = !allExpanded;
+    });
+    setExpandedTopics(newState);
+  };
 
-      // Process each subject group and save to My Syllabus
-      for (const [subjectName, subjectTopics] of Object.entries(groupedBySubject)) {
-        const existingSubjectNodes = personalRawNodes.filter(
-          (n) => n.subject.toLowerCase() === subjectName.toLowerCase()
-        );
+  // Available subjects
+  const availableSubjects = useMemo(() => {
+    const subjectsMap: Record<string, number> = {};
+    currentTopics.forEach((t) => {
+      const s = t.category || 'General';
+      subjectsMap[s] = (subjectsMap[s] || 0) + 1;
+    });
+    return Object.entries(subjectsMap).map(([name, count]) => ({ name, count }));
+  }, [currentTopics]);
 
-        const newNodesForSubject: PersonalSyllabusNode[] = [];
+  // Stages
+  const stages = useMemo(() => {
+    const set = new Set<string>();
+    currentTopics.forEach(t => {
+      if (t.stage) set.add(t.stage);
+    });
+    return ['All', ...Array.from(set)];
+  }, [currentTopics]);
 
-        subjectTopics.forEach((topic) => {
-          const chapterTitle = topic.title || 'General Chapter';
-          const stageVal = (['Prelims','Mains','Tier-1','Tier-2','Board Exam','Written Exam','Annual Exam','Main Exam','Main Test','Full Test','Paper 1','Paper 1 & 2','Board + NEET','Semester Exams','Phase 1','Paper 2'] as const).includes(topic.stage as any) ? topic.stage : 'Prelims';
-          const weightageVal = topic.weightage || 'Medium';
+  // Filtered topics
+  const filteredTopics = useMemo(() => {
+    return currentTopics.filter(t => {
+      // Stage filter
+      if (activeStageFilter !== 'All' && t.stage !== activeStageFilter) return false;
+      // Subject filter
+      if (selectedSubjectFilter !== 'ALL' && (t.category || 'General') !== selectedSubjectFilter) return false;
+      
+      // Mastery filter
+      const p = taskProgressMap.get(t.id);
+      if (masteryFilter === 'Completed' && !t.completed && p?.learningStatus !== 'completed') return false;
+      if (masteryFilter === 'Pending' && (t.completed || p?.learningStatus === 'completed')) return false;
+      if (masteryFilter === 'NeedsRevision' && (p?.revisionCycle || 0) > 0) return false;
+      if (masteryFilter === 'Weak' && (p?.masteryLevel || 1) > 2) return false;
+      if (masteryFilter === 'HighWeightage' && t.weightage !== 'High') return false;
 
-          if (Array.isArray(topic.subtopics) && topic.subtopics.length > 0) {
-            topic.subtopics.forEach((sub, idx) => {
-              newNodesForSubject.push({
-                id: `pers_node_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 7)}`,
-                exam: selectedExam,
-                subject: subjectName,
-                chapter: chapterTitle,
-                topic: chapterTitle,
-                subtopic: sub.title || chapterTitle,
-                stage: stageVal,
-                weightage: sub.weightage || weightageVal,
-                time_studied_seconds: 0
-              });
-            });
-          } else {
-            newNodesForSubject.push({
-              id: `pers_node_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-              exam: selectedExam,
-              subject: subjectName,
-              chapter: chapterTitle,
-              topic: chapterTitle,
-              subtopic: chapterTitle,
-              stage: stageVal,
-              weightage: weightageVal,
-              time_studied_seconds: 0
-            });
-          }
-        });
-
-        const allNodesForSubject = [...existingSubjectNodes, ...newNodesForSubject];
-
-        await savePersonalSubjectSyllabus(
-          userId || 'guest',
-          selectedExam,
-          subjectName,
-          allNodesForSubject
-        );
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = t.title.toLowerCase().includes(q);
+        const matchCategory = (t.category || '').toLowerCase().includes(q);
+        const matchSubtopics = (t.subtopics || []).some(s => s.title.toLowerCase().includes(q));
+        if (!matchTitle && !matchCategory && !matchSubtopics) return false;
       }
 
-      setActiveTab('personal');
-      setImportNotification(message || 'Successfully imported Google Sheet to My Syllabus!');
-      setTimeout(() => setImportNotification(null), 4000);
-      await loadData();
-    } catch (err) {
-      console.error('Error saving Google Sheet import:', err);
-      setImportNotification('Failed to save imported syllabus. Please try again.');
-      setTimeout(() => setImportNotification(null), 4000);
-    }
-  };
+      return true;
+    });
+  }, [currentTopics, activeStageFilter, selectedSubjectFilter, masteryFilter, searchQuery, taskProgressMap]);
 
-  // Hierarchy Builder actions for My Syllabus Tab
-  const openAddSubject = () => {
-    setBuilderMode('subject');
-    setInputSubject('');
-    setInputChapter('');
-    setInputSubtopic('');
-    setIsBuilderModalOpen(true);
-  };
-
-  const openAddTopic = (subjectName: string) => {
-    setBuilderMode('topic');
-    setTargetSubject(subjectName);
-    setInputSubject(subjectName);
-    setInputChapter('');
-    setInputSubtopic('');
-    setIsBuilderModalOpen(true);
-  };
-
-  const openAddSubtopic = (subjectName: string, chapterName: string) => {
-    setBuilderMode('subtopic');
-    setTargetSubject(subjectName);
-    setTargetChapter(chapterName);
-    setInputSubject(subjectName);
-    setInputChapter(chapterName);
-    setInputSubtopic('');
-    setIsBuilderModalOpen(true);
-  };
-
-  const handleSaveBuilderNode = async () => {
-    if (!inputSubject.trim()) {
-      alert('Subject name is required.');
+  // Stop study timer & log session
+  const stopAndLogTimer = () => {
+    if (timerSeconds < 60) {
+      setIsTimerRunning(false);
+      setTimerSeconds(0);
       return;
     }
 
-    let nodesToSave: PersonalSyllabusNode[] = [...personalRawNodes];
+    const hours = Math.round((timerSeconds / 3600) * 10) / 10;
+    const newLog: StudySessionLog = {
+      id: `log_${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      dayType: 'NORMAL',
+      plannedHours: hours,
+      actualHours: hours,
+      productiveHours: Math.round(hours * 0.9 * 10) / 10,
+      topicsCovered: timerSubject ? [timerSubject] : [],
+      createdAt: new Date().toISOString()
+    };
 
-    if (builderMode === 'subject') {
-      const newNode: PersonalSyllabusNode = {
-        id: `pers_node_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        exam: selectedExam,
-        subject: inputSubject.trim(),
-        chapter: inputChapter.trim() || 'General Chapter',
-        topic: inputTopic.trim() || 'General Topic',
-        subtopic: inputSubtopic.trim() || 'Overview',
-        stage: inputStage,
-        weightage: inputWeightage,
-        time_studied_seconds: 0
-      };
-      nodesToSave.push(newNode);
-    } else if (builderMode === 'topic') {
-      const newNode: PersonalSyllabusNode = {
-        id: `pers_node_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        exam: selectedExam,
-        subject: targetSubject,
-        chapter: inputChapter.trim() || 'New Chapter',
-        topic: inputTopic.trim() || inputChapter.trim() || 'New Topic',
-        subtopic: inputSubtopic.trim() || 'Topic Overview',
-        stage: inputStage,
-        weightage: inputWeightage,
-        time_studied_seconds: 0
-      };
-      nodesToSave.push(newNode);
-    } else if (builderMode === 'subtopic') {
-      const newNode: PersonalSyllabusNode = {
-        id: `pers_node_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-        exam: selectedExam,
-        subject: targetSubject,
-        chapter: targetChapter,
-        topic: targetChapter,
-        subtopic: inputSubtopic.trim() || 'New Subtopic',
-        stage: inputStage,
-        weightage: inputWeightage,
-        time_studied_seconds: 0
-      };
-      nodesToSave.push(newNode);
-    }
+    const updated = [newLog, ...studyLogs];
+    setStudyLogs(updated);
+    try {
+      localStorage.setItem(`studyride_study_logs_${userId || 'guest'}`, JSON.stringify(updated));
+    } catch {}
 
-    await savePersonalSubjectSyllabus(
-      userId,
-      selectedExam,
-      inputSubject.trim(),
-      nodesToSave.filter((n) => n.subject.toLowerCase() === inputSubject.trim().toLowerCase())
-    );
-
-    setIsBuilderModalOpen(false);
-    loadData();
+    setIsTimerRunning(false);
+    setTimerSeconds(0);
+    setImportNotification(`Logged ${hours}h study session! Forecast updated.`);
+    setTimeout(() => setImportNotification(null), 4000);
   };
 
-  const handleDeleteSubject = async (subjectName: string) => {
-    if (window.confirm(`Are you sure you want to delete the entire subject "${subjectName}" from My Syllabus?`)) {
-      await removePersonalSubject(userId, selectedExam, subjectName);
-      loadData();
+  // Reset progress confirmation
+  const handleResetProgress = async () => {
+    if (window.confirm(`Are you sure you want to reset all progress for ${selectedExam}?`)) {
+      setCompletedSubtopicIds(new Set());
+      setTaskProgressMap(new Map());
+      await saveCompletedSubtopicIds(new Set(), userId, selectedExam);
+      localStorage.removeItem(progressStorageKey);
     }
   };
-
-  const handleDeleteNode = async (subjectName: string, nodeId: string) => {
-    const updated = personalRawNodes.filter((n) => n.id !== nodeId);
-    await saveAllPersonalSyllabusNodes(userId, selectedExam, updated);
-    setPersonalRawNodes(updated);
-  };
-
-  // Determine active topics list
-  let currentTopics = activeTab === 'official' ? officialTopics : personalTopics;
-
-  if (searchBothTabs && searchQuery.trim()) {
-    // Combine both sets
-    currentTopics = [...officialTopics, ...personalTopics];
-  }
-
-  // Subject-wise Filtering
-  const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>('ALL');
-
-  // Available distinct subjects for filtering
-  const availableSubjects = useMemo(() => {
-    const map = new Map<string, number>();
-    currentTopics.forEach((t) => {
-      const subj = t.category || 'General';
-      map.set(subj, (map.get(subj) || 0) + 1);
-    });
-    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
-  }, [currentTopics]);
-
-  // Filter topics based on stage, subject & search query
-  const filteredTopics = currentTopics.filter((t) => {
-    const matchesStage = activeStageFilter === 'All' || t.stage === activeStageFilter;
-    const matchesSubject = selectedSubjectFilter === 'ALL' || t.category === selectedSubjectFilter;
-    const matchesQuery = 
-      !searchQuery.trim() ||
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (t.subtopics && t.subtopics.some((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase())));
-    return matchesStage && matchesSubject && matchesQuery;
-  });
-
-  // Next Recommended Topic for progressive disclosure
-  const nextRecommendedTopic = useMemo(() => {
-    return filteredTopics.find(
-      (t) => t.subtopics && t.subtopics.some((s) => !completedSubtopicIds.has(s.id))
-    ) || null;
-  }, [filteredTopics, completedSubtopicIds]);
-
-  // Calculate distinct progress metrics
-  const getProgressStats = (topicList: SyllabusTopic[]) => {
-    let totalSubs = 0;
-    let completedSubs = 0;
-    topicList.forEach((t) => {
-      if (t.subtopics) {
-        totalSubs += t.subtopics.length;
-        completedSubs += t.subtopics.filter((s) => completedSubtopicIds.has(s.id) || s.completed).length;
-      }
-    });
-    const percent = totalSubs > 0 ? Math.round((completedSubs / totalSubs) * 100) : 0;
-    return { totalSubs, completedSubs, percent };
-  };
-
-  const officialStats = getProgressStats(officialTopics);
-  const personalStats = getProgressStats(personalTopics);
-
-  // Predictor stats
-  const activeStats = calculatePredictorStats(currentTopics, predictorSettings, selectedExam);
-
-  const stages = ['All', ...Array.from(new Set(currentTopics.map((t) => t.stage).filter(Boolean)))];
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* View Mode Switcher Header */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 flex items-center justify-between gap-2 overflow-x-auto shadow-lg backdrop-blur-md">
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={() => setViewMode('forecast')}
-            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
-              viewMode === 'forecast'
-                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>Exam Forecast Tracker</span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Live AI Pro</span>
-          </button>
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
+      {/* ── TOP HERO: UNIFIED EXAM FORECAST HUD ───────────────────────────── */}
+      <div className="rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl p-5 sm:p-7 relative overflow-hidden backdrop-blur-xl">
+        {/* Glowing Background Gradients */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <button
-            onClick={() => setViewMode('tracker')}
-            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
-              viewMode === 'tracker'
-                ? 'bg-slate-800 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Classic Checklist</span>
-          </button>
+        {/* Top Header Row: Exam Title, Target Exam Countdown & Actions */}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 pb-6 border-b border-slate-800/80 relative z-10">
+          <div>
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <span className="px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                Dynamic Exam Forecast Engine
+              </span>
+              <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-slate-900 text-slate-300 border border-slate-800">
+                Confidence: <strong className="text-emerald-400">{currentForecast.confidenceLevel}</strong>
+              </span>
+            </div>
 
-          <button
-            onClick={() => setViewMode('directory')}
-            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
-              viewMode === 'directory'
-                ? 'bg-slate-800 text-white shadow'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
-            }`}
-          >
-            <Layers className="w-4 h-4" />
-            <span>All 48 Exam Syllabi</span>
-          </button>
-        </div>
-      </div>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2">
+                <span>{examDefinition.name}</span>
+                <span className="text-sky-400 text-lg font-bold">Preparation Hub</span>
+              </h1>
 
-      {viewMode === 'forecast' ? (
-        <ExamForecastTracker
-          initialExamId={selectedExam}
-          userId={userId}
-          isGuest={isGuest}
-        />
-      ) : viewMode === 'directory' ? (
-        <OpenKoshExamDirectory
-          onSelectExam={(newId) => {
-            setSelectedExam(newId as ExamType);
-            setViewMode('tracker');
-          }}
-          selectedExamId={selectedExam}
-          onClose={() => setViewMode('tracker')}
-        />
-      ) : (
-        <>
-          {/* OpenKosh-style Exam Details Frame */}
-          <OpenKoshExamFrame
-            examId={selectedExam}
-            onSelectExam={(newId) => setSelectedExam(newId as ExamType)}
-            onBrowseAll={() => setViewMode('directory')}
-            totalTopics={officialStats.totalSubs || currentTopics.length}
-            completedTopics={officialStats.completedSubs}
-          />
+              {/* Exam Selector Dropdown */}
+              <select
+                value={selectedExam}
+                onChange={(e) => setSelectedExam(e.target.value as ExamType)}
+                className="bg-slate-900 hover:bg-slate-850 border border-slate-700 text-sky-300 text-xs font-bold rounded-xl px-3 py-1.5 outline-none cursor-pointer transition shadow-sm"
+                title="Switch target exam"
+              >
+                {EXAM_LIST.map((ex) => (
+                  <option key={ex.id} value={ex.id}>
+                    {ex.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Predictor Engine Dynamic Widget */}
-      <PremiumGate
-        featureName="ai_predictor"
-        featureTitle="PYQ Syllabus Predictor Engine"
-        isUserPremium={isUserPremium}
-        isGuest={isGuest}
-        featureFlags={featureFlags}
-        onOpenPremium={onOpenPremium}
-        onRequireLogin={onRequireLogin}
-      >
-        <PredictorEngineWidget
-          stats={activeStats}
-          settings={predictorSettings}
-          onUpdateSettings={(newSettings) => setPredictorSettings(newSettings)}
-          examName={selectedExam}
-        />
-      </PremiumGate>
+            <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+              Continuously predicts realistic completion dates based on your empirical productive study hours, 
+              chapter difficulty, prerequisite chains, and 3 cycles of spaced revision.
+            </p>
+          </div>
 
-      {/* Main Header & Actions */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-900 border border-slate-800 backdrop-blur-2xl flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-sky-400" />
-              {EXAM_LIST.find((ex) => ex.id === selectedExam)?.label || selectedExam} Syllabus Engine
-            </h3>
-            <span
-              className={`px-3 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1.5 transition-all ${
-                syncState.status === 'synced'
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                  : syncState.status === 'saving'
-                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 animate-pulse'
-                  : 'bg-slate-900 text-slate-400 border-slate-800'
+          {/* Quick Tool Drawer Toggles */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setActiveForecastDrawer(d => d === 'simulator' ? 'none' : 'simulator')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                activeForecastDrawer === 'simulator'
+                  ? 'bg-amber-500 text-slate-950 font-black'
+                  : 'bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-800'
               }`}
             >
-              <CloudCheck className="w-3.5 h-3.5" />
-              {syncState.message || 'Saved to Supabase'}
+              <Sliders className="w-3.5 h-3.5" />
+              <span>What-If Simulator</span>
+            </button>
+
+            <button
+              onClick={() => setActiveForecastDrawer(d => d === 'target' ? 'none' : 'target')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                activeForecastDrawer === 'target'
+                  ? 'bg-indigo-600 text-white font-black'
+                  : 'bg-slate-900 hover:bg-slate-800 text-indigo-300 border border-slate-800'
+              }`}
+            >
+              <Target className="w-3.5 h-3.5" />
+              <span>Target Date</span>
+            </button>
+
+            <button
+              onClick={() => setActiveForecastDrawer(d => d === 'timer' ? 'none' : 'timer')}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm ${
+                activeForecastDrawer === 'timer' || isTimerRunning
+                  ? 'bg-emerald-500 text-slate-950 font-black'
+                  : 'bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-slate-800'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>{isTimerRunning ? `${Math.floor(timerSeconds / 60)}m Focus` : 'Study Timer'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* ── 3 FORECAST SCENARIO CARDS ───────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 relative z-10">
+          {/* 1. Fast Scenario */}
+          <div className="bg-gradient-to-b from-indigo-950/40 to-slate-950/80 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-indigo-400/50 transition">
+            <div className="flex items-center justify-between text-xs text-indigo-300 font-semibold mb-2">
+              <span className="flex items-center gap-1.5">
+                <Flame className="w-4 h-4 text-amber-400" /> FAST SCENARIO
+              </span>
+              <span className="text-[11px] text-indigo-400/80">Upper Pace (~115%)</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              {formatNiceDate(currentForecast.fastDate)}
+            </div>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              Disciplined upper bound. Requires peak focus consistency and zero unrecovered disruptions.
+            </p>
+          </div>
+
+          {/* 2. Realistic Scenario (Authoritative / Highlighted) */}
+          <div className="bg-gradient-to-b from-emerald-950/50 to-slate-950/90 border-2 border-emerald-500/60 rounded-2xl p-4 sm:p-5 relative overflow-hidden shadow-xl shadow-emerald-500/10">
+            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              Most Likely
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-bold mb-2">
+              <Target className="w-4 h-4 text-emerald-400" /> REALISTIC COMPLETION
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-200 tracking-tight">
+              {formatNiceDate(currentForecast.realisticDate)}
+            </div>
+            <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+              Expected Range: <strong className="text-white">{formatNiceDate(currentForecast.expectedRangeStart)}</strong> – <strong className="text-white">{formatNiceDate(currentForecast.expectedRangeEnd)}</strong>
+            </p>
+          </div>
+
+          {/* 3. Slow Scenario */}
+          <div className="bg-gradient-to-b from-slate-900/60 to-slate-950/80 border border-slate-800 rounded-2xl p-4 sm:p-5 relative overflow-hidden group hover:border-slate-700 transition">
+            <div className="flex items-center justify-between text-xs text-slate-400 font-semibold mb-2">
+              <span className="flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-slate-400" /> SLOW SCENARIO
+              </span>
+              <span className="text-[11px] text-slate-500">Plausible Lower (~82%)</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-200 tracking-tight">
+              {formatNiceDate(currentForecast.slowDate)}
+            </div>
+            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+              Disruption-tolerant projection. Accounts for unexpected sick days, difficult topics, and college duties.
+            </p>
+          </div>
+        </div>
+
+        {/* ── METRICS STRIP: PACE, SYLLABUS VS MASTERY, WORKLOAD, BUFFER ──── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-800/80 relative z-10 text-xs">
+          {/* Syllabus vs True Mastery */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+            <span className="text-slate-400 text-[11px]">Syllabus vs Mastered</span>
+            <div className="flex items-baseline gap-2 mt-1">
+              <span className="text-lg font-black text-white">{currentForecast.syllabusCompletionPercentage}%</span>
+              <span className="text-[11px] text-emerald-400 font-bold">{currentForecast.masteryCoveragePercentage}% Mastered</span>
+            </div>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-1.5">
+              <div className="bg-gradient-to-r from-sky-500 to-emerald-400 h-full rounded-full" style={{ width: `${currentForecast.syllabusCompletionPercentage}%` }} />
+            </div>
+          </div>
+
+          {/* Sustainable Pace */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+            <span className="text-slate-400 text-[11px]">Sustainable Pace</span>
+            <div className="text-lg font-black text-white mt-1">
+              {currentForecast.currentPaceHoursPerWeek} <span className="text-xs font-normal text-slate-400">h/week</span>
+            </div>
+            <span className="text-[10px] text-slate-400 mt-0.5 block truncate">
+              {currentForecast.currentDailyProductiveAverage}h/day productive focus
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Structured learning tree: switch between official standard syllabus and your personalized custom study roadmap.
-          </p>
+
+          {/* Remaining Workload */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+            <span className="text-slate-400 text-[11px]">Remaining Workload</span>
+            <div className="text-lg font-black text-indigo-300 mt-1">
+              {currentForecast.remainingWorkloadHours} <span className="text-xs font-normal text-slate-400">eff. hours</span>
+            </div>
+            <span className="text-[10px] text-slate-400 mt-0.5 block truncate">
+              Theory + Practice + PYQs + 3 Rev
+            </span>
+          </div>
+
+          {/* Revision Buffer Cushion */}
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3">
+            <span className="text-slate-400 text-[11px]">Revision Cushion</span>
+            <div className="text-lg font-black text-amber-300 mt-1">
+              {currentForecast.revisionBufferDays} <span className="text-xs font-normal text-slate-400">days buffer</span>
+            </div>
+            <span className="text-[10px] text-slate-400 mt-0.5 block truncate">
+              {currentForecast.mockTestWindowDays}d dedicated full mocks
+            </span>
+          </div>
         </div>
 
-        {/* Global Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto">
-          <button
-            onClick={() => setViewMode('directory')}
-            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer shadow-md shadow-blue-600/20"
-          >
-            <Layers className="w-4 h-4" />
-            <span>Browse 45 Syllabuses</span>
-          </button>
+        {/* ── EXPANDABLE DRAWER 1: WHAT-IF SIMULATOR ───────────────────────── */}
+        <AnimatePresence>
+          {activeForecastDrawer === 'simulator' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-5 pt-5 border-t border-slate-800 relative z-10"
+            >
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-amber-500/30 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-amber-400" />
+                    <h3 className="text-sm font-bold text-white">Interactive Schedule Simulator</h3>
+                  </div>
+                  <button
+                    onClick={() => setWhatIfConfig({
+                      dailyHourDelta: 0,
+                      removeSundayStudy: false,
+                      weeklyTestCount: 0,
+                      extraRestDaysPerMonth: 0,
+                      missedDaysToSimulate: 0,
+                      revisionMultiplier: 1.0
+                    })}
+                    className="text-xs text-amber-400 hover:underline cursor-pointer"
+                  >
+                    Reset Defaults
+                  </button>
+                </div>
 
-          <button
-            onClick={() => setIsGlobalSearchOpen(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-sky-400 transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
-          >
-            <Search className="w-4 h-4 text-sky-400" />
-            <span>Search All</span>
-          </button>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                  {/* Daily Hours Delta */}
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div className="flex justify-between font-semibold mb-1 text-slate-300">
+                      <span>Daily Study Adjustment:</span>
+                      <strong className="text-amber-400">{whatIfConfig.dailyHourDelta > 0 ? `+${whatIfConfig.dailyHourDelta}h` : `${whatIfConfig.dailyHourDelta}h`} / day</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="-3"
+                      max="4"
+                      step="0.5"
+                      value={whatIfConfig.dailyHourDelta}
+                      onChange={e => setWhatIfConfig(c => ({ ...c, dailyHourDelta: parseFloat(e.target.value) }))}
+                      className="w-full accent-amber-500 cursor-pointer"
+                    />
+                  </div>
 
-          <button
-            onClick={() => setIsMySyllabusModalOpen(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
-          >
-            <Layers className="w-4 h-4 text-sky-400" />
-            <span>Bulk CSV Upload</span>
-          </button>
+                  {/* Missed Days Streak */}
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <div className="flex justify-between font-semibold mb-1 text-slate-300">
+                      <span>Simulate Missed Days:</span>
+                      <strong className="text-rose-400">{whatIfConfig.missedDaysToSimulate} days</strong>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="14"
+                      step="1"
+                      value={whatIfConfig.missedDaysToSimulate}
+                      onChange={e => setWhatIfConfig(c => ({ ...c, missedDaysToSimulate: parseInt(e.target.value, 10) }))}
+                      className="w-full accent-rose-500 cursor-pointer"
+                    />
+                  </div>
 
-          <button
-            onClick={() => setIsImportModalOpen(true)}
-            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md shadow-sky-600/25 active:scale-[0.98] flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
-          >
-            <FileSpreadsheet className="w-4 h-4" /> <span>Import Sheet</span>
-          </button>
+                  {/* Rest & Test Toggles */}
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-around gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={whatIfConfig.removeSundayStudy}
+                        onChange={e => setWhatIfConfig(c => ({ ...c, removeSundayStudy: e.target.checked }))}
+                        className="rounded accent-amber-500"
+                      />
+                      <span>Remove Sunday Study (Rest Day)</span>
+                    </label>
 
-          <button
-            onClick={handleResetProgress}
-            className="p-2.5 rounded-xl bg-slate-900 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
-            title="Reset All Progress"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-        </div>
+                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={whatIfConfig.weeklyTestCount > 0}
+                        onChange={e => setWhatIfConfig(c => ({ ...c, weeklyTestCount: e.target.checked ? 1 : 0 }))}
+                        className="rounded accent-amber-500"
+                      />
+                      <span>Reserve 1 Day / Week for Mock Test</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-200 flex items-center justify-between">
+                  <span>
+                    Simulated Realistic Finish: <strong className="text-white font-bold">{formatNiceDate(currentForecast.realisticDate)}</strong>
+                  </span>
+                  <span className="text-[11px] text-amber-300/80">
+                    Live calculated based on remaining {currentForecast.remainingWorkloadHours}h workload
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── EXPANDABLE DRAWER 2: TARGET DATE CALCULATOR ─────────────────── */}
+        <AnimatePresence>
+          {activeForecastDrawer === 'target' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-5 pt-5 border-t border-slate-800 relative z-10"
+            >
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-indigo-400" />
+                    <h3 className="text-sm font-bold text-white">Target Date Feasibility Calculator</h3>
+                  </div>
+                  <span className="text-xs text-slate-400">Test if your desired completion deadline is possible</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <input
+                    type="date"
+                    value={targetDateInput}
+                    onChange={e => setTargetDateInput(e.target.value)}
+                    className="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs outline-none focus:border-indigo-500"
+                  />
+                  <div className="text-xs text-slate-300">
+                    Select the target date by which you want all syllabus and first revision done.
+                  </div>
+                </div>
+
+                {currentForecast.targetCalculation && (
+                  <div className={`p-3.5 rounded-xl border text-xs space-y-1 ${
+                    currentForecast.targetCalculation.isFeasible 
+                      ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200' 
+                      : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
+                  }`}>
+                    <div className="font-bold flex items-center justify-between">
+                      <span>Target: {formatNiceDate(currentForecast.targetCalculation.targetDate)}</span>
+                      <span>{currentForecast.targetCalculation.isFeasible ? '✓ Mathematically Feasible' : '⚠️ Requires Pace Acceleration'}</span>
+                    </div>
+                    <p className="text-slate-200 leading-relaxed">
+                      {currentForecast.targetCalculation.explanation}
+                    </p>
+                    <div className="pt-1 flex items-center gap-4 text-[11px] text-slate-400">
+                      <span>Current: <strong>{currentForecast.currentPaceHoursPerWeek}h/wk</strong></span>
+                      <span>Required: <strong className="text-white">{currentForecast.targetCalculation.requiredWeeklyHours}h/wk</strong></span>
+                      <span>Gap: <strong className={currentForecast.targetCalculation.gapWeeklyHours > 0 ? 'text-amber-400' : 'text-emerald-400'}>
+                        {currentForecast.targetCalculation.gapWeeklyHours > 0 ? `+${currentForecast.targetCalculation.gapWeeklyHours}h/wk` : 'None'}
+                      </strong></span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── EXPANDABLE DRAWER 3: LIVE STUDY FOCUS STOPWATCH ──────────────── */}
+        <AnimatePresence>
+          {activeForecastDrawer === 'timer' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-5 pt-5 border-t border-slate-800 relative z-10"
+            >
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    <h3 className="text-sm font-bold text-white">Live Study Focus Timer</h3>
+                  </div>
+                  <span className="text-xs text-slate-400">Productive time logs directly into forecast velocity</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl bg-slate-950 border border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="text-3xl font-black font-mono text-emerald-400 tracking-wider">
+                      {String(Math.floor(timerSeconds / 3600)).padStart(2, '0')}:
+                      {String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0')}:
+                      {String(timerSeconds % 60).padStart(2, '0')}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Subject / Topic note (optional)..."
+                      value={timerSubject}
+                      onChange={e => setTimerSubject(e.target.value)}
+                      className="px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white outline-none w-48 sm:w-64"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {!isTimerRunning ? (
+                      <button
+                        onClick={() => setIsTimerRunning(true)}
+                        className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" /> Start Session
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setIsTimerRunning(false)}
+                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Pause className="w-3.5 h-3.5 fill-current" /> Pause
+                      </button>
+                    )}
+
+                    <button
+                      onClick={stopAndLogTimer}
+                      disabled={timerSeconds === 0}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white font-bold text-xs transition cursor-pointer"
+                    >
+                      Save & Log to Forecast
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Notification Banner */}
+      {/* ── NOTIFICATION BANNER ────────────────────────────────────────────── */}
       {importNotification && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -913,12 +1166,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         </motion.div>
       )}
 
-      {/* TOP LEVEL TAB TOGGLE: Official Syllabus vs My Syllabus */}
+      {/* ── SYLLABUS SOURCE TABS: OFFICIAL vs MY SYLLABUS vs DIRECTORY ──────── */}
       <div className="p-2 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 w-full sm:w-auto p-1 bg-slate-950 rounded-2xl border border-slate-800">
+        <div className="flex items-center gap-2 w-full sm:w-auto p-1 bg-slate-950 rounded-2xl border border-slate-800 overflow-x-auto">
           <button
             onClick={() => setActiveTab('official')}
-            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'official'
                 ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
                 : 'text-slate-400 hover:text-white hover:bg-slate-900'
@@ -926,596 +1179,564 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           >
             <BookOpen className="w-4 h-4" />
             <span>Official Syllabus</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              activeTab === 'official' ? 'bg-black/25 text-white' : 'bg-slate-900 text-slate-400'
-            }`}>
-              {officialStats.completedSubs}/{officialStats.totalSubs}
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/25 text-white">
+              {officialTopics.filter(t => t.completed).length}/{officialTopics.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('personal')}
-            className={`flex-1 sm:flex-initial px-6 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'personal'
                 ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
                 : 'text-slate-400 hover:text-white hover:bg-slate-900'
             }`}
           >
             <User className="w-4 h-4" />
-            <span>My Syllabus</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-              activeTab === 'personal' ? 'bg-black/25 text-white' : 'bg-slate-900 text-slate-400'
-            }`}>
-              {personalStats.completedSubs}/{personalStats.totalSubs}
+            <span>My Custom Plan</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/25 text-white">
+              {personalTopics.filter(t => t.completed).length}/{personalTopics.length}
             </span>
           </button>
-        </div>
-
-        {/* Tab Progress Bar Indicator */}
-        <div className="w-full sm:w-72 px-4 py-2.5 bg-slate-950 rounded-2xl border border-slate-800 flex flex-col justify-center">
-          <div className="flex items-center justify-between text-[11px] font-bold mb-1.5">
-            <span className="text-slate-400">
-              {activeTab === 'official' ? 'Official Coverage' : 'My Syllabus Coverage'}
-            </span>
-            <span className="text-sky-400 font-extrabold">
-              <CountUp
-                value={activeTab === 'official' ? officialStats.percent : personalStats.percent}
-                suffix="%"
-              />
-            </span>
-          </div>
-          <ProgressAnimation
-            percent={activeTab === 'official' ? officialStats.percent : personalStats.percent}
-            barClassName="bg-gradient-to-r from-sky-500 to-indigo-500"
-            className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800"
-          />
-        </div>
-      </div>
-
-      {/* Tab Specific Helper Header & Builder Trigger */}
-      {activeTab === 'personal' && (
-        <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div>
-            <h4 className="text-xs font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-sky-400" /> Custom Student Learning Path
-            </h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              Add custom subjects, chapters, topics, or subtopics directly or import from Official Syllabus.
-            </p>
-          </div>
-          <button
-            onClick={openAddSubject}
-            className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition-all shadow-md shadow-sky-600/25 flex items-center gap-1.5 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Add New Subject
-          </button>
-        </div>
-      )}
-
-      {/* Filters & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Stage Filter Buttons */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          <span className="text-xs font-bold text-slate-400 flex items-center gap-1.5 mr-2 shrink-0">
-            <Filter className="w-3.5 h-3.5 text-sky-400" /> Stage:
-          </span>
-          {stages.map((stage) => (
-            <button
-              key={stage}
-              onClick={() => setActiveStageFilter(stage)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                activeStageFilter === stage
-                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
-                  : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              {stage}
-            </button>
-          ))}
-        </div>
-
-        {/* Search Bar, Option & Accordion Toggle */}
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search topics or sub-topics..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500 transition-all font-medium"
-            />
-          </div>
-
-          <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={searchBothTabs}
-              onChange={(e) => setSearchBothTabs(e.target.checked)}
-              className="rounded accent-sky-500"
-            />
-            <span>Search both tabs</span>
-          </label>
 
           <button
-            onClick={() => toggleExpandAll(currentTopics)}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold shrink-0 transition-colors cursor-pointer"
-          >
-            Expand/Collapse All
-          </button>
-        </div>
-      </div>
-
-      {/* Subject-Wise Horizontal Filter Pills */}
-      {availableSubjects.length > 1 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            onClick={() => setSelectedSubjectFilter('ALL')}
-            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              selectedSubjectFilter === 'ALL'
-                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
+            onClick={() => setActiveTab('directory')}
+            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+              activeTab === 'directory'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
             }`}
           >
-            All Subjects ({currentTopics.length})
+            <Layers className="w-4 h-4" />
+            <span>48 Exams Directory</span>
           </button>
-          {availableSubjects.map((subj) => (
-            <button
-              key={subj.name}
-              onClick={() => setSelectedSubjectFilter(subj.name)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                selectedSubjectFilter === subj.name
-                  ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-              }`}
-            >
-              {subj.name} ({subj.count})
-            </button>
-          ))}
         </div>
-      )}
 
-      {/* Topic List Render */}
-      {activeTab === 'personal' ? (
-        <MySyllabusDndTree
-          rawNodes={personalRawNodes}
-          selectedExam={selectedExam}
-          userId={userId}
-          completedSubtopicIds={completedSubtopicIds}
-          timeSummary={timeSummary}
-          searchQuery={searchQuery}
-          activeStageFilter={activeStageFilter}
-          onToggleSubtopic={toggleSubtopicCompletion}
-          onToggleTopic={(nodes) => toggleParentTopicNodes(nodes)}
-          onOpenAddSubject={openAddSubject}
-          onOpenAddTopic={(subj) => openAddTopic(subj)}
-          onOpenAddSubtopic={(subj, chap) => openAddSubtopic(subj, chap)}
-          onDeleteSubject={handleDeleteSubject}
-          onDeleteNode={handleDeleteNode}
-          onNodesChanged={(newNodes) => setPersonalRawNodes(newNodes)}
-        />
-      ) : (
+        {/* Global Action Toolbar */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setIsGlobalSearchOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-sky-400 flex items-center gap-1.5 cursor-pointer"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span>Search</span>
+          </button>
+
+          <button
+            onClick={() => setIsImportModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Import</span>
+          </button>
+
+          <button
+            onClick={handleResetProgress}
+            className="p-2 rounded-xl bg-slate-950 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-800 transition cursor-pointer"
+            title="Reset All Progress"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── VIEW ROUTING: DIRECTORY OR TOPIC CHECKLIST ─────────────────────── */}
+      {activeTab === 'directory' ? (
         <div className="space-y-4">
-          {filteredTopics.length === 0 ? (
-            <div className="p-12 text-center rounded-3xl bg-slate-900 border border-slate-800">
-              <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <p className="text-slate-300 font-bold">
-                No official topics match your filter
-              </p>
-              <p className="text-slate-500 text-xs mt-1">
-                Try clearing search or changing the stage filter.
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <span className="text-xs text-slate-300 font-semibold">
+              Browsing all 48 national & state examinations curriculum archive.
+            </span>
+            <button
+              onClick={() => setActiveTab('official')}
+              className="text-xs text-sky-400 font-bold hover:underline"
+            >
+              Back to Active Tracker →
+            </button>
+          </div>
+          <OpenKoshExamDirectory 
+            selectedExamId={selectedExam}
+            onSelectExam={(e) => {
+              setSelectedExam(e as ExamType);
+              setActiveTab('official');
+            }}
+          />
+        </div>
+      ) : activeTab === 'personal' ? (
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div>
+              <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-sky-400" /> Custom Student Learning Path
+              </h4>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Drag, rearrange, add custom chapters, or import directly from official exam benchmarks.
               </p>
             </div>
-          ) : (
-          filteredTopics.map((topic, topicIdx) => {
-            const effectiveGuestLimit = guestLimit ?? Number(localStorage.getItem('aspirantx_guest_syllabus_limit') || 5);
-            const isLockedForGuest = isGuest && topicIdx >= effectiveGuestLimit;
+            <button
+              onClick={() => {
+                setBuilderMode('subject');
+                setIsBuilderModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-600/25"
+            >
+              <Plus className="w-4 h-4" /> Add Subject
+            </button>
+          </div>
 
-            if (isLockedForGuest) {
-              return (
-                <div
-                  key={topic.id}
-                  className="p-5 rounded-3xl bg-slate-900 border border-amber-500/20 backdrop-blur-md relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group shadow-lg"
+          <MySyllabusDndTree
+            rawNodes={personalRawNodes}
+            selectedExam={selectedExam}
+            userId={userId}
+            completedSubtopicIds={completedSubtopicIds}
+            timeSummary={timeSummary}
+            searchQuery={searchQuery}
+            activeStageFilter={activeStageFilter}
+            onToggleSubtopic={toggleSubtopicCompletion}
+            onToggleTopic={async (nodes) => {
+              const newSet = new Set(completedSubtopicIds);
+              const allDone = nodes.every(n => newSet.has(n.id));
+              nodes.forEach(n => {
+                if (allDone) newSet.delete(n.id);
+                else newSet.add(n.id);
+              });
+              setCompletedSubtopicIds(newSet);
+              await saveCompletedSubtopicIds(newSet, userId, selectedExam);
+            }}
+            onOpenAddSubject={() => {
+              setBuilderMode('subject');
+              setIsBuilderModalOpen(true);
+            }}
+            onOpenAddTopic={(subj) => {
+              setTargetSubject(subj);
+              setBuilderMode('topic');
+              setIsBuilderModalOpen(true);
+            }}
+            onOpenAddSubtopic={(subj, chap) => {
+              setTargetSubject(subj);
+              setTargetChapter(chap);
+              setBuilderMode('subtopic');
+              setIsBuilderModalOpen(true);
+            }}
+            onDeleteSubject={async (subj) => {
+              await removePersonalSubject(selectedExam, subj, userId);
+              loadData();
+            }}
+            onDeleteNode={() => {}}
+            onNodesChanged={(newNodes) => setPersonalRawNodes(newNodes)}
+          />
+        </div>
+      ) : (
+        /* ── OFFICIAL SYLLABUS TOPIC CHECKLIST WITH 5-DIMENSION MASTERY ── */
+        <div className="space-y-4">
+          {/* Filters Bar: Stages, Mastery Status, and Search */}
+          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            {/* Stage filter pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+              <span className="text-xs font-bold text-slate-400 mr-1 shrink-0 flex items-center gap-1">
+                <Filter className="w-3.5 h-3.5 text-sky-400" /> Stage:
+              </span>
+              {stages.map((stage) => (
+                <button
+                  key={stage}
+                  onClick={() => setActiveStageFilter(stage)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
+                    activeStageFilter === stage
+                      ? 'bg-sky-600 text-white shadow-md'
+                      : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                      <LockIcon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-extrabold text-slate-300 blur-[2px] select-none">
-                          {topic.title}
-                        </h4>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase">
-                          Demo Mode Locked
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Demo Mode limit reached ({effectiveGuestLimit} Topics max). Login or Register to unlock complete syllabus.
-                      </p>
-                    </div>
-                  </div>
+                  {stage}
+                </button>
+              ))}
+            </div>
 
-                  <button
-                    onClick={onRequireLogin}
-                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow-md shrink-0 flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" /> Login to Unlock Full Syllabus
-                  </button>
-                </div>
-              );
-            }
+            {/* Preparation Mastery Filter */}
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <select
+                value={masteryFilter}
+                onChange={e => setMasteryFilter(e.target.value as any)}
+                className="bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-xl px-3 py-1.5 outline-none cursor-pointer"
+              >
+                <option value="All">All Topics</option>
+                <option value="Pending">Pending Topics</option>
+                <option value="Completed">Completed Topics</option>
+                <option value="NeedsRevision">Needs Revision Cycle</option>
+                <option value="Weak">Weak Mastery (≤2★)</option>
+                <option value="HighWeightage">High Weightage</option>
+              </select>
 
-            const isExpanded = Boolean(expandedTopics[topic.id]);
-            const subList = topic.subtopics || [];
-            const subCount = subList.length || topic.subtopicsCount || 0;
-            const completedCount = subList.filter((s) => completedSubtopicIds.has(s.id) || s.completed).length;
-            const topicPercentage = subCount > 0 ? Math.round((completedCount / subCount) * 100) : 0;
-            const isFullyCompleted = subCount > 0 && completedCount === subCount;
+              {/* Search input */}
+              <div className="relative flex-1 md:w-56">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search chapters..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500"
+                />
+              </div>
 
-            // Check if all subtopics in this topic are imported to My Syllabus
-            const isEntireTopicImported = subList.length > 0 && subList.every((s) => importedOfficialIds.has(s.id));
+              <button
+                onClick={() => toggleExpandAll(filteredTopics)}
+                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 hover:text-white shrink-0 cursor-pointer"
+              >
+                Expand/Collapse
+              </button>
+            </div>
+          </div>
 
-            return (
-              <div
-                key={topic.id}
-                id={`topic-card-${topic.id}`}
-                className={`rounded-3xl border transition-all duration-300 overflow-hidden ${
-                  isFullyCompleted
-                    ? 'bg-sky-500/5 border-sky-500/20 shadow-sm'
-                    : isExpanded
-                    ? 'bg-slate-900 border-slate-700 shadow-md'
-                    : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+          {/* Subject Pills (Physics, Chemistry, Maths, etc.) */}
+          {availableSubjects.length > 1 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => setSelectedSubjectFilter('ALL')}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                  selectedSubjectFilter === 'ALL'
+                    ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
                 }`}
               >
-                {/* Topic Accordion Header */}
-                <div
-                  onClick={() => toggleAccordion(topic.id)}
-                  className="p-4 sm:p-5 cursor-pointer flex items-center justify-between gap-3 select-none"
+                All Subjects ({currentTopics.length})
+              </button>
+              {availableSubjects.map((subj) => (
+                <button
+                  key={subj.name}
+                  onClick={() => setSelectedSubjectFilter(subj.name)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                    selectedSubjectFilter === subj.name
+                      ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                  }`}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleParentTopicCompletion(filteredTopics, topic.id);
-                      }}
-                      className="text-slate-400 hover:text-sky-400 transition-colors shrink-0 cursor-pointer"
-                      title={isFullyCompleted ? 'Uncheck all subtopics' : 'Check all subtopics'}
+                  {subj.name} ({subj.count})
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* ── TOPIC CARDS: MERGED CHECKLIST + 5-DIMENSION MASTERY TOOLBAR ── */}
+          <div className="space-y-3">
+            {filteredTopics.length === 0 ? (
+              <div className="p-12 text-center rounded-3xl bg-slate-900 border border-slate-800">
+                <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-300 font-bold">No topics match your current filter</p>
+                <p className="text-slate-500 text-xs mt-1">Try resetting the stage or search query.</p>
+              </div>
+            ) : (
+              filteredTopics.map((topic, topicIdx) => {
+                const effectiveGuestLimit = guestLimit ?? Number(localStorage.getItem('aspirantx_guest_syllabus_limit') || 5);
+                const isLockedForGuest = isGuest && topicIdx >= effectiveGuestLimit;
+
+                if (isLockedForGuest) {
+                  return (
+                    <div
+                      key={topic.id}
+                      className="p-5 rounded-3xl bg-slate-900 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                     >
-                      {isFullyCompleted ? (
-                        <CheckCircle2 className="w-5 h-5 text-sky-400 fill-sky-400/20" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-slate-600 hover:text-sky-400" />
-                      )}
-                    </button>
-
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className={`text-sm sm:text-base font-bold tracking-tight ${isFullyCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
-                          {topic.title}
-                        </h4>
-                        <span
-                          className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                            topic.weightage === 'High'
-                              ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                              : topic.weightage === 'Medium'
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              : 'bg-slate-800 text-slate-400'
-                          }`}
-                        >
-                          {topic.weightage}
-                        </span>
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-900 text-slate-400 border border-slate-800">
-                          {topic.stage}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                          <LockIcon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-extrabold text-slate-300 blur-[2px] select-none">
+                              {topic.title}
+                            </h4>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-300 uppercase">
+                              Demo Mode Locked
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Login or Register to unlock complete syllabus.
+                          </p>
+                        </div>
                       </div>
 
-                      <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1.5">
-                        <span className="truncate">{topic.category}</span>
-                        <span>•</span>
-                        <span className="text-sky-400 font-semibold shrink-0">
-                          {completedCount}/{subCount} Done ({topicPercentage}%)
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="hidden sm:flex flex-col items-end">
-                      <span className="text-xs font-black text-white">{topicPercentage}%</span>
-                      <div className="w-16 h-1.5 bg-slate-950 rounded-full overflow-hidden mt-1 border border-slate-800">
-                        <div
-                          className={`h-full rounded-full transition-all duration-300 ${
-                            isFullyCompleted ? 'bg-sky-500' : 'bg-sky-600'
-                          }`}
-                          style={{ width: `${topicPercentage}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
-                      <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-sky-400' : ''}`} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sub-topics Accordion Drawer */}
-                <AccordionTransition isOpen={isExpanded} className="border-t border-slate-800/80 bg-slate-950/80 p-4 sm:p-5 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-400 mb-1 px-0.5">
-                    <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 text-[11px]">
-                      <Layers className="w-3.5 h-3.5 text-sky-400" /> Sub-topics ({subList.length})
-                    </span>
-
-                    {/* Single Clean Import Topic Action */}
-                    {activeTab === 'official' && (
                       <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (isEntireTopicImported) return;
-                          const items = subList.map((s) => ({
-                            subject: topic.category,
-                            topic: topic.title,
-                            subtopic: s.title,
-                            officialNodeId: s.id,
-                            stage: topic.stage,
-                            weightage: topic.weightage
-                          }));
-                          handleImportNode(items);
-                        }}
-                        disabled={isEntireTopicImported}
-                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                          isEntireTopicImported
-                            ? 'bg-slate-800 text-slate-500 border border-slate-700 opacity-70 cursor-not-allowed'
-                            : 'bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-sm'
-                        }`}
+                        onClick={onRequireLogin}
+                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md shrink-0 flex items-center gap-1.5 cursor-pointer"
                       >
-                        <Download className="w-3 h-3" />
-                        <span>{isEntireTopicImported ? '✓ In My Syllabus' : 'Import Topic'}</span>
+                        <Sparkles className="w-3.5 h-3.5" /> Login to Unlock Full Syllabus
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  );
+                }
 
-                  {subList.length === 0 ? (
-                    <p className="text-xs text-slate-500 italic p-3">No individual sub-topics loaded.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-2">
-                      {subList.map((sub) => {
-                        const isDone = completedSubtopicIds.has(sub.id) || sub.completed;
+                const isExpanded = Boolean(expandedTopics[topic.id]);
+                const subList = topic.subtopics || [];
+                const subCount = subList.length || topic.subtopicsCount || 0;
+                const completedCount = subList.filter((s) => completedSubtopicIds.has(s.id) || s.completed).length;
+                const topicPercentage = subCount > 0 ? Math.round((completedCount / subCount) * 100) : 0;
+                const isFullyCompleted = topic.completed || (subCount > 0 && completedCount === subCount);
 
-                        // Calculate accumulated time studied for this subtopic
-                        const key = `${topic.category}|||${topic.title}|||${sub.title}`;
-                        const studiedSecs = timeSummary[sub.id] || sub.time_studied_seconds || timeSummary[key] || 0;
-                        const timeText = formatStudiedTime(studiedSecs);
+                // Progress state from forecasting map
+                const progress: StudentTaskProgress = taskProgressMap.get(topic.id) || {
+                  taskId: topic.id,
+                  learningStatus: (isFullyCompleted ? 'completed' : 'pending') as TaskStatus,
+                  practiceStatus: (isFullyCompleted ? 'completed' : 'pending') as TaskStatus,
+                  pyqPercentage: isFullyCompleted ? 80 : 0,
+                  revisionCycle: (isFullyCompleted ? 1 : 0) as RevisionCycle,
+                  masteryLevel: (isFullyCompleted ? 4 : 1) as MasteryRating,
+                  plannedHours: 10,
+                  actualHoursSpent: 0
+                };
 
-                        return (
-                          <div
-                            key={sub.id}
-                            onClick={() => toggleSubtopicCompletion(sub.id, topic.category, topic.title, sub.title)}
-                            className={`p-3 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group ${
-                              isDone
-                                ? 'bg-sky-500/10 border-sky-500/25 text-slate-200'
-                                : 'bg-slate-900/80 border-slate-800/90 hover:border-slate-700 text-slate-200'
-                            }`}
+                return (
+                  <div
+                    key={topic.id}
+                    id={`topic-card-${topic.id}`}
+                    className={`rounded-3xl border transition-all duration-300 overflow-hidden ${
+                      isFullyCompleted
+                        ? 'bg-sky-500/5 border-sky-500/25 shadow-sm'
+                        : isExpanded
+                        ? 'bg-slate-900 border-slate-700 shadow-md'
+                        : 'bg-slate-950 border-slate-800/80 hover:border-slate-700'
+                    }`}
+                  >
+                    {/* Header: Checkbox, Title, Stage, Weightage & Expand Button */}
+                    <div
+                      onClick={() => toggleAccordion(topic.id)}
+                      className="p-4 sm:p-5 cursor-pointer select-none"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3.5 min-w-0">
+                          {/* Master Completion Checkbox */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleParentTopicCompletion(topic.id);
+                            }}
+                            className="mt-0.5 text-slate-400 hover:text-sky-400 transition shrink-0 cursor-pointer"
+                            title={isFullyCompleted ? 'Mark topic as incomplete' : 'Mark topic as complete'}
                           >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="shrink-0 relative">
-                                <CheckmarkPop isChecked={isDone}>
-                                  {isDone ? (
-                                    <div className="w-4 h-4 rounded-md bg-sky-600 text-white flex items-center justify-center font-bold">
-                                      <Check className="w-3 h-3 stroke-[3]" />
-                                    </div>
-                                  ) : (
-                                    <div className="w-4 h-4 rounded-md border-2 border-slate-600 group-hover:border-sky-500 transition-colors" />
-                                  )}
-                                </CheckmarkPop>
-                                {recentlyCheckedSubId === sub.id && (
-                                  <FloatingRewardBadge text="+30 XP" onComplete={() => setRecentlyCheckedSubId(null)} />
-                                )}
-                              </div>
+                            {isFullyCompleted ? (
+                              <CheckCircle2 className="w-5 h-5 text-sky-400 fill-sky-400/20" />
+                            ) : (
+                              <Circle className="w-5 h-5 text-slate-600 hover:text-sky-400" />
+                            )}
+                          </button>
 
-                              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                <span className={`text-xs font-medium ${isDone ? 'line-through text-slate-400' : 'text-slate-100'}`}>
-                                  {sub.title}
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className={`text-sm sm:text-base font-bold tracking-tight ${isFullyCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
+                                {topic.title}
+                              </h4>
+
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
+                                topic.weightage === 'High'
+                                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                  : topic.weightage === 'Medium'
+                                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                  : 'bg-slate-800 text-slate-400'
+                              }`}>
+                                {topic.weightage} Weightage
+                              </span>
+
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-900 text-slate-400 border border-slate-800">
+                                {topic.stage}
+                              </span>
+
+                              {timeSummary[topic.id] ? (
+                                <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                  {formatStudiedTime(timeSummary[topic.id])}
                                 </span>
-
-                                {studiedSecs > 0 && (
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/30 flex items-center gap-1">
-                                    <Clock className="w-2.5 h-2.5 text-sky-400" />
-                                    {timeText}
-                                  </span>
-                                )}
-                              </div>
+                              ) : null}
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-950 text-slate-400 border border-slate-800/80 flex items-center gap-1">
-                                <Clock className="w-2.5 h-2.5 text-slate-500" /> {sub.estimatedHours || 2.5}h
-                              </span>
+                            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+                              <span className="font-semibold text-sky-400">{topic.category}</span>
+                              <span>•</span>
+                              <span>{subCount} Subtopics ({completedCount} Done)</span>
+                              <span>•</span>
+                              <span>Est. Workload: ~{topic.subtopics?.reduce((a, b) => a + (b.estimatedHours || 2.5), 0) || 12}h</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Right: Percent & Accordion Toggle */}
+                        <div className="flex items-center gap-3 shrink-0">
+                          <div className="hidden sm:flex flex-col items-end">
+                            <span className="text-xs font-black text-white">{topicPercentage}%</span>
+                            <div className="w-16 h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1 border border-slate-800">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  isFullyCompleted ? 'bg-sky-400' : 'bg-sky-600'
+                                }`}
+                                style={{ width: `${topicPercentage}%` }}
+                              />
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
 
-                  {topic.notes && (
-                    <div className="mt-3 p-3 rounded-xl bg-slate-900/60 border border-slate-800/80 text-[11px] text-slate-400 flex items-start gap-2">
-                      <Info className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
-                      <span><strong className="text-slate-300">Note:</strong> {topic.notes}</span>
+                          <div className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
+                            <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-sky-400' : ''}`} />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ── 5-DIMENSION MASTERY TOOLBAR (THE CORE PRINCIPLE) ── */}
+                      <div 
+                        onClick={(e) => e.stopPropagation()} 
+                        className="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-2 text-xs"
+                      >
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {/* 1. Learning Pill */}
+                          <button
+                            onClick={() => toggleLearning(topic.id)}
+                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition flex items-center gap-1 cursor-pointer ${
+                              progress.learningStatus === 'completed'
+                                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                            }`}
+                            title="Concept understanding & theory"
+                          >
+                            <BookOpen className="w-3 h-3" />
+                            <span>Concept: {progress.learningStatus === 'completed' ? 'Done ✓' : 'Pending'}</span>
+                          </button>
+
+                          {/* 2. Practice Pill */}
+                          <button
+                            onClick={() => cyclePractice(topic.id)}
+                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition flex items-center gap-1 cursor-pointer ${
+                              progress.practiceStatus === 'completed'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                : progress.practiceStatus === 'in_progress'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                            }`}
+                            title="Question solving practice"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            <span>Practice: {progress.practiceStatus === 'completed' ? 'Done ✓' : progress.practiceStatus === 'in_progress' ? 'In Progress' : 'Pending'}</span>
+                          </button>
+
+                          {/* 3. PYQ % Button */}
+                          <button
+                            onClick={() => cyclePyq(topic.id)}
+                            className="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 transition flex items-center gap-1 cursor-pointer"
+                            title="Click to cycle PYQ coverage (0% -> 50% -> 80% -> 100%)"
+                          >
+                            <Zap className="w-3 h-3 text-amber-400" />
+                            <span>PYQ: <strong className="text-white">{progress.pyqPercentage}%</strong></span>
+                          </button>
+
+                          {/* 4. Spaced Revision Cycle */}
+                          <button
+                            onClick={() => cycleRevision(topic.id)}
+                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition flex items-center gap-1 cursor-pointer ${
+                              progress.revisionCycle > 0
+                                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
+                                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                            }`}
+                            title="Click to advance revision cycle (Rev 1 -> Rev 2 -> Rev 3)"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>{progress.revisionCycle === 0 ? 'Rev Pending' : `Rev ${progress.revisionCycle} Done`}</span>
+                          </button>
+                        </div>
+
+                        {/* 5. Mastery 1 to 5 Stars Rating */}
+                        <div className="flex items-center gap-1 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
+                          <span className="text-[10px] text-slate-400 font-semibold mr-1">Mastery:</span>
+                          {([1, 2, 3, 4, 5] as MasteryRating[]).map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setMasteryRating(topic.id, star)}
+                              className="cursor-pointer text-slate-600 hover:text-amber-400 transition"
+                              title={`Rate mastery as ${star}/5 stars`}
+                            >
+                              <Star
+                                className={`w-3.5 h-3.5 ${
+                                  star <= progress.masteryLevel
+                                    ? 'text-amber-400 fill-amber-400'
+                                    : 'text-slate-700'
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </AccordionTransition>
+
+                    {/* Subtopics Accordion Drawer */}
+                    <AccordionTransition isOpen={isExpanded} className="border-t border-slate-800/80 bg-slate-950/80 p-4 sm:p-5 space-y-3">
+                      <div className="flex items-center justify-between text-xs text-slate-400 mb-1 px-0.5">
+                        <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 text-[11px]">
+                          <Layers className="w-3.5 h-3.5 text-sky-400" /> Sub-topics Breakdown ({subList.length})
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {subList.map((sub, sIdx) => {
+                          const isSubDone = completedSubtopicIds.has(sub.id) || sub.completed;
+                          return (
+                            <div
+                              key={sub.id || sIdx}
+                              onClick={() => toggleSubtopicCompletion(sub.id)}
+                              className={`p-3 rounded-2xl border transition flex items-center justify-between gap-3 cursor-pointer ${
+                                isSubDone
+                                  ? 'bg-sky-500/10 border-sky-500/30 text-slate-200'
+                                  : 'bg-slate-900 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSubtopicCompletion(sub.id);
+                                  }}
+                                  className="text-slate-400 hover:text-sky-400 shrink-0"
+                                >
+                                  {isSubDone ? (
+                                    <CheckCircle2 className="w-4 h-4 text-sky-400 fill-sky-400/20" />
+                                  ) : (
+                                    <Circle className="w-4 h-4 text-slate-600" />
+                                  )}
+                                </button>
+                                <span className={`text-xs font-medium ${isSubDone ? 'line-through text-slate-400' : 'text-white'}`}>
+                                  {sub.title}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2 text-[10px] text-slate-400 shrink-0">
+                                <span>~{sub.estimatedHours || 2.5}h</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </AccordionTransition>
                   </div>
                 );
               })
             )}
-
-            {/* Progressive Discovery: Next Recommended Topic */}
-            {nextRecommendedTopic && completedSubtopicIds.size > 0 && (
-              <ProgressiveDiscoveryCard
-                title={`Next Recommended: ${nextRecommendedTopic.title}`}
-                subtitle={`Category: ${nextRecommendedTopic.category} • Ready for study focus`}
-                actionLabel="Study Topic"
-                badge="Next Up"
-                icon={<Sparkles className="w-5 h-5 text-sky-400" />}
-                onAction={() => {
-                  setExpandedTopics((prev) => ({ ...prev, [nextRecommendedTopic.id]: true }));
-                  const el = document.getElementById(`topic-card-${nextRecommendedTopic.id}`);
-                  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }}
-              />
-            )}
           </div>
-        )}
-
-      {/* Hierarchy Builder Modal for My Syllabus Tab */}
-      <AnimatePresence>
-        {isBuilderModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4"
-            >
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Plus className="w-5 h-5 text-sky-400" />
-                  {builderMode === 'subject' && 'Add New Custom Subject'}
-                  {builderMode === 'topic' && `Add Topic under "${targetSubject}"`}
-                  {builderMode === 'subtopic' && `Add Subtopic under "${targetChapter}"`}
-                </h3>
-                <button
-                  onClick={() => setIsBuilderModalOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-3">
-                {builderMode === 'subject' && (
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1">Subject Name *</label>
-                    <input
-                      type="text"
-                      value={inputSubject}
-                      onChange={(e) => setInputSubject(e.target.value)}
-                      placeholder="e.g. Ancient Indian History, Ethics, Python..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                    />
-                  </div>
-                )}
-
-                {(builderMode === 'subject' || builderMode === 'topic') && (
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1">Topic / Chapter Name</label>
-                    <input
-                      type="text"
-                      value={inputChapter}
-                      onChange={(e) => setInputChapter(e.target.value)}
-                      placeholder="e.g. Indus Valley Civilization, Moral Philosophy..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                    />
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-xs font-bold text-slate-300 block mb-1">Subtopic Title</label>
-                  <input
-                    type="text"
-                    value={inputSubtopic}
-                    onChange={(e) => setInputSubtopic(e.target.value)}
-                    placeholder="e.g. Harappan Seals, Categorical Imperative..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1">Stage</label>
-                    <select
-                      value={inputStage}
-                      onChange={(e) => setInputStage(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-sky-500 font-semibold"
-                    >
-                      <option value="Prelims">Prelims</option>
-                      <option value="Mains">Mains</option>
-                      <option value="Tier-1">Tier-1</option>
-                      <option value="Tier-2">Tier-2</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 block mb-1">Weightage</label>
-                    <select
-                      value={inputWeightage}
-                      onChange={(e) => setInputWeightage(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-sky-500 font-semibold"
-                    >
-                      <option value="High">High</option>
-                      <option value="Medium">Medium</option>
-                      <option value="Low">Low</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
-                <button
-                  onClick={() => setIsBuilderModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSaveBuilderNode}
-                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  Save to My Syllabus
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-        </>
+        </div>
       )}
 
-      {/* Google Spreadsheet Importer Modal */}
-      <GoogleSheetImportModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onImportSuccess={(topics, message) => {
-          handleGoogleSheetImportSuccess(topics, message);
-          setIsImportModalOpen(false);
-        }}
-      />
+      {/* ── MODALS (IMPORT / SEARCH) ────────────────────────────────────────── */}
+      {isImportModalOpen && (
+        <GoogleSheetImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          onImportSuccess={(_importedTopics, msg) => {
+            setIsImportModalOpen(false);
+            setImportNotification(msg);
+            loadData();
+          }}
+        />
+      )}
 
-      {/* Phase 4 Universal Bulk Import Modal */}
-      <AcademicBulkImportModal
-        isOpen={isBulkImportOpen}
-        onClose={() => setIsBulkImportOpen(false)}
-      />
-
-      {/* Global Search Modal */}
-      <GlobalSearchModal
-        isOpen={isGlobalSearchOpen}
-        onClose={() => setIsGlobalSearchOpen(false)}
-      />
-
-      {/* Student Personal Syllabus Upload Modal */}
-      <MySyllabusUploadModal
-        isOpen={isMySyllabusModalOpen}
-        onClose={() => {
-          setIsMySyllabusModalOpen(false);
-          loadData();
-        }}
-        exam={selectedExam}
-        userId={userId}
-        onSyllabusUpdated={() => loadData()}
-      />
+      {isGlobalSearchOpen && (
+        <GlobalSearchModal
+          isOpen={isGlobalSearchOpen}
+          onClose={() => setIsGlobalSearchOpen(false)}
+        />
+      )}
     </div>
   );
 };
