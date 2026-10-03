@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '2.9.0',
-  versionCode: 23,
+  version: '3.0.0',
+  versionCode: 24,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
   releaseDate: 'October 3, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v2.9.0: Dynamic Exam Forecast Tracker (Fast, Realistic, Slow Scenarios, Spaced Revision & What-If Simulator), 243K+ Full Exam Question Banks (5,000+ Qs across all 48 Exams), and Android Performance Optimizations.',
+  releaseNotes: 'v3.0.0: Unified Syllabus Tracker (combining Classic Checklist with Dynamic Exam Forecast Engine, Spaced Revision, What-If Simulator & 5-Dimension Mastery), 243K+ Full Exam Question Banks, and APK Updater.',
 };

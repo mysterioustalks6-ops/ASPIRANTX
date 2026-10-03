@@ -640,8 +640,8 @@ export async function updateGlobalAdminSettings(body: any, updatedBy = 'Admin') 
   return globalAdminSettings;
 }
 
-export const APP_VERSION = process.env.APP_VERSION || '2.9.0';
-export const APP_VERSION_CODE = 23;
+export const APP_VERSION = process.env.APP_VERSION || '3.0.0';
+export const APP_VERSION_CODE = 24;
 
 export function isValidUUID(str: string | null | undefined): boolean {
   if (!str) return false;

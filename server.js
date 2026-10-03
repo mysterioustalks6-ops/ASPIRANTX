@@ -4765,8 +4765,8 @@ var init_shared = __esm({
         demoDurationMinutes: 10
       }
     };
-    APP_VERSION = process.env.APP_VERSION || "2.9.0";
-    APP_VERSION_CODE = 23;
+    APP_VERSION = process.env.APP_VERSION || "3.0.0";
+    APP_VERSION_CODE = 24;
     lastGatewaySettingsSync = 0;
     GATEWAY_SETTINGS_CACHE_MS = 1e4;
     serverOrdersDb = /* @__PURE__ */ new Map();
@@ -26234,11 +26234,11 @@ app.get("/api/version", (_req, res) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.json({
     version: APP_VERSION,
-    versionCode: APP_VERSION_CODE || 22,
+    versionCode: APP_VERSION_CODE || 24,
     apkDownloadUrl: "https://studyride.in/studyride.apk",
     directApkUrl: "https://studyride.in/studyride.apk",
     releaseDate: "October 3, 2026",
-    releaseNotes: "v2.9.0: Dynamic Exam Forecast Tracker (Fast, Realistic, Slow Scenarios, Spaced Revision & What-If Simulator), 243K+ Full Exam Question Banks (5,000+ Qs across all 48 Exams), and Android Performance Optimizations.",
+    releaseNotes: "v3.0.0: Unified Syllabus Tracker (combining Classic Checklist with Dynamic Exam Forecast Engine, Spaced Revision, What-If Simulator & 5-Dimension Mastery), 243K+ Full Exam Question Banks, and APK Updater.",
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
