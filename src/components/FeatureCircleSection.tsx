@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { ActiveTab, UserProfile } from '../types';
 import { ExamSelectModal } from './ExamSelectModal';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 export interface FeatureCircleItem {
   id: ActiveTab;
@@ -240,7 +241,7 @@ export const FeatureCircleSection: React.FC<FeatureCircleSectionProps> = ({
                   Study<span className="text-sky-400">Ride</span>
                 </span>
                 <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-300">
-                  v2.8.0
+                  v{CANONICAL_APP_RELEASE.version}
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-medium leading-none">

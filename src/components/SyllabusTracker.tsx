@@ -47,6 +47,7 @@ import { OpenKoshExamDirectory } from './OpenKoshExamDirectory';
 import { OpenKoshExamFrame } from './OpenKoshExamFrame';
 import { convertOpenKoshToSyllabusNodes } from '../data/openkoshData';
 import { getExamConfig } from '../lib/examRegistry';
+import { ExamForecastTracker } from './forecast/ExamForecastTracker';
 import { 
   CheckCircle2, 
   Circle, 
@@ -105,7 +106,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   onOpenPremium
 }) => {
   const [selectedExam, setSelectedExam] = useState<ExamType>(initialExam || 'UPSC_CSE');
-  const [viewMode, setViewMode] = useState<'tracker' | 'directory'>('tracker');
+  const [viewMode, setViewMode] = useState<'forecast' | 'tracker' | 'directory'>('forecast');
 
   useEffect(() => {
     if (initialExam) {
@@ -745,7 +746,55 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
   return (
     <div className="space-y-6 pb-12">
-      {viewMode === 'directory' ? (
+      {/* View Mode Switcher Header */}
+      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 flex items-center justify-between gap-2 overflow-x-auto shadow-lg backdrop-blur-md">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={() => setViewMode('forecast')}
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap ${
+              viewMode === 'forecast'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-600/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>Exam Forecast Tracker</span>
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Live AI Pro</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('tracker')}
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
+              viewMode === 'tracker'
+                ? 'bg-slate-800 text-white shadow'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Classic Checklist</span>
+          </button>
+
+          <button
+            onClick={() => setViewMode('directory')}
+            className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition whitespace-nowrap ${
+              viewMode === 'directory'
+                ? 'bg-slate-800 text-white shadow'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>All 48 Exam Syllabi</span>
+          </button>
+        </div>
+      </div>
+
+      {viewMode === 'forecast' ? (
+        <ExamForecastTracker
+          initialExamId={selectedExam}
+          userId={userId}
+          isGuest={isGuest}
+        />
+      ) : viewMode === 'directory' ? (
         <OpenKoshExamDirectory
           onSelectExam={(newId) => {
             setSelectedExam(newId as ExamType);

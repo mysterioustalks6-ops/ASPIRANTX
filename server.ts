@@ -148,7 +148,7 @@ app.get('/api/version', (_req, res) => {
     apkDownloadUrl: 'https://studyride.in/studyride.apk',
     directApkUrl: 'https://studyride.in/studyride.apk',
     releaseDate: 'October 3, 2026',
-    releaseNotes: 'v2.8.0: Galaxy Pomodoro Analytics HUD (Days & Hours Studied), Interactive Cosmic Activity Charts & Trend Waves, Modern Cosmic Study Checkbox Checklist, and Mobile Auth Deep-Linking Optimization.',
+    releaseNotes: 'v2.9.0: Dynamic Exam Forecast Tracker (Fast, Realistic, Slow Scenarios, Spaced Revision & What-If Simulator), 243K+ Full Exam Question Banks (5,000+ Qs across all 48 Exams), and Android Performance Optimizations.',
     timestamp: new Date().toISOString()
   });
 });

@@ -4765,8 +4765,8 @@ var init_shared = __esm({
         demoDurationMinutes: 10
       }
     };
-    APP_VERSION = process.env.APP_VERSION || "2.8.0";
-    APP_VERSION_CODE = 22;
+    APP_VERSION = process.env.APP_VERSION || "2.9.0";
+    APP_VERSION_CODE = 23;
     lastGatewaySettingsSync = 0;
     GATEWAY_SETTINGS_CACHE_MS = 1e4;
     serverOrdersDb = /* @__PURE__ */ new Map();
@@ -10321,128 +10321,116 @@ router.get("/api/academic/pyqs", async (req, res) => {
     let fetchedFromDb = false;
     if (process.env.DATABASE_URL) {
       try {
-        const whereClauses = [];
-        const params = [];
-        let pIdx = 1;
+        const qWhereClauses = [];
+        const qParams = [];
+        let qIdx = 1;
         if (exam) {
           const aliases = getExamAliases(exam);
-          whereClauses.push(`UPPER(data->>'exam') = ANY($${pIdx})`);
-          params.push(aliases.map((a) => a.toUpperCase()));
-          pIdx++;
+          qWhereClauses.push(`UPPER(exam_id) = ANY($${qIdx})`);
+          qParams.push(aliases.map((a) => a.toUpperCase()));
+          qIdx++;
         }
         if (subject && subject !== "All") {
-          whereClauses.push(`(data->>'subject' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx} OR data->>'paper' ILIKE $${pIdx})`);
-          params.push(`%${subject}%`);
-          pIdx++;
+          qWhereClauses.push(`(subject ILIKE $${qIdx} OR topic ILIKE $${qIdx})`);
+          qParams.push(`%${subject}%`);
+          qIdx++;
         }
         if (topic && topic !== "All") {
-          whereClauses.push(`data->>'topic' ILIKE $${pIdx}`);
-          params.push(`%${topic}%`);
-          pIdx++;
-        }
-        if (stage && stage !== "All") {
-          whereClauses.push(`data->>'stage' = $${pIdx}`);
-          params.push(stage);
-          pIdx++;
+          qWhereClauses.push(`topic ILIKE $${qIdx}`);
+          qParams.push(`%${topic}%`);
+          qIdx++;
         }
         if (difficulty && difficulty !== "All") {
-          whereClauses.push(`data->>'difficulty' = $${pIdx}`);
-          params.push(difficulty);
-          pIdx++;
+          qWhereClauses.push(`difficulty = $${qIdx}`);
+          qParams.push(difficulty);
+          qIdx++;
         }
         if (search) {
-          whereClauses.push(`(data->>'questionText' ILIKE $${pIdx} OR data->>'question' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx})`);
-          params.push(`%${search}%`);
-          pIdx++;
+          qWhereClauses.push(`(question_text ILIKE $${qIdx} OR topic ILIKE $${qIdx})`);
+          qParams.push(`%${search}%`);
+          qIdx++;
         }
-        const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
-        const countRes = await queryPostgres(`SELECT count(*) FROM pyqs ${whereSql};`, params);
-        let dbTotal = parseInt(countRes.rows[0]?.count || "0", 10);
-        if (dbTotal === 0 && subject && subject !== "All" && exam) {
-          const examOnlyAliases = getExamAliases(exam).map((a) => a.toUpperCase());
-          const broadRes = await queryPostgres(
-            `SELECT count(*) FROM pyqs WHERE UPPER(data->>'exam') = ANY($1);`,
-            [examOnlyAliases]
-          );
-          const broadTotal = parseInt(broadRes.rows[0]?.count || "0", 10);
-          if (broadTotal > 0) {
-            const offset = (pageNum - 1) * pageLimit;
-            const broadData = await queryPostgres(
-              `SELECT id, data FROM pyqs WHERE UPPER(data->>'exam') = ANY($1) ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $2 OFFSET $3;`,
-              [examOnlyAliases, pageLimit, offset]
-            );
-            if (broadData.rows.length > 0) {
-              fetchedFromDb = true;
-              total = broadTotal;
-              items = broadData.rows.map(normalizePyqItem).filter(Boolean);
-            }
-          }
-        } else if (dbTotal > 0) {
+        const qWhereSql = qWhereClauses.length > 0 ? `WHERE ${qWhereClauses.join(" AND ")}` : "";
+        const qCountRes = await queryPostgres(`SELECT count(*) FROM questions ${qWhereSql};`, qParams);
+        let qDbTotal = parseInt(qCountRes.rows[0]?.count || "0", 10);
+        if (qDbTotal > 0) {
           const offset = (pageNum - 1) * pageLimit;
-          const dataRes = await queryPostgres(
-            `SELECT id, data FROM pyqs ${whereSql} ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $${pIdx} OFFSET $${pIdx + 1};`,
-            [...params, pageLimit, offset]
+          const qDataRes = await queryPostgres(
+            `SELECT * FROM questions ${qWhereSql} ORDER BY COALESCE(source_year, 2024) DESC, id ASC LIMIT $${qIdx} OFFSET $${qIdx + 1};`,
+            [...qParams, pageLimit, offset]
           );
-          if (dataRes.rows.length > 0) {
+          if (qDataRes.rows.length > 0) {
             fetchedFromDb = true;
-            total = dbTotal;
-            items = dataRes.rows.map(normalizePyqItem).filter(Boolean);
+            total = qDbTotal;
+            items = qDataRes.rows.map((r) => normalizePyqItem(r)).filter(Boolean);
           }
         } else {
-          const qWhereClauses = [];
-          const qParams = [];
-          let qIdx = 1;
+          const whereClauses = [];
+          const params = [];
+          let pIdx = 1;
           if (exam) {
             const aliases = getExamAliases(exam);
-            qWhereClauses.push(`UPPER(exam_id) = ANY($${qIdx})`);
-            qParams.push(aliases.map((a) => a.toUpperCase()));
-            qIdx++;
+            whereClauses.push(`UPPER(data->>'exam') = ANY($${pIdx})`);
+            params.push(aliases.map((a) => a.toUpperCase()));
+            pIdx++;
           }
           if (subject && subject !== "All") {
-            qWhereClauses.push(`subject ILIKE $${qIdx}`);
-            qParams.push(`%${subject}%`);
-            qIdx++;
+            whereClauses.push(`(data->>'subject' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx} OR data->>'paper' ILIKE $${pIdx})`);
+            params.push(`%${subject}%`);
+            pIdx++;
           }
           if (topic && topic !== "All") {
-            qWhereClauses.push(`topic ILIKE $${qIdx}`);
-            qParams.push(`%${topic}%`);
-            qIdx++;
+            whereClauses.push(`data->>'topic' ILIKE $${pIdx}`);
+            params.push(`%${topic}%`);
+            pIdx++;
+          }
+          if (stage && stage !== "All") {
+            whereClauses.push(`data->>'stage' = $${pIdx}`);
+            params.push(stage);
+            pIdx++;
           }
           if (difficulty && difficulty !== "All") {
-            qWhereClauses.push(`difficulty = $${qIdx}`);
-            qParams.push(difficulty);
-            qIdx++;
+            whereClauses.push(`data->>'difficulty' = $${pIdx}`);
+            params.push(difficulty);
+            pIdx++;
           }
           if (search) {
-            qWhereClauses.push(`(question_text ILIKE $${qIdx} OR topic ILIKE $${qIdx})`);
-            qParams.push(`%${search}%`);
-            qIdx++;
+            whereClauses.push(`(data->>'questionText' ILIKE $${pIdx} OR data->>'question' ILIKE $${pIdx} OR data->>'topic' ILIKE $${pIdx})`);
+            params.push(`%${search}%`);
+            pIdx++;
           }
-          const qWhereSql = qWhereClauses.length > 0 ? `WHERE ${qWhereClauses.join(" AND ")}` : "";
-          const qCountRes = await queryPostgres(`SELECT count(*) FROM questions ${qWhereSql};`, qParams);
-          const qDbTotal = parseInt(qCountRes.rows[0]?.count || "0", 10);
-          if (qDbTotal > 0) {
-            const offset = (pageNum - 1) * pageLimit;
-            const qDataRes = await queryPostgres(
-              `SELECT * FROM questions ${qWhereSql} ORDER BY id ASC LIMIT $${qIdx} OFFSET $${qIdx + 1};`,
-              [...qParams, pageLimit, offset]
+          const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+          const countRes = await queryPostgres(`SELECT count(*) FROM pyqs ${whereSql};`, params);
+          let dbTotal = parseInt(countRes.rows[0]?.count || "0", 10);
+          if (dbTotal === 0 && subject && subject !== "All" && exam) {
+            const examOnlyAliases = getExamAliases(exam).map((a) => a.toUpperCase());
+            const broadRes = await queryPostgres(
+              `SELECT count(*) FROM pyqs WHERE UPPER(data->>'exam') = ANY($1);`,
+              [examOnlyAliases]
             );
-            if (qDataRes.rows.length > 0) {
+            const broadTotal = parseInt(broadRes.rows[0]?.count || "0", 10);
+            if (broadTotal > 0) {
+              const offset = (pageNum - 1) * pageLimit;
+              const broadData = await queryPostgres(
+                `SELECT id, data FROM pyqs WHERE UPPER(data->>'exam') = ANY($1) ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $2 OFFSET $3;`,
+                [examOnlyAliases, pageLimit, offset]
+              );
+              if (broadData.rows.length > 0) {
+                fetchedFromDb = true;
+                total = broadTotal;
+                items = broadData.rows.map(normalizePyqItem).filter(Boolean);
+              }
+            }
+          } else if (dbTotal > 0) {
+            const offset = (pageNum - 1) * pageLimit;
+            const dataRes = await queryPostgres(
+              `SELECT id, data FROM pyqs ${whereSql} ORDER BY (data->>'year')::int DESC NULLS LAST LIMIT $${pIdx} OFFSET $${pIdx + 1};`,
+              [...params, pageLimit, offset]
+            );
+            if (dataRes.rows.length > 0) {
               fetchedFromDb = true;
-              total = qDbTotal;
-              items = qDataRes.rows.map((r) => normalizePyqItem({
-                id: r.id,
-                exam: r.exam_id,
-                subject: r.subject,
-                topic: r.topic,
-                questionText: r.question_text,
-                options: r.options,
-                correctOption: typeof r.correct_answer === "number" ? r.correct_answer : typeof r.correct_option === "number" ? r.correct_option : 0,
-                explanation: r.explanation || "",
-                difficulty: r.difficulty || "Medium",
-                marks: parseFloat(r.marks) || 2,
-                negativeMarks: parseFloat(r.negative_marks) || 0.66
-              })).filter(Boolean);
+              total = dbTotal;
+              items = dataRes.rows.map(normalizePyqItem).filter(Boolean);
             }
           }
         }
@@ -26250,7 +26238,7 @@ app.get("/api/version", (_req, res) => {
     apkDownloadUrl: "https://studyride.in/studyride.apk",
     directApkUrl: "https://studyride.in/studyride.apk",
     releaseDate: "October 3, 2026",
-    releaseNotes: "v2.8.0: Galaxy Pomodoro Analytics HUD (Days & Hours Studied), Interactive Cosmic Activity Charts & Trend Waves, Modern Cosmic Study Checkbox Checklist, and Mobile Auth Deep-Linking Optimization.",
+    releaseNotes: "v2.9.0: Dynamic Exam Forecast Tracker (Fast, Realistic, Slow Scenarios, Spaced Revision & What-If Simulator), 243K+ Full Exam Question Banks (5,000+ Qs across all 48 Exams), and Android Performance Optimizations.",
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });
