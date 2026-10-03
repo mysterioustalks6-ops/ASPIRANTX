@@ -26319,6 +26319,9 @@ if (!isServerless) {
       res.sendFile(path9.join(publicPath, "privacy.html"));
     });
     app.get("*", (_req, res) => {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       res.sendFile(path9.join(distPath, "index.html"));
     });
     app.listen(PORT, "0.0.0.0", () => {
