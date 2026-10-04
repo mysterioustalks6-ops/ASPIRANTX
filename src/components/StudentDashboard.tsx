@@ -335,9 +335,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   return (
     <div id="student-dashboard" className="w-full space-y-6 pb-24 md:pb-8 font-sans">
-      {/* ── 1. HEADER: Student Context, Exam Identity & Gamified Segmented Switcher ── */}
+      {/* ── 1. DESKTOP / ADVANCED HEADER: Candidate Workspace & Mode Switcher ── */}
       <SlideUp>
-        <TactileCard className="p-4 sm:p-6 bg-[#1A1D24] border border-[#2A2F3A] space-y-4">
+        <TactileCard className={`p-4 sm:p-6 bg-[#1A1D24] border border-[#2A2F3A] space-y-4 ${dashboardViewMode === 'path' ? 'hidden md:block' : ''}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -381,23 +381,21 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </div>
 
-            {/* Right: Key Exam Gamification Telemetry (Hearts + Streak + Gems + Countdown) */}
+            {/* Right: Key Exam Gamification Telemetry */}
             <div className="flex items-center gap-2 flex-wrap">
-              {/* Energy Hearts */}
               <div 
                 onClick={() => { soundFx.playTap(); }}
                 className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#FF4B4B]/30 flex items-center gap-1.5 shadow-sm cursor-pointer select-none"
-                title="Candidate Energy (Refills automatically or via Practice)"
+                title="Candidate Energy"
               >
                 <Heart className="w-4 h-4 text-[#FF4B4B] fill-[#FF4B4B] animate-pulse" />
                 <span className="text-xs font-black text-[#F3F4F6]">{getCandidateHearts(userProfile.id).hearts}/5</span>
               </div>
 
-              {/* Streak */}
               <div 
                 onClick={() => { soundFx.playChestOpen(); triggerConfetti(); }}
                 className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#FF9600]/30 flex items-center gap-1.5 shadow-sm cursor-pointer select-none"
-                title="Tap to celebrate your daily study streak!"
+                title="Study Streak"
               >
                 <FlameGlow active={(userProfile.streakDays || data.currentStreak || 0) > 0}>
                   <Flame className="w-4 h-4 text-[#FF9600] fill-[#FF9600]" />
@@ -407,7 +405,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 </span>
               </div>
 
-              {/* Countdown to Exam */}
               <div className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] flex items-center gap-1.5 shadow-sm">
                 <Target className="w-4 h-4 text-[#1CB0F6]" />
                 <span className="text-xs font-black text-[#F3F4F6]">
@@ -457,52 +454,27 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </TactileCard>
       </SlideUp>
 
-      {/* ── MODE 1: DUOLINGO-GRADE LEARNING TREE & MASCOT EXPERIENCE ── */}
+      {/* ── MODE 1: DUOLINGO-GRADE LEARNING TREE EXPERIENCE ── */}
       {dashboardViewMode === 'path' && (
-        <div className="space-y-6">
-          {/* Interactive Mascot Companion Banner (Tap to celebrate!) */}
-          <TactileCard className="p-4 sm:p-5 bg-gradient-to-r from-[#142318] via-[#1A1D24] to-[#142318] border-2 border-[#58CC02]/40 shadow-xl overflow-hidden relative">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <AspirantMascot
-                  state={mascotState}
-                  size="md"
-                  speechBubble={VEER_QUOTES[mascotQuoteIndex]}
-                  onClick={handleMascotTap}
-                  className="cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={handleMascotTap}
-                  className="px-3.5 py-2 rounded-xl bg-[#58CC02]/15 hover:bg-[#58CC02]/25 border border-[#58CC02]/40 text-[#58CC02] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#58CC02]" />
-                  <span>Tap Veer for Boost 🍀</span>
-                </button>
-
-                <TactileButton
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    soundFx.playTap();
-                    if (onNavigate) onNavigate('practice_hub');
-                  }}
-                  leftIcon={<Zap className="w-3.5 h-3.5" />}
-                >
-                  Quick PYQ Practice
-                </TactileButton>
-              </div>
-            </div>
-          </TactileCard>
-
+        <div className="space-y-4">
           {/* Full Duolingo Learning Path Engine */}
           <DuolingoPathEngine
             userProfile={userProfile}
             selectedExam={activeExamTag}
+            onExamChange={onExamChange}
             onNavigate={onNavigate}
           />
+
+          {/* Quick Footer Switcher to Analytics */}
+          <div className="pt-4 pb-8 flex justify-center">
+            <button
+              onClick={() => { soundFx.playTap(); setDashboardViewMode('analytics'); }}
+              className="px-4 py-2 rounded-2xl bg-[#1A1D24] hover:bg-[#252B37] border border-[#2A2F3A] text-xs font-bold text-[#9CA3AF] hover:text-[#1CB0F6] flex items-center gap-2 transition-all active:scale-95 shadow-sm cursor-pointer"
+            >
+              <BarChart2 className="w-3.5 h-3.5 text-[#1CB0F6]" />
+              <span>View In-Depth Analytics & Radar</span>
+            </button>
+          </div>
         </div>
       )}
 

@@ -1316,17 +1316,19 @@ function AppContent() {
 
       {/* Main Content Dashboard Area with Full-Width Screen Workspace */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
-        {/* Dedicated Circular Features Section: Replaces legacy sidebar & upper header */}
+        {/* Dedicated Circular Features Section: On mobile dashboard, DuolingoPathEngine provides native top HUD */}
         {!['focus_shield', 'timer'].includes(activeTab) && (
-          <FeatureCircleSection
-            activeTab={activeTab}
-            onSelectTab={handleSelectTab}
-            selectedExam={selectedExam}
-            onExamChange={handleExamChange}
-            user={user}
-            onOpenProfile={() => setShowProfileModal(true)}
-            onOpenSearch={() => setShowSearchModal(true)}
-          />
+          <div className={activeTab === 'dashboard' || activeTab === 'student_dashboard' ? 'hidden md:block' : ''}>
+            <FeatureCircleSection
+              activeTab={activeTab}
+              onSelectTab={handleSelectTab}
+              selectedExam={selectedExam}
+              onExamChange={handleExamChange}
+              user={user}
+              onOpenProfile={() => setShowProfileModal(true)}
+              onOpenSearch={() => setShowSearchModal(true)}
+            />
+          </div>
         )}
 
         {/* Gamification Bar: Relocated from global header to dedicated Rewards & Milestones experience to eliminate cognitive clutter */}
@@ -1425,8 +1427,10 @@ function AppContent() {
                 <AdSenseBanner slotType="header" isPremium={user?.isPremium} />
               </div>
 
-              {/* Daily Motivational Quote (Always Featured at top of Dashboard) */}
-              <DailyQuoteCard />
+              {/* Daily Motivational Quote (Featured on desktop dashboard) */}
+              <div className="hidden md:block">
+                <DailyQuoteCard />
+              </div>
             </>
           )}
 
