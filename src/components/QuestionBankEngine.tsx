@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { SlideUp, Stagger, StaggerItem, PressFeedback, EmptyState, SkeletonShimmer, ModalTransition } from '../lib/animations';
+import { SlideUp, Stagger, StaggerItem, PressFeedback, EmptyState, SkeletonShimmer, ModalTransition, triggerConfetti } from '../lib/animations';
+import { soundFx } from '../lib/soundEffects';
 import { getStandardSubject, getExamSubjects } from './PyqEngine';
 import { dedupFetch } from '../lib/apiDeduplicator';
 import { getApiUrl } from '../lib/apiConfig';
@@ -365,6 +366,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
     }
     // Pick up to 10 random questions
     const shuffled = [...mcqPool].sort(() => 0.5 - Math.random()).slice(0, 10);
+    soundFx.playChestOpen();
     setQuizQuestions(shuffled);
     setQuizAnswers({});
     setQuizSubmitted(false);
@@ -825,8 +827,11 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                             <button
                               key={optIdx}
                               disabled={quizSubmitted}
-                              onClick={() => setQuizAnswers(prev => ({ ...prev, [q.id]: optIdx }))}
-                              className={`w-full text-left p-3 rounded-xl border text-xs font-semibold transition-all ${
+                              onClick={() => {
+                                soundFx.playTap();
+                                setQuizAnswers(prev => ({ ...prev, [q.id]: optIdx }));
+                              }}
+                              className={`w-full text-left p-3 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-[0.99] ${
                                 quizSubmitted
                                   ? isCorrect
                                     ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'
@@ -859,26 +864,31 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
               {/* Submit panel */}
               <div className="pt-4 border-t border-white/5 flex justify-between">
                 <button
-                  onClick={() => setQuizActive(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
+                  onClick={() => { soundFx.playTap(); setQuizActive(false); }}
+                  className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white cursor-pointer"
                 >
                   Exit Quiz
                 </button>
 
                 {!quizSubmitted ? (
                   <button
-                    onClick={() => setQuizSubmitted(true)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs rounded-xl shadow-lg hover:brightness-110"
+                    onClick={() => {
+                      soundFx.playVictory();
+                      triggerConfetti({ particleCount: 50, spread: 65 });
+                      setQuizSubmitted(true);
+                    }}
+                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black text-xs rounded-xl shadow-lg hover:brightness-110 cursor-pointer active:scale-95"
                   >
                     Finish & View Score
                   </button>
                 ) : (
                   <button
                     onClick={() => {
+                      soundFx.playTap();
                       setQuizActive(false);
                       setQuizSubmitted(false);
                     }}
-                    className="px-5 py-2.5 bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-white font-black text-xs rounded-xl transition-all"
+                    className="px-5 py-2.5 bg-slate-950 border border-white/10 hover:border-emerald-500/30 text-white font-black text-xs rounded-xl transition-all cursor-pointer active:scale-95"
                   >
                     Return to Selector
                   </button>

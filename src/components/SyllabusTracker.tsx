@@ -43,6 +43,8 @@ import { OpenKoshExamDirectory } from './OpenKoshExamDirectory';
 import { convertOpenKoshToSyllabusNodes } from '../data/openkoshData';
 import { getExamConfig } from '../lib/examRegistry';
 import { SyllabusVelocityHud } from './SyllabusVelocityHud';
+import { soundFx } from '../lib/soundEffects';
+import { AspirantMascot } from './duolingo/AspirantMascot';
 import { AddCustomTopicModal } from './AddCustomTopicModal';
 import { useExam } from '../context/ExamContext';
 
@@ -614,10 +616,13 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     if (isNowDone) {
       newCompleted.add(subId);
       awardXPAndCoins(10, 2, 'Completed Syllabus Subtopic', userId);
+      soundFx.playCorrect();
+      triggerConfetti({ particleCount: 25, spread: 45 });
       setRecentlyCheckedSubId(subId);
       setTimeout(() => setRecentlyCheckedSubId(null), 1000);
     } else {
       newCompleted.delete(subId);
+      soundFx.playTap();
     }
 
     setCompletedSubtopicIds(newCompleted);
@@ -642,7 +647,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
     if (shouldCompleteAll) {
       awardXPAndCoins(topic.subtopics.length * 10, topic.subtopics.length * 2, 'Completed Syllabus Topic', userId);
-      triggerConfetti();
+      soundFx.playVictory();
+      triggerConfetti({ particleCount: 50, spread: 65 });
+    } else {
+      soundFx.playTap();
     }
 
     setCompletedSubtopicIds(newCompleted);
@@ -660,6 +668,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
   // Accordion toggle
   const toggleAccordion = (topicId: string) => {
+    soundFx.playTap();
     setExpandedTopics(prev => ({
       ...prev,
       [topicId]: !prev[topicId]
@@ -927,12 +936,38 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       ) : (
         /* ── OFFICIAL SYLLABUS TOPIC CHECKLIST ── */
         <div className="space-y-3.5">
+          {/* Playful Veer Mascot Study Motivation Banner */}
+          <div 
+            onClick={() => { soundFx.playChestOpen(); triggerConfetti({ particleCount: 35, spread: 50 }); }}
+            className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-teal-950/30 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-md cursor-pointer hover:border-emerald-400/50 transition-all select-none active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3">
+              <AspirantMascot size="sm" state="encouraging" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    Syllabus Mastery
+                  </span>
+                  <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
+                    🎯 +10 XP per subtopic
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
+                  "Roz 2 chapters mark off karo. Consistency hi AIR-1 banati hai! Tap Veer for power! ⚡"
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-black">
+              Tap Mascot 🪶
+            </span>
+          </div>
+
           {/* 1. Primary Subject Switcher Pills (Physics, Chemistry, Maths, etc.) */}
           {availableSubjects.length > 1 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <button
-                onClick={() => setSelectedSubjectFilter('ALL')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                onClick={() => { soundFx.playTap(); setSelectedSubjectFilter('ALL'); }}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                   selectedSubjectFilter === 'ALL'
                     ? 'bg-[#58CC02] text-[#0B2300] shadow-sm border-b-2 border-[#46A302]'
                     : 'bg-[#15181F] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white'
@@ -946,8 +981,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               {availableSubjects.map((subj) => (
                 <button
                   key={subj.name}
-                  onClick={() => setSelectedSubjectFilter(subj.name)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+                  onClick={() => { soundFx.playTap(); setSelectedSubjectFilter(subj.name); }}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:scale-95 ${
                     selectedSubjectFilter === subj.name
                       ? 'bg-[#1CB0F6] text-[#052840] shadow-sm border-b-2 border-[#1899D6]'
                       : 'bg-[#15181F] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white'

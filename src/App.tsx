@@ -221,7 +221,7 @@ function AppContent() {
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
       'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy'];
-    return (validTabs.includes(hash) ? hash : 'syllabus') as ActiveTab;
+    return (validTabs.includes(hash) ? hash : 'dashboard') as ActiveTab;
   });
   const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
 

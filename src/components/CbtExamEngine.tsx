@@ -23,6 +23,8 @@ export { normalizeCbtQuestion, normalizeCbtTest };
 import { 
   FadeIn, SlideUp, ScaleIn, PressFeedback, CountUp, triggerConfetti, ModalTransition 
 } from '../lib/animations';
+import { soundFx } from '../lib/soundEffects';
+import { AspirantMascot } from './duolingo/AspirantMascot';
 
 
 interface CbtExamEngineProps {
@@ -147,7 +149,8 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
 
   useEffect(() => {
     if (examResult) {
-      triggerConfetti();
+      soundFx.playVictory();
+      triggerConfetti({ particleCount: 60, spread: 75 });
     }
   }, [examResult]);
 
@@ -812,6 +815,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   };
 
   const handleSelectOption = (optIdx: number) => {
+    soundFx.playTap();
     if (!selectedTest) return;
     setSessionState(prev => {
       if (!prev || prev.isSubmitted) return prev;
@@ -961,6 +965,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   };
 
   const handleClearResponse = () => {
+    soundFx.playTap();
     if (!selectedTest) return;
     setSessionState(prev => {
       if (!prev || prev.isSubmitted) return prev;
@@ -998,6 +1003,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   };
 
   const handleMarkForReview = () => {
+    soundFx.playTap();
     if (!selectedTest) return;
     setSessionState(prev => {
       if (!prev || prev.isSubmitted) return prev;
@@ -1050,6 +1056,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   };
 
   const handleSaveAndNext = () => {
+    soundFx.playTap();
     if (!selectedTest) return;
     const isLast = sessionState ? sessionState.currentQuestionIndex >= selectedTest.questions.length - 1 : false;
 
@@ -1094,6 +1101,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   };
 
   const handleNextQuestion = () => {
+    soundFx.playTap();
     if (!selectedTest) return;
     setSessionState(prev => {
       if (!prev || prev.isSubmitted) return prev;
@@ -1121,6 +1129,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   };
 
   const handlePrevQuestion = () => {
+    soundFx.playTap();
     if (!selectedTest) return;
     setSessionState(prev => {
       if (!prev || prev.isSubmitted) return prev;
@@ -1138,6 +1147,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   };
 
   const handleJumpToQuestion = (idx: number) => {
+    soundFx.playTap();
     if (!selectedTest) return;
     setSessionState(prev => {
       if (!prev || prev.isSubmitted) return prev;
@@ -2075,6 +2085,35 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   if (examResult) {
     return (
       <SlideUp id="cbt-result-scorecard" className="w-full space-y-4 sm:space-y-6">
+        {/* Playful Veer Mascot Result Celebration */}
+        <div 
+          onClick={() => { soundFx.playChestOpen(); triggerConfetti({ particleCount: 50, spread: 70 }); }}
+          className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-slate-900/90 to-amber-950/40 border border-emerald-500/40 flex items-center justify-between gap-4 shadow-xl cursor-pointer hover:border-emerald-400 transition-all select-none active:scale-[0.99]"
+        >
+          <div className="flex items-center gap-3.5">
+            <AspirantMascot size="md" state="celebrating" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  🎉 Mock Test Concluded
+                </span>
+                <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
+                  ⭐ +50 XP Earned
+                </span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-white mt-0.5">
+                Shabaash! You completed {examResult.testTitle}!
+              </h3>
+              <p className="text-xs text-emerald-200/90 font-medium">
+                Veer: "Har ek test tumhe real exam hall ke liye fearless banata hai. Tap me for congratulations!"
+              </p>
+            </div>
+          </div>
+          <span className="hidden sm:inline-block px-3.5 py-2 rounded-xl bg-emerald-500 text-slate-950 font-black text-xs shadow-md">
+            Tap Veer 🪶
+          </span>
+        </div>
+
         <div className="bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 rounded-2xl p-4 sm:p-6 text-white shadow-xl border border-slate-800">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-800 pb-4 mb-4 sm:mb-6">
             <div>

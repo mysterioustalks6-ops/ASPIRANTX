@@ -30,6 +30,9 @@ import {
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
+import { soundFx } from '../lib/soundEffects';
+import { triggerConfetti } from '../lib/animations';
+import { AspirantMascot } from './duolingo/AspirantMascot';
 
 interface PyqEngineProps {
   onOpenBulkImport?: () => void;
@@ -425,6 +428,16 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
   }, [selectedExam, searchQuery]);
 
   const handleSelectOption = (pyqId: string, optionIndex: number) => {
+    soundFx.playTap();
+    const currentQ = pyqs.find(p => String(p.id) === String(pyqId));
+    if (currentQ && currentQ.correctOption !== undefined) {
+      if (Number(currentQ.correctOption) === optionIndex) {
+        soundFx.playCorrect();
+        triggerConfetti({ particleCount: 35, spread: 55 });
+      } else {
+        soundFx.playWrong();
+      }
+    }
     setUserAnswers((prev) => ({ ...prev, [pyqId]: optionIndex }));
     setShowExplanations((prev) => ({ ...prev, [pyqId]: true }));
   };
@@ -505,11 +518,37 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
       {/* AdSense In-Feed Ad Banner */}
       <AdSenseBanner slotType="inFeed" />
 
+      {/* Playful Veer Mascot Study Motivation Banner */}
+      <div 
+        onClick={() => { soundFx.playChestOpen(); triggerConfetti({ particleCount: 40, spread: 60 }); }}
+        className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-cyan-950/30 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-lg cursor-pointer hover:border-emerald-400/60 transition-all select-none active:scale-[0.99]"
+      >
+        <div className="flex items-center gap-3">
+          <AspirantMascot size="sm" state="happy" />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                Veer PYQ Companion
+              </span>
+              <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
+                ⭐ +15 XP per correct answer
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
+              "70% questions follow past patterns. Solve these with full focus! Tap me for good luck! 🪶"
+            </p>
+          </div>
+        </div>
+        <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 text-xs font-black transition-all">
+          Cheer Me Up 🎉
+        </span>
+      </div>
+
       {/* Tab Switcher */}
-      <div className="flex gap-2 p-1.5 rounded-xl bg-white/5 border border-white/10 w-fit">
+      <div className="flex flex-wrap gap-2 p-1.5 rounded-xl bg-white/5 border border-white/10 w-fit">
         <button
-          onClick={() => setSubTab('practice')}
-          className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
+          onClick={() => { soundFx.playTap(); setSubTab('practice'); }}
+          className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
             subTab === 'practice'
               ? 'bg-sky-600 text-white shadow-lg'
               : 'text-slate-400 hover:text-white'
@@ -518,8 +557,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           Interactive Quiz Mode
         </button>
         <button
-          onClick={() => setSubTab('pdfs')}
-          className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+          onClick={() => { soundFx.playTap(); setSubTab('pdfs'); }}
+          className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             subTab === 'pdfs'
               ? 'bg-sky-600 text-white shadow-lg'
               : 'text-slate-400 hover:text-white'
@@ -533,7 +572,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           )}
         </button>
         <button
-          onClick={() => setSubTab('trends')}
+          onClick={() => { soundFx.playTap(); setSubTab('trends'); }}
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             subTab === 'trends'
               ? 'bg-amber-500 text-black font-black shadow-lg'
@@ -543,8 +582,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           <span>🔥 PYQ Repeat Trends</span>
         </button>
         <button
-          onClick={() => setSubTab('ocr')}
-          className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+          onClick={() => { soundFx.playTap(); setSubTab('ocr'); }}
+          className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             subTab === 'ocr'
               ? 'bg-sky-600 text-white shadow-lg'
               : 'text-slate-400 hover:text-white'
@@ -685,8 +724,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1 || loading}
-                onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
+                onClick={() => { soundFx.playTap(); setPage(prev => Math.max(1, prev - 1)); }}
+                className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1 active:scale-95"
               >
                 <span>← Previous</span>
               </button>
@@ -695,8 +734,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               </span>
               <button
                 disabled={page >= totalPages || loading}
-                onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
+                onClick={() => { soundFx.playTap(); setPage(prev => Math.min(totalPages, prev + 1)); }}
+                className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1 active:scale-95"
               >
                 <span>Next →</span>
               </button>
@@ -748,8 +787,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                   <div key={year} className="rounded-2xl bg-slate-900/80 border border-sky-500/30 overflow-hidden shadow-xl transition-all">
                     {/* Year Folder Accordion Header */}
                     <div
-                      onClick={() => setCollapsedYears(prev => ({ ...prev, [String(year)]: !prev[String(year)] }))}
-                      className="p-4 bg-gradient-to-r from-slate-900/60 via-slate-900/80 to-slate-900/60 flex items-center justify-between cursor-pointer hover:bg-slate-900/20 transition-all select-none border-b border-white/5"
+                      onClick={() => { soundFx.playTap(); setCollapsedYears(prev => ({ ...prev, [String(year)]: !prev[String(year)] })); }}
+                      className="p-4 bg-gradient-to-r from-slate-900/60 via-slate-900/80 to-slate-900/60 flex items-center justify-between cursor-pointer hover:bg-slate-900/20 transition-all select-none border-b border-white/5 active:scale-[0.99]"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center justify-center font-extrabold text-sm shadow-inner">

@@ -16,6 +16,8 @@ import { UserProfile, ExamType, ActiveTab } from '../types';
 import { PyqEngine } from './PyqEngine';
 import { QuestionBankEngine } from './QuestionBankEngine';
 import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
+import { soundFx } from '../lib/soundEffects';
+import { AspirantMascot } from './duolingo/AspirantMascot';
 
 const CbtExamEngine = React.lazy(() => import('./CbtExamEngine').then(m => ({ default: m.CbtExamEngine })));
 const WeaknessDetector = React.lazy(() => import('./WeaknessDetector').then(m => ({ default: m.WeaknessDetector })));
@@ -63,8 +65,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setSubTab(t.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+              onClick={() => { soundFx.playTap(); setSubTab(t.id as any); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                 subTab === t.id
                   ? 'bg-[#1CB0F6] text-[#052840] shadow-sm'
                   : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
@@ -79,6 +81,32 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* OVERVIEW / HUB SELECTION */}
       {subTab === 'overview' && (
         <div className="space-y-6">
+          {/* Playful Veer Mascot Practice Motivation Banner */}
+          <div 
+            onClick={() => { soundFx.playChestOpen(); }}
+            className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-indigo-950/30 border border-cyan-500/30 flex items-center justify-between gap-3 shadow-md cursor-pointer hover:border-cyan-400/50 transition-all select-none active:scale-[0.99]"
+          >
+            <div className="flex items-center gap-3">
+              <AspirantMascot size="sm" state="happy" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+                    Veer Practice Coach
+                  </span>
+                  <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
+                    ⚡ Daily Goal: 15 Questions
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
+                  "Practice makes permanent. Topic-wise questions lagao aur CBT mock me AIR check karo!"
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-300 text-xs font-black">
+              Start Practice 🚀
+            </span>
+          </div>
+
           {/* Contextual Recommendation Card */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[#1A1D24] border border-[#1CB0F6]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-[#1CB0F6]/5">
             <div className="space-y-1">
@@ -86,15 +114,15 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 <span className="px-2 py-0.5 rounded-full bg-[#1CB0F6]/20 text-[#1CB0F6] text-[10px] font-black uppercase border border-[#1CB0F6]/40">
                   Recommended Drill
                 </span>
-                <span className="text-xs text-[#9CA3AF]">Polity • Constitutional Framework</span>
+                <span className="text-xs text-[#9CA3AF]">High-Yield Practice Set</span>
               </div>
-              <h3 className="text-base font-black text-white">5 High-Yield Preamble & Articles PYQs</h3>
+              <h3 className="text-base font-black text-white">5 High-Yield PYQs & Topic Questions</h3>
               <p className="text-xs text-[#9CA3AF]">
                 Reinforce foundational concepts covered in today's study plan with previous years' questions.
               </p>
             </div>
             <button
-              onClick={() => setSubTab('pyq')}
+              onClick={() => { soundFx.playTap(); setSubTab('pyq'); }}
               className="px-5 py-2.5 rounded-xl bg-[#58CC02] hover:bg-[#46A302] text-[#0B2300] font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-md border-b-2 border-[#46A302] active:border-b-0 active:translate-y-0.5 shrink-0 cursor-pointer"
             >
               Start Drill <ArrowRight className="w-4 h-4" />
@@ -105,8 +133,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* 1. PYQ Archive */}
             <div 
-              onClick={() => setSubTab('pyq')}
-              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#1CB0F6] hover:border-b-[#1899D6] transition-all cursor-pointer group space-y-3 shadow-md"
+              onClick={() => { soundFx.playTap(); setSubTab('pyq'); }}
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#1CB0F6] hover:border-b-[#1899D6] transition-all cursor-pointer group space-y-3 shadow-md active:translate-y-0.5 active:border-b-2"
             >
               <div className="flex items-center justify-between">
                 <div className="w-11 h-11 rounded-xl bg-[#1CB0F6]/10 border border-[#1CB0F6]/30 text-[#1CB0F6] flex items-center justify-center">
@@ -131,8 +159,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
             {/* 2. Question Bank */}
             <div 
-              onClick={() => setSubTab('question_bank')}
-              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#58CC02] hover:border-b-[#46A302] transition-all cursor-pointer group space-y-3 shadow-md"
+              onClick={() => { soundFx.playTap(); setSubTab('question_bank'); }}
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#58CC02] hover:border-b-[#46A302] transition-all cursor-pointer group space-y-3 shadow-md active:translate-y-0.5 active:border-b-2"
             >
               <div className="flex items-center justify-between">
                 <div className="w-11 h-11 rounded-xl bg-[#58CC02]/10 border border-[#58CC02]/30 text-[#58CC02] flex items-center justify-center">
@@ -157,8 +185,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
             {/* 3. CBT Simulator */}
             <div 
-              onClick={() => setSubTab('cbt')}
-              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-indigo-400 hover:border-b-indigo-500 transition-all cursor-pointer group space-y-3 shadow-md"
+              onClick={() => { soundFx.playTap(); setSubTab('cbt'); }}
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-indigo-400 hover:border-b-indigo-500 transition-all cursor-pointer group space-y-3 shadow-md active:translate-y-0.5 active:border-b-2"
             >
               <div className="flex items-center justify-between">
                 <div className="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
@@ -183,8 +211,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
 
             {/* 4. Weakness Re-tester */}
             <div 
-              onClick={() => setSubTab('weakness')}
-              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#FF9600] hover:border-b-[#E08500] transition-all cursor-pointer group space-y-3 shadow-md"
+              onClick={() => { soundFx.playTap(); setSubTab('weakness'); }}
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#FF9600] hover:border-b-[#E08500] transition-all cursor-pointer group space-y-3 shadow-md active:translate-y-0.5 active:border-b-2"
             >
               <div className="flex items-center justify-between">
                 <div className="w-11 h-11 rounded-xl bg-[#FF9600]/10 border border-[#FF9600]/30 text-[#FF9600] flex items-center justify-center">
