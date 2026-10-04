@@ -94,8 +94,39 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
 
   if (!isOpen) return null;
 
+  function getExamBadge(id: string) {
+    const norm = id.toUpperCase();
+    if (norm.includes('JEE_ADV')) return { code: 'JA', color: 'bg-purple-500/15 text-purple-400 border border-purple-500/30' };
+    if (norm.includes('JEE_MAIN') || norm.includes('JEE')) return { code: 'JM', color: 'bg-sky-500/15 text-sky-400 border border-sky-500/30' };
+    if (norm.includes('NEET') || norm.includes('AIIMS')) return { code: 'NE', color: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' };
+    if (norm.includes('UPSC')) return { code: 'UP', color: 'bg-amber-500/15 text-amber-400 border border-amber-500/30' };
+    if (norm.includes('GATE')) return { code: 'GA', color: 'bg-orange-500/15 text-orange-400 border border-orange-500/30' };
+    if (norm.includes('NDA')) return { code: 'ND', color: 'bg-blue-500/15 text-blue-400 border border-blue-500/30' };
+    if (norm.includes('CDS')) return { code: 'CD', color: 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/30' };
+    if (norm.includes('SSC')) return { code: 'SC', color: 'bg-teal-500/15 text-teal-400 border border-teal-500/30' };
+    if (norm.includes('CAT')) return { code: 'CA', color: 'bg-rose-500/15 text-rose-400 border border-rose-500/30' };
+    if (norm.includes('PSC') || norm.includes('BPSC') || norm.includes('UPPSC')) return { code: 'PS', color: 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30' };
+    if (norm.includes('IBPS') || norm.includes('SBI')) return { code: 'BK', color: 'bg-green-500/15 text-green-400 border border-green-500/30' };
+    const cleaned = norm.replace(/[^A-Z]/g, '');
+    return { code: cleaned.slice(0, 2) || 'EX', color: 'bg-slate-500/15 text-slate-300 border border-slate-500/30' };
+  }
+
+  function parseExamLabel(label: string) {
+    const parts = label.split(/[–—]/);
+    if (parts.length >= 2) {
+      return {
+        shortName: parts[0].trim(),
+        fullName: parts.slice(1).join('—').trim()
+      };
+    }
+    return {
+      shortName: label.trim(),
+      fullName: ''
+    };
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 text-left">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4 text-left backdrop-blur-sm">
       {/* Backdrop */}
       <div className="absolute inset-0" onClick={onClose} />
 
@@ -128,20 +159,20 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
           </button>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar - Single Clean Border, No Double Focus Ring */}
         <div className="px-4 py-2.5 border-b border-[var(--sr-line)] bg-[var(--sr-surface)]">
-          <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
+          <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] focus-within:border-[var(--sr-primary)] transition-colors">
             <Search className="w-4 h-4 text-[var(--sr-text-subtle)] shrink-0" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search exam (NEET, JEE, UPSC, SSC CGL...)"
-              className="w-full bg-transparent text-[var(--sr-text)] placeholder-[var(--sr-text-subtle)] text-xs font-bold focus:outline-none min-h-[36px]"
+              placeholder="Search 48+ exams..."
+              className="w-full bg-transparent text-[var(--sr-text)] placeholder-[var(--sr-text-subtle)] text-xs font-bold outline-none border-none ring-0 focus:outline-none focus:ring-0 min-h-[36px]"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery('')} className="text-[var(--sr-text-muted)]">
+              <button onClick={() => setSearchQuery('')} className="text-[var(--sr-text-muted)] p-1 hover:text-[var(--sr-text)]">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -172,31 +203,36 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
         <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
           {filteredExams.map((ex) => {
             const isSelected = ex.id === selectedExam;
+            const { code, color } = getExamBadge(ex.id);
+            const { shortName, fullName } = parseExamLabel(ex.label);
+
             return (
               <button
                 key={ex.id}
                 onClick={() => handleSelectExam(ex.id)}
-                className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left cursor-pointer min-h-[52px] select-none ${
+                className={`w-full flex items-center justify-between p-3.5 rounded-2xl border transition-all text-left cursor-pointer min-h-[56px] select-none ${
                   isSelected
                     ? 'bg-[var(--sr-primary-subtle)] border-[var(--sr-primary)] text-[var(--sr-text)]'
                     : 'bg-[var(--sr-surface)] hover:bg-[var(--sr-surface-2)] border-[var(--sr-line)] text-[var(--sr-text)]'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${
+                <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-xs font-black ${
                     isSelected
-                      ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)]'
-                      : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-subtle)]'
+                      ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] shadow-sm'
+                      : color
                   }`}>
-                    {ex.id.slice(0, 2)}
+                    {code}
                   </div>
-                  <div className="min-w-0">
-                    <span className="block text-sm font-bold text-[var(--sr-text)] truncate">
-                      {ex.label}
+                  <div className="min-w-0 flex-1">
+                    <span className="block text-sm font-black text-[var(--sr-text)] leading-snug break-words">
+                      {shortName}
                     </span>
-                    <span className="block text-[11px] font-bold text-[var(--sr-text-subtle)] uppercase tracking-wider">
-                      {ex.id.replace(/_/g, ' ')}
-                    </span>
+                    {fullName && (
+                      <span className="block text-xs font-medium text-[var(--sr-text-muted)] line-clamp-2 mt-0.5 leading-tight">
+                        {fullName}
+                      </span>
+                    )}
                   </div>
                 </div>
 

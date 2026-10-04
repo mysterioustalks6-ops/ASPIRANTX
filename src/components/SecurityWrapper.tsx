@@ -171,23 +171,8 @@ export const SecurityWrapper: React.FC<SecurityWrapperProps> = ({
     );
   }
 
-  // Draw semi-transparent screenshot protection watermarks
-  const watermarkText = `${user.email || 'guest@studyride.in'} • IP: 192.168.1.107 • SECURE PORTAL`;
-
   return (
     <div className="relative w-full h-full">
-      {/* Background Watermark Grid */}
-      <div className="absolute inset-0 pointer-events-none z-50 overflow-hidden opacity-[0.02] select-none flex flex-wrap gap-20 p-10 justify-around items-center">
-        {Array.from({ length: 16 }).map((_, idx) => (
-          <div 
-            key={idx} 
-            className="text-white text-xs font-black tracking-widest uppercase rotate-[-30deg] whitespace-nowrap"
-          >
-            {watermarkText}
-          </div>
-        ))}
-      </div>
-
       {children}
     </div>
   );

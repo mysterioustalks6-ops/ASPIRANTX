@@ -99,27 +99,17 @@ export const Header: React.FC<HeaderProps> = ({
         <span>{user?.streakDays ?? 1}d</span>
       </div>
 
-      {/* ── 3. RIGHT: GLOBAL SEARCH & CANDIDATE AVATAR ── */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* Search Trigger */}
-        <button
-          onClick={handleOpenSearch}
-          aria-label="Search platform tools and questions"
-          className="w-10 h-10 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] border-2 border-[var(--sr-line)] flex items-center justify-center cursor-pointer transition-transform active:scale-95"
-        >
-          <Search className="w-4 h-4" />
-        </button>
-
-        {/* Avatar / Profile / Me Launcher */}
+      {/* ── 3. RIGHT: CANDIDATE AVATAR / PROFILE LAUNCHER ── */}
+      <div className="flex items-center gap-1.5 shrink-0">
         <button
           onClick={handleOpenMe}
           aria-label="Candidate Profile and Tools"
-          className="w-10 h-10 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] text-[var(--sr-primary)] font-black text-sm flex items-center justify-center cursor-pointer transition-transform active:scale-95 shrink-0 overflow-hidden"
+          className="w-9 h-9 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] text-[var(--sr-primary)] font-black text-xs flex items-center justify-center cursor-pointer transition-transform active:scale-95 shrink-0 overflow-hidden shadow-sm"
         >
           {user?.name ? (
             user.name[0].toUpperCase()
           ) : (
-            <User className="w-5 h-5" />
+            <User className="w-4 h-4" />
           )}
         </button>
       </div>

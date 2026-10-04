@@ -1,7 +1,17 @@
-﻿<!doctype html>
-<html lang="en">
+<!doctype html>
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('sr_theme') || 'dark';
+          document.documentElement.classList.add(t);
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="7ecc5d7116ebcc2d694e204dc205e623e605e739" content="7ecc5d7116ebcc2d694e204dc205e623e605e739" />
     <meta name="theme-color" content="#030303" />

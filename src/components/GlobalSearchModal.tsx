@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, X, BookOpen, MessageSquare, HelpCircle, ArrowRight,
   Target, BookMarked, Award, BarChart3, Timer, CheckSquare, Users, Flame,
-  Mic, ShieldCheck, Crown, Gift, Compass, Smartphone, Palette, Shield
+  Mic, ShieldCheck, Crown, Gift, Compass, Smartphone, Palette, Shield,
+  Map, Layers, Trophy, User, Sparkles
 } from 'lucide-react';
 import { APP_FEATURES } from '../data/appFeatureIndex';
 import { soundFx } from '../lib/soundEffects';
@@ -16,6 +17,11 @@ interface GlobalSearchModalProps {
 const getFeatureIcon = (iconName: string) => {
   switch (iconName) {
     case 'Target': return Target;
+    case 'Map': return Map;
+    case 'Layers': return Layers;
+    case 'Trophy': return Trophy;
+    case 'User': return User;
+    case 'Sparkles': return Sparkles;
     case 'BookOpen': return BookOpen;
     case 'BookMarked': return BookMarked;
     case 'HelpCircle': return HelpCircle;
@@ -109,29 +115,32 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
         <div className="w-12 h-1.5 rounded-full bg-[var(--sr-line-strong)] mx-auto mt-3 mb-1 sm:hidden" />
 
         {/* Search Bar Input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--sr-line)]">
+        <div className="flex items-center gap-3 px-4 py-2 border-b border-[var(--sr-line)] bg-[var(--sr-surface)]">
           <Search className="w-5 h-5 text-[var(--sr-primary)] shrink-0" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search syllabus, PYQs, mocks, focus tools..."
-            className="w-full bg-transparent text-[var(--sr-text)] placeholder-[var(--sr-text-subtle)] text-sm font-bold focus:outline-none min-h-[44px]"
+            placeholder="Search tools, topics, tests..."
+            className="w-full bg-transparent text-[var(--sr-text)] placeholder-[var(--sr-text-subtle)] text-sm font-bold border-0 outline-none ring-0 focus:ring-0 focus:outline-none min-h-[44px]"
             autoFocus
           />
           {query ? (
             <button
               onClick={() => setQuery('')}
-              className="p-1 rounded-full text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]"
+              aria-label="Clear search"
+              className="w-10 h-10 flex items-center justify-center rounded-full text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)] transition-colors cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           ) : (
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] text-xs font-bold"
+              aria-label="Close search sheet"
+              className="min-w-[44px] min-h-[44px] px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
             >
-              Esc
+              <X className="w-4 h-4" />
+              <span className="hidden sm:inline text-xs font-bold">Esc</span>
             </button>
           )}
         </div>

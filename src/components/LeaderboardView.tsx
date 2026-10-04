@@ -14,7 +14,20 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
   const [scope, setScope] = useState<'global' | 'state' | 'city' | 'batch' | 'subject'>('global');
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentLeague, setCurrentLeague] = useState<'Bronze' | 'Silver' | 'Gold' | 'Sapphire' | 'Ruby' | 'Diamond'>('Diamond');
+  const userXp = userProfile.xp ?? 0;
+  const currentLeague = 
+    userXp <= 0 ? 'Unranked' :
+    userXp < 500 ? 'Bronze' :
+    userXp < 1500 ? 'Silver' :
+    userXp < 3000 ? 'Gold' :
+    userXp < 6000 ? 'Platinum' : 'Diamond';
+
+  const leagueIcon = 
+    currentLeague === 'Unranked' ? '🌱' :
+    currentLeague === 'Bronze' ? '🥉' :
+    currentLeague === 'Silver' ? '🥈' :
+    currentLeague === 'Gold' ? '🥇' :
+    currentLeague === 'Platinum' ? '🏆' : '💎';
 
   useEffect(() => {
     fetchLeaderboard();
@@ -53,15 +66,19 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-3 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
-                  💎 {currentLeague} League
+                  {leagueIcon} {currentLeague} League
                 </span>
                 <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
-                  ⏱️ Ends in 2d 14h
+                  ⏱️ Weekly Reset in 2d 14h
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-white mt-1">National All-India League</h1>
+              <h1 className="text-xl sm:text-2xl font-black text-white mt-1">
+                {currentLeague === 'Unranked' ? 'All-India Aspirant League' : `${currentLeague} Division Standings`}
+              </h1>
               <p className="text-slate-300 text-xs mt-0.5 max-w-md">
-                Top 10 advance to the elite Diamond Champions. Keep solving drills to defend your rank!
+                {currentLeague === 'Unranked' 
+                  ? 'Complete your first syllabus lesson or practice drill to earn XP and enter the Bronze League.'
+                  : 'Top 10 advance to the next division. Keep solving daily questions to defend your ranking!'}
               </p>
             </div>
           </div>
@@ -267,10 +284,29 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
                   );
                 })
               ) : (
-                <div className="p-10 text-center rounded-2xl bg-[#0F1115] border border-[#2A2F3A] space-y-2">
-                  <Trophy className="w-10 h-10 text-amber-400 mx-auto" />
-                  <h4 className="text-white font-bold text-sm">No competitors found</h4>
-                  <p className="text-xs text-slate-400">Complete a CBT test to claim Rank #1!</p>
+                <div className="p-8 sm:p-12 text-center rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] space-y-4 max-w-md mx-auto">
+                  <div className="w-16 h-16 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] flex items-center justify-center text-[var(--sr-primary)] mx-auto shadow-sm">
+                    <Trophy className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-black text-[var(--sr-text)]">
+                      {userXp === 0 ? 'Complete Your First Ride to Join' : 'All-India Standings Updating'}
+                    </h3>
+                    <p className="text-xs text-[var(--sr-text-muted)] max-w-sm mx-auto">
+                      {userXp === 0
+                        ? 'Earn your first 10 XP on the syllabus map to enter the Bronze League and compete nationwide.'
+                        : 'Solve topic drills and mock questions today to defend and advance your national ranking.'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      soundFx.playTap();
+                      window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'dashboard' }));
+                    }}
+                    className="px-6 py-3 rounded-2xl bg-[var(--sr-primary)] text-[var(--sr-on-primary)] font-black text-xs border-b-4 border-[var(--sr-primary-hover)] active:border-b-0 active:translate-y-1 shadow-md cursor-pointer transition-all inline-flex items-center gap-2"
+                  >
+                    <span>Start First Ride →</span>
+                  </button>
                 </div>
               )}
             </div>

@@ -334,153 +334,42 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   }
 
   return (
-    <div id="student-dashboard" className="w-full space-y-6 pb-24 md:pb-8 font-sans">
-      {/* ── 1. DESKTOP / ADVANCED HEADER: Candidate Workspace & Mode Switcher ── */}
+    <div id="student-dashboard" className="w-full max-w-3xl mx-auto space-y-5 pb-24 md:pb-8 font-sans px-3 sm:px-4 text-[var(--sr-text)]">
+      {/* ── 1. VEER MOTIVATIONAL HERO CARD ──────────────────────────────────── */}
       <SlideUp>
-        <TactileCard className={`p-4 sm:p-6 bg-[#1A1D24] border border-[#2A2F3A] space-y-4 ${dashboardViewMode === 'path' ? 'hidden md:block' : ''}`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#58CC02] animate-pulse" />
-                <p className="text-[11px] font-bold text-[#58CC02] uppercase tracking-wider">
-                  CANDIDATE WORKSPACE
-                </p>
-                <span className="px-2 py-0.5 rounded-full bg-[#1CB0F6]/15 border border-[#1CB0F6]/30 text-[#1CB0F6] text-[10px] font-black uppercase tracking-tight">
-                  v{CANONICAL_APP_RELEASE.version}
+        <div 
+          onClick={handleMascotTap}
+          className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] hover:border-[var(--sr-primary)]/50 transition-all flex items-center justify-between gap-4 cursor-pointer shadow-sm select-none"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <AspirantMascot 
+              size="md" 
+              state={mascotState} 
+            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="w-2 h-2 rounded-full bg-[var(--sr-primary)] animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-wider text-[var(--sr-primary)]">
+                  Veer's Daily Ride Advice
                 </span>
               </div>
-              <h1 className="text-xl sm:text-2xl font-black text-[#F3F4F6] tracking-tight">
-                Welcome back, <span className="text-[#1CB0F6]">{userProfile.name?.split(' ')[0] || 'Aspirant'}</span>
-              </h1>
-              <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
-                <span className="text-[#9CA3AF] font-medium">Target Exam:</span>
-                <select
-                  value={selectedExam || userProfile.exam || 'NEET_UG'}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
-                      onOpenProfileModal();
-                    } else if (onExamChange) {
-                      soundFx.playTap();
-                      onExamChange(val);
-                    }
-                  }}
-                  className="bg-[#0F1115] border border-[#2A2F3A] hover:border-[#1CB0F6]/50 text-[#1CB0F6] font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#1CB0F6] cursor-pointer shadow-sm transition-colors"
-                >
-                  <optgroup label="Standard Exams">
-                    {EXAM_LIST.map((ex) => (
-                      <option key={ex.id} value={ex.id} className="bg-[#1A1D24] text-[#F3F4F6]">
-                        {ex.label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <option value="__CREATE_CUSTOM__" className="bg-[#1A1D24] text-[#FFA726] font-bold">
-                    + Create Custom Exam...
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            {/* Right: Key Exam Gamification Telemetry */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div 
-                onClick={() => { soundFx.playTap(); }}
-                className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#FF4B4B]/30 flex items-center gap-1.5 shadow-sm cursor-pointer select-none"
-                title="Candidate Energy"
-              >
-                <Heart className="w-4 h-4 text-[#FF4B4B] fill-[#FF4B4B] animate-pulse" />
-                <span className="text-xs font-black text-[#F3F4F6]">{getCandidateHearts(userProfile.id).hearts}/5</span>
-              </div>
-
-              <div 
-                onClick={() => { soundFx.playChestOpen(); triggerConfetti(); }}
-                className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#FF9600]/30 flex items-center gap-1.5 shadow-sm cursor-pointer select-none"
-                title="Study Streak"
-              >
-                <FlameGlow active={(userProfile.streakDays || data.currentStreak || 0) > 0}>
-                  <Flame className="w-4 h-4 text-[#FF9600] fill-[#FF9600]" />
-                </FlameGlow>
-                <span className="text-xs font-black text-[#F3F4F6]">
-                  <CountUp value={userProfile.streakDays || data.currentStreak || 1} suffix="d" />
-                </span>
-              </div>
-
-              <div className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] flex items-center gap-1.5 shadow-sm">
-                <Target className="w-4 h-4 text-[#1CB0F6]" />
-                <span className="text-xs font-black text-[#F3F4F6]">
-                  <CountUp value={data.daysLeftForExam} suffix="d" />
-                </span>
-              </div>
-
-              {onOpenWorkspaceCustomizer && (
-                <button
-                  onClick={onOpenWorkspaceCustomizer}
-                  title="Personalize Workspace"
-                  className="p-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] hover:border-[#1CB0F6]/50 text-[#9CA3AF] hover:text-[#1CB0F6] transition-all cursor-pointer shadow-sm active:translate-y-0.5"
-                  aria-label="Personalize Workspace"
-                >
-                  <Sliders className="w-4 h-4" />
-                </button>
-              )}
+              <p className="text-xs sm:text-sm font-bold text-[var(--sr-text)] line-clamp-2">
+                "{VEER_QUOTES[mascotQuoteIndex]}"
+              </p>
+              <span className="text-[10px] text-[var(--sr-text-muted)] font-medium mt-0.5 block">
+                Tap Veer for motivation • Target: {examCfg2.displayName}
+              </span>
             </div>
           </div>
 
-          {/* Segmented Dual-Mode Switcher */}
-          <div className="flex items-center gap-2 p-1 rounded-2xl bg-[#0F1115] border border-[#2A2F3A] w-full">
-            <button
-              onClick={() => { soundFx.playTap(); setDashboardViewMode('path'); }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
-                dashboardViewMode === 'path'
-                  ? 'bg-[#58CC02] text-[#0B2300] shadow-[0_2px_12px_rgba(88,204,2,0.35)]'
-                  : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
-              }`}
-            >
-              <Gamepad2 className="w-4 h-4 stroke-[2.5]" />
-              <span className="tracking-wide">GAMIFIED LEARNING PATH</span>
-            </button>
-
-            <button
-              onClick={() => { soundFx.playTap(); setDashboardViewMode('analytics'); }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
-                dashboardViewMode === 'analytics'
-                  ? 'bg-[#1CB0F6] text-[#00263D] shadow-[0_2px_12px_rgba(28,176,246,0.35)]'
-                  : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
-              }`}
-            >
-              <BarChart2 className="w-4 h-4 stroke-[2.5]" />
-              <span className="tracking-wide">PREP ANALYTICS & RADAR</span>
-            </button>
-          </div>
-        </TactileCard>
-      </SlideUp>
-
-      {/* ── MODE 1: DUOLINGO-GRADE LEARNING TREE EXPERIENCE ── */}
-      {dashboardViewMode === 'path' && (
-        <div className="space-y-4">
-          {/* Full Duolingo Learning Path Engine */}
-          <DuolingoPathEngine
-            userProfile={userProfile}
-            selectedExam={activeExamTag}
-            onExamChange={onExamChange}
-            onNavigate={onNavigate}
-          />
-
-          {/* Quick Footer Switcher to Analytics */}
-          <div className="pt-4 pb-8 flex justify-center">
-            <button
-              onClick={() => { soundFx.playTap(); setDashboardViewMode('analytics'); }}
-              className="px-4 py-2 rounded-2xl bg-[#1A1D24] hover:bg-[#252B37] border border-[#2A2F3A] text-xs font-bold text-[#9CA3AF] hover:text-[#1CB0F6] flex items-center gap-2 transition-all active:scale-95 shadow-sm cursor-pointer"
-            >
-              <BarChart2 className="w-3.5 h-3.5 text-[#1CB0F6]" />
-              <span>View In-Depth Analytics & Radar</span>
-            </button>
+          <div className="hidden sm:flex flex-col items-end shrink-0">
+            <span className="text-xs font-mono font-black text-[var(--sr-primary)]">
+              {data.daysLeftForExam} Days Left
+            </span>
+            <span className="text-[10px] text-[var(--sr-text-muted)] font-medium">Until Exam Day</span>
           </div>
         </div>
-      )}
-
-      {/* ── MODE 2: CLASSIC PREPARATION ANALYTICS, RADAR & TIMELINE ── */}
-      {dashboardViewMode === 'analytics' && (
-        <div className="space-y-6">
+      </SlideUp>
 
       {/* ── 2. DOMINANT PRIMARY STUDY ACTION: Answers "What should I do now?" ── */}
       <TactileCard className="p-5 sm:p-6 bg-gradient-to-br from-[#16251B] to-[#1A1D24] border-2 border-[#58CC02]/40 shadow-lg relative overflow-hidden space-y-4">
@@ -527,7 +416,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       </TactileCard>
 
       {/* ── 3. TODAY'S DAILY GOALS (3 Clear Targets with Micro-XP Feedback) ──── */}
-      <TactileCard className="p-5 bg-[#1A1D24] border border-[#2A2F3A] space-y-3 relative">
+      <div className="p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] space-y-3 relative shadow-sm">
         {rewardBadge && (
           <div className="absolute top-2 right-4">
             <FloatingRewardBadge text={rewardBadge} onComplete={() => setRewardBadge(null)} />
@@ -536,12 +425,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-[#58CC02]/15 border border-[#58CC02]/30 flex items-center justify-center text-[#58CC02]">
+            <div className="w-7 h-7 rounded-xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)]">
               <CheckSquare className="w-4 h-4" />
             </div>
-            <h3 className="text-xs font-black text-[#F3F4F6] uppercase tracking-wider">Today's Targets</h3>
+            <h3 className="text-xs font-black text-[var(--sr-text)] uppercase tracking-wider">Today's Targets</h3>
           </div>
-          <span className="text-xs font-mono font-black text-[#58CC02]">
+          <span className="text-xs font-mono font-black text-[var(--sr-primary)]">
             {dailyGoals.filter((g) => g.completed).length}/{dailyGoals.length} Done
           </span>
         </div>
@@ -551,25 +440,25 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             <div
               key={goal.id}
               onClick={() => handleToggleGoal(goal.id)}
-              className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 select-none touch-manipulation active:scale-[0.99] ${
+              className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 select-none touch-manipulation active:scale-[0.99] ${
                 goal.completed
-                  ? 'bg-[#132A1C] border-[#58CC02]/40 text-[#76E025]'
-                  : 'bg-[#15181F] border-[#2A2F3A] hover:border-[#383F4E] text-[#F3F4F6]'
+                  ? 'bg-[var(--sr-primary-subtle)] border-[var(--sr-primary)]/40 text-[var(--sr-primary)]'
+                  : 'bg-[var(--sr-surface-2)] border-[var(--sr-line)] hover:border-[var(--sr-line-strong)] text-[var(--sr-text)]'
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <CheckmarkPop isChecked={goal.completed}>
                   {goal.completed ? (
-                    <CheckCircle2 className="w-5 h-5 text-[#58CC02] fill-[#58CC02]/20 shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 text-[var(--sr-primary)] fill-[var(--sr-primary-subtle)] shrink-0" />
                   ) : (
-                    <Circle className="w-5 h-5 text-[#6B7280] shrink-0 hover:text-[#9CA3AF]" />
+                    <Circle className="w-5 h-5 text-[var(--sr-text-subtle)] shrink-0 hover:text-[var(--sr-text)]" />
                   )}
                 </CheckmarkPop>
                 <div className="min-w-0">
-                  <p className={`text-xs font-bold truncate ${goal.completed ? 'line-through text-[#6B7280]' : 'text-[#F3F4F6]'}`}>
+                  <p className={`text-xs font-bold truncate ${goal.completed ? 'line-through text-[var(--sr-text-muted)]' : 'text-[var(--sr-text)]'}`}>
                     {goal.title}
                   </p>
-                  <span className="text-[10px] text-[#9CA3AF] font-mono">
+                  <span className="text-[10px] text-[var(--sr-text-subtle)] font-mono">
                     {goal.duration}
                   </span>
                 </div>
@@ -577,27 +466,27 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono shrink-0 border ${
                 goal.completed
-                  ? 'bg-[#58CC02]/20 text-[#76E025] border-[#58CC02]/30'
-                  : 'bg-[#1CB0F6]/15 text-[#38BDF8] border-[#1CB0F6]/30'
+                  ? 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]/30'
+                  : 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30'
               }`}>
                 +{goal.xp} XP
               </span>
             </div>
           ))}
         </div>
-      </TactileCard>
+      </div>
 
       {/* ── 4. CONTEXTUAL RECOMMENDATION & EXAM TARGET ──────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-        <div className="sm:col-span-8 p-4 sm:p-5 rounded-2xl bg-[#1A1D24] border border-[#2A2F3A] flex flex-col justify-between space-y-3">
+        <div className="sm:col-span-8 p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex flex-col justify-between space-y-3 shadow-sm">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#FFA726]" />
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#FFA726]">
+              <Sparkles className="w-3.5 h-3.5 text-[var(--sr-amber)]" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-[var(--sr-amber)]">
                 RECOMMENDED PRACTICE
               </span>
             </div>
-            <h4 className="text-xs sm:text-sm font-bold text-[#F3F4F6]">
+            <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)]">
               {primarySuggestion}
             </h4>
           </div>
@@ -615,52 +504,52 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
 
         {/* TARGET EXAM COUNTDOWN CARD */}
-        <div className="sm:col-span-4 p-4 sm:p-5 rounded-2xl bg-[#1A1D24] border border-[#2A2F3A] flex flex-col justify-between space-y-2">
+        <div className="sm:col-span-4 p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex flex-col justify-between space-y-2 shadow-sm">
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#FF4B4B]">
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--sr-coral)]">
               <Target className="w-3.5 h-3.5" />
               <span>Exam Target</span>
             </div>
-            <h4 className="text-xs sm:text-sm font-bold text-[#F3F4F6] mt-1">
+            <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] mt-1">
               {examCfg2.displayName} 2026
             </h4>
-            <p className="text-[11px] text-[#9CA3AF] font-mono mt-0.5">
+            <p className="text-[11px] text-[var(--sr-text-muted)] font-mono mt-0.5">
               {data.daysLeftForExam} Days Remaining
             </p>
           </div>
 
-          <div className="pt-2 flex items-center justify-between text-[11px] border-t border-[#2A2F3A]">
-            <span className="text-[#9CA3AF]">Pace:</span>
-            <span className="text-[#58CC02] font-black">On Track</span>
+          <div className="pt-2 flex items-center justify-between text-[11px] border-t border-[var(--sr-line)]">
+            <span className="text-[var(--sr-text-muted)]">Pace:</span>
+            <span className="text-[var(--sr-primary)] font-black">On Track</span>
           </div>
         </div>
       </div>
 
       {/* ── 5. PERFORMANCE TELEMETRY HUB (Progressive Disclosure) ──────────── */}
-      <div className="rounded-2xl border border-[#2A2F3A] bg-[#1A1D24] overflow-hidden">
+      <div className="rounded-3xl border-2 border-[var(--sr-line-strong)] bg-[var(--sr-surface)] overflow-hidden shadow-sm">
         <button
           onClick={() => setShowTelemetryRings(!showTelemetryRings)}
-          className="w-full p-4 flex items-center justify-between text-left hover:bg-[#222732] transition-colors cursor-pointer select-none"
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--sr-surface-2)] transition-colors cursor-pointer select-none"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-[#1CB0F6]/15 border border-[#1CB0F6]/30 flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-[#1CB0F6]" />
+            <div className="w-7 h-7 rounded-xl bg-[var(--sr-blue-subtle)] border border-[var(--sr-blue)]/30 flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 text-[var(--sr-blue)]" />
             </div>
             <div>
-              <h3 className="text-xs font-black text-[#F3F4F6]">Live Study Telemetry</h3>
-              <p className="text-[11px] text-[#9CA3AF]">Syllabus, accuracy & daily focus metrics</p>
+              <h3 className="text-xs font-black text-[var(--sr-text)]">Live Study Telemetry</h3>
+              <p className="text-[11px] text-[var(--sr-text-muted)]">Syllabus, accuracy & daily focus metrics</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-[#1CB0F6]">
+            <span className="text-[11px] font-bold text-[var(--sr-primary)]">
               {showTelemetryRings ? 'Collapse' : 'Tap to View'}
             </span>
-            <ChevronRight className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${showTelemetryRings ? 'rotate-90' : ''}`} />
+            <ChevronRight className={`w-4 h-4 text-[var(--sr-text-muted)] transition-transform duration-200 ${showTelemetryRings ? 'rotate-90' : ''}`} />
           </div>
         </button>
 
         {showTelemetryRings && (
-          <div className="p-4 border-t border-[#2A2F3A] bg-[#0F1115]">
+          <div className="p-4 border-t border-[var(--sr-line)] bg-[var(--sr-surface-2)]">
             <CircularPerformanceHub
               syllabusPercent={data.overallProgressPercent}
               revisionPercent={data.revisionProgressPercent || 0}
@@ -671,24 +560,22 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         )}
       </div>
-      </div>
-      )}
 
       {/* Non-intrusive in-feed slot for non-premium candidates */}
       <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />
 
       {/* ── 6. ESSENTIAL QUICK LAUNCH (Tactile Shortcuts) ───────────────────── */}
-      <TactileCard className="p-4 sm:p-5 bg-[#1A1D24] border border-[#2A2F3A]">
+      <div className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] shadow-sm">
         <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-[#0F1115] border border-[#2A2F3A] flex items-center justify-center">
-              <LayoutGrid className="w-3.5 h-3.5 text-[#1CB0F6]" />
+            <div className="w-7 h-7 rounded-xl bg-[var(--sr-blue-subtle)] border border-[var(--sr-blue)]/30 flex items-center justify-center">
+              <LayoutGrid className="w-3.5 h-3.5 text-[var(--sr-blue)]" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-black text-[#F3F4F6]">
+              <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)]">
                 Quick Shortcuts
               </h3>
-              <p className="text-[10px] text-[#9CA3AF]">Direct access to primary study engines</p>
+              <p className="text-[10px] text-[var(--sr-text-muted)]">Direct access to primary study engines</p>
             </div>
           </div>
 
@@ -696,7 +583,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             {allFeatures.length > 4 && (
               <button
                 onClick={() => setShowAllShortcuts(!showAllShortcuts)}
-                className="px-2.5 py-1 rounded-xl bg-[#0F1115] hover:bg-[#222732] border border-[#2A2F3A] text-[11px] font-bold text-[#F3F4F6] transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[11px] font-bold text-[var(--sr-text)] transition-all cursor-pointer"
               >
                 {showAllShortcuts ? 'Show Top 4' : `All (${allFeatures.length})`}
               </button>
@@ -704,9 +591,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             {onOpenWorkspaceCustomizer && (
               <button
                 onClick={onOpenWorkspaceCustomizer}
-                className="px-2.5 py-1 rounded-xl bg-[#0F1115] hover:bg-[#222732] border border-[#2A2F3A] text-[11px] font-bold text-[#9CA3AF] hover:text-[#F3F4F6] flex items-center gap-1 transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[11px] font-bold text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center gap-1 transition-all cursor-pointer"
               >
-                <Sliders className="w-3 h-3 text-[#1CB0F6]" />
+                <Sliders className="w-3 h-3 text-[var(--sr-blue)]" />
                 <span>Customize</span>
               </button>
             )}
@@ -722,13 +609,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   recordFeatureUsage(item.id, userProfile.id);
                   if (onNavigate) onNavigate(item.id as ActiveTab);
                 }}
-                className="w-full p-3 rounded-xl bg-[#0F1115] hover:bg-[#161920] border-b-2 border-[#2A2F3A] hover:border-[#1CB0F6]/40 active:border-b-0 active:translate-y-0.5 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer shadow-sm select-none"
+                className="w-full p-3 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-primary-subtle)] border border-[var(--sr-line)] hover:border-[var(--sr-primary)]/40 active:border-b-0 active:translate-y-0.5 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer shadow-sm select-none"
               >
-                <div className="w-8 h-8 rounded-xl bg-[#1A1D24] group-hover:bg-[#1CB0F6]/15 border border-[#2A2F3A] group-hover:border-[#1CB0F6]/40 flex items-center justify-center text-xs font-black text-[#9CA3AF] group-hover:text-[#1CB0F6] transition-all">
+                <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface)] group-hover:bg-[var(--sr-primary-subtle)] border border-[var(--sr-line)] group-hover:border-[var(--sr-primary)]/40 flex items-center justify-center text-xs font-black text-[var(--sr-text-muted)] group-hover:text-[var(--sr-primary)] transition-all">
                   {item.label.charAt(0)}
                 </div>
                 <div className="min-w-0 w-full text-center">
-                  <span className="text-[11px] font-bold text-[#F3F4F6] group-hover:text-[#1CB0F6] transition-colors block truncate">
+                  <span className="text-[11px] font-bold text-[var(--sr-text)] group-hover:text-[var(--sr-primary)] transition-colors block truncate">
                     {item.label}
                   </span>
                 </div>
@@ -736,7 +623,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </StaggerItem>
           ))}
         </Stagger>
-      </TactileCard>
+      </div>
 
       {/* ── 7. LOWER REGION: Daily Study Summary Card ──────────────────────── */}
       <DailyStudySummaryCard

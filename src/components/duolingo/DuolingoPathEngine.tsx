@@ -272,57 +272,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
 
   return (
     <div className={`w-full max-w-md mx-auto flex flex-col items-center select-none font-sans relative pb-28 ${className}`}>
-      {/* ── 1. DUOLINGO TOP STICKY HUD (EXAM FLAG + STREAK + GEMS + HEARTS) ── */}
-      <div className="w-full sticky top-0 z-30 bg-[#0F1115]/95 backdrop-blur-xl border-b border-[#2A2F3A] py-2 px-3 shadow-lg">
-        <div className="flex items-center justify-between gap-2 max-w-md mx-auto">
-          {/* Target Exam Button Pill with Flag */}
-          <button
-            onClick={() => setIsExamModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[#1A1D24] hover:bg-[#252B37] border border-[#2A2F3A] text-xs font-black text-white shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="Switch Target Examination"
-          >
-            <span className="text-sm">🎯</span>
-            <span className="truncate max-w-[110px] text-xs font-black text-[#1CB0F6]">
-              {examCfg.displayName}
-            </span>
-            <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF]" />
-          </button>
-
-          {/* Right: Gamification Telemetry */}
-          <div className="flex items-center gap-2">
-            {/* Streak */}
-            <div 
-              onClick={() => { soundFx.playChestOpen(); triggerConfetti(); }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#0F1115] border border-[#FF9600]/40 text-[#FF9600] font-black text-xs cursor-pointer active:scale-95 shadow-sm"
-              title="Daily Study Streak"
-            >
-              <Flame className="w-4 h-4 fill-[#FF9600] animate-pulse" />
-              <span>{userProfile.streakDays || 1}</span>
-            </div>
-
-            {/* Gems / Coins */}
-            <div 
-              className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#0F1115] border border-[#FFC800]/40 text-[#FFC800] font-black text-xs shadow-sm"
-              title="Coins Balance"
-            >
-              <Coins className="w-4 h-4 fill-[#FFC800]" />
-              <span>{userProfile.coins || 150}</span>
-            </div>
-
-            {/* Hearts Energy */}
-            <div 
-              onClick={() => setShowHeartModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-[#0F1115] border border-[#FF4B4B]/40 text-[#FF4B4B] font-black text-xs cursor-pointer active:scale-95 shadow-sm"
-              title="Energy Hearts"
-            >
-              <Heart className="w-4 h-4 fill-[#FF4B4B] animate-pulse" />
-              <span>{heartsData.hearts}/5</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 2. DUOLINGO UNIT BANNER ───────────────────────────────────── */}
+      {/* ── 1. DUOLINGO UNIT BANNER ───────────────────────────────────── */}
       <div className="w-full px-4 mt-4 mb-2">
         <div className="rounded-3xl bg-gradient-to-r from-[#17301B] via-[#1A1D24] to-[#17301B] border-2 border-[#58CC02]/40 p-4 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between gap-3">

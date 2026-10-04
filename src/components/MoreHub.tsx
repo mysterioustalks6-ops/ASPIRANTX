@@ -68,40 +68,51 @@ export const MoreHub: React.FC<MoreHubProps> = ({
     onNavigate(tab);
   };
 
+  const userXp = user.xp ?? 0;
+  const getLeagueInfo = (xp: number) => {
+    if (xp <= 0) return { name: 'Unranked', icon: '🌱', badgeClass: 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)]' };
+    if (xp < 500) return { name: 'Bronze League', icon: '🥉', badgeClass: 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] border-[var(--sr-amber)]/30' };
+    if (xp < 1500) return { name: 'Silver League', icon: '🥈', badgeClass: 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30' };
+    if (xp < 3000) return { name: 'Gold League', icon: '🥇', badgeClass: 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] border-[var(--sr-amber)]/30' };
+    if (xp < 6000) return { name: 'Platinum League', icon: '🏆', badgeClass: 'bg-[var(--sr-purple-subtle)] text-[var(--sr-purple)] border-[var(--sr-purple)]/30' };
+    return { name: 'Diamond League', icon: '💎', badgeClass: 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]/30' };
+  };
+  const league = getLeagueInfo(userXp);
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-28 px-3 sm:px-4 text-[var(--sr-text)]">
       {/* ── PROFILE & CANDIDATE SUMMARY CARD ── */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] shadow-sm">
+      <div className="p-4 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] flex items-center justify-center font-black text-[var(--sr-primary)] text-2xl shrink-0">
+          <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+            <div className="relative shrink-0">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] flex items-center justify-center font-black text-[var(--sr-primary)] text-xl sm:text-2xl shrink-0">
                 {user.name ? user.name[0].toUpperCase() : 'A'}
               </div>
-              <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[var(--sr-primary)] text-[var(--sr-on-primary)] border-2 border-[var(--sr-surface)] flex items-center justify-center text-xs font-black">
+              <span className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[var(--sr-primary)] text-[var(--sr-on-primary)] border-2 border-[var(--sr-surface)] flex items-center justify-center text-[10px] sm:text-xs font-black">
                 ✓
               </span>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg font-black text-[var(--sr-text)] tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-black text-[var(--sr-text)] tracking-tight truncate">
                   {user.name || 'Aspirant'}
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-xs font-black border border-[var(--sr-blue)]/30">
-                  LEVEL {user.level || 1}
+                <span className="px-2 py-0.5 rounded-full bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-[11px] font-black border border-[var(--sr-blue)]/30 shrink-0">
+                  LVL {user.level || 1}
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] text-xs font-black border border-[var(--sr-amber)]/30">
-                  💎 Diamond League
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-black border shrink-0 ${league.badgeClass}`}>
+                  {league.icon} {league.name}
                 </span>
               </div>
-              <p className="text-xs font-bold text-[var(--sr-text-muted)] mt-1">
+              <p className="text-xs font-bold text-[var(--sr-text-muted)] mt-1 truncate">
                 Target: {selectedExam.replace(/_/g, ' ')}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
             <TactileButton
               variant="secondary"
               size="sm"
@@ -114,7 +125,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-[var(--sr-line)]">
+        <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-[var(--sr-line)]">
           <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--sr-surface-2)]">
             <div className="flex items-center gap-1 text-[var(--sr-amber)] font-black text-sm">
               <Flame className="w-4 h-4 fill-current" />
@@ -141,40 +152,96 @@ export const MoreHub: React.FC<MoreHubProps> = ({
         </div>
       </div>
 
-      {/* ── AUDIO & HAPTIC PREFERENCES (Rule C) ── */}
-      <div className="p-4 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex items-center justify-between gap-4">
-        <div>
+      {/* ── CONTEXTUAL ASK VEER AI (Rule 3) ── */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] hover:border-[var(--sr-primary)]/50 transition-all flex items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-11 h-11 rounded-2xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)] shrink-0">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-black text-[var(--sr-text)]">Ask Veer AI Mentor</h3>
+              <span className="px-2 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-[10px] font-black uppercase">
+                Tutor
+              </span>
+            </div>
+            <p className="text-xs text-[var(--sr-text-muted)] truncate mt-0.5">
+              Ask exam doubts, formula clarifications or revision strategy
+            </p>
+          </div>
+        </div>
+        <TactileButton
+          variant="primary"
+          size="sm"
+          onClick={() => navigateTo('chat')}
+          icon={<Sparkles className="w-3.5 h-3.5" />}
+        >
+          Ask Veer
+        </TactileButton>
+      </div>
+
+      {/* ── AUDIO & HAPTIC PREFERENCES (Rule 7: 2 List Rows with Switches) ── */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] space-y-3">
+        <div className="border-b border-[var(--sr-line)] pb-2.5">
           <h3 className="text-sm font-black text-[var(--sr-text)]">Interaction Feedback</h3>
-          <p className="text-xs text-[var(--sr-text-muted)]">Customize sound effects and touch haptics</p>
+          <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">Customize tactile sound effects and touch haptics</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Sound Toggle */}
+        {/* Sound Row */}
+        <div className="flex items-center justify-between gap-3 py-1">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-center text-[var(--sr-text)] shrink-0">
+              {isSoundOn ? <Volume2 className="w-4 h-4 text-[var(--sr-primary)]" /> : <VolumeX className="w-4 h-4 text-[var(--sr-text-subtle)]" />}
+            </div>
+            <div className="min-w-0">
+              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)] truncate">Sound Effects</span>
+              <span className="block text-[11px] text-[var(--sr-text-muted)] truncate">Audio cues on correct answers & clicks</span>
+            </div>
+          </div>
           <button
+            type="button"
+            role="switch"
+            aria-checked={isSoundOn}
             onClick={handleToggleSound}
-            aria-label={isSoundOn ? 'Disable Sound Effects' : 'Enable Sound Effects'}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-              isSoundOn 
-                ? 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]'
-                : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)]'
+            aria-label="Toggle Sound Effects"
+            className={`w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+              isSoundOn ? 'bg-[var(--sr-primary)]' : 'bg-[var(--sr-line-strong)]'
             }`}
           >
-            {isSoundOn ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-            <span>Sound: {isSoundOn ? 'ON' : 'OFF'}</span>
+            <div
+              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                isSoundOn ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
           </button>
+        </div>
 
-          {/* Haptic Toggle */}
+        {/* Haptics Row */}
+        <div className="flex items-center justify-between gap-3 py-1 border-t border-[var(--sr-line)] pt-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-center text-[var(--sr-text)] shrink-0">
+              <Vibrate className={`w-4 h-4 ${isHapticOn ? 'text-[var(--sr-primary)]' : 'text-[var(--sr-text-subtle)]'}`} />
+            </div>
+            <div className="min-w-0">
+              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)] truncate">Vibration Haptics</span>
+              <span className="block text-[11px] text-[var(--sr-text-muted)] truncate">Micro-vibrations on tactile button presses</span>
+            </div>
+          </div>
           <button
+            type="button"
+            role="switch"
+            aria-checked={isHapticOn}
             onClick={handleToggleHaptic}
-            aria-label={isHapticOn ? 'Disable Vibration Haptics' : 'Enable Vibration Haptics'}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-              isHapticOn 
-                ? 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]'
-                : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)]'
+            aria-label="Toggle Vibration Haptics"
+            className={`w-12 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+              isHapticOn ? 'bg-[var(--sr-primary)]' : 'bg-[var(--sr-line-strong)]'
             }`}
           >
-            <Vibrate className="w-4 h-4" />
-            <span>Haptics: {isHapticOn ? 'ON' : 'OFF'}</span>
+            <div
+              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                isHapticOn ? 'translate-x-5' : 'translate-x-0'
+              }`}
+            />
           </button>
         </div>
       </div>

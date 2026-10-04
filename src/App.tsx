@@ -50,6 +50,7 @@ import { ReminderSettingsModal } from './components/ReminderSettingsModal';
 import { ExamWallpaperWidget } from './components/ExamWallpaperWidget';
 import { LiveWallpaperSetupModal } from './components/LiveWallpaperSetupModal';
 import { AppSplashScreen } from './components/AppSplashScreen';
+import { MapJourneyView } from './components/MapJourneyView';
 import { shouldPromptWallpaperSetup, fetchWallpaperStatus, isAndroidPlatform } from './lib/nativeWallpaperBridge';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
@@ -98,7 +99,18 @@ const SuspenseFallback = () => (
 export const DESIGNATED_ADMIN_EMAIL = 'ambujyadav0010@gmail.com';
 
 function AppContent() {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? (localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('aspirantx_user_profile')) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.id) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return null;
+  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('aspirantx_sidebar_collapsed') === 'true';
   });
@@ -266,8 +278,18 @@ function AppContent() {
       window.removeEventListener('aspirantx_navigate_tab', onNavigateTab);
     };
   }, []);
-  const [initializing, setInitializing] = useState<boolean>(true);
-  const [splashFinished, setSplashFinished] = useState<boolean>(false);
+  const [initializing, setInitializing] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && (localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('studyride_skip_splash') === 'true')) {
+      return false;
+    }
+    return true;
+  });
+  const [splashFinished, setSplashFinished] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && (window.location.search.includes('no_splash') || localStorage.getItem('studyride_skip_splash') === 'true')) {
+      return true;
+    }
+    return false;
+  });
   const [bannedMessage, setBannedMessage] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [showReferralModal, setShowReferralModal] = useState<boolean>(false);
@@ -323,8 +345,13 @@ function AppContent() {
         setShowSearchModal((prev) => !prev);
       }
     };
+    const handleOpenSearch = () => setShowSearchModal(true);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('studyride:open-search', handleOpenSearch);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('studyride:open-search', handleOpenSearch);
+    };
   }, []);
 
 
@@ -1190,6 +1217,7 @@ function AppContent() {
           };
 
           // INSTANT SYNCHRONOUS TRANSITION TO APP SHELL
+          localStorage.setItem('aspirantx_auth_user', JSON.stringify(immediateUser));
           setUser(immediateUser);
           if (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) {
             setIsAdminUnlocked(true);
@@ -1241,7 +1269,7 @@ function AppContent() {
     <ErrorBoundary>
       <VersionUpdateNotifier />
       <SecurityWrapper user={user!} enabled={user?.role !== 'ADMIN' && user?.role !== 'DEVELOPER'}>
-      <div className="min-h-screen bg-[#050505] text-slate-100 flex flex-col md:flex-row font-sans selection:bg-[#00FF94] selection:text-black relative">
+      <div className="min-h-screen bg-[var(--bg,#12161F)] text-[var(--sr-text,#F8FAFC)] flex flex-col md:flex-row font-sans selection:bg-[var(--sr-primary)] selection:text-[var(--sr-on-primary)] relative">
       {/* Background Animated Canvas FX & Particles */}
       <BackgroundFX customizer={customizer} />
 
@@ -1469,27 +1497,17 @@ function AppContent() {
             <AnimatePresence mode="wait">
               <PageTransition key={activeTab}>
                 {activeTab === 'syllabus' && (
-              <PremiumGate
-                featureName="syllabus"
-                featureTitle="Interactive Syllabus Tracker"
-                isUserPremium={user.isPremium || isAdmin}
-                isAdmin={isAdmin}
-                isGuest={user.isGuest}
-                featureFlags={featureFlagsMap}
-                onOpenPremium={() => setActiveTab('premium')}
-                onRequireLogin={() => setUser(null)}
-              >
-                <SyllabusTracker 
-                  exam={selectedExam} 
-                  userId={user.id} 
-                  isGuest={user.isGuest}
-                  isUserPremium={user.isPremium || isAdmin}
-                  featureFlags={featureFlagsMap}
-                  onOpenPremium={() => setActiveTab('premium')}
-                  onRequireLogin={() => setUser(null)}
-                />
-              </PremiumGate>
-            )}
+                  <MapJourneyView
+                    user={{...user, exam: selectedExam}}
+                    selectedExam={selectedExam}
+                    isAdmin={isAdmin}
+                    featureFlagsMap={featureFlagsMap}
+                    onNavigate={(t) => setActiveTab(t)}
+                    onExamChange={handleExamChange}
+                    onOpenPremium={() => setActiveTab('premium')}
+                    onRequireLogin={() => setUser(null)}
+                  />
+                )}
 
             {activeTab === 'pyq' && (
               <PremiumGate
@@ -1900,90 +1918,7 @@ function AppContent() {
         />
       )}
 
-      {/* Friendly Study Companion Widget (Research-tested calm nudge) */}
-      {user && showCompanionWidget && (
-        <div className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-4 z-40 group transition-all">
-          {isCompanionMinimized ? (
-            <button
-              onClick={() => setIsCompanionMinimized(false)}
-              className="p-2.5 rounded-full bg-[#090b11] border border-emerald-500/40 text-emerald-400 shadow-2xl flex items-center gap-1.5 hover:scale-110 transition-all cursor-pointer"
-              title="Expand StudyRide Companion"
-            >
-              <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
-              <span className="text-sm">🤖</span>
-              <span className="text-[10px] font-extrabold text-emerald-300 pr-1">StudyRide AI</span>
-            </button>
-          ) : (() => {
-            const summary = getDailyStudySummary(user, selectedExam || user.exam);
-            return (
-              <div className="max-w-xs p-3.5 rounded-2xl bg-[#090b11] border border-emerald-500/30 text-xs text-slate-100 shadow-2xl flex items-start gap-3 relative pr-8">
-                {/* Close & Minimize Action Buttons */}
-                <div className="absolute top-2 right-2 flex items-center gap-1">
-                  <button
-                    onClick={() => setIsCompanionMinimized(true)}
-                    className="w-4 h-4 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center text-[10px] transition-all cursor-pointer"
-                    title="Minimize widget to side"
-                  >
-                    −
-                  </button>
-                  <button
-                    onClick={() => setShowCompanionWidget(false)}
-                    className="w-4 h-4 rounded-full bg-white/5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-300 flex items-center justify-center text-[10px] transition-all cursor-pointer"
-                    title="Dismiss widget"
-                  >
-                    ✕
-                  </button>
-                </div>
 
-                <div className="w-8 h-8 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0 relative mt-0.5">
-                  <span className="w-2 h-2 bg-emerald-400 rounded-full absolute top-0 right-0 animate-ping" />
-                  🤖
-                </div>
-                <div className="text-left space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div className="font-extrabold text-[10px] text-emerald-400 uppercase tracking-wide">
-                      {summary.headlineCopy}
-                    </div>
-                  </div>
-                  {summary.pendingTopics.length > 0 ? (
-                    <div className="text-[10px] text-slate-300 space-y-0.5">
-                      {summary.pendingTopics.map((pt) => (
-                        <div key={pt.id} className="flex items-center gap-1 text-slate-300 truncate">
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                          <span className="truncate">{pt.title}</span>
-                        </div>
-                      ))}
-                      <div className="text-[10px] text-emerald-400 font-semibold pt-0.5">
-                        {summary.streakCopy}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-200 font-medium leading-snug">
-                      {summary.streakCopy}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-2 pt-1">
-                    {!summary.isCompletedForToday && (
-                      <button
-                        onClick={() => setActiveTab('tasks')}
-                        className="text-[10px] font-bold text-emerald-400 hover:underline"
-                      >
-                        View Tasks →
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setShowReminderSettingsModal(true)}
-                      className="text-[10px] text-slate-400 hover:text-slate-200 hover:underline"
-                    >
-                      Settings ⚙️
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
 
       {/* Network Status & Offline Indicator Toast */}
       <NetworkStatusIndicator />

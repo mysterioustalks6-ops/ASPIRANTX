@@ -148,10 +148,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
     startDemoSession();
     const demoUser: UserProfile = {
       id: 'demo-guest-123',
-      name: '',
+      name: 'Aspirant',
       email: 'guest@studyride.in',
       avatar_url: resolveUserAvatar(null, 'demo-guest-123', 'guest@studyride.in'),
-      exam: '',
+      exam: 'NEET_UG',
       targetYear: 2026,
       streakDays: 1,
       isPremium: false,
@@ -161,7 +161,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       coins: 50,
       level: 1,
       role: 'USER',
-      isProfileComplete: false,
+      isProfileComplete: true,
     };
     document.cookie = `user_email=guest@studyride.in; path=/; max-age=86400; SameSite=Lax`;
     document.cookie = `user_role=USER; path=/; max-age=86400; SameSite=Lax`;

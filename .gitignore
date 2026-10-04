@@ -79,4 +79,5 @@ scratch_*.xml
 dump_*.xml
 supabase/.temp/
 RELEASE_ARTIFACTS/
-
+docs/screenshots/
+test_*.png
