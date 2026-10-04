@@ -21,6 +21,7 @@ import { PracticeHub } from './components/PracticeHub';
 import { ProgressHub } from './components/ProgressHub';
 import { MoreHub } from './components/MoreHub';
 import { FigmaRedesignPreview } from './components/FigmaRedesignPreview';
+import { DesignSystemShowcase } from './components/DesignSystemShowcase';
 import { DailyQuoteCard } from './components/DailyQuote';
 import { SyllabusTracker } from './components/SyllabusTracker';
 import { PyqEngine } from './components/PyqEngine';
@@ -209,18 +210,20 @@ function AppContent() {
     })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy')) {
+    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy' || window.location.pathname === '/design-system')) {
       if (window.location.pathname.startsWith('/debug')) return 'debug_galaxy';
+      if (window.location.pathname === '/design-system') return 'design_system';
       return 'download';
     }
     const hash = window.location.hash.replace('#', '');
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
     if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') return 'debug_galaxy';
+    if (hash === 'design-system' || hash === 'design_system') return 'design_system';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
-      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy'];
+      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy', 'design_system'];
     return (validTabs.includes(hash) ? hash : 'dashboard') as ActiveTab;
   });
   const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
@@ -1164,6 +1167,10 @@ function AppContent() {
     );
   }
 
+  if (activeTab === 'design_system') {
+    return <DesignSystemShowcase />;
+  }
+
   if (!user) {
     logAuthDiagnostic('NAVIGATION', 'Rendering Sign In page (LandingPage)', { reason: 'No active user in app state' });
     return (
@@ -1768,6 +1775,10 @@ function AppContent() {
                   onClose={() => setActiveTab('dashboard')}
                   onNavigateTab={(t) => setActiveTab(t as ActiveTab)}
                 />
+              )}
+
+              {activeTab === 'design_system' && (
+                <DesignSystemShowcase />
               )}
               </Suspense>
             </PageTransition>

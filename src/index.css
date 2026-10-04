@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./design-system/tokens.css";
 @import "katex/dist/katex.min.css";
 
 /* Design Tokens & Custom Surface Utilities (Refined Modern Education Design System) */
