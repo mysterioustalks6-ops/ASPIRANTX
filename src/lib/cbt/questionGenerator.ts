@@ -78,8 +78,19 @@ export function normalizeExamIds(id: string): string[] {
   if (upper.includes('SSC_CGL') || upper.includes('SSC-CGL')) {
     results.add('SSC_CGL');
   }
+  if (upper.includes('SSC_JE') || upper.includes('SSC-JE') || upper === 'SSC_JE') {
+    results.add('SSC_JE');
+    results.add('SSC_JE_CIVIL');
+    results.add('SSC_JE_ELECTRICAL');
+    results.add('SSC_JE_MECHANICAL');
+  }
+  if (upper.includes('_JE') || upper.includes('_AE') || upper.includes('AEN') || upper.includes('AEE')) {
+    results.add(upper);
+    results.add(withUnderscoreUpper);
+  }
   if (upper.includes('RRB')) {
     results.add('RRB_NTPC');
+    results.add('RRB_JE');
   }
   if (upper.includes('CTET')) {
     results.add('CTET');

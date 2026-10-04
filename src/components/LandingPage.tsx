@@ -211,7 +211,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 STUDY<span className="text-sky-400">RIDE</span>
               </h1>
               <span className="px-1.5 py-0.5 rounded-full bg-sky-500/15 border border-sky-500/25 text-[10px] font-bold text-sky-400">
-                PRO
+                PRO v{CANONICAL_APP_RELEASE.version}
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium">Precision Exam Suite</p>
@@ -229,7 +229,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               title={`Download Android APK v${CANONICAL_APP_RELEASE.version}`}
             >
               <Download className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span>Android APK</span>
+              <span>Android APK v{CANONICAL_APP_RELEASE.version}</span>
             </a>
           )}
 

@@ -144,11 +144,11 @@ app.get('/api/version', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.json({
     version: APP_VERSION,
-    versionCode: Shared.APP_VERSION_CODE || 24,
+    versionCode: Shared.APP_VERSION_CODE || 25,
     apkDownloadUrl: 'https://studyride.in/studyride.apk',
     directApkUrl: 'https://studyride.in/studyride.apk',
-    releaseDate: 'October 3, 2026',
-    releaseNotes: 'v3.0.0: Unified Syllabus Tracker (combining Classic Checklist with Dynamic Exam Forecast Engine, Spaced Revision, What-If Simulator & 5-Dimension Mastery), 243K+ Full Exam Question Banks, and APK Updater.',
+    releaseDate: 'October 4, 2026',
+    releaseNotes: 'v3.1.0: Duolingo-grade Gamified Learning Path, original Veer Falcon mascot, offline sound effects engine, 5-hearts system, and 33 new SSC & State AE/JE exams with 10,000+ authentic questions.',
     timestamp: new Date().toISOString()
   });
 });

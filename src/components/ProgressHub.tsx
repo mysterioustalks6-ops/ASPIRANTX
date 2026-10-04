@@ -210,38 +210,41 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
         </div>
 
         {/* Sub-Tab Navigation Bar */}
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-900 border border-slate-800 self-start sm:self-auto">
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 self-start sm:self-auto">
           <button
             onClick={() => setSubTab('readiness')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
               subTab === 'readiness'
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black shadow-md shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-emerald-500 text-slate-950 border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 shadow-md shadow-emerald-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            🎯 AIR Readiness
+            <span>🎯</span>
+            <span>AIR Readiness</span>
           </button>
 
           <button
             onClick={() => setSubTab('weakness')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
               subTab === 'weakness'
-                ? 'bg-gradient-to-r from-rose-500 to-amber-600 text-white font-black shadow-md shadow-rose-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-rose-500 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 shadow-md shadow-rose-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            🔍 Weakness AI
+            <span>🔍</span>
+            <span>Weakness AI</span>
           </button>
 
           <button
             onClick={() => setSubTab('leaderboard')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
               subTab === 'leaderboard'
-                ? 'bg-gradient-to-r from-indigo-500 to-sky-600 text-white font-black shadow-md shadow-indigo-500/20'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-sky-500 text-slate-950 border-b-4 border-sky-700 active:border-b-0 active:translate-y-1 shadow-md shadow-sky-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
             }`}
           >
-            🏆 All-India Leaderboard
+            <span>🏆</span>
+            <span>Leaderboard</span>
           </button>
         </div>
       </div>
@@ -252,47 +255,47 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
       {subTab === 'readiness' && (
         <div className="space-y-6">
           {/* AI SCORE PREDICTOR & NATIONAL RANK CARD */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-950 border border-indigo-500/30 shadow-2xl relative overflow-hidden">
+          <div className="p-6 sm:p-7 rounded-3xl bg-[#1A1D24] border-2 border-slate-800 border-b-4 border-b-slate-900 shadow-xl relative overflow-hidden">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-[11px] font-bold">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="space-y-2.5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-bold">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-400" />
                   <span>AI Predictive Rank Telemetry</span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-black text-white">
-                  Predicted Performance: <span className="text-emerald-400">{predictedScore}</span> / {examScale.maxMarks}
+                <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
+                  Predicted Score: <span className="text-[#58CC02]">{predictedScore}</span> <span className="text-slate-500 text-lg">/ {examScale.maxMarks}</span>
                 </h2>
-                <p className="text-xs text-slate-300 max-w-lg leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-300 max-w-lg leading-relaxed">
                   Based on your actual {coveragePercent}% syllabus coverage, {cbtAccuracy}% CBT accuracy, and active study velocity.
                 </p>
 
                 <div className="flex items-center gap-3 pt-2 flex-wrap">
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-white/[0.08] text-xs">
+                  <div className="px-3.5 py-2 rounded-xl bg-[#15181F] border border-[#2A2F3A] text-xs">
                     <span className="text-slate-400">Estimated Percentile: </span>
                     <strong className="text-sky-400 font-mono font-bold text-sm ml-1">{predictedPercentile}%ile</strong>
                   </div>
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-950/80 border border-white/[0.08] text-xs">
+                  <div className="px-3.5 py-2 rounded-xl bg-[#15181F] border border-[#2A2F3A] text-xs">
                     <span className="text-slate-400">Rank Bracket: </span>
                     <strong className="text-emerald-400 font-mono font-bold text-sm ml-1">{airBracket}</strong>
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons to Boost Score */}
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 shrink-0 w-full sm:w-auto">
+              {/* Tactile Action Buttons to Boost Score */}
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => onNavigate?.('cbt_exam')}
-                  className="btn-3d btn-3d-emerald px-4 py-2.5 rounded-2xl text-xs font-black flex items-center justify-center gap-2 tap-target-44 shadow-lg shadow-emerald-500/20"
+                  className="px-5 py-3 rounded-2xl bg-[#58CC02] hover:bg-[#46a302] text-slate-950 font-black text-sm border-b-4 border-[#3c8801] active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#58CC02]/20 min-h-[48px]"
                 >
-                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <Play className="w-4 h-4 fill-current" />
                   <span>Take Benchmark CBT Mock</span>
                 </button>
 
                 <button
                   onClick={() => onNavigate?.('syllabus')}
-                  className="btn-3d btn-3d-slate px-4 py-2.5 rounded-2xl text-xs font-bold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 tap-target-44"
+                  className="px-5 py-3 rounded-2xl bg-[#15181F] hover:bg-slate-800 text-slate-200 hover:text-white font-bold text-sm border border-[#2A2F3A] border-b-4 border-b-slate-950 active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 cursor-pointer min-h-[48px]"
                 >
-                  <BookOpen className="w-3.5 h-3.5 text-sky-400" />
+                  <BookOpen className="w-4 h-4 text-sky-400" />
                   <span>Cover Pending Syllabus</span>
                 </button>
               </div>
@@ -422,10 +425,10 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
 
                   <button
                     onClick={() => onNavigate?.(item.actionTab)}
-                    className="w-full py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 text-slate-200 hover:text-white font-bold text-xs border border-white/[0.08] transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl bg-[#15181F] hover:bg-slate-800 text-slate-200 hover:text-white font-bold text-xs border border-[#2A2F3A] border-b-2 border-b-slate-950 active:border-b-0 active:translate-y-0.5 transition flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px]"
                   >
                     <span>Revise Now</span>
-                    <ArrowUpRight className="w-3 h-3 text-slate-400" />
+                    <ArrowUpRight className="w-3.5 h-3.5 text-sky-400" />
                   </button>
                 </div>
               ))}

@@ -259,49 +259,53 @@ export const RewardsHub: React.FC<RewardsHubProps> = ({
       </SlideUp>
 
       {/* ── NAVIGATION TABS ─────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-3 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2.5 border-b border-slate-800 pb-4 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('trophies')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all whitespace-nowrap min-h-[48px] flex items-center gap-2 cursor-pointer ${
             activeTab === 'trophies'
-              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#1CB0F6] text-slate-950 border-b-4 border-[#0b8ecd] active:border-b-0 active:translate-y-1 shadow-md shadow-[#1CB0F6]/20'
+              : 'bg-[#15181F] text-slate-300 hover:text-white border border-[#2A2F3A] hover:bg-slate-800'
           }`}
         >
-          🏆 Trophy Collection ({trophies.length})
+          <span>🏆</span>
+          <span>Trophies ({trophies.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('challenges')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all whitespace-nowrap min-h-[48px] flex items-center gap-2 cursor-pointer ${
             activeTab === 'challenges'
-              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#FF9600] text-slate-950 border-b-4 border-[#cc7800] active:border-b-0 active:translate-y-1 shadow-md shadow-[#FF9600]/20'
+              : 'bg-[#15181F] text-slate-300 hover:text-white border border-[#2A2F3A] hover:bg-slate-800'
           }`}
         >
-          ⚡ Daily & Weekly Challenges ({challenges.length})
+          <span>⚡</span>
+          <span>Challenges ({challenges.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all whitespace-nowrap min-h-[48px] flex items-center gap-2 cursor-pointer ${
             activeTab === 'history'
-              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-[#58CC02] text-slate-950 border-b-4 border-[#3c8801] active:border-b-0 active:translate-y-1 shadow-md shadow-[#58CC02]/20'
+              : 'bg-[#15181F] text-slate-300 hover:text-white border border-[#2A2F3A] hover:bg-slate-800'
           }`}
         >
-          📜 XP Ledger & History
+          <span>📜</span>
+          <span>XP Ledger</span>
         </button>
 
         <button
           onClick={() => setActiveTab('swag')}
-          className={`px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+          className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-black transition-all whitespace-nowrap min-h-[48px] flex items-center gap-2 cursor-pointer ${
             activeTab === 'swag'
-              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30'
-              : 'text-slate-400 hover:text-slate-200'
+              ? 'bg-purple-500 text-white border-b-4 border-purple-700 active:border-b-0 active:translate-y-1 shadow-md shadow-purple-500/20'
+              : 'bg-[#15181F] text-slate-300 hover:text-white border border-[#2A2F3A] hover:bg-slate-800'
           }`}
         >
-          🎁 Physical Swag & Milestones
+          <span>🎁</span>
+          <span>Physical Swag</span>
         </button>
       </div>
 

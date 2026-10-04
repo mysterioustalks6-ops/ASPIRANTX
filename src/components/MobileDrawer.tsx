@@ -35,6 +35,7 @@ import { AppCustomizerSettings } from '../lib/customizer';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
 import { loadWorkspaceConfig, ALL_WORKSPACE_FEATURES } from '../lib/workspacePreferences';
 import { ExamSelectModal } from './ExamSelectModal';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 interface MobileDrawerProps {
   isOpen: boolean;
@@ -160,7 +161,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/logo.png'; }}
                 />
                 <div>
-                  <h2 className="text-sm font-bold text-slate-100">{customizer?.brandName || 'ASPIRANTX'}</h2>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-sm font-bold text-slate-100">{customizer?.brandName || 'ASPIRANTX'}</h2>
+                    <span className="px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 text-[9px] font-black uppercase border border-sky-500/30">
+                      v{CANONICAL_APP_RELEASE.version}
+                    </span>
+                  </div>
                   <p className="text-[11px] text-slate-400">Complete Mobile Navigation</p>
                 </div>
               </div>
@@ -357,6 +363,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Log Out</span>
                 </button>
+
+                <div className="pt-1 text-center text-[10px] text-slate-500 font-mono flex items-center justify-center gap-1.5">
+                  <span>StudyRide v{CANONICAL_APP_RELEASE.version}</span>
+                  <span>•</span>
+                  <span>Build {CANONICAL_APP_RELEASE.versionCode}</span>
+                </div>
               </div>
             </div>
           </motion.div>

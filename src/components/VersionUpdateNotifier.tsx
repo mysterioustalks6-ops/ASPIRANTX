@@ -34,11 +34,15 @@ export const VersionUpdateNotifier: React.FC = () => {
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   const [isDismissed, setIsDismissed] = useState<boolean>(false);
   const [downloadStepActive, setDownloadStepActive] = useState<boolean>(false);
+  const [manualFeedback, setManualFeedback] = useState<string | null>(null);
 
   const isNative = Capacitor.isNativePlatform();
 
   const checkForUpdate = useCallback(async (manual = false) => {
     try {
+      if (manual) {
+        setManualFeedback('Checking for updates...');
+      }
       let localVer = CANONICAL_APP_RELEASE.version;
       let localCode = CANONICAL_APP_RELEASE.versionCode;
 
@@ -56,17 +60,29 @@ export const VersionUpdateNotifier: React.FC = () => {
       }
       setCurrentVersion(localVer);
 
-      // Fetch latest version from authoritative production API
       const timestamp = Date.now();
-      const apiUrl = isNative 
-        ? `https://studyride.in/api/version?t=${timestamp}` 
-        : `/api/version?t=${timestamp}`;
+      // Try current origin first (for custom domain, localhost, or production), fallback to studyride.in
+      let res = await fetch(`/api/version?t=${timestamp}`, { cache: 'no-store' }).catch(() => null);
+      if (!res || !res.ok) {
+        res = await fetch(`https://studyride.in/api/version?t=${timestamp}`, { cache: 'no-store' }).catch(() => null);
+      }
 
-      const res = await fetch(apiUrl, { cache: 'no-store' }).catch(() => null);
-      if (!res || !res.ok) return;
+      if (!res || !res.ok) {
+        if (manual) {
+          setManualFeedback(`Installed v${localVer} • Offline or Network Timeout`);
+          setTimeout(() => setManualFeedback(null), 4000);
+        }
+        return;
+      }
 
       const data: VersionResponse = await res.json().catch(() => null);
-      if (!data || !data.version) return;
+      if (!data || !data.version) {
+        if (manual) {
+          setManualFeedback(`Installed v${localVer} • Latest Release`);
+          setTimeout(() => setManualFeedback(null), 4000);
+        }
+        return;
+      }
 
       const remoteCode = data.versionCode || 0;
       const isNewerCode = remoteCode > localCode;
@@ -81,10 +97,19 @@ export const VersionUpdateNotifier: React.FC = () => {
         if (manual || dismissedVer !== data.version || hoursSinceDismiss >= 2) {
           setUpdateAvailable(true);
           setIsDismissed(false);
+          setManualFeedback(null);
+        }
+      } else {
+        if (manual) {
+          setManualFeedback(`✓ StudyRide is up to date! (v${localVer} Build ${localCode})`);
+          setTimeout(() => setManualFeedback(null), 4500);
         }
       }
     } catch {
-      // Silent catch
+      if (manual) {
+        setManualFeedback('Unable to check update. Please check internet connection.');
+        setTimeout(() => setManualFeedback(null), 4000);
+      }
     }
   }, [isNative]);
 
@@ -147,6 +172,30 @@ export const VersionUpdateNotifier: React.FC = () => {
     setUpdateAvailable(false);
     setDownloadStepActive(false);
   };
+
+  if (manualFeedback) {
+    return (
+      <AnimatePresence>
+        <motion.div
+          initial={{ opacity: 0, y: -40, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -40, scale: 0.95 }}
+          className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] px-5 py-3 rounded-2xl bg-slate-900/95 border-2 border-emerald-500/60 shadow-[0_10px_30px_rgba(16,185,129,0.3)] backdrop-blur-xl flex items-center gap-3 text-white text-xs font-bold"
+        >
+          <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/40">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span>{manualFeedback}</span>
+          <button
+            onClick={() => setManualFeedback(null)}
+            className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white ml-1"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </motion.div>
+      </AnimatePresence>
+    );
+  }
 
   if (!updateAvailable || isDismissed || !remoteInfo) return null;
 

@@ -494,6 +494,64 @@ Object.assign(UNIVERSAL_EXAM_CONFIGS, {
     ]
   },
 
+  // ── 6b. SSC JE (Junior Engineer Civil / Electrical / Mechanical) ──────────
+  SSC_JE: {
+    examId: 'SSC_JE',
+    examName: 'SSC JE — Junior Engineer (Civil / Electrical / Mechanical)',
+    conductingBody: 'Staff Selection Commission (SSC)',
+    category: 'GOVERNMENT_RECRUITMENT',
+    version: '2026-SSC-JE-v1',
+    availableLanguages: ['English', 'Hindi'],
+    defaultLanguage: 'English',
+    normalizationRule: 'linear_interpolation',
+    stages: [
+      {
+        stageId: 'paper1',
+        stageName: 'Paper-1 (Computer Based Examination)',
+        papers: [
+          {
+            paperId: 'ssc_je_p1',
+            paperName: 'Paper-1 CBT',
+            totalDurationMinutes: 120, // 2 Hours
+            timingModel: 'GLOBAL_TIMER',
+            sections: [
+              {
+                id: 'reasoning',
+                name: 'General Intelligence and Reasoning',
+                subject: 'General Intelligence & Reasoning',
+                questionCount: 50,
+                totalMarks: 50,
+                markingScheme: { positive: 1.0, negative: 0.25, unattempted: 0 },
+                allowedQuestionTypes: ['SINGLE_CORRECT_MCQ'],
+                navigationRule: 'FREE_NAVIGATION'
+              },
+              {
+                id: 'general_awareness',
+                name: 'General Awareness',
+                subject: 'General Awareness',
+                questionCount: 50,
+                totalMarks: 50,
+                markingScheme: { positive: 1.0, negative: 0.25, unattempted: 0 },
+                allowedQuestionTypes: ['SINGLE_CORRECT_MCQ'],
+                navigationRule: 'FREE_NAVIGATION'
+              },
+              {
+                id: 'general_engineering',
+                name: 'General Engineering (Civil / Electrical / Mechanical)',
+                subject: 'Engineering',
+                questionCount: 100,
+                totalMarks: 100,
+                markingScheme: { positive: 1.0, negative: 0.25, unattempted: 0 },
+                allowedQuestionTypes: ['SINGLE_CORRECT_MCQ', 'NUMERICAL'],
+                navigationRule: 'FREE_NAVIGATION'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
   // ── 7. IBPS PO (CRITICAL MODEL B: SECTION-WISE TIMED & LOCKED) ──────────────
   IBPS_PO: {
     examId: 'IBPS_PO',
@@ -1230,6 +1288,69 @@ export function getUniversalExamConfig(examId: string): UniversalExamConfig {
   const isRailway = normalizedKey.includes('RRB') || normalizedKey.includes('RAILWAY');
   const isPolice = normalizedKey.includes('POLICE') || normalizedKey.includes('CONSTABLE') || normalizedKey.includes('SI');
   const isMedicalNursing = normalizedKey.includes('NURSING') || normalizedKey.includes('ANM') || normalizedKey.includes('GNM') || normalizedKey.includes('PNST');
+  const isAeJe = normalizedKey.includes('_JE') || normalizedKey.includes('_AE') || normalizedKey.includes('AEN') || normalizedKey.includes('AEE') || normalizedKey.includes('SUB_ENGINEER');
+
+  if (isAeJe) {
+    const branchName = normalizedKey.includes('CIVIL') ? 'Civil Engineering' :
+                       normalizedKey.includes('ELEC') ? 'Electrical Engineering' :
+                       normalizedKey.includes('MECH') ? 'Mechanical Engineering' : 'Engineering Core & Technical Discipline';
+    return {
+      examId: normalizedKey,
+      examName: `${normalizedKey.replace(/_/g, ' ')} Examination`,
+      conductingBody: 'State Public Service Commission / Recruitment Board',
+      category: 'GOVERNMENT_RECRUITMENT',
+      version: '2026-AE-JE-STANDARD',
+      availableLanguages: ['English', 'Hindi'],
+      defaultLanguage: 'English',
+      normalizationRule: 'linear_interpolation',
+      stages: [
+        {
+          stageId: 'stage1',
+          stageName: 'Computer Based Test / Written Exam',
+          papers: [
+            {
+              paperId: `${normalizedKey.toLowerCase()}_p1`,
+              paperName: 'Technical & General Paper',
+              totalDurationMinutes: 120,
+              timingModel: 'GLOBAL_TIMER',
+              sections: [
+                {
+                  id: 'technical_discipline',
+                  name: `Technical Section — ${branchName}`,
+                  subject: branchName,
+                  questionCount: 100,
+                  totalMarks: 100,
+                  markingScheme: { positive: 1.0, negative: 0.25, unattempted: 0 },
+                  allowedQuestionTypes: ['SINGLE_CORRECT_MCQ', 'NUMERICAL'],
+                  navigationRule: 'FREE_NAVIGATION'
+                },
+                {
+                  id: 'general_reasoning',
+                  name: 'General Intelligence & Reasoning',
+                  subject: 'Reasoning',
+                  questionCount: 50,
+                  totalMarks: 50,
+                  markingScheme: { positive: 1.0, negative: 0.25, unattempted: 0 },
+                  allowedQuestionTypes: ['SINGLE_CORRECT_MCQ'],
+                  navigationRule: 'FREE_NAVIGATION'
+                },
+                {
+                  id: 'general_studies',
+                  name: 'General Awareness & State GK',
+                  subject: 'General Knowledge',
+                  questionCount: 50,
+                  totalMarks: 50,
+                  markingScheme: { positive: 1.0, negative: 0.25, unattempted: 0 },
+                  allowedQuestionTypes: ['SINGLE_CORRECT_MCQ'],
+                  navigationRule: 'FREE_NAVIGATION'
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+  }
 
   if (isBanking) {
     return {

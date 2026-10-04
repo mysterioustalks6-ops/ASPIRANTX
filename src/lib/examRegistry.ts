@@ -1,4 +1,5 @@
 import { EXAM_LIST } from './examList';
+import { AE_JE_CONFIGS } from './aeJeRegistryConfigs';
 
 export interface ExamConfig {
   examId: string;
@@ -17,6 +18,7 @@ export interface ExamConfig {
 }
 
 export const EXAM_REGISTRY: Record<string, ExamConfig> = {
+  ...AE_JE_CONFIGS,
   UPSC_CSE: {
     examId: 'UPSC_CSE',
     displayName: 'UPSC Civil Services Examination',
@@ -1388,6 +1390,46 @@ export function normalizeExamId(raw?: string | null): string {
   if (s.includes('neet') || s.includes('national eligibility')) return 'NEET_UG';
   if (s.includes('ssc cgl') || s.includes('combined graduate level')) return 'SSC_CGL';
   if (s.includes('ssc chsl')) return 'SSC_CHSL';
+  if (s.includes('ssc je') || s.includes('ssc junior engineer') || s.includes('ssc ae')) {
+    if (s.includes('civil')) return 'SSC_JE_CIVIL';
+    if (s.includes('elec')) return 'SSC_JE_ELECTRICAL';
+    if (s.includes('mech')) return 'SSC_JE_MECHANICAL';
+    return 'SSC_JE';
+  }
+  if (s.includes('uppsc ae')) return 'UPPSC_AE';
+  if (s.includes('upsssc je')) return 'UPSSSC_JE';
+  if (s.includes('uppcl')) return 'UPPCL_AE_JE';
+  if (s.includes('bpsc ae')) return 'BPSC_AE';
+  if (s.includes('btsc je') || s.includes('btsc')) return 'BTSC_JE';
+  if (s.includes('bsphcl')) return 'BSPHCL_AE_JE';
+  if (s.includes('mppsc ae') || s.includes('mp ses')) return 'MPPSC_AE';
+  if (s.includes('mp sub engineer') || s.includes('vyapam sub')) return 'MP_SUB_ENGINEER';
+  if (s.includes('rpsc ae') || s.includes('rpsc aen')) return 'RPSC_AEN';
+  if (s.includes('rsmssb je') || s.includes('rssb je')) return 'RSMSSB_JE';
+  if (s.includes('ukpsc ae')) return 'UKPSC_AE';
+  if (s.includes('ukpsc je')) return 'UKPSC_JE';
+  if (s.includes('mpsc mes') || s.includes('mpsc ae')) return 'MPSC_MES_AE';
+  if (s.includes('wbpsc ae')) return 'WBPSC_AE';
+  if (s.includes('wbpsc je')) return 'WBPSC_JE';
+  if (s.includes('hpsc ae')) return 'HPSC_AE';
+  if (s.includes('hssc je')) return 'HSSC_JE';
+  if (s.includes('ppsc ae')) return 'PPSC_AE';
+  if (s.includes('pspcl')) return 'PSPCL_JE';
+  if (s.includes('jpsc ae')) return 'JPSC_AE';
+  if (s.includes('jssc je') || s.includes('jdlcce')) return 'JSSC_JE';
+  if (s.includes('opsc aee') || s.includes('opsc ae')) return 'OPSC_AEE';
+  if (s.includes('osssc je')) return 'OSSSC_JE';
+  if (s.includes('gpsc ae')) return 'GPSC_AE';
+  if (s.includes('gsecl') || s.includes('getco')) return 'GSECL_GETCO_JE';
+  if (s.includes('cgpsc ae')) return 'CGPSC_AE';
+  if (s.includes('cg vyapam') || s.includes('cg sub engineer')) return 'CG_VYAPAM_JE';
+  if (s.includes('appsc ae') || s.includes('appsc aee')) return 'APPSC_AEE';
+  if (s.includes('tspsc ae') || s.includes('tspsc aee')) return 'TSPSC_AEE';
+  if (s.includes('kpsc ae') || s.includes('kpsc je')) return 'KPSC_AE_JE';
+  if (s.includes('tnpsc cese') || s.includes('tnpsc ae')) return 'TNPSC_CESE_AE';
+  if (s.includes('kerala psc ae')) return 'KERALA_PSC_AE';
+  if (s.includes('dsssb ae') || s.includes('dsssb je')) return 'DSSSB_AE_JE';
+  if (s.includes('dda je')) return 'DDA_JE';
   if (s.includes('nda') || s.includes('naval academy') || s.includes('national defence academy')) return 'NDA_NA';
   if (s.includes('cds') || s.includes('combined defence')) return 'CDS';
   if (s.includes('rrb ntpc')) return 'RRB_NTPC';

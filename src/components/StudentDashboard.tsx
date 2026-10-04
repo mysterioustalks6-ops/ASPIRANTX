@@ -3,10 +3,10 @@ import {
   Flame, Target,
   Sparkles, BookOpen, Zap,
   LayoutGrid, Sliders, ChevronRight,
-  CheckCircle2, Circle, Play, ArrowRight, Clock, Award, CheckSquare
+  CheckCircle2, Circle, Play, ArrowRight, Award, CheckSquare
 } from 'lucide-react';
 import { 
-  FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, CountUp, ProgressAnimation, FlameGlow,
+  FadeIn, SlideUp, Stagger, StaggerItem, CountUp, FlameGlow,
   CheckmarkPop, FloatingRewardBadge, triggerConfetti
 } from '../lib/animations';
 import { awardXPAndCoins } from '../lib/gamification';
@@ -17,6 +17,12 @@ import { AdSenseBanner } from './AdSenseBanner';
 import { DailyStudySummaryCard } from './DailyStudySummaryCard';
 import { CircularPerformanceHub } from './CircularPerformanceMeter';
 import { loadWorkspaceConfig, getActiveFeaturesInOrder, WorkspaceConfig, recordFeatureUsage } from '../lib/workspacePreferences';
+import { TactileButton } from './TactileButton';
+import { TactileCard } from './TactileCard';
+import { TactileProgressBar } from './TactileProgressBar';
+import { AspirantMascot } from './duolingo/AspirantMascot';
+import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 interface StudentDashboardProps {
   userProfile: UserProfile;
@@ -33,9 +39,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   selectedExam, 
   onExamChange, 
   onNavigate, 
-  onOpenProfileModal,
-  onOpenWorkspaceCustomizer,
-  onOpenReminderSettings
+  onOpenProfileModal, 
+  onOpenWorkspaceCustomizer, 
+  onOpenReminderSettings 
 }) => {
   const [workspaceConfig, setWorkspaceConfig] = useState<WorkspaceConfig>(() => loadWorkspaceConfig(userProfile.id));
 
@@ -46,30 +52,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     window.addEventListener('aspirantx_workspace_updated', handleWorkspaceUpdate);
     return () => window.removeEventListener('aspirantx_workspace_updated', handleWorkspaceUpdate);
   }, [userProfile.id]);
-
-  const defaultDashboardData: StudentDashboardData = {
-    todayStudyMinutes: 0,
-    weeklyStudyHours: 0,
-    monthlyStudyHours: 0,
-    currentStreak: userProfile.streakDays || 0,
-    longestStreak: userProfile.streakDays || 0,
-    topicsCompleted: 0,
-    totalTopics: 240,
-    overallProgressPercent: 0,
-    daysLeftForExam: 110,
-    estimatedCompletionDate: '2026-11-20',
-    dailyTargetHours: 8,
-    weeklyTargetTopics: 15,
-    monthlyTargetTopics: 60,
-    revisionProgressPercent: 0,
-    testAccuracyPercent: 0,
-    rankTrend: [],
-    studyHeatmap: [],
-    aiSuggestions: [
-      'Begin your daily study by completing your targeted syllabus topic.',
-      'Attempt a CBT mock test or PYQ section to establish your accuracy benchmark.',
-    ]
-  };
 
   const activeExamTag = normalizeExamId(selectedExam || userProfile.exam);
 
@@ -90,7 +72,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     const diffMs = targetExamDate.getTime() - today.getTime();
     const daysLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-    // 2. Calculate Real Syllabus Topics Completed from LocalStorage (Scoped by User + Exam)
+    // 2. Calculate Real Syllabus Topics Completed from LocalStorage
     let completedTopicsCount = 0;
     try {
       const progressKey = `aspirantx_subtopic_progress_v3_${userId || 'guest'}_${examTag}`;
@@ -126,7 +108,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       todayMinutes = Math.max(0, Math.round(userProfile.studyHoursToday * 60));
     }
 
-    // 4. Calculate Real Accuracy from CBT tests (Scoped by User + Exam)
+    // 4. Calculate Real Accuracy from CBT tests
     let testAccuracy = 0;
     try {
       const scopedKey = `aspirantx_cbt_results_cache_${userId || 'guest'}_${examTag}`;
@@ -144,7 +126,6 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       }
     } catch {}
 
-    // Derive Dynamic AI Suggestions for the active exam subjects
     const examCfg = getExamConfig(examTag);
     const primarySubject = examCfg.subjects?.[0] || 'Core Concepts';
     const secondarySubject = examCfg.subjects?.[1] || primarySubject;
@@ -180,7 +161,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [data, setData] = useState<StudentDashboardData>(() => 
     computeLiveDashboardData(activeExamTag, userProfile.id)
   );
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading] = useState<boolean>(false);
 
   useEffect(() => {
     setData(computeLiveDashboardData(activeExamTag, userProfile.id));
@@ -192,15 +173,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       }
     };
 
-    const handleGamificationUpdated = () => {
-      setData(computeLiveDashboardData(activeExamTag, userProfile.id));
-    };
-
-    const handleSyllabusUpdated = () => {
-      setData(computeLiveDashboardData(activeExamTag, userProfile.id));
-    };
-
-    const handleStoreUpdated = () => {
+    const handleSyncEvent = () => {
       setData(computeLiveDashboardData(activeExamTag, userProfile.id));
     };
 
@@ -210,18 +183,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     };
 
     window.addEventListener('aspirantx_streak_updated', handleStreakUpdated);
-    window.addEventListener('aspirantx_gamification_updated', handleGamificationUpdated);
-    window.addEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdated);
-    window.addEventListener('aspirantx_syllabus_time_updated', handleSyllabusUpdated);
-    window.addEventListener('aspirantx_local_store_updated', handleStoreUpdated);
+    window.addEventListener('aspirantx_gamification_updated', handleSyncEvent);
+    window.addEventListener('aspirantx_personal_syllabus_updated', handleSyncEvent);
+    window.addEventListener('aspirantx_syllabus_time_updated', handleSyncEvent);
+    window.addEventListener('aspirantx_local_store_updated', handleSyncEvent);
     window.addEventListener('aspirantx_exam_changed', handleExamChanged);
 
     return () => {
       window.removeEventListener('aspirantx_streak_updated', handleStreakUpdated);
-      window.removeEventListener('aspirantx_gamification_updated', handleGamificationUpdated);
-      window.removeEventListener('aspirantx_personal_syllabus_updated', handleSyllabusUpdated);
-      window.removeEventListener('aspirantx_syllabus_time_updated', handleSyllabusUpdated);
-      window.removeEventListener('aspirantx_local_store_updated', handleStoreUpdated);
+      window.removeEventListener('aspirantx_gamification_updated', handleSyncEvent);
+      window.removeEventListener('aspirantx_personal_syllabus_updated', handleSyncEvent);
+      window.removeEventListener('aspirantx_syllabus_time_updated', handleSyncEvent);
+      window.removeEventListener('aspirantx_local_store_updated', handleSyncEvent);
       window.removeEventListener('aspirantx_exam_changed', handleExamChanged);
     };
   }, [activeExamTag, userProfile.id, userProfile.streakDays, userProfile.xp]);
@@ -233,51 +206,21 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       const stored = localStorage.getItem(histKey);
       if (stored) return JSON.parse(stored) as { subject: string; chapter: string; subtopic: string; tab: ActiveTab };
     } catch {}
-    // Fallback: derive from first subject in exam config
     const examCfg = getExamConfig(activeExamTag);
     const subject = examCfg.subjects?.[0] || 'Core Subject';
-    return { subject, chapter: 'Chapter 1', subtopic: 'Introduction & Overview', tab: 'syllabus' as ActiveTab };
+    return { subject, chapter: 'Chapter 1', subtopic: 'Foundational Overview', tab: 'syllabus' as ActiveTab };
   };
 
   const lastTopic = getLastStudiedTopic();
-
   const examCfg2 = getExamConfig(activeExamTag);
   const primarySubject = examCfg2.subjects?.[0] || 'Core Concepts';
   const secondarySubject = examCfg2.subjects?.[1] || primarySubject;
   const primarySuggestion = data.aiSuggestions?.[0] || `Focus on ${primarySubject} today.`;
-  const secondarySuggestion = data.aiSuggestions?.[1] || null;
   const [showAllShortcuts, setShowAllShortcuts] = useState<boolean>(false);
   const [showTelemetryRings, setShowTelemetryRings] = useState<boolean>(false);
+  const [showDuolingoPath, setShowDuolingoPath] = useState<boolean>(false);
 
-  if (loading || !data) {
-    return (
-      <div className="p-12 text-center text-slate-400">
-        <div className="w-8 h-8 border-3 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        <p className="text-xs font-semibold text-slate-400">Syncing Dashboard Telemetry...</p>
-      </div>
-    );
-  }
-
-  // Derive target action tab from AI recommendation
-  const getRecommendationAction = () => {
-    const text = (primarySuggestion || '').toLowerCase();
-    if (text.includes('cbt') || text.includes('mock') || text.includes('test series')) {
-      return { label: 'Take Mock Test', tab: 'cbt' as ActiveTab };
-    }
-    if (text.includes('pyq') || text.includes('previous')) {
-      return { label: 'Solve PYQs', tab: 'pyq' as ActiveTab };
-    }
-    if (text.includes('mcq') || text.includes('question') || text.includes('practice')) {
-      return { label: 'Practice MCQs', tab: 'question_bank' as ActiveTab };
-    }
-    return { label: 'Practice Now', tab: 'pyq' as ActiveTab };
-  };
-
-  const recAction = getRecommendationAction();
-  const allFeatures = getActiveFeaturesInOrder(workspaceConfig);
-  const displayedShortcuts = showAllShortcuts ? allFeatures : allFeatures.slice(0, 4);
-
-  // ── 5-Pillar Architecture: Daily Goals Engine (Persistent with Instant XP Feedback) ──
+  // 5-Pillar Architecture: Daily Goals Engine (Persistent with Instant XP Feedback)
   const todayDateStr = new Date().toISOString().split('T')[0];
   const dailyGoalsStorageKey = `aspirantx_daily_goals_${userProfile.id || 'guest'}_${todayDateStr}`;
 
@@ -292,7 +235,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return [
       {
         id: 'goal-1',
-        title: `${primarySubject}: Core Concept Framework & Summary Notes`,
+        title: `${primarySubject}: Core Concept Framework & Summary`,
         duration: '20m',
         xp: 20,
         completed: false,
@@ -340,299 +283,342 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     }
   };
 
+  const allFeatures = getActiveFeaturesInOrder(workspaceConfig);
+  const displayedShortcuts = showAllShortcuts ? allFeatures : allFeatures.slice(0, 4);
+
+  const getRecommendationAction = () => {
+    const text = (primarySuggestion || '').toLowerCase();
+    if (text.includes('cbt') || text.includes('mock') || text.includes('test series')) {
+      return { label: 'Take Mock Test', tab: 'cbt' as ActiveTab };
+    }
+    if (text.includes('pyq') || text.includes('previous')) {
+      return { label: 'Solve PYQs', tab: 'pyq' as ActiveTab };
+    }
+    if (text.includes('mcq') || text.includes('question') || text.includes('practice')) {
+      return { label: 'Practice MCQs', tab: 'question_bank' as ActiveTab };
+    }
+    return { label: 'Practice Now', tab: 'pyq' as ActiveTab };
+  };
+
+  const recAction = getRecommendationAction();
+
+  if (loading || !data) {
+    return (
+      <div className="p-12 text-center text-[#9CA3AF]">
+        <div className="w-8 h-8 border-3 border-[#58CC02] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-xs font-bold">Syncing Study Telemetry...</p>
+      </div>
+    );
+  }
+
   return (
-    <div id="student-dashboard" className="w-full space-y-5 pb-24 md:pb-8 font-sans">
-
-      {/* ── 1. HEADER & GREETING (Above the Fold) ─────────────────────────── */}
-      <SlideUp className="ax-card p-4 sm:p-6 border-slate-800 bg-slate-900/90">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Left: User Identity & Target Exam */}
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-              <p className="text-[11px] font-bold text-sky-400 uppercase tracking-wider">Candidate Workspace</p>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-              Welcome back, <span className="text-sky-400">{userProfile.name?.split(' ')[0] || 'Aspirant'}</span>
-            </h1>
-            <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
-              <span className="text-slate-400 font-medium">Target Exam:</span>
-              <select
-                value={selectedExam || userProfile.exam || 'NEET_UG'}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
-                    onOpenProfileModal();
-                  } else if (onExamChange) {
-                    onExamChange(val);
-                  }
-                }}
-                className="bg-slate-950 border border-slate-700 text-sky-300 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-sky-500 cursor-pointer shadow-sm transition-colors hover:border-sky-500/50"
-              >
-                <optgroup label="Standard Exams">
-                  {EXAM_LIST.map((ex) => (
-                    <option key={ex.id} value={ex.id} className="bg-slate-900 text-slate-200">
-                      {ex.label}
-                    </option>
-                  ))}
-                </optgroup>
-                <option value="__CREATE_CUSTOM__" className="bg-slate-900 text-amber-400 font-bold">
-                  + Create Custom Exam...
-                </option>
-              </select>
-            </div>
-          </div>
-
-          {/* Right: Key Exam Timeline Telemetry (Streak + Countdown) */}
-          <div className="flex items-center gap-3">
-            <div className="px-4 py-2.5 rounded-2xl bg-slate-950 border border-amber-500/30 flex items-center gap-2.5 shadow-sm">
-              <FlameGlow active={(userProfile.streakDays || data.currentStreak || 0) > 0}>
-                <Flame className="w-5 h-5 text-amber-400 fill-amber-400/20" />
-              </FlameGlow>
-              <div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Daily Streak</div>
-                <div className="text-sm font-black text-white">
-                  <CountUp value={userProfile.streakDays || data.currentStreak || 1} suffix=" Days 🔥" />
-                </div>
+    <div id="student-dashboard" className="w-full space-y-6 pb-24 md:pb-8 font-sans">
+      {/* ── 1. HEADER: Student Context & Clear Exam Identity ───────────────── */}
+      <SlideUp>
+        <TactileCard className="p-4 sm:p-6 bg-[#1A1D24] border border-[#2A2F3A]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-[#58CC02] animate-pulse" />
+                <p className="text-[11px] font-bold text-[#58CC02] uppercase tracking-wider">
+                  CANDIDATE WORKSPACE
+                </p>
+                <span className="px-2 py-0.5 rounded-full bg-[#1CB0F6]/15 border border-[#1CB0F6]/30 text-[#1CB0F6] text-[10px] font-black uppercase tracking-tight">
+                  v{CANONICAL_APP_RELEASE.version}
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-[#F3F4F6] tracking-tight">
+                Welcome back, <span className="text-[#1CB0F6]">{userProfile.name?.split(' ')[0] || 'Aspirant'}</span>
+              </h1>
+              <div className="flex items-center gap-2 mt-2 flex-wrap text-xs">
+                <span className="text-[#9CA3AF] font-medium">Target Exam:</span>
+                <select
+                  value={selectedExam || userProfile.exam || 'NEET_UG'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
+                      onOpenProfileModal();
+                    } else if (onExamChange) {
+                      onExamChange(val);
+                    }
+                  }}
+                  className="bg-[#0F1115] border border-[#2A2F3A] hover:border-[#1CB0F6]/50 text-[#1CB0F6] font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#1CB0F6] cursor-pointer shadow-sm transition-colors"
+                >
+                  <optgroup label="Standard Exams">
+                    {EXAM_LIST.map((ex) => (
+                      <option key={ex.id} value={ex.id} className="bg-[#1A1D24] text-[#F3F4F6]">
+                        {ex.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <option value="__CREATE_CUSTOM__" className="bg-[#1A1D24] text-[#FFA726] font-bold">
+                    + Create Custom Exam...
+                  </option>
+                </select>
               </div>
             </div>
 
-            <div className="px-4 py-2.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-2.5 shadow-sm">
-              <Target className="w-5 h-5 text-rose-400" />
-              <div>
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Countdown</div>
-                <div className="text-sm font-black text-white">
-                  <CountUp value={data.daysLeftForExam} suffix=" Days Left" />
+            {/* Right: Key Exam Timeline Telemetry (Streak + Countdown) */}
+            <div className="flex items-center gap-2.5">
+              <div className="px-3.5 py-2 rounded-xl bg-[#0F1115] border border-[#FF9600]/30 flex items-center gap-2.5 shadow-sm">
+                <FlameGlow active={(userProfile.streakDays || data.currentStreak || 0) > 0}>
+                  <Flame className="w-5 h-5 text-[#FF9600] fill-[#FF9600]" />
+                </FlameGlow>
+                <div>
+                  <div className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Streak</div>
+                  <div className="text-sm font-black text-[#F3F4F6]">
+                    <CountUp value={userProfile.streakDays || data.currentStreak || 1} suffix=" Days" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {onOpenWorkspaceCustomizer && (
-              <PressFeedback>
+              <div className="px-3.5 py-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] flex items-center gap-2.5 shadow-sm">
+                <Target className="w-5 h-5 text-[#FF4B4B]" />
+                <div>
+                  <div className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Countdown</div>
+                  <div className="text-sm font-black text-[#F3F4F6]">
+                    <CountUp value={data.daysLeftForExam} suffix=" Days" />
+                  </div>
+                </div>
+              </div>
+
+              {onOpenWorkspaceCustomizer && (
                 <button
                   onClick={onOpenWorkspaceCustomizer}
                   title="Personalize Workspace"
-                  className="p-3 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/50 text-slate-400 hover:text-sky-400 transition-all cursor-pointer shadow-sm"
+                  className="p-2.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] hover:border-[#1CB0F6]/50 text-[#9CA3AF] hover:text-[#1CB0F6] transition-all cursor-pointer shadow-sm active:translate-y-0.5"
+                  aria-label="Personalize Workspace"
                 >
                   <Sliders className="w-4 h-4" />
                 </button>
-              </PressFeedback>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        </TactileCard>
       </SlideUp>
 
-      {/* ── 2. DAILY AFFIRMATION & TODAY'S STUDY HERO (Above the Fold) ── */}
-      <div className="space-y-4">
-        {/* Daily Affirmation */}
-        <div className="text-center py-0.5">
-          <p className="text-xs italic text-slate-400 font-serif tracking-wide">
-            "Discipline is choosing between what you want now and what you want most."
-          </p>
+      {/* ── 1.5. GAMIFIED EXAM PATH BANNER (Duolingo Style Mobile Learning Experience) ── */}
+      <TactileCard className="p-4 sm:p-5 bg-gradient-to-r from-[#16251B] via-[#1A1D24] to-[#16251B] border-2 border-[#58CC02]/40 shadow-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <AspirantMascot state="idle" size="sm" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/40 text-[10px] font-black uppercase">
+                  Duolingo-Style Mode
+                </span>
+                <span className="text-[11px] text-[#9CA3AF] font-bold">Interactive Learning Tree</span>
+              </div>
+              <h3 className="text-base font-black text-[#F3F4F6] mt-0.5">
+                Gamified Daily Exam Journey
+              </h3>
+              <p className="text-xs text-[#9CA3AF]">
+                Bite-sized concept drills, 3D buttons, audio chimes, and milestone chests.
+              </p>
+            </div>
+          </div>
+
+          <TactileButton
+            variant={showDuolingoPath ? 'secondary' : 'primary'}
+            size="md"
+            onClick={() => setShowDuolingoPath(!showDuolingoPath)}
+            rightIcon={<ArrowRight className="w-4 h-4" />}
+          >
+            {showDuolingoPath ? 'SHOW STANDARD DASHBOARD' : 'OPEN EXAM PATH'}
+          </TactileButton>
         </div>
 
-        {/* TODAY'S STUDY TARGET HERO CARD (Figma Blueprint Component 03) */}
-        <div className="p-5 sm:p-7 rounded-3xl bg-gradient-to-br from-[#0e1b2e] via-[#0c1626] to-[#080d17] border border-sky-500/30 shadow-2xl relative overflow-hidden space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-400">
-                TODAY'S TARGET
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[10px] font-bold uppercase border border-amber-500/30">
-                HIGH YIELD
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-slate-400">
+        {/* Expandable Gamified Path */}
+        {showDuolingoPath && (
+          <div className="pt-6 border-t border-[#2A2F3A] mt-4">
+            <DuolingoPathEngine
+              userProfile={userProfile}
+              selectedExam={activeExamTag}
+              onNavigate={onNavigate}
+            />
+          </div>
+        )}
+      </TactileCard>
+
+      {/* ── 2. DOMINANT PRIMARY STUDY ACTION: Answers "What should I do now?" ── */}
+      <TactileCard className="p-5 sm:p-6 bg-gradient-to-br from-[#16251B] to-[#1A1D24] border-2 border-[#58CC02]/40 shadow-lg relative overflow-hidden space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/40">
+              NEXT UP TO MASTER
+            </span>
+            <span className="text-xs font-bold text-[#9CA3AF]">
               {lastTopic.subject}
             </span>
           </div>
+          <span className="text-xs font-mono font-bold text-[#58CC02]">
+            {data.overallProgressPercent}% Complete
+          </span>
+        </div>
 
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-[#F3F4F6] tracking-tight">
+            {lastTopic.chapter}
+          </h2>
+          <p className="text-xs sm:text-sm text-[#9CA3AF] mt-1 font-medium">
+            {lastTopic.subtopic} • ~45 min recommended study session
+          </p>
+        </div>
+
+        {/* Tactile Progress bar inside the hero card */}
+        <TactileProgressBar
+          progressPercent={data.overallProgressPercent}
+          color="primary"
+          height="sm"
+        />
+
+        {/* DOMINANT 3D TACTILE CTA BUTTON */}
+        <TactileButton
+          variant="primary"
+          size="lg"
+          fullWidth
+          leftIcon={<Play className="w-5 h-5 fill-current" />}
+          onClick={() => { if (onNavigate) onNavigate(lastTopic.tab || 'syllabus'); }}
+        >
+          CONTINUE STUDY
+        </TactileButton>
+      </TactileCard>
+
+      {/* ── 3. TODAY'S DAILY GOALS (3 Clear Targets with Micro-XP Feedback) ──── */}
+      <TactileCard className="p-5 bg-[#1A1D24] border border-[#2A2F3A] space-y-3 relative">
+        {rewardBadge && (
+          <div className="absolute top-2 right-4">
+            <FloatingRewardBadge text={rewardBadge} onComplete={() => setRewardBadge(null)} />
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-[#58CC02]/15 border border-[#58CC02]/30 flex items-center justify-center text-[#58CC02]">
+              <CheckSquare className="w-4 h-4" />
+            </div>
+            <h3 className="text-xs font-black text-[#F3F4F6] uppercase tracking-wider">Today's Targets</h3>
+          </div>
+          <span className="text-xs font-mono font-black text-[#58CC02]">
+            {dailyGoals.filter((g) => g.completed).length}/{dailyGoals.length} Done
+          </span>
+        </div>
+
+        <div className="space-y-2">
+          {dailyGoals.map((goal) => (
+            <div
+              key={goal.id}
+              onClick={() => handleToggleGoal(goal.id)}
+              className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-3 select-none touch-manipulation active:scale-[0.99] ${
+                goal.completed
+                  ? 'bg-[#132A1C] border-[#58CC02]/40 text-[#76E025]'
+                  : 'bg-[#15181F] border-[#2A2F3A] hover:border-[#383F4E] text-[#F3F4F6]'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <CheckmarkPop isChecked={goal.completed}>
+                  {goal.completed ? (
+                    <CheckCircle2 className="w-5 h-5 text-[#58CC02] fill-[#58CC02]/20 shrink-0" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-[#6B7280] shrink-0 hover:text-[#9CA3AF]" />
+                  )}
+                </CheckmarkPop>
+                <div className="min-w-0">
+                  <p className={`text-xs font-bold truncate ${goal.completed ? 'line-through text-[#6B7280]' : 'text-[#F3F4F6]'}`}>
+                    {goal.title}
+                  </p>
+                  <span className="text-[10px] text-[#9CA3AF] font-mono">
+                    {goal.duration}
+                  </span>
+                </div>
+              </div>
+
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono shrink-0 border ${
+                goal.completed
+                  ? 'bg-[#58CC02]/20 text-[#76E025] border-[#58CC02]/30'
+                  : 'bg-[#1CB0F6]/15 text-[#38BDF8] border-[#1CB0F6]/30'
+              }`}>
+                +{goal.xp} XP
+              </span>
+            </div>
+          ))}
+        </div>
+      </TactileCard>
+
+      {/* ── 4. CONTEXTUAL RECOMMENDATION & EXAM TARGET ──────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+        <div className="sm:col-span-8 p-4 sm:p-5 rounded-2xl bg-[#1A1D24] border border-[#2A2F3A] flex flex-col justify-between space-y-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              {lastTopic.chapter}
-            </h2>
-            <p className="text-xs text-slate-300 mt-1">
-              {lastTopic.subtopic} • 3 Core Subtopics • ~45 min estimated study time
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#FFA726]" />
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#FFA726]">
+                RECOMMENDED PRACTICE
+              </span>
+            </div>
+            <h4 className="text-xs sm:text-sm font-bold text-[#F3F4F6]">
+              {primarySuggestion}
+            </h4>
+          </div>
+
+          <div className="pt-1">
+            <TactileButton
+              variant="secondary"
+              size="sm"
+              rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+              onClick={() => { if (onNavigate) onNavigate(recAction.tab); }}
+            >
+              {recAction.label}
+            </TactileButton>
+          </div>
+        </div>
+
+        {/* TARGET EXAM COUNTDOWN CARD */}
+        <div className="sm:col-span-4 p-4 sm:p-5 rounded-2xl bg-[#1A1D24] border border-[#2A2F3A] flex flex-col justify-between space-y-2">
+          <div>
+            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#FF4B4B]">
+              <Target className="w-3.5 h-3.5" />
+              <span>Exam Target</span>
+            </div>
+            <h4 className="text-xs sm:text-sm font-bold text-[#F3F4F6] mt-1">
+              {examCfg2.displayName} 2026
+            </h4>
+            <p className="text-[11px] text-[#9CA3AF] font-mono mt-0.5">
+              {data.daysLeftForExam} Days Remaining
             </p>
           </div>
 
-          <PressFeedback>
-            <button
-              onClick={() => { if (onNavigate) onNavigate('syllabus'); }}
-              className="w-full py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
-            >
-              <Play className="w-4 h-4 fill-white" />
-              <span>START STUDYING</span>
-            </button>
-          </PressFeedback>
-        </div>
-
-        {/* CONTINUE STUDYING RESUME ROW */}
-        <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-3 shadow-sm hover:border-slate-700 transition-all">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 shrink-0">
-              <BookOpen className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 truncate">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Continue Studying</span>
-                <span className="text-[10px] font-mono text-sky-400">• 12m left</span>
-              </div>
-              <p className="text-xs font-bold text-slate-200 truncate mt-0.5">
-                {lastTopic.chapter}: {lastTopic.subtopic}
-              </p>
-            </div>
-          </div>
-
-          <PressFeedback>
-            <button
-              onClick={() => { if (onNavigate) onNavigate(lastTopic.tab || 'syllabus'); }}
-              className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-sky-600 text-slate-200 hover:text-white flex items-center justify-center transition-all shrink-0 cursor-pointer border border-slate-700/60"
-              title="Resume Chapter"
-            >
-              <Play className="w-4 h-4 fill-current ml-0.5" />
-            </button>
-          </PressFeedback>
-        </div>
-
-        {/* TODAY'S GOALS (3 Items with XP Micro-Interactions) */}
-        <div className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-3 relative">
-          {rewardBadge && (
-            <div className="absolute top-2 right-4">
-              <FloatingRewardBadge text={rewardBadge} onComplete={() => setRewardBadge(null)} />
-            </div>
-          )}
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-                <CheckSquare className="w-3.5 h-3.5" />
-              </div>
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Today's Goals</h3>
-            </div>
-            <span className="text-xs font-bold text-emerald-400 font-mono">
-              {dailyGoals.filter((g) => g.completed).length}/{dailyGoals.length} Done
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {dailyGoals.map((goal) => (
-              <div
-                key={goal.id}
-                onClick={() => handleToggleGoal(goal.id)}
-                className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                  goal.completed
-                    ? 'bg-emerald-950/20 border-emerald-500/30 text-emerald-300'
-                    : 'bg-slate-950/70 border-slate-800 hover:border-slate-700 text-slate-200'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <CheckmarkPop isChecked={goal.completed}>
-                    {goal.completed ? (
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 fill-emerald-400/20 shrink-0" />
-                    ) : (
-                      <Circle className="w-5 h-5 text-slate-500 shrink-0 hover:text-slate-400" />
-                    )}
-                  </CheckmarkPop>
-                  <div className="min-w-0">
-                    <p className={`text-xs font-semibold truncate ${goal.completed ? 'line-through text-slate-400' : 'text-slate-200'}`}>
-                      {goal.title}
-                    </p>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {goal.duration}
-                    </span>
-                  </div>
-                </div>
-
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono shrink-0 border ${
-                  goal.completed
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                    : 'bg-amber-500/10 text-amber-300 border-amber-500/20'
-                }`}>
-                  +{goal.xp} XP
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CONTEXTUAL RECOMMENDATION & EXAM TARGET */}
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-          <div className="sm:col-span-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-950/30 via-slate-900 to-indigo-950/30 border border-sky-500/25 flex flex-col justify-between space-y-3">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">Contextual Recommendation</span>
-              </div>
-              <h4 className="text-xs sm:text-sm font-bold text-white">
-                {primarySuggestion}
-              </h4>
-              {secondarySuggestion && (
-                <p className="text-[11px] text-slate-400 mt-1 line-clamp-1">
-                  {secondarySuggestion}
-                </p>
-              )}
-            </div>
-
-            <div className="pt-1">
-              <button
-                onClick={() => { if (onNavigate) onNavigate(recAction.tab); }}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-sky-600 border border-slate-700 hover:border-sky-500 text-white font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
-              >
-                <span>{recAction.label}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* TARGET EXAM COUNTDOWN CARD */}
-          <div className="sm:col-span-4 p-4 sm:p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col justify-between space-y-2">
-            <div>
-              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-400">
-                <Target className="w-3.5 h-3.5" />
-                <span>Exam Target</span>
-              </div>
-              <h4 className="text-xs sm:text-sm font-bold text-white mt-1">
-                {examCfg2.displayName} 2026
-              </h4>
-              <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                {data.daysLeftForExam} Days Remaining
-              </p>
-            </div>
-
-            <div className="pt-2 flex items-center justify-between text-[11px] border-t border-slate-800/80">
-              <span className="text-slate-400">Preparation Pace:</span>
-              <span className="text-emerald-400 font-bold">On Track</span>
-            </div>
+          <div className="pt-2 flex items-center justify-between text-[11px] border-t border-[#2A2F3A]">
+            <span className="text-[#9CA3AF]">Pace:</span>
+            <span className="text-[#58CC02] font-black">On Track</span>
           </div>
         </div>
       </div>
 
-      {/* ── 3. PERFORMANCE TELEMETRY HUB (On-demand Progressive Disclosure) ── */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 overflow-hidden">
+      {/* ── 5. PERFORMANCE TELEMETRY HUB (Progressive Disclosure) ──────────── */}
+      <div className="rounded-2xl border border-[#2A2F3A] bg-[#1A1D24] overflow-hidden">
         <button
           onClick={() => setShowTelemetryRings(!showTelemetryRings)}
-          className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-800/40 transition-colors"
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-[#222732] transition-colors cursor-pointer select-none"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-sky-400" />
+            <div className="w-7 h-7 rounded-xl bg-[#1CB0F6]/15 border border-[#1CB0F6]/30 flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 text-[#1CB0F6]" />
             </div>
             <div>
-              <h3 className="text-xs font-bold text-white">Live Study Telemetry</h3>
-              <p className="text-[11px] text-slate-400">Multi-ring syllabus, accuracy & daily pace metrics</p>
+              <h3 className="text-xs font-black text-[#F3F4F6]">Live Study Telemetry</h3>
+              <p className="text-[11px] text-[#9CA3AF]">Syllabus, accuracy & daily focus metrics</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-sky-400">
+            <span className="text-[11px] font-bold text-[#1CB0F6]">
               {showTelemetryRings ? 'Collapse' : 'Tap to View'}
             </span>
-            <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${showTelemetryRings ? 'rotate-90' : ''}`} />
+            <ChevronRight className={`w-4 h-4 text-[#9CA3AF] transition-transform duration-200 ${showTelemetryRings ? 'rotate-90' : ''}`} />
           </div>
         </button>
 
         {showTelemetryRings && (
-          <div className="p-4 border-t border-slate-800 bg-slate-950/70">
+          <div className="p-4 border-t border-[#2A2F3A] bg-[#0F1115]">
             <CircularPerformanceHub
               syllabusPercent={data.overallProgressPercent}
               revisionPercent={data.revisionProgressPercent || 0}
@@ -644,21 +630,21 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         )}
       </div>
 
-      {/* Non-intrusive in-feed slot (suppressed for premium candidates) */}
+      {/* Non-intrusive in-feed slot for non-premium candidates */}
       <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />
 
-      {/* ── 4. ESSENTIAL QUICK LAUNCH (4 Primary Shortcuts by default) ─────── */}
-      <div className="ax-card p-4 sm:p-5 border-slate-800 bg-slate-900/90">
+      {/* ── 6. ESSENTIAL QUICK LAUNCH (Tactile Shortcuts) ───────────────────── */}
+      <TactileCard className="p-4 sm:p-5 bg-[#1A1D24] border border-[#2A2F3A]">
         <div className="flex items-center justify-between mb-3.5 flex-wrap gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center">
-              <LayoutGrid className="w-3.5 h-3.5 text-sky-400" />
+            <div className="w-7 h-7 rounded-xl bg-[#0F1115] border border-[#2A2F3A] flex items-center justify-center">
+              <LayoutGrid className="w-3.5 h-3.5 text-[#1CB0F6]" />
             </div>
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+              <h3 className="text-xs sm:text-sm font-black text-[#F3F4F6]">
                 Quick Shortcuts
               </h3>
-              <p className="text-[10px] text-slate-400">Direct access to core study engines</p>
+              <p className="text-[10px] text-[#9CA3AF]">Direct access to primary study engines</p>
             </div>
           </div>
 
@@ -666,7 +652,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             {allFeatures.length > 4 && (
               <button
                 onClick={() => setShowAllShortcuts(!showAllShortcuts)}
-                className="px-2.5 py-1 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[11px] font-semibold text-slate-300 hover:text-white transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[#0F1115] hover:bg-[#222732] border border-[#2A2F3A] text-[11px] font-bold text-[#F3F4F6] transition-all cursor-pointer"
               >
                 {showAllShortcuts ? 'Show Top 4' : `All (${allFeatures.length})`}
               </button>
@@ -674,9 +660,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             {onOpenWorkspaceCustomizer && (
               <button
                 onClick={onOpenWorkspaceCustomizer}
-                className="px-2.5 py-1 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-[11px] font-semibold text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[#0F1115] hover:bg-[#222732] border border-[#2A2F3A] text-[11px] font-bold text-[#9CA3AF] hover:text-[#F3F4F6] flex items-center gap-1 transition-all cursor-pointer"
               >
-                <Sliders className="w-3 h-3 text-sky-400" />
+                <Sliders className="w-3 h-3 text-[#1CB0F6]" />
                 <span>Customize</span>
               </button>
             )}
@@ -684,33 +670,31 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         </div>
 
         {/* Grid of Compact Shortcuts with Stagger */}
-        <Stagger staggerDelay={0.03} className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <Stagger staggerDelay={0.03} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           {displayedShortcuts.map((item) => (
             <StaggerItem key={item.id}>
-              <PressFeedback className="w-full h-full">
-                <button
-                  onClick={() => {
-                    recordFeatureUsage(item.id, userProfile.id);
-                    if (onNavigate) onNavigate(item.id as ActiveTab);
-                  }}
-                  className="w-full h-full p-3 rounded-2xl bg-slate-950 hover:bg-slate-800/80 border border-slate-800/90 hover:border-sky-500/40 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <div className="w-8 h-8 rounded-xl bg-slate-900 group-hover:bg-sky-500/15 border border-slate-800 group-hover:border-sky-500/30 flex items-center justify-center text-xs font-black text-slate-400 group-hover:text-sky-400 transition-all">
-                    {item.label.charAt(0)}
-                  </div>
-                  <div className="min-w-0 w-full text-center">
-                    <span className="text-[11px] font-bold text-slate-300 group-hover:text-white transition-colors block truncate">
-                      {item.label}
-                    </span>
-                  </div>
-                </button>
-              </PressFeedback>
+              <button
+                onClick={() => {
+                  recordFeatureUsage(item.id, userProfile.id);
+                  if (onNavigate) onNavigate(item.id as ActiveTab);
+                }}
+                className="w-full p-3 rounded-xl bg-[#0F1115] hover:bg-[#161920] border-b-2 border-[#2A2F3A] hover:border-[#1CB0F6]/40 active:border-b-0 active:translate-y-0.5 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer shadow-sm select-none"
+              >
+                <div className="w-8 h-8 rounded-xl bg-[#1A1D24] group-hover:bg-[#1CB0F6]/15 border border-[#2A2F3A] group-hover:border-[#1CB0F6]/40 flex items-center justify-center text-xs font-black text-[#9CA3AF] group-hover:text-[#1CB0F6] transition-all">
+                  {item.label.charAt(0)}
+                </div>
+                <div className="min-w-0 w-full text-center">
+                  <span className="text-[11px] font-bold text-[#F3F4F6] group-hover:text-[#1CB0F6] transition-colors block truncate">
+                    {item.label}
+                  </span>
+                </div>
+              </button>
             </StaggerItem>
           ))}
         </Stagger>
-      </div>
+      </TactileCard>
 
-      {/* ── 5. LOWER REGIONS: Daily Study Summary Card (Clean, Quiet) ──────── */}
+      {/* ── 7. LOWER REGION: Daily Study Summary Card ──────────────────────── */}
       <DailyStudySummaryCard
         user={userProfile}
         selectedExam={selectedExam}

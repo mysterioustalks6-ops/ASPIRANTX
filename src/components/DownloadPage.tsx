@@ -111,22 +111,23 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   />
                   <div>
                     <h2 className="text-2xl font-black text-white">StudyRide for Android</h2>
-                    <div className="text-xs text-emerald-400 font-semibold">Version {CANONICAL_APP_RELEASE.version} • Official Build (September 2026)</div>
+                    <div className="text-xs text-emerald-400 font-semibold">Version {CANONICAL_APP_RELEASE.version} • Official Release (October 2026)</div>
                   </div>
                 </div>
 
                 <p className="text-sm text-slate-300 mb-6 leading-relaxed">
-                  Full-featured native Android app with local Focus Shield, cheat-proof CBT exam engine, active recall flashcards, and live question banks.
+                  Full-featured native Android app with Duolingo-grade gamified path, Veer champion mascot, local Focus Shield, cheat-proof CBT exam engine, active recall flashcards, and live question banks.
                 </p>
 
                 {/* Feature Checklist */}
                 <div className="space-y-2.5 mb-8">
                   {[
+                    'Gamified Duolingo-Grade Exam Path & 5-Heart Energy System',
+                    '33 New SSC & State AE/JE Exams with 10,000+ Questions',
                     'Computer Based Test (CBT) with Zero-Leakage',
                     'Focus Shield: On-Device YouTube & Instagram Distraction Filter',
                     'Active Recall Leitner Spaced-Repetition Flashcards',
                     'Pomodoro Study Timer with Ambient Sound Generator',
-                    'Authoritative Trophy Collection & Challenge Progression',
                     'Offline-Friendly Architecture with Neon Sync'
                   ].map((feat, idx) => (
                     <div key={idx} className="flex items-center gap-2.5 text-xs text-slate-200">
@@ -149,7 +150,7 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                 </a>
 
                 <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                  <span>File Size: ~12.6 MB</span>
+                  <span>File Size: ~12.9 MB</span>
                   <span>Requires Android 8.0+</span>
                   <button 
                     onClick={handleCopyLink}

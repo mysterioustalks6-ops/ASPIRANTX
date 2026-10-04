@@ -12593,5 +12593,425 @@
         ]
       }
     ]
+  },
+  "SSC_JE": {
+    "examId": "SSC_JE",
+    "slug": "ssc-je",
+    "title": "SSC JE",
+    "fullName": "Staff Selection Commission Junior Engineer",
+    "location": "Central / All India",
+    "category": "Engineering / SSC",
+    "conductedBy": "Staff Selection Commission (SSC)",
+    "eligibility": "Degree or Diploma in Civil, Electrical, or Mechanical Engineering",
+    "ageLimit": "18-32 years (varies by post and category)",
+    "pattern": "Paper 1 (CBT - 200 Marks) & Paper 2 (CBT - 300 Marks)",
+    "overview": "SSC JE recruits Junior Engineers in premier central organizations including CPWD, MES, CWC, FBP, BRO, and NTRO. Paper 1 consists of 200 MCQs covering General Intelligence & Reasoning (50 marks), General Awareness (50 marks), and General Engineering (100 marks). Paper 2 consists of 100 questions of 3 marks each (300 marks) testing in-depth technical engineering competence.",
+    "difficulty": "High",
+    "totalTopicsCount": 50,
+    "books": [
+      {
+        "subject": "Civil Engineering",
+        "book": "SSC JE Civil Engineering Guide",
+        "author": "Made Easy / Youth Competition Times"
+      },
+      {
+        "subject": "Electrical Engineering",
+        "book": "SSC JE Electrical Engineering Guide",
+        "author": "Made Easy / Arihant"
+      },
+      {
+        "subject": "Mechanical Engineering",
+        "book": "SSC JE Mechanical Engineering Guide",
+        "author": "Made Easy / R.K. Rajput"
+      },
+      {
+        "subject": "General Intelligence",
+        "book": "A Modern Approach to Verbal & Non-Verbal Reasoning",
+        "author": "R.S. Aggarwal"
+      },
+      {
+        "subject": "General Awareness",
+        "book": "Lucent General Knowledge & Current Affairs",
+        "author": "Lucent Publications"
+      }
+    ],
+    "sections": [
+      {
+        "title": "Paper 1 - Computer Based Examination (Screening)",
+        "description": "200 marks | 120 minutes | 200 MCQs | 0.25 negative marking",
+        "subjects": [
+          {
+            "title": "General Intelligence and Reasoning",
+            "marks": "50 marks",
+            "questions": "50 questions",
+            "topics": [
+              {
+                "id": "ssc-je-reasoning-1",
+                "name": "Analogies & Classification"
+              },
+              {
+                "id": "ssc-je-reasoning-2",
+                "name": "Series & Coding-Decoding"
+              },
+              {
+                "id": "ssc-je-reasoning-3",
+                "name": "Blood Relations, Directions & Syllogisms"
+              },
+              {
+                "id": "ssc-je-reasoning-4",
+                "name": "Pattern Completion, Paper Folding & Mirror Images"
+              }
+            ]
+          },
+          {
+            "title": "General Awareness",
+            "marks": "50 marks",
+            "questions": "50 questions",
+            "topics": [
+              {
+                "id": "ssc-je-ga-1",
+                "name": "Physics, Chemistry & Life Sciences"
+              },
+              {
+                "id": "ssc-je-ga-2",
+                "name": "Constitution, Fundamental Rights & Administrative Setup"
+              },
+              {
+                "id": "ssc-je-ga-3",
+                "name": "Ancient, Medieval & Freedom Struggle"
+              },
+              {
+                "id": "ssc-je-ga-4",
+                "name": "Physical Geography of India & Ecological Balance"
+              }
+            ]
+          },
+          {
+            "title": "Part-A: Civil & Structural Engineering",
+            "marks": "100 marks",
+            "questions": "100 questions",
+            "topics": [
+              {
+                "id": "ssc-je-civil-1",
+                "name": "Bricks, Stones & Aggregates"
+              },
+              {
+                "id": "ssc-je-civil-2",
+                "name": "Cement & Concrete Technology"
+              },
+              {
+                "id": "ssc-je-civil-3",
+                "name": "Chain & Compass Surveying"
+              },
+              {
+                "id": "ssc-je-civil-4",
+                "name": "Levelling, Contouring & Theodolite"
+              },
+              {
+                "id": "ssc-je-civil-5",
+                "name": "Stress, Strain & Elastic Constants"
+              },
+              {
+                "id": "ssc-je-civil-6",
+                "name": "Shear Force & Bending Moment"
+              },
+              {
+                "id": "ssc-je-civil-7",
+                "name": "Limit State Design of Beams & Slabs"
+              },
+              {
+                "id": "ssc-je-civil-8",
+                "name": "Columns, Footings & Shear Design"
+              },
+              {
+                "id": "ssc-je-civil-9",
+                "name": "Riveted, Bolted & Welded Connections"
+              },
+              {
+                "id": "ssc-je-civil-10",
+                "name": "Tension, Compression Members & Plate Girders"
+              },
+              {
+                "id": "ssc-je-civil-11",
+                "name": "Properties of Soil & Index Properties"
+              },
+              {
+                "id": "ssc-je-civil-12",
+                "name": "Permeability, Compaction & Shear Strength"
+              },
+              {
+                "id": "ssc-je-civil-13",
+                "name": "Fluid Statics & Buoyancy"
+              },
+              {
+                "id": "ssc-je-civil-14",
+                "name": "Fluid Kinematics, Dynamics & Pipe Flow"
+              },
+              {
+                "id": "ssc-je-civil-15",
+                "name": "Water Quality, Demand & Treatment"
+              },
+              {
+                "id": "ssc-je-civil-16",
+                "name": "Sewage Treatment & Disposal"
+              },
+              {
+                "id": "ssc-je-civil-17",
+                "name": "Highway Geometric Design"
+              },
+              {
+                "id": "ssc-je-civil-18",
+                "name": "Water Requirements of Crops & Canal Design"
+              },
+              {
+                "id": "ssc-je-civil-19",
+                "name": "Methods of Estimation & Specifications"
+              }
+            ]
+          },
+          {
+            "title": "Part-B: Electrical Engineering",
+            "marks": "100 marks",
+            "questions": "100 questions",
+            "topics": [
+              {
+                "id": "ssc-je-elec-1",
+                "name": "Circuit Laws & Network Theorems"
+              },
+              {
+                "id": "ssc-je-elec-2",
+                "name": "AC Fundamentals & Polyphase Circuits"
+              },
+              {
+                "id": "ssc-je-elec-3",
+                "name": "DC Generators & Motors"
+              },
+              {
+                "id": "ssc-je-elec-4",
+                "name": "Transformers"
+              },
+              {
+                "id": "ssc-je-elec-5",
+                "name": "Induction & Synchronous Machines"
+              },
+              {
+                "id": "ssc-je-elec-6",
+                "name": "Transmission & Distribution"
+              },
+              {
+                "id": "ssc-je-elec-7",
+                "name": "Switchgear & Fault Protection"
+              },
+              {
+                "id": "ssc-je-elec-8",
+                "name": "Analog Meters & Bridge Measurements"
+              },
+              {
+                "id": "ssc-je-elec-9",
+                "name": "Semiconductors, Diodes & Transistors"
+              }
+            ]
+          },
+          {
+            "title": "Part-C: Mechanical Engineering",
+            "marks": "100 marks",
+            "questions": "100 questions",
+            "topics": [
+              {
+                "id": "ssc-je-mech-1",
+                "name": "First & Second Laws of Thermodynamics"
+              },
+              {
+                "id": "ssc-je-mech-2",
+                "name": "Air Standard Cycles & IC Engines"
+              },
+              {
+                "id": "ssc-je-mech-3",
+                "name": "Fluid Statics, Dynamics & Flow Measurement"
+              },
+              {
+                "id": "ssc-je-mech-4",
+                "name": "Hydraulic Turbines & Pumps"
+              },
+              {
+                "id": "ssc-je-mech-5",
+                "name": "Mechanisms, Cams & Gears"
+              },
+              {
+                "id": "ssc-je-mech-6",
+                "name": "Stress Analysis, Fatigue & Shaft Design"
+              },
+              {
+                "id": "ssc-je-mech-7",
+                "name": "Casting, Welding & Forming Processes"
+              },
+              {
+                "id": "ssc-je-mech-8",
+                "name": "Metal Cutting & Machine Tools"
+              },
+              {
+                "id": "ssc-je-mech-9",
+                "name": "Heat Exchangers & Vapor Compression Cycle"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Paper 2 - Technical Computer Based Examination (CBT)",
+        "description": "300 marks | 120 minutes | 100 questions (3 marks each) | 1.00 negative marking",
+        "subjects": [
+          {
+            "title": "Core Discipline Advanced Problem Solving",
+            "marks": "300 marks",
+            "questions": "100 questions",
+            "topics": [
+              {
+                "id": "p2-core-analysis",
+                "name": "Design and Analysis of Structural & Circuit Elements"
+              },
+              {
+                "id": "p2-spec-codes",
+                "name": "Standard Technical Codes (IS 456, IS 800, NEC, IEEE)"
+              },
+              {
+                "id": "p2-computations",
+                "name": "Numerical Problem Solving & Technical Derivations"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "UPPSC_AE": {
+    "examId": "UPPSC_AE",
+    "slug": "uppsc-ae",
+    "title": "UPPSC AE",
+    "fullName": "Uttar Pradesh Combined State Engineering Services (Assistant Engineer)",
+    "location": "Uttar Pradesh",
+    "category": "State PSC / Engineering",
+    "conductedBy": "Uttar Pradesh Public Service Commission (UPPSC)",
+    "eligibility": "Bachelor Degree in Engineering (B.E. / B.Tech) in relevant discipline",
+    "ageLimit": "21-40 years",
+    "pattern": "Paper 1 (Hindi + Branch Paper 1) & Paper 2 (General Studies + Branch Paper 2) + Interview",
+    "overview": "UPPSC Combined State Engineering Services Examination recruits Assistant Engineers in UP PWD, Irrigation Department, Rural Engineering Department, and Minor Irrigation.",
+    "difficulty": "High",
+    "totalTopicsCount": 30,
+    "books": [
+      {
+        "subject": "Technical",
+        "book": "UPPSC AE Technical Guide",
+        "author": "Youth Competition Times"
+      },
+      {
+        "subject": "General Hindi",
+        "book": "Samanya Hindi",
+        "author": "Vasudev Nandan Prasad"
+      },
+      {
+        "subject": "General Studies",
+        "book": "UP Special GK & GS",
+        "author": "Drishti / Ghatna Chakra"
+      }
+    ],
+    "sections": [
+      {
+        "title": "Paper 1: General Hindi & Engineering Paper 1",
+        "description": "375 marks | 150 minutes | 125 MCQs (3 marks each)",
+        "subjects": [
+          {
+            "title": "General Hindi",
+            "marks": "75 marks",
+            "questions": "25 questions",
+            "topics": [
+              {
+                "id": "uppsc-ae-hindi-1",
+                "name": "Hindi Grammar, Sandhi, Samas, Muhavare"
+              }
+            ]
+          },
+          {
+            "title": "Engineering Discipline Paper 1",
+            "marks": "300 marks",
+            "questions": "100 questions",
+            "topics": [
+              {
+                "id": "uppsc-ae-tech1-1",
+                "name": "Bricks, Stones & Aggregates"
+              },
+              {
+                "id": "uppsc-ae-tech1-2",
+                "name": "Cement & Concrete Technology"
+              },
+              {
+                "id": "uppsc-ae-tech1-3",
+                "name": "Chain & Compass Surveying"
+              },
+              {
+                "id": "uppsc-ae-tech1-4",
+                "name": "Levelling, Contouring & Theodolite"
+              },
+              {
+                "id": "uppsc-ae-tech1-5",
+                "name": "Stress, Strain & Elastic Constants"
+              },
+              {
+                "id": "uppsc-ae-tech1-6",
+                "name": "Shear Force & Bending Moment"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Paper 2: General Studies & Engineering Paper 2",
+        "description": "375 marks | 150 minutes | 125 MCQs (3 marks each)",
+        "subjects": [
+          {
+            "title": "General Studies & UP GK",
+            "marks": "75 marks",
+            "questions": "25 questions",
+            "topics": [
+              {
+                "id": "uppsc-ae-gs-1",
+                "name": "Indian History, Polity, Geography & UP Special"
+              }
+            ]
+          },
+          {
+            "title": "Engineering Discipline Paper 2",
+            "marks": "300 marks",
+            "questions": "100 questions",
+            "topics": [
+              {
+                "id": "uppsc-ae-tech2-1",
+                "name": "Limit State Design of Beams & Slabs"
+              },
+              {
+                "id": "uppsc-ae-tech2-2",
+                "name": "Columns, Footings & Shear Design"
+              },
+              {
+                "id": "uppsc-ae-tech2-3",
+                "name": "Riveted, Bolted & Welded Connections"
+              },
+              {
+                "id": "uppsc-ae-tech2-4",
+                "name": "Tension, Compression Members & Plate Girders"
+              },
+              {
+                "id": "uppsc-ae-tech2-5",
+                "name": "Properties of Soil & Index Properties"
+              },
+              {
+                "id": "uppsc-ae-tech2-6",
+                "name": "Permeability, Compaction & Shear Strength"
+              }
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

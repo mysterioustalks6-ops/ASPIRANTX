@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles } from 'lucide-react';
+import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
 interface AppSplashScreenProps {
   onFinish?: () => void;
@@ -203,7 +204,7 @@ export const AppSplashScreen: React.FC<AppSplashScreenProps> = ({
               transition={{ delay: 0.7, duration: 0.4 }}
               className="text-[10px] text-slate-500 font-mono mt-2"
             >
-              Tap to skip • v2.5.7
+              Tap to skip • v{CANONICAL_APP_RELEASE.version}
             </motion.span>
           </div>
         </motion.div>

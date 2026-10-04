@@ -15,6 +15,7 @@ import {
 import { UserProfile, ExamType, ActiveTab } from '../types';
 import { PyqEngine } from './PyqEngine';
 import { QuestionBankEngine } from './QuestionBankEngine';
+import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
 
 const CbtExamEngine = React.lazy(() => import('./CbtExamEngine').then(m => ({ default: m.CbtExamEngine })));
 const WeaknessDetector = React.lazy(() => import('./WeaknessDetector').then(m => ({ default: m.WeaknessDetector })));
@@ -24,7 +25,7 @@ interface PracticeHubProps {
   selectedExam: ExamType;
   isAdmin?: boolean;
   onNavigate?: (tab: ActiveTab) => void;
-  initialSubTab?: 'overview' | 'pyq' | 'question_bank' | 'cbt' | 'weakness';
+  initialSubTab?: 'overview' | 'duo_path' | 'pyq' | 'question_bank' | 'cbt' | 'weakness';
 }
 
 export const PracticeHub: React.FC<PracticeHubProps> = ({
@@ -34,26 +35,27 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   onNavigate,
   initialSubTab = 'overview'
 }) => {
-  const [subTab, setSubTab] = useState<'overview' | 'pyq' | 'question_bank' | 'cbt' | 'weakness'>(initialSubTab);
+  const [subTab, setSubTab] = useState<'overview' | 'duo_path' | 'pyq' | 'question_bank' | 'cbt' | 'weakness'>(initialSubTab);
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Quiet Header & Category Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2A2F3A] pb-4">
         <div>
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-sky-400">
+          <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#1CB0F6]">
             Practice & Test Engine
           </span>
-          <h1 className="text-xl sm:text-2xl font-bold text-white mt-0.5">Reinforce & Test Knowledge</h1>
-          <p className="text-xs text-slate-400 mt-1">
+          <h1 className="text-xl sm:text-2xl font-black text-[#F3F4F6] mt-0.5">Reinforce & Test Knowledge</h1>
+          <p className="text-xs text-[#9CA3AF] mt-1">
             Topic drills, 35-year PYQ archives, and All-India timed CBT mock simulations.
           </p>
         </div>
 
         {/* Tab Pills */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-slate-800 self-start overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 p-1 bg-[#15181F] rounded-xl border border-[#2A2F3A] self-start overflow-x-auto max-w-full">
           {[
             { id: 'overview', label: 'Hub' },
+            { id: 'duo_path', label: '🎯 Exam Path (Duo Drills)' },
             { id: 'pyq', label: 'PYQ Archive' },
             { id: 'question_bank', label: 'Question Bank' },
             { id: 'cbt', label: 'CBT Simulator' },
@@ -62,10 +64,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             <button
               key={t.id}
               onClick={() => setSubTab(t.id as any)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer ${
                 subTab === t.id
-                  ? 'bg-sky-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  ? 'bg-[#1CB0F6] text-[#052840] shadow-sm'
+                  : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
               }`}
             >
               {t.label}
@@ -78,22 +80,22 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {subTab === 'overview' && (
         <div className="space-y-6">
           {/* Contextual Recommendation Card */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-950/40 via-slate-900 to-indigo-950/40 border border-sky-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#1A1D24] border border-[#1CB0F6]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-[#1CB0F6]/5">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold uppercase border border-sky-500/30">
+                <span className="px-2 py-0.5 rounded-full bg-[#1CB0F6]/20 text-[#1CB0F6] text-[10px] font-black uppercase border border-[#1CB0F6]/40">
                   Recommended Drill
                 </span>
-                <span className="text-xs text-slate-400">Polity • Constitutional Framework</span>
+                <span className="text-xs text-[#9CA3AF]">Polity • Constitutional Framework</span>
               </div>
-              <h3 className="text-base font-bold text-white">5 High-Yield Preamble & Articles PYQs</h3>
-              <p className="text-xs text-slate-300">
+              <h3 className="text-base font-black text-white">5 High-Yield Preamble & Articles PYQs</h3>
+              <p className="text-xs text-[#9CA3AF]">
                 Reinforce foundational concepts covered in today's study plan with previous years' questions.
               </p>
             </div>
             <button
               onClick={() => setSubTab('pyq')}
-              className="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md shadow-sky-600/20 shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-[#58CC02] hover:bg-[#46A302] text-[#0B2300] font-black text-xs flex items-center justify-center gap-1.5 transition-all shadow-md border-b-2 border-[#46A302] active:border-b-0 active:translate-y-0.5 shrink-0 cursor-pointer"
             >
               Start Drill <ArrowRight className="w-4 h-4" />
             </button>
@@ -104,23 +106,23 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 1. PYQ Archive */}
             <div 
               onClick={() => setSubTab('pyq')}
-              className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-sky-500/50 transition-all cursor-pointer group space-y-3"
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#1CB0F6] hover:border-b-[#1899D6] transition-all cursor-pointer group space-y-3 shadow-md"
             >
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-[#1CB0F6]/10 border border-[#1CB0F6]/30 text-[#1CB0F6] flex items-center justify-center">
                   <FileText className="w-5 h-5" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-[#1CB0F6] group-hover:translate-x-1 transition-all" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white group-hover:text-sky-300 transition-colors">
+                <h3 className="text-base font-extrabold text-[#F3F4F6] group-hover:text-[#1CB0F6] transition-colors">
                   Enterprise PYQ Archive (1991–2026)
                 </h3>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                <p className="text-xs text-[#9CA3AF] mt-1 leading-relaxed">
                   Search and practice official UPSC Civil Services Prelims & Mains questions with detailed official answer keys.
                 </p>
               </div>
-              <div className="pt-1 flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+              <div className="pt-1 flex items-center gap-3 text-[11px] text-[#9CA3AF] font-mono">
                 <span>35 Years Archive</span>
                 <span>•</span>
                 <span>Subject & Year Filters</span>
@@ -130,23 +132,23 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 2. Question Bank */}
             <div 
               onClick={() => setSubTab('question_bank')}
-              className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-emerald-500/50 transition-all cursor-pointer group space-y-3"
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#58CC02] hover:border-b-[#46A302] transition-all cursor-pointer group space-y-3 shadow-md"
             >
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-[#58CC02]/10 border border-[#58CC02]/30 text-[#58CC02] flex items-center justify-center">
                   <HelpCircle className="w-5 h-5" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-[#58CC02] group-hover:translate-x-1 transition-all" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors">
+                <h3 className="text-base font-extrabold text-[#F3F4F6] group-hover:text-[#58CC02] transition-colors">
                   Topic Question Bank
                 </h3>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                <p className="text-xs text-[#9CA3AF] mt-1 leading-relaxed">
                   Over 6,000+ curated conceptual MCQs indexed strictly by chapter, difficulty tier, and NCERT standard.
                 </p>
               </div>
-              <div className="pt-1 flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+              <div className="pt-1 flex items-center gap-3 text-[11px] text-[#9CA3AF] font-mono">
                 <span>6,000+ MCQs</span>
                 <span>•</span>
                 <span>Instant Explanations</span>
@@ -156,23 +158,23 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 3. CBT Simulator */}
             <div 
               onClick={() => setSubTab('cbt')}
-              className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-indigo-500/50 transition-all cursor-pointer group space-y-3"
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-indigo-400 hover:border-b-indigo-500 transition-all cursor-pointer group space-y-3 shadow-md"
             >
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center">
                   <Award className="w-5 h-5" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white group-hover:text-indigo-300 transition-colors">
+                <h3 className="text-base font-extrabold text-[#F3F4F6] group-hover:text-indigo-300 transition-colors">
                   All-India CBT Mock Simulator
                 </h3>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                <p className="text-xs text-[#9CA3AF] mt-1 leading-relaxed">
                   Real-time full-length GS Paper-1 & CSAT timed mock exam with negative marking and All-India ranks.
                 </p>
               </div>
-              <div className="pt-1 flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+              <div className="pt-1 flex items-center gap-3 text-[11px] text-[#9CA3AF] font-mono">
                 <span>NTA Interface</span>
                 <span>•</span>
                 <span>Live Percentile</span>
@@ -182,23 +184,23 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 4. Weakness Re-tester */}
             <div 
               onClick={() => setSubTab('weakness')}
-              className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 hover:border-amber-500/50 transition-all cursor-pointer group space-y-3"
+              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] hover:border-[#FF9600] hover:border-b-[#E08500] transition-all cursor-pointer group space-y-3 shadow-md"
             >
               <div className="flex items-center justify-between">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-[#FF9600]/10 border border-[#FF9600]/30 text-[#FF9600] flex items-center justify-center">
                   <Target className="w-5 h-5" />
                 </div>
-                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-[#FF9600] group-hover:translate-x-1 transition-all" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors">
+                <h3 className="text-base font-extrabold text-[#F3F4F6] group-hover:text-[#FF9600] transition-colors">
                   Weakness Detector & Mistake Log
                 </h3>
-                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                <p className="text-xs text-[#9CA3AF] mt-1 leading-relaxed">
                   AI diagnostic detector that tracks your incorrect attempts and generates targeted re-tests to turn weaknesses into strengths.
                 </p>
               </div>
-              <div className="pt-1 flex items-center gap-3 text-[11px] text-slate-400 font-mono">
+              <div className="pt-1 flex items-center gap-3 text-[11px] text-[#9CA3AF] font-mono">
                 <span>Auto Error Log</span>
                 <span>•</span>
                 <span>Targeted Drills</span>
@@ -209,6 +211,18 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       )}
 
       {/* SUB-TAB VIEWS */}
+      {subTab === 'duo_path' && (
+        <div className="space-y-4">
+          <button 
+            onClick={() => setSubTab('overview')}
+            className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
+          >
+            ← Back to Practice Hub
+          </button>
+          <DuolingoPathEngine userProfile={userProfile} selectedExam={selectedExam} onNavigate={onNavigate} />
+        </div>
+      )}
+
       {subTab === 'pyq' && (
         <div className="space-y-4">
           <button 

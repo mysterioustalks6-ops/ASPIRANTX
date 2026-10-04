@@ -14387,5 +14387,1094 @@
         ]
       }
     ]
+  },
+  "SSC_JE::syllabus": {
+    "exam_id": "SSC_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.748Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "General Intelligence & Reasoning",
+        "topics": [
+          "Analogies & Classification",
+          "Series & Coding-Decoding",
+          "Blood Relations, Directions & Syllogisms",
+          "Pattern Completion, Paper Folding & Mirror Images"
+        ]
+      },
+      {
+        "title": "General Awareness",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance"
+        ]
+      },
+      {
+        "title": "Part-A: Civil & Structural Engineering",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Stress, Strain & Elastic Constants",
+          "Shear Force & Bending Moment",
+          "Limit State Design of Beams & Slabs",
+          "Columns, Footings & Shear Design",
+          "Riveted, Bolted & Welded Connections",
+          "Tension, Compression Members & Plate Girders",
+          "Properties of Soil & Index Properties",
+          "Permeability, Compaction & Shear Strength",
+          "Fluid Statics & Buoyancy",
+          "Fluid Kinematics, Dynamics & Pipe Flow",
+          "Water Quality, Demand & Treatment",
+          "Sewage Treatment & Disposal",
+          "Highway Geometric Design",
+          "Water Requirements of Crops & Canal Design",
+          "Methods of Estimation & Specifications"
+        ]
+      },
+      {
+        "title": "Part-B: Electrical Engineering",
+        "topics": [
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "Transformers",
+          "Induction & Synchronous Machines",
+          "Transmission & Distribution",
+          "Switchgear & Fault Protection",
+          "Analog Meters & Bridge Measurements",
+          "Semiconductors, Diodes & Transistors"
+        ]
+      },
+      {
+        "title": "Part-C: Mechanical Engineering",
+        "topics": [
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement",
+          "Hydraulic Turbines & Pumps",
+          "Mechanisms, Cams & Gears",
+          "Stress Analysis, Fatigue & Shaft Design",
+          "Casting, Welding & Forming Processes",
+          "Metal Cutting & Machine Tools",
+          "Heat Exchangers & Vapor Compression Cycle"
+        ]
+      }
+    ]
+  },
+  "UPPSC_AE::syllabus": {
+    "exam_id": "UPPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "UPSSSC_JE::syllabus": {
+    "exam_id": "UPSSSC_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "UPPCL_AE_JE::syllabus": {
+    "exam_id": "UPPCL_AE_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "BPSC_AE::syllabus": {
+    "exam_id": "BPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "BTSC_JE::syllabus": {
+    "exam_id": "BTSC_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "MPPSC_AE::syllabus": {
+    "exam_id": "MPPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "MP_SUB_ENGINEER::syllabus": {
+    "exam_id": "MP_SUB_ENGINEER",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "RPSC_AEN::syllabus": {
+    "exam_id": "RPSC_AEN",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "RSMSSB_JE::syllabus": {
+    "exam_id": "RSMSSB_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "UKPSC_AE::syllabus": {
+    "exam_id": "UKPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "UKPSC_JE::syllabus": {
+    "exam_id": "UKPSC_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "MPSC_MES_AE::syllabus": {
+    "exam_id": "MPSC_MES_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "WBPSC_AE::syllabus": {
+    "exam_id": "WBPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "WBPSC_JE::syllabus": {
+    "exam_id": "WBPSC_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "HSSC_JE::syllabus": {
+    "exam_id": "HSSC_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "PPSC_AE::syllabus": {
+    "exam_id": "PPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "JPSC_AE::syllabus": {
+    "exam_id": "JPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "JSSC_JE::syllabus": {
+    "exam_id": "JSSC_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "OPSC_AEE::syllabus": {
+    "exam_id": "OPSC_AEE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "GPSC_AE::syllabus": {
+    "exam_id": "GPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "CGPSC_AE::syllabus": {
+    "exam_id": "CGPSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "APPSC_AEE::syllabus": {
+    "exam_id": "APPSC_AEE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "TSPSC_AEE::syllabus": {
+    "exam_id": "TSPSC_AEE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "KPSC_AE_JE::syllabus": {
+    "exam_id": "KPSC_AE_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "TNPSC_CESE_AE::syllabus": {
+    "exam_id": "TNPSC_CESE_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "KERALA_PSC_AE::syllabus": {
+    "exam_id": "KERALA_PSC_AE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "DSSSB_AE_JE::syllabus": {
+    "exam_id": "DSSSB_AE_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
+  },
+  "DDA_JE::syllabus": {
+    "exam_id": "DDA_JE",
+    "type": "syllabus",
+    "fetched_at": "2026-10-04T12:50:08.765Z",
+    "confidence_score": 1,
+    "status": "verified",
+    "content_usage": "official_exam_syllabus",
+    "verification_status": "verified",
+    "sections": [
+      {
+        "title": "Technical Engineering (Civil / Electrical / Mechanical)",
+        "topics": [
+          "Bricks, Stones & Aggregates",
+          "Cement & Concrete Technology",
+          "Chain & Compass Surveying",
+          "Levelling, Contouring & Theodolite",
+          "Circuit Laws & Network Theorems",
+          "AC Fundamentals & Polyphase Circuits",
+          "DC Generators & Motors",
+          "First & Second Laws of Thermodynamics",
+          "Air Standard Cycles & IC Engines",
+          "Fluid Statics, Dynamics & Flow Measurement"
+        ]
+      },
+      {
+        "title": "General Studies & State Specific Aptitude",
+        "topics": [
+          "Physics, Chemistry & Life Sciences",
+          "Constitution, Fundamental Rights & Administrative Setup",
+          "Ancient, Medieval & Freedom Struggle",
+          "Physical Geography of India & Ecological Balance",
+          "State Geography, Water Resources & Infrastructure"
+        ]
+      }
+    ]
   }
 }

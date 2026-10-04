@@ -752,239 +752,70 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         onOpenAddCustomTopic={() => setIsAddCustomTopicOpen(true)}
       />
 
-      {/* ── EXPANDABLE TOOL DRAWERS (WHAT-IF, TARGET DATE, FOCUS TIMER) ── */}
-      <AnimatePresence>
-        {activeForecastDrawer !== 'none' && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, y: -10, height: 0 }}
-            className="rounded-3xl bg-slate-950 border border-slate-800 shadow-2xl p-5 sm:p-6 relative overflow-hidden"
-          >
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800 text-xs">
-              <span className="font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                <Sliders className="w-4 h-4 text-sky-400" />
-                <span>
-                  {activeForecastDrawer === 'simulator'
-                    ? 'What-If Schedule Simulator'
-                    : activeForecastDrawer === 'target'
-                    ? 'Target Date Feasibility Calculator'
-                    : 'Live Study Focus Stopwatch'}
-                </span>
-              </span>
-              <button
-                onClick={() => setActiveForecastDrawer('none')}
-                className="text-slate-400 hover:text-white px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-bold cursor-pointer transition"
-              >
-                Close Drawer ✕
-              </button>
-            </div>
-
-            {/* Drawer 1: Simulator */}
-            {activeForecastDrawer === 'simulator' && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-amber-500/30 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-amber-400" />
-                    <h3 className="text-sm font-bold text-white">Interactive Schedule Simulator</h3>
-                  </div>
-                  <button
-                    onClick={() => setWhatIfConfig({
-                      dailyHourDelta: 0,
-                      removeSundayStudy: false,
-                      weeklyTestCount: 0,
-                      extraRestDaysPerMonth: 0,
-                      missedDaysToSimulate: 0,
-                      revisionMultiplier: 1.0
-                    })}
-                    className="text-xs text-amber-400 hover:underline cursor-pointer"
-                  >
-                    Reset Defaults
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <div className="flex justify-between font-semibold mb-1 text-slate-300">
-                      <span>Daily Study Adjustment:</span>
-                      <strong className="text-amber-400">{whatIfConfig.dailyHourDelta > 0 ? `+${whatIfConfig.dailyHourDelta}h` : `${whatIfConfig.dailyHourDelta}h`} / day</strong>
-                    </div>
-                    <input
-                      type="range"
-                      min="-3"
-                      max="4"
-                      step="0.5"
-                      value={whatIfConfig.dailyHourDelta}
-                      onChange={e => setWhatIfConfig(c => ({ ...c, dailyHourDelta: parseFloat(e.target.value) }))}
-                      className="w-full accent-amber-500 cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <div className="flex justify-between font-semibold mb-1 text-slate-300">
-                      <span>Simulate Missed Days:</span>
-                      <strong className="text-rose-400">{whatIfConfig.missedDaysToSimulate} days</strong>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="14"
-                      step="1"
-                      value={whatIfConfig.missedDaysToSimulate}
-                      onChange={e => setWhatIfConfig(c => ({ ...c, missedDaysToSimulate: parseInt(e.target.value, 10) }))}
-                      className="w-full accent-rose-500 cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-around gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={whatIfConfig.removeSundayStudy}
-                        onChange={e => setWhatIfConfig(c => ({ ...c, removeSundayStudy: e.target.checked }))}
-                        className="rounded accent-amber-500"
-                      />
-                      <span>Remove Sunday Study (Rest Day)</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={whatIfConfig.weeklyTestCount > 0}
-                        onChange={e => setWhatIfConfig(c => ({ ...c, weeklyTestCount: e.target.checked ? 1 : 0 }))}
-                        className="rounded accent-amber-500"
-                      />
-                      <span>Reserve 1 Day / Week for Mock Test</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-200 flex items-center justify-between">
-                  <span>
-                    Simulated Realistic Finish: <strong className="text-white font-bold">{formatNiceDate(currentForecast.realisticDate)}</strong>
-                  </span>
-                  <span className="text-[11px] text-amber-300/80">
-                    Live calculated based on remaining {currentForecast.remainingWorkloadHours}h workload
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Drawer 2: Target Date */}
-            {activeForecastDrawer === 'target' && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/90 border border-indigo-500/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Target className="w-4 h-4 text-indigo-400" />
-                    <h3 className="text-sm font-bold text-white">Target Date Feasibility Calculator</h3>
-                  </div>
-                  <span className="text-xs text-slate-400">Test if your desired completion deadline is possible</span>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <input
-                    type="date"
-                    value={targetDateInput}
-                    onChange={e => setTargetDateInput(e.target.value)}
-                    className="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-xs outline-none focus:border-indigo-500"
-                  />
-                  <div className="text-xs text-slate-300">
-                    Select the target date by which you want all syllabus and first revision done.
-                  </div>
-                </div>
-
-                {currentForecast.targetCalculation && (
-                  <div className={`p-3.5 rounded-xl border text-xs space-y-1 ${
-                    currentForecast.targetCalculation.isFeasible 
-                      ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-200' 
-                      : 'bg-rose-950/40 border-rose-500/40 text-rose-200'
-                  }`}>
-                    <div className="font-bold flex items-center justify-between">
-                      <span>Target: {formatNiceDate(currentForecast.targetCalculation.targetDate)}</span>
-                      <span>{currentForecast.targetCalculation.isFeasible ? '✓ Mathematically Feasible' : '⚠️ Requires Pace Acceleration'}</span>
-                    </div>
-                    <p className="text-slate-200 leading-relaxed">
-                      {currentForecast.targetCalculation.explanation}
-                    </p>
-                    <div className="pt-1 flex items-center gap-4 text-[11px] text-slate-400">
-                      <span>Current: <strong>{currentForecast.currentPaceHoursPerWeek}h/wk</strong></span>
-                      <span>Required: <strong className="text-white">{currentForecast.targetCalculation.requiredWeeklyHours}h/wk</strong></span>
-                      <span>Gap: <strong className={currentForecast.targetCalculation.gapWeeklyHours > 0 ? 'text-amber-400' : 'text-emerald-400'}>
-                        {currentForecast.targetCalculation.gapWeeklyHours > 0 ? `+${currentForecast.targetCalculation.gapWeeklyHours}h/wk` : 'None'}
-                      </strong></span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ── NOTIFICATION BANNER ────────────────────────────────────────────── */}
       {importNotification && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-2xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs font-bold flex items-center gap-3 shadow-md"
+          className="p-3.5 rounded-2xl bg-[#58CC02]/10 border border-[#58CC02]/30 text-[#58CC02] text-xs font-bold flex items-center gap-2.5 shadow-md"
         >
-          <Sparkles className="w-5 h-5 shrink-0 text-sky-400" />
+          <Sparkles className="w-4 h-4 shrink-0 text-[#58CC02]" />
           <span>{importNotification}</span>
         </motion.div>
       )}
 
       {/* ── SYLLABUS SOURCE TABS: OFFICIAL vs MY SYLLABUS vs DIRECTORY ──────── */}
-      <div className="p-2 rounded-3xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2 w-full sm:w-auto p-1 bg-slate-950 rounded-2xl border border-slate-800 overflow-x-auto">
+      <div className="p-2 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto p-1 bg-[#0F1115] rounded-xl border border-[#2A2F3A] overflow-x-auto">
           <button
             onClick={() => setActiveTab('official')}
-            className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'official'
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-[#1CB0F6] text-[#052840] shadow-sm border-b-2 border-[#1899D6] font-extrabold'
+                : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-3.5 h-3.5" />
             <span>Official Syllabus</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/25 text-white">
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-black/20">
               {officialTopics.filter(t => t.completed).length}/{officialTopics.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('personal')}
-            className={`flex-1 sm:flex-initial px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'personal'
-                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-[#58CC02] text-[#0B2300] shadow-sm border-b-2 border-[#46A302] font-extrabold'
+                : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
             }`}
           >
-            <User className="w-4 h-4" />
-            <span>My Custom Plan</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/25 text-white">
+            <User className="w-3.5 h-3.5" />
+            <span>My Plan</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-black/20">
               {personalTopics.filter(t => t.completed).length}/{personalTopics.length}
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('directory')}
-            className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
               activeTab === 'directory'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-[#1A1D24] text-[#F3F4F6] border border-[#3A404F]'
+                : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
             }`}
           >
-            <Layers className="w-4 h-4" />
-            <span>48 Exams Directory</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span>48 Exams</span>
           </button>
         </div>
 
         {/* Global Action Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-sky-400 flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[#0F1115] hover:bg-[#1A1D24] border border-[#2A2F3A] text-xs font-bold text-[#1CB0F6] flex items-center gap-1.5 cursor-pointer"
+            title="Global syllabus keyword search"
           >
             <Search className="w-3.5 h-3.5" />
             <span>Search</span>
@@ -992,15 +823,16 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[#0F1115] hover:bg-[#1A1D24] border border-[#2A2F3A] text-xs font-bold text-[#58CC02] flex items-center gap-1.5 cursor-pointer"
+            title="Import syllabus from spreadsheet"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+            <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>Import</span>
           </button>
 
           <button
             onClick={handleResetProgress}
-            className="p-2 rounded-xl bg-slate-950 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 border border-slate-800 transition cursor-pointer"
+            className="p-2 rounded-xl bg-[#0F1115] hover:bg-rose-500/10 text-[#9CA3AF] hover:text-rose-400 border border-[#2A2F3A] transition cursor-pointer"
             title="Reset All Progress"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -1011,13 +843,13 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       {/* ── VIEW ROUTING: DIRECTORY OR TOPIC CHECKLIST ─────────────────────── */}
       {activeTab === 'directory' ? (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <span className="text-xs text-slate-300 font-semibold">
+          <div className="p-3.5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex items-center justify-between">
+            <span className="text-xs text-[#9CA3AF] font-semibold">
               Browsing all 48 national & state examinations curriculum archive.
             </span>
             <button
               onClick={() => setActiveTab('official')}
-              className="text-xs text-sky-400 font-bold hover:underline"
+              className="text-xs text-[#1CB0F6] font-bold hover:underline cursor-pointer"
             >
               Back to Active Tracker →
             </button>
@@ -1032,12 +864,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         </div>
       ) : activeTab === 'personal' ? (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="p-4 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h4 className="text-xs font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-sky-400" /> Custom Student Learning Path
+                <Sparkles className="w-4 h-4 text-[#1CB0F6]" /> Custom Student Learning Path
               </h4>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-[#9CA3AF] mt-0.5">
                 Drag, rearrange, add custom chapters, or import directly from official exam benchmarks.
               </p>
             </div>
@@ -1046,7 +878,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 setTargetSubject('');
                 setIsAddCustomTopicOpen(true);
               }}
-              className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-600/25"
+              className="px-4 py-2 rounded-xl bg-[#1CB0F6] hover:bg-[#1899D6] text-[#052840] font-extrabold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md border-b-2 border-[#1899D6]"
             >
               <Plus className="w-4 h-4" /> Add Subject / Chapter
             </button>
@@ -1093,402 +925,397 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           />
         </div>
       ) : (
-        /* ── OFFICIAL SYLLABUS TOPIC CHECKLIST WITH 5-DIMENSION MASTERY ── */
-        <div className="space-y-4">
-          {/* Filters Bar: Stages, Mastery Status, and Search */}
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-            {/* Stage filter pills */}
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-              <span className="text-xs font-bold text-slate-400 mr-1 shrink-0 flex items-center gap-1">
-                <Filter className="w-3.5 h-3.5 text-sky-400" /> Stage:
-              </span>
-              {stages.map((stage) => (
-                <button
-                  key={stage}
-                  onClick={() => setActiveStageFilter(stage)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-                    activeStageFilter === stage
-                      ? 'bg-sky-600 text-white shadow-md'
-                      : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
-                  }`}
-                >
-                  {stage}
-                </button>
-              ))}
-            </div>
-
-            {/* Preparation Mastery Filter */}
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <select
-                value={masteryFilter}
-                onChange={e => setMasteryFilter(e.target.value as any)}
-                className="bg-slate-950 border border-slate-800 text-xs text-slate-200 rounded-xl px-3 py-1.5 outline-none cursor-pointer"
-              >
-                <option value="All">All Topics</option>
-                <option value="Pending">Pending Topics</option>
-                <option value="Completed">Completed Topics</option>
-                <option value="NeedsRevision">Needs Revision Cycle</option>
-                <option value="Weak">Weak Mastery (≤2★)</option>
-                <option value="HighWeightage">High Weightage</option>
-              </select>
-
-              {/* Search input */}
-              <div className="relative flex-1 md:w-56">
-                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  placeholder="Search chapters..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 outline-none focus:border-sky-500"
-                />
-              </div>
-
-              <button
-                onClick={() => toggleExpandAll(filteredTopics)}
-                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 hover:text-white shrink-0 cursor-pointer"
-              >
-                Expand/Collapse
-              </button>
-
-              <button
-                onClick={() => setIsAddCustomTopicOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-bold text-white shrink-0 cursor-pointer flex items-center gap-1.5 shadow-md shadow-sky-600/20"
-                title="Add your own custom chapter or topic"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Custom Topic</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Subject Pills (Physics, Chemistry, Maths, etc.) */}
+        /* ── OFFICIAL SYLLABUS TOPIC CHECKLIST ── */
+        <div className="space-y-3.5">
+          {/* 1. Primary Subject Switcher Pills (Physics, Chemistry, Maths, etc.) */}
           {availableSubjects.length > 1 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <button
                 onClick={() => setSelectedSubjectFilter('ALL')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
                   selectedSubjectFilter === 'ALL'
-                    ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
-                    : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                    ? 'bg-[#58CC02] text-[#0B2300] shadow-sm border-b-2 border-[#46A302]'
+                    : 'bg-[#15181F] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white'
                 }`}
               >
-                All Subjects ({currentTopics.length})
+                <span>All Subjects</span>
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 font-mono">
+                  {currentTopics.length}
+                </span>
               </button>
               {availableSubjects.map((subj) => (
                 <button
                   key={subj.name}
                   onClick={() => setSelectedSubjectFilter(subj.name)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
                     selectedSubjectFilter === subj.name
-                      ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
-                      : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                      ? 'bg-[#1CB0F6] text-[#052840] shadow-sm border-b-2 border-[#1899D6]'
+                      : 'bg-[#15181F] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white'
                   }`}
                 >
-                  {subj.name} ({subj.count})
+                  <span>{subj.name}</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 font-mono">
+                    {subj.count}
+                  </span>
                 </button>
               ))}
             </div>
           )}
 
-          {/* ── TOPIC CARDS: MERGED CHECKLIST + 5-DIMENSION MASTERY TOOLBAR ── */}
-          <div className="space-y-3">
-            {filteredTopics.length === 0 ? (
-              <div className="p-12 text-center rounded-3xl bg-slate-900 border border-slate-800">
-                <BookOpen className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-300 font-bold">No topics match your current filter</p>
-                <p className="text-slate-500 text-xs mt-1">Try resetting the stage or search query.</p>
-              </div>
-            ) : (
-              filteredTopics.map((topic, topicIdx) => {
-                const effectiveGuestLimit = guestLimit ?? Number(localStorage.getItem('aspirantx_guest_syllabus_limit') || 5);
-                const isLockedForGuest = isGuest && topicIdx >= effectiveGuestLimit;
+          {/* 2. Compact Search & Filter Toolbar */}
+          <div className="p-2.5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            {/* Search Input */}
+            <div className="relative w-full sm:flex-1">
+              <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search chapters or topics..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-7 py-1.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-xs text-white placeholder-[#6B7280] outline-none focus:border-[#1CB0F6] transition"
+              />
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-white text-xs cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
 
-                if (isLockedForGuest) {
-                  return (
-                    <div
-                      key={topic.id}
-                      className="p-5 rounded-3xl bg-slate-900 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                          <LockIcon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-extrabold text-slate-300 blur-[2px] select-none">
+            {/* Filter Dropdowns & Quick Action */}
+            <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto justify-end">
+              {stages.length > 2 && (
+                <select
+                  value={activeStageFilter}
+                  onChange={e => setActiveStageFilter(e.target.value)}
+                  className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-1.5 outline-none cursor-pointer"
+                >
+                  {stages.map(st => (
+                    <option key={st} value={st}>{st}</option>
+                  ))}
+                </select>
+              )}
+
+              <select
+                value={masteryFilter}
+                onChange={e => setMasteryFilter(e.target.value as any)}
+                className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-1.5 outline-none cursor-pointer"
+              >
+                <option value="All">All Status</option>
+                <option value="Pending">Pending Only</option>
+                <option value="Completed">Completed Only</option>
+                <option value="HighWeightage">High Weightage</option>
+                <option value="NeedsRevision">Needs Revision</option>
+                <option value="Weak">Weak (≤2★)</option>
+              </select>
+
+              <button
+                onClick={() => toggleExpandAll(filteredTopics)}
+                className="p-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white text-xs font-bold shrink-0 cursor-pointer"
+                title="Expand or collapse all chapters"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => setIsAddCustomTopicOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-[#1CB0F6] hover:bg-[#1899D6] text-xs font-black text-[#052840] shrink-0 cursor-pointer flex items-center gap-1 shadow-sm border-b-2 border-[#1899D6]"
+                title="Add your own custom chapter or topic"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Topic</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. CLEAN & CLEAR CHAPTER TOPIC CARDS ── */}
+          <div className="space-y-2.5">
+            {filteredTopics.length === 0 ? (
+              <div className="p-10 text-center rounded-2xl bg-[#15181F] border border-[#2A2F3A]">
+                <BookOpen className="w-10 h-10 text-[#6B7280] mx-auto mb-2" />
+                <p className="text-[#F3F4F6] font-bold text-sm">No chapters match your filter</p>
+                <p className="text-[#9CA3AF] text-xs mt-1">Try resetting the search query or status filter.</p>
+              </div>
+            ) : (() => {
+                const firstIncompleteId = filteredTopics.find(t => {
+                  const p = taskProgressMap.get(t.id);
+                  return !t.completed && p?.learningStatus !== 'completed';
+                })?.id;
+
+                return filteredTopics.map((topic, topicIdx) => {
+                  const effectiveGuestLimit = guestLimit ?? Number(localStorage.getItem('aspirantx_guest_syllabus_limit') || 5);
+                  const isLockedForGuest = isGuest && topicIdx >= effectiveGuestLimit;
+
+                  if (isLockedForGuest) {
+                    return (
+                      <div
+                        key={topic.id}
+                        className="p-4 rounded-2xl bg-[#15181F] border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
+                            <LockIcon className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-[#F3F4F6] blur-[2px] select-none">
                               {topic.title}
                             </h4>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-500/20 text-amber-300 uppercase">
-                              Demo Mode Locked
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-400 mt-0.5">
-                            Login or Register to unlock complete syllabus.
-                          </p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={onRequireLogin}
-                        className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md shrink-0 flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" /> Login to Unlock Full Syllabus
-                      </button>
-                    </div>
-                  );
-                }
-
-                const isExpanded = Boolean(expandedTopics[topic.id]);
-                const subList = topic.subtopics || [];
-                const subCount = subList.length || topic.subtopicsCount || 0;
-                const completedCount = subList.filter((s) => completedSubtopicIds.has(s.id) || s.completed).length;
-                const topicPercentage = subCount > 0 ? Math.round((completedCount / subCount) * 100) : 0;
-                const isFullyCompleted = topic.completed || (subCount > 0 && completedCount === subCount);
-
-                // Progress state from forecasting map
-                const progress: StudentTaskProgress = taskProgressMap.get(topic.id) || {
-                  taskId: topic.id,
-                  learningStatus: (isFullyCompleted ? 'completed' : 'pending') as TaskStatus,
-                  practiceStatus: (isFullyCompleted ? 'completed' : 'pending') as TaskStatus,
-                  pyqPercentage: isFullyCompleted ? 80 : 0,
-                  revisionCycle: (isFullyCompleted ? 1 : 0) as RevisionCycle,
-                  masteryLevel: (isFullyCompleted ? 4 : 1) as MasteryRating,
-                  plannedHours: 10,
-                  actualHoursSpent: 0
-                };
-
-                return (
-                  <div
-                    key={topic.id}
-                    id={`topic-card-${topic.id}`}
-                    className={`rounded-3xl border transition-all duration-300 overflow-hidden ${
-                      isFullyCompleted
-                        ? 'bg-sky-500/5 border-sky-500/25 shadow-sm'
-                        : isExpanded
-                        ? 'bg-slate-900 border-slate-700 shadow-md'
-                        : 'bg-slate-950 border-slate-800/80 hover:border-slate-700'
-                    }`}
-                  >
-                    {/* Header: Checkbox, Title, Stage, Weightage & Expand Button */}
-                    <div
-                      onClick={() => toggleAccordion(topic.id)}
-                      className="p-4 sm:p-5 cursor-pointer select-none"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-start gap-3.5 min-w-0">
-                          {/* Master Completion Checkbox */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleParentTopicCompletion(topic.id);
-                            }}
-                            className="mt-0.5 text-slate-400 hover:text-sky-400 transition shrink-0 cursor-pointer"
-                            title={isFullyCompleted ? 'Mark topic as incomplete' : 'Mark topic as complete'}
-                          >
-                            {isFullyCompleted ? (
-                              <CheckCircle2 className="w-5 h-5 text-sky-400 fill-sky-400/20" />
-                            ) : (
-                              <Circle className="w-5 h-5 text-slate-600 hover:text-sky-400" />
-                            )}
-                          </button>
-
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h4 className={`text-sm sm:text-base font-bold tracking-tight ${isFullyCompleted ? 'line-through text-slate-400' : 'text-white'}`}>
-                                {topic.title}
-                              </h4>
-
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider ${
-                                topic.weightage === 'High'
-                                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                  : topic.weightage === 'Medium'
-                                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                  : 'bg-slate-800 text-slate-400'
-                              }`}>
-                                {topic.weightage} Weightage
-                              </span>
-
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-900 text-slate-400 border border-slate-800">
-                                {topic.stage}
-                              </span>
-
-                              {timeSummary[topic.id] ? (
-                                <span className="text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                                  {formatStudiedTime(timeSummary[topic.id])}
-                                </span>
-                              ) : null}
-                            </div>
-
-                            <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
-                              <span className="font-semibold text-sky-400">{topic.category}</span>
-                              <span>•</span>
-                              <span>{subCount} Subtopics ({completedCount} Done)</span>
-                              <span>•</span>
-                              <span>Est. Workload: ~{topic.subtopics?.reduce((a, b) => a + (b.estimatedHours || 2.5), 0) || 12}h</span>
+                            <p className="text-[11px] text-[#9CA3AF]">
+                              Login or Register to unlock complete syllabus.
                             </p>
                           </div>
                         </div>
 
-                        {/* Right: Percent & Accordion Toggle */}
-                        <div className="flex items-center gap-3 shrink-0">
-                          <div className="hidden sm:flex flex-col items-end">
-                            <span className="text-xs font-black text-white">{topicPercentage}%</span>
-                            <div className="w-16 h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1 border border-slate-800">
-                              <div
-                                className={`h-full rounded-full transition-all duration-300 ${
-                                  isFullyCompleted ? 'bg-sky-400' : 'bg-sky-600'
-                                }`}
-                                style={{ width: `${topicPercentage}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="p-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400">
-                            <ChevronDown className={`w-4 h-4 text-slate-300 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-sky-400' : ''}`} />
-                          </div>
-                        </div>
+                        <button
+                          onClick={onRequireLogin}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md shrink-0 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Sparkles className="w-3 h-3" /> Unlock Full Syllabus
+                        </button>
                       </div>
+                    );
+                  }
 
-                      {/* ── 5-DIMENSION MASTERY TOOLBAR (THE CORE PRINCIPLE) ── */}
-                      <div 
-                        onClick={(e) => e.stopPropagation()} 
-                        className="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center justify-between flex-wrap gap-2 text-xs"
+                  const isExpanded = Boolean(expandedTopics[topic.id]);
+                  const subList = topic.subtopics || [];
+                  const subCount = subList.length || topic.subtopicsCount || 0;
+                  const completedCount = subList.filter((s) => completedSubtopicIds.has(s.id) || s.completed).length;
+                  const topicPercentage = subCount > 0 ? Math.round((completedCount / subCount) * 100) : 0;
+                  const isFullyCompleted = topic.completed || (subCount > 0 && completedCount === subCount);
+                  const isNextUp = topic.id === firstIncompleteId;
+
+                  const progress: StudentTaskProgress = taskProgressMap.get(topic.id) || {
+                    taskId: topic.id,
+                    learningStatus: (isFullyCompleted ? 'completed' : 'pending') as TaskStatus,
+                    practiceStatus: (isFullyCompleted ? 'completed' : 'pending') as TaskStatus,
+                    pyqPercentage: isFullyCompleted ? 80 : 0,
+                    revisionCycle: (isFullyCompleted ? 1 : 0) as RevisionCycle,
+                    masteryLevel: (isFullyCompleted ? 4 : 1) as MasteryRating,
+                    plannedHours: 10,
+                    actualHoursSpent: 0
+                  };
+
+                  return (
+                    <div
+                      key={topic.id}
+                      id={`topic-card-${topic.id}`}
+                      className={`rounded-2xl border transition-all duration-150 overflow-hidden ${
+                        isFullyCompleted
+                          ? 'bg-[#15181F]/70 border-[#2A2F3A] opacity-90'
+                          : isNextUp
+                          ? 'bg-[#1A1D24] border-[#58CC02]/80 shadow-md shadow-[#58CC02]/10 ring-1 ring-[#58CC02]/30'
+                          : isExpanded
+                          ? 'bg-[#1A1D24] border-[#3A404F] shadow-sm'
+                          : 'bg-[#15181F] border-[#2A2F3A] hover:border-[#3A404F]'
+                      }`}
+                    >
+                      {/* ── CARD HEADER (CLEAN, LOW TEXT, EASY TAP TARGET) ── */}
+                      <div
+                        onClick={() => toggleAccordion(topic.id)}
+                        className="p-3.5 sm:p-4 cursor-pointer select-none"
                       >
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {/* 1. Learning Pill */}
-                          <button
-                            onClick={() => toggleLearning(topic.id)}
-                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition flex items-center gap-1 cursor-pointer ${
-                              progress.learningStatus === 'completed'
-                                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
-                                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
-                            }`}
-                            title="Concept understanding & theory"
-                          >
-                            <BookOpen className="w-3 h-3" />
-                            <span>Concept: {progress.learningStatus === 'completed' ? 'Done ✓' : 'Pending'}</span>
-                          </button>
-
-                          {/* 2. Practice Pill */}
-                          <button
-                            onClick={() => cyclePractice(topic.id)}
-                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition flex items-center gap-1 cursor-pointer ${
-                              progress.practiceStatus === 'completed'
-                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                : progress.practiceStatus === 'in_progress'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
-                            }`}
-                            title="Question solving practice"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                            <span>Practice: {progress.practiceStatus === 'completed' ? 'Done ✓' : progress.practiceStatus === 'in_progress' ? 'In Progress' : 'Pending'}</span>
-                          </button>
-
-                          {/* 3. PYQ % Button */}
-                          <button
-                            onClick={() => cyclePyq(topic.id)}
-                            className="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 transition flex items-center gap-1 cursor-pointer"
-                            title="Click to cycle PYQ coverage (0% -> 50% -> 80% -> 100%)"
-                          >
-                            <Zap className="w-3 h-3 text-amber-400" />
-                            <span>PYQ: <strong className="text-white">{progress.pyqPercentage}%</strong></span>
-                          </button>
-
-                          {/* 4. Spaced Revision Cycle */}
-                          <button
-                            onClick={() => cycleRevision(topic.id)}
-                            className={`px-2.5 py-1 rounded-lg font-bold text-[11px] transition flex items-center gap-1 cursor-pointer ${
-                              progress.revisionCycle > 0
-                                ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40'
-                                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
-                            }`}
-                            title="Click to advance revision cycle (Rev 1 -> Rev 2 -> Rev 3)"
-                          >
-                            <RotateCcw className="w-3 h-3" />
-                            <span>{progress.revisionCycle === 0 ? 'Rev Pending' : `Rev ${progress.revisionCycle} Done`}</span>
-                          </button>
-                        </div>
-
-                        {/* 5. Mastery 1 to 5 Stars Rating */}
-                        <div className="flex items-center gap-1 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-800">
-                          <span className="text-[10px] text-slate-400 font-semibold mr-1">Mastery:</span>
-                          {([1, 2, 3, 4, 5] as MasteryRating[]).map((star) => (
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/* Tactile Master Completion Checkbox */}
                             <button
-                              key={star}
                               type="button"
-                              onClick={() => setMasteryRating(topic.id, star)}
-                              className="cursor-pointer text-slate-600 hover:text-amber-400 transition"
-                              title={`Rate mastery as ${star}/5 stars`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleParentTopicCompletion(topic.id);
+                              }}
+                              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9CA3AF] hover:text-[#58CC02] transition shrink-0 cursor-pointer active:scale-90"
+                              title={isFullyCompleted ? 'Mark topic as incomplete' : 'Mark topic as complete'}
                             >
-                              <Star
-                                className={`w-3.5 h-3.5 ${
-                                  star <= progress.masteryLevel
-                                    ? 'text-amber-400 fill-amber-400'
-                                    : 'text-slate-700'
-                                }`}
-                              />
+                              {isFullyCompleted ? (
+                                <CheckCircle2 className="w-6 h-6 text-[#58CC02] fill-[#58CC02]/20" />
+                              ) : (
+                                <Circle className="w-6 h-6 text-[#4B5563] hover:text-[#58CC02]" />
+                              )}
                             </button>
-                          ))}
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className={`text-sm sm:text-base font-bold tracking-tight ${isFullyCompleted ? 'line-through text-[#9CA3AF]' : 'text-white'}`}>
+                                  {topic.title}
+                                </h4>
+
+                                {isNextUp && !isFullyCompleted && (
+                                  <span className="px-2 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/30">
+                                    Next Up
+                                  </span>
+                                )}
+
+                                {topic.weightage === 'High' && (
+                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                    High Weightage
+                                  </span>
+                                )}
+                              </div>
+
+                              <p className="text-[11px] text-[#9CA3AF] mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-[#1CB0F6]">{topic.category}</span>
+                                <span>•</span>
+                                <span>{subCount} Subtopics</span>
+                                {completedCount > 0 && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-[#58CC02] font-semibold">{completedCount} Completed</span>
+                                  </>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Right: Compact Percent Chip & Chevron */}
+                          <div className="flex items-center gap-2.5 shrink-0">
+                            <span className="text-xs font-mono font-bold text-white px-2 py-0.5 rounded-lg bg-[#0F1115] border border-[#2A2F3A]">
+                              {topicPercentage}%
+                            </span>
+
+                            <div className="p-1 rounded-lg text-[#9CA3AF]">
+                              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#1CB0F6]' : ''}`} />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Subtopics Accordion Drawer */}
-                    <AccordionTransition isOpen={isExpanded} className="border-t border-slate-800/80 bg-slate-950/80 p-4 sm:p-5 space-y-3">
-                      <div className="flex items-center justify-between text-xs text-slate-400 mb-1 px-0.5">
-                        <span className="font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5 text-[11px]">
-                          <Layers className="w-3.5 h-3.5 text-sky-400" /> Sub-topics Breakdown ({subList.length})
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        {subList.map((sub, sIdx) => {
-                          const isSubDone = completedSubtopicIds.has(sub.id) || sub.completed;
-                          return (
-                            <div
-                              key={sub.id || sIdx}
-                              onClick={() => toggleSubtopicCompletion(sub.id)}
-                              className={`p-3 rounded-2xl border transition flex items-center justify-between gap-3 cursor-pointer ${
-                                isSubDone
-                                  ? 'bg-sky-500/10 border-sky-500/30 text-slate-200'
-                                  : 'bg-slate-900 border-slate-800/80 text-slate-300 hover:border-slate-700'
+                      {/* ── EXPANDED ACCORDION: MASTERY TOOLBAR + SUBTOPICS ── */}
+                      <AccordionTransition isOpen={isExpanded} className="border-t border-[#2A2F3A] bg-[#0F1115]/90 p-3.5 sm:p-4 space-y-3">
+                        {/* 5-Dimension Mastery Row (Only visible when studying this chapter!) */}
+                        <div 
+                          onClick={(e) => e.stopPropagation()} 
+                          className="p-2.5 rounded-xl bg-[#15181F] border border-[#2A2F3A] flex items-center justify-between flex-wrap gap-2 text-xs"
+                        >
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {/* 1. Learning Pill */}
+                            <button
+                              onClick={() => toggleLearning(topic.id)}
+                              className={`px-2 py-1 rounded-lg font-bold text-[10px] transition flex items-center gap-1 cursor-pointer ${
+                                progress.learningStatus === 'completed'
+                                  ? 'bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/40'
+                                  : 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] hover:text-white'
                               }`}
+                              title="Concept understanding"
                             >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleSubtopicCompletion(sub.id);
-                                  }}
-                                  className="text-slate-400 hover:text-sky-400 shrink-0"
-                                >
-                                  {isSubDone ? (
-                                    <CheckCircle2 className="w-4 h-4 text-sky-400 fill-sky-400/20" />
-                                  ) : (
-                                    <Circle className="w-4 h-4 text-slate-600" />
-                                  )}
-                                </button>
-                                <span className={`text-xs font-medium ${isSubDone ? 'line-through text-slate-400' : 'text-white'}`}>
-                                  {sub.title}
-                                </span>
-                              </div>
+                              <BookOpen className="w-3 h-3" />
+                              <span>Concept: {progress.learningStatus === 'completed' ? 'Done' : 'Pending'}</span>
+                            </button>
 
-                              <div className="flex items-center gap-2 text-[10px] text-slate-400 shrink-0">
-                                <span>~{sub.estimatedHours || 2.5}h</span>
+                            {/* 2. Practice Pill */}
+                            <button
+                              onClick={() => cyclePractice(topic.id)}
+                              className={`px-2 py-1 rounded-lg font-bold text-[10px] transition flex items-center gap-1 cursor-pointer ${
+                                progress.practiceStatus === 'completed'
+                                  ? 'bg-[#1CB0F6]/20 text-[#1CB0F6] border border-[#1CB0F6]/40'
+                                  : progress.practiceStatus === 'in_progress'
+                                  ? 'bg-[#FF9600]/20 text-[#FF9600] border border-[#FF9600]/40'
+                                  : 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] hover:text-white'
+                              }`}
+                              title="Question solving practice"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                              <span>Practice: {progress.practiceStatus === 'completed' ? 'Done' : progress.practiceStatus === 'in_progress' ? 'Active' : 'Pending'}</span>
+                            </button>
+
+                            {/* 3. PYQ % Button */}
+                            <button
+                              onClick={() => cyclePyq(topic.id)}
+                              className="px-2 py-1 rounded-lg font-bold text-[10px] bg-[#0F1115] hover:bg-[#1A1D24] text-[#9CA3AF] border border-[#2A2F3A] transition flex items-center gap-1 cursor-pointer"
+                              title="Cycle PYQ coverage"
+                            >
+                              <Zap className="w-3 h-3 text-[#FF9600]" />
+                              <span>PYQ: <strong className="text-white">{progress.pyqPercentage}%</strong></span>
+                            </button>
+
+                            {/* 4. Spaced Revision Cycle */}
+                            <button
+                              onClick={() => cycleRevision(topic.id)}
+                              className={`px-2 py-1 rounded-lg font-bold text-[10px] transition flex items-center gap-1 cursor-pointer ${
+                                progress.revisionCycle > 0
+                                  ? 'bg-[#1CB0F6]/20 text-[#1CB0F6] border border-[#1CB0F6]/40'
+                                  : 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] hover:text-white'
+                              }`}
+                              title="Advance revision cycle"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              <span>{progress.revisionCycle === 0 ? 'Rev 0' : `Rev ${progress.revisionCycle}`}</span>
+                            </button>
+                          </div>
+
+                          {/* 5. Mastery 1 to 5 Stars Rating */}
+                          <div className="flex items-center gap-1 bg-[#0F1115] px-2 py-1 rounded-lg border border-[#2A2F3A]">
+                            <span className="text-[10px] text-[#9CA3AF] font-bold mr-0.5">Stars:</span>
+                            {([1, 2, 3, 4, 5] as MasteryRating[]).map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setMasteryRating(topic.id, star)}
+                                className="cursor-pointer text-[#4B5563] hover:text-[#FF9600] transition"
+                              >
+                                <Star
+                                  className={`w-3 h-3 ${
+                                    star <= progress.masteryLevel
+                                      ? 'text-[#FF9600] fill-[#FF9600]'
+                                      : 'text-[#3A404F]'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Subtopics Checklist */}
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] px-1 block">
+                            Sub-topics ({subList.length})
+                          </span>
+
+                          {subList.map((sub, sIdx) => {
+                            const isSubDone = completedSubtopicIds.has(sub.id) || sub.completed;
+                            return (
+                              <div
+                                key={sub.id || sIdx}
+                                onClick={() => toggleSubtopicCompletion(sub.id)}
+                                className={`p-2.5 rounded-xl border transition flex items-center justify-between gap-2.5 cursor-pointer ${
+                                  isSubDone
+                                    ? 'bg-[#58CC02]/10 border-[#58CC02]/25 text-[#F3F4F6]'
+                                    : 'bg-[#15181F] border-[#2A2F3A] text-[#F3F4F6] hover:border-[#3A404F]'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleSubtopicCompletion(sub.id);
+                                    }}
+                                    className="text-[#9CA3AF] hover:text-[#58CC02] shrink-0"
+                                  >
+                                    {isSubDone ? (
+                                      <CheckCircle2 className="w-4 h-4 text-[#58CC02] fill-[#58CC02]/20" />
+                                    ) : (
+                                      <Circle className="w-4 h-4 text-[#4B5563]" />
+                                    )}
+                                  </button>
+                                  <span className={`text-xs font-medium ${isSubDone ? 'line-through text-[#9CA3AF]' : 'text-white'}`}>
+                                    {sub.title}
+                                  </span>
+                                </div>
+
+                                <div className="text-[10px] text-[#9CA3AF] shrink-0 font-mono">
+                                  ~{sub.estimatedHours || 2.5}h
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </AccordionTransition>
-                  </div>
-                );
-              })
-            )}
+                            );
+                          })}
+                        </div>
+                      </AccordionTransition>
+                    </div>
+                  );
+                });
+              })()}
           </div>
         </div>
       )}

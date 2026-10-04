@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '3.0.0',
-  versionCode: 24,
+  version: '3.1.0',
+  versionCode: 25,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
-  releaseDate: 'October 3, 2026',
+  releaseDate: 'October 4, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v3.0.0: Unified Syllabus Tracker (combining Classic Checklist with Dynamic Exam Forecast Engine, Spaced Revision, What-If Simulator & 5-Dimension Mastery), 243K+ Full Exam Question Banks, and APK Updater.',
+  releaseNotes: 'v3.1.0: Duolingo-grade Gamified Learning Path, original Veer Falcon mascot, offline sound effects engine, 5-hearts system, and 33 new SSC & State AE/JE exams with 10,000+ authentic questions.',
 };

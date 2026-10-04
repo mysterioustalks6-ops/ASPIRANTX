@@ -789,15 +789,15 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                           return (
                             <div
                               key={pyq.id}
-                              className="p-4 rounded-xl bg-slate-950/70 border border-white/10 space-y-3 text-left transition-all hover:border-sky-500/30"
+                              className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] space-y-3.5 text-left transition-all hover:border-[#3A404F] shadow-sm"
                             >
-                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-2">
+                              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2A2F3A] pb-3">
                                 <div className="flex items-center gap-2">
-                                  <span className="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-black">
+                                  <span className="px-2.5 py-0.5 rounded-md bg-[#1CB0F6]/20 text-[#1CB0F6] border border-[#1CB0F6]/30 text-[10px] font-black">
                                     Year {pyq.year}
                                   </span>
-                                  <span className="text-xs font-bold text-slate-300">{getStandardSubject(selectedExam, pyq.subject)}</span>
-                                  <span className="text-[10px] text-slate-500">• {pyq.topic}</span>
+                                  <span className="text-xs font-bold text-[#F3F4F6]">{getStandardSubject(selectedExam, pyq.subject)}</span>
+                                  <span className="text-[10px] text-[#9CA3AF]">• {pyq.topic}</span>
                                 </div>
 
                                 <span
@@ -813,42 +813,50 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                                 </span>
                               </div>
 
-                              <div className="text-xs font-semibold text-slate-100 whitespace-pre-line leading-relaxed">
-                                <span className="text-sky-400 font-extrabold mr-1.5">Q{index + 1}.</span>
+                              <div className="text-sm font-semibold text-white whitespace-pre-line leading-relaxed">
+                                <span className="text-[#1CB0F6] font-black mr-2">Q{index + 1}.</span>
                                 {pyq.questionText}
                               </div>
 
                               {pyq.options && pyq.options.length > 0 && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
                                   {pyq.options.map((opt, optIdx) => {
                                     const isSelected = selectedOpt === optIdx;
                                     const isOptionCorrect = pyq.correctOption === optIdx;
 
-                                    let btnStyle = 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10';
+                                    let cardStyle = 'bg-[#15181F] border-[#2A2F3A] border-b-4 border-b-[#1A1D24] text-[#F3F4F6] hover:bg-[#1A1D24] hover:border-[#3A404F]';
+                                    let badgeStyle = 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]';
 
                                     if (isAnswered) {
                                       if (isOptionCorrect) {
-                                        btnStyle = 'bg-emerald-500/20 border-emerald-500/40 text-emerald-200 font-bold';
+                                        cardStyle = 'bg-[#58CC02]/15 border-[#58CC02] border-b-4 border-b-[#46A302] text-[#F3F4F6] font-bold';
+                                        badgeStyle = 'bg-[#58CC02] text-[#0B2300] font-black';
                                       } else if (isSelected && !isCorrect) {
-                                        btnStyle = 'bg-rose-500/20 border-rose-500/40 text-rose-200';
+                                        cardStyle = 'bg-[#FF4B4B]/15 border-[#FF4B4B] border-b-4 border-b-[#D32F2F] text-[#F3F4F6]';
+                                        badgeStyle = 'bg-[#FF4B4B] text-white font-black';
                                       }
+                                    } else if (isSelected) {
+                                      cardStyle = 'bg-[#1CB0F6]/15 border-[#1CB0F6] border-b-4 border-b-[#1899D6] text-[#F3F4F6] font-bold';
+                                      badgeStyle = 'bg-[#1CB0F6] text-[#052840] font-black';
                                     }
 
                                     return (
                                       <button
                                         key={optIdx}
                                         onClick={() => handleSelectOption(pyq.id, optIdx)}
-                                        className={`p-2.5 rounded-xl border text-left text-xs transition-all flex items-center justify-between ${btnStyle}`}
+                                        className={`p-3 min-h-[52px] rounded-xl border text-left text-xs transition-all flex items-center justify-between gap-3 cursor-pointer active:border-b-0 active:translate-y-1 ${cardStyle}`}
                                       >
-                                        <span>
-                                          <strong className="mr-1.5 text-slate-400">{String.fromCharCode(65 + optIdx)}.</strong>
-                                          {opt}
-                                        </span>
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${badgeStyle}`}>
+                                            {String.fromCharCode(65 + optIdx)}
+                                          </span>
+                                          <span className="leading-snug break-words">{opt}</span>
+                                        </div>
                                         {isAnswered && isOptionCorrect && (
-                                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                          <CheckCircle2 className="w-4 h-4 text-[#58CC02] shrink-0" />
                                         )}
                                         {isAnswered && isSelected && !isCorrect && (
-                                          <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                          <XCircle className="w-4 h-4 text-[#FF4B4B] shrink-0" />
                                         )}
                                       </button>
                                     );
@@ -912,20 +920,20 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                     return (
                       <StaggerItem
                         key={pyq.id}
-                        className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-4 transition-all hover:border-white/20 text-left"
+                        className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] space-y-4 transition-all hover:border-[#3A404F] text-left shadow-sm"
                       >
                         {/* PYQ Meta Badge Header */}
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2A2F3A] pb-3">
                           <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[11px] font-extrabold">
+                            <span className="px-2.5 py-0.5 rounded-md bg-[#1CB0F6]/20 text-[#1CB0F6] border border-[#1CB0F6]/30 text-[11px] font-black">
                               Year {pyq.year}
                             </span>
-                            <span className="px-2 py-0.5 rounded bg-white/5 text-slate-300 text-[11px] font-semibold">
+                            <span className="px-2 py-0.5 rounded bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] text-[11px] font-semibold">
                               {pyq.paper}
                             </span>
-                            <span className="text-xs font-bold text-slate-400">{getStandardSubject(selectedExam, pyq.subject)}</span>
+                            <span className="text-xs font-bold text-[#F3F4F6]">{getStandardSubject(selectedExam, pyq.subject)}</span>
                             {pyq.repeatCount && pyq.repeatCount > 1 && (
-                              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-extrabold flex items-center gap-1">
+                              <span className="px-2.5 py-0.5 rounded-full bg-[#FF9600]/20 text-[#FF9600] border border-[#FF9600]/40 text-[10px] font-black flex items-center gap-1">
                                 <span>🔁 Repeated {pyq.repeatCount} times</span>
                                 {pyq.repeatYears && pyq.repeatYears.length > 0 && (
                                   <span className="text-amber-200/80 font-mono">({pyq.repeatYears.join(', ')})</span>
@@ -935,11 +943,11 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                           </div>
 
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] px-2 py-0.5 rounded bg-white/5 text-slate-400">
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]">
                               {pyq.stage}
                             </span>
                             <span
-                              className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
+                              className={`text-[10px] font-black px-2 py-0.5 rounded ${
                                 pyq.difficulty === 'Hard'
                                   ? 'bg-rose-500/20 text-rose-300'
                                   : pyq.difficulty === 'Medium'
@@ -953,8 +961,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                         </div>
 
                         {/* Question Body */}
-                        <div className="text-sm font-semibold text-slate-100 whitespace-pre-line leading-relaxed">
-                          <span className="text-sky-400 font-extrabold mr-2">Q{(page - 1) * limit + index + 1}.</span>
+                        <div className="text-sm font-semibold text-white whitespace-pre-line leading-relaxed">
+                          <span className="text-[#1CB0F6] font-black mr-2">Q{(page - 1) * limit + index + 1}.</span>
                           {pyq.questionText}
                         </div>
 
@@ -965,31 +973,39 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                               const isSelected = selectedOpt === optIdx;
                               const isOptionCorrect = pyq.correctOption === optIdx;
 
-                              let btnStyle = 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10';
+                              let cardStyle = 'bg-[#15181F] border-[#2A2F3A] border-b-4 border-b-[#1A1D24] text-[#F3F4F6] hover:bg-[#1A1D24] hover:border-[#3A404F]';
+                              let badgeStyle = 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]';
 
                               if (isAnswered) {
                                 if (isOptionCorrect) {
-                                  btnStyle = 'bg-emerald-500/20 border-emerald-500/40 text-emerald-200 font-bold';
+                                  cardStyle = 'bg-[#58CC02]/15 border-[#58CC02] border-b-4 border-b-[#46A302] text-[#F3F4F6] font-bold';
+                                  badgeStyle = 'bg-[#58CC02] text-[#0B2300] font-black';
                                 } else if (isSelected && !isCorrect) {
-                                  btnStyle = 'bg-rose-500/20 border-rose-500/40 text-rose-200';
+                                  cardStyle = 'bg-[#FF4B4B]/15 border-[#FF4B4B] border-b-4 border-b-[#D32F2F] text-[#F3F4F6]';
+                                  badgeStyle = 'bg-[#FF4B4B] text-white font-black';
                                 }
+                              } else if (isSelected) {
+                                cardStyle = 'bg-[#1CB0F6]/15 border-[#1CB0F6] border-b-4 border-b-[#1899D6] text-[#F3F4F6] font-bold';
+                                badgeStyle = 'bg-[#1CB0F6] text-[#052840] font-black';
                               }
 
                               return (
                                 <button
                                   key={optIdx}
                                   onClick={() => handleSelectOption(pyq.id, optIdx)}
-                                  className={`p-3 rounded-xl border text-left text-xs transition-all flex items-center justify-between cursor-pointer ${btnStyle}`}
+                                  className={`p-3 min-h-[52px] rounded-xl border text-left text-xs transition-all flex items-center justify-between gap-3 cursor-pointer active:border-b-0 active:translate-y-1 ${cardStyle}`}
                                 >
-                                  <span>
-                                    <strong className="mr-2 text-slate-400">{String.fromCharCode(65 + optIdx)}.</strong>
-                                    {opt}
-                                  </span>
+                                  <div className="flex items-center gap-2.5 min-w-0">
+                                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${badgeStyle}`}>
+                                      {String.fromCharCode(65 + optIdx)}
+                                    </span>
+                                    <span className="leading-snug break-words">{opt}</span>
+                                  </div>
                                   {isAnswered && isOptionCorrect && (
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                                    <CheckCircle2 className="w-4 h-4 text-[#58CC02] shrink-0" />
                                   )}
                                   {isAnswered && isSelected && !isCorrect && (
-                                    <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                                    <XCircle className="w-4 h-4 text-[#FF4B4B] shrink-0" />
                                   )}
                                 </button>
                               );

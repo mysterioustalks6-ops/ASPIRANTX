@@ -634,31 +634,30 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                   {questions.map((q, index) => (
                     <StaggerItem
                       key={q.id}
-                      className="p-5 rounded-2xl bg-slate-900/40 border border-white/10 space-y-4 transition-all hover:border-emerald-500/20 text-left"
+                      className="p-5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] space-y-4 transition-all hover:border-[#3A404F] text-left shadow-sm"
                     >
                       {/* Meta Badges */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#2A2F3A] pb-3">
                         <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] font-extrabold">
+                          <span className="px-2.5 py-0.5 rounded-md bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/30 text-[11px] font-black">
                             {getStandardSubject(selectedExam, q.subject)}
                           </span>
-                          <span className="px-2 py-0.5 rounded bg-white/5 text-slate-300 text-[11px] font-semibold">
+                          <span className="px-2 py-0.5 rounded bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] text-[11px] font-semibold">
                             Topic: {q.topic}
                           </span>
                           {q.repeatCount && q.repeatCount > 1 && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-extrabold flex items-center gap-1">
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#FF9600]/20 text-[#FF9600] border border-[#FF9600]/40 text-[10px] font-black flex items-center gap-1">
                               <span>🔁 Repeated {q.repeatCount} times</span>
                             </span>
                           )}
                         </div>
 
-
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 text-slate-400 font-bold">
+                          <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] font-bold">
                             {q.type}
                           </span>
                           <span
-                            className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
+                            className={`text-[10px] font-black px-2 py-0.5 rounded ${
                               q.difficulty === 'Hard'
                                 ? 'bg-rose-500/20 text-rose-300'
                                 : q.difficulty === 'Medium'
@@ -672,29 +671,37 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                       </div>
 
                       {/* Question Text */}
-                      <div className="text-sm font-semibold text-slate-100 whitespace-pre-line leading-relaxed">
-                        <span className="text-emerald-400 font-extrabold mr-2">Q{(page - 1) * limit + index + 1}.</span>
+                      <div className="text-sm font-semibold text-white whitespace-pre-line leading-relaxed">
+                        <span className="text-[#58CC02] font-black mr-2">Q{(page - 1) * limit + index + 1}.</span>
                         {q.questionText}
                       </div>
 
                       {/* Options (if MCQ) */}
                       {q.options && q.options.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
                           {q.options.map((opt, oIdx) => (
                             <div
                               key={oIdx}
-                              className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
+                              className={`p-3 min-h-[48px] rounded-xl border text-xs flex items-center justify-between gap-3 ${
                                 q.correctOption === oIdx
-                                  ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300 font-bold'
-                                  : 'bg-white/5 border-white/10 text-slate-300'
+                                  ? 'bg-[#58CC02]/15 border-[#58CC02] border-b-4 border-b-[#46A302] text-[#F3F4F6] font-bold'
+                                  : 'bg-[#15181F] border-[#2A2F3A] border-b-4 border-b-[#1A1D24] text-[#F3F4F6]'
                               }`}
                             >
-                              <span>
-                                <strong className="mr-1.5 text-slate-400">{String.fromCharCode(65 + oIdx)}.</strong>
-                                {typeof opt === 'string' ? opt : ((opt as any)?.text ?? '')}
-                              </span>
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${
+                                  q.correctOption === oIdx
+                                    ? 'bg-[#58CC02] text-[#0B2300]'
+                                    : 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]'
+                                }`}>
+                                  {String.fromCharCode(65 + oIdx)}
+                                </span>
+                                <span className="leading-snug break-words">
+                                  {typeof opt === 'string' ? opt : ((opt as any)?.text ?? '')}
+                                </span>
+                              </div>
                               {q.correctOption === oIdx && (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                <CheckCircle2 className="w-4 h-4 text-[#58CC02] shrink-0" />
                               )}
                             </div>
                           ))}

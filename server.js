@@ -2293,14 +2293,760 @@ var init_jeeSyllabusData = __esm({
   }
 });
 
+// src/data/aeJeSyllabusData.ts
+var SSC_JE_CIVIL_SYLLABUS, SSC_JE_ELECTRICAL_SYLLABUS, SSC_JE_MECHANICAL_SYLLABUS, SSC_JE_REASONING_SYLLABUS, SSC_JE_GA_SYLLABUS, ALL_AE_JE_SYLLABUS;
+var init_aeJeSyllabusData = __esm({
+  "src/data/aeJeSyllabusData.ts"() {
+    SSC_JE_CIVIL_SYLLABUS = [
+      {
+        id: "ae_je_ce_01",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Building Materials & Construction",
+        topic: "Bricks, Stones & Aggregates",
+        subtopic: "Manufacturing, Classification & Testing",
+        title: "Bricks, Natural Stones & Coarse/Fine Aggregates",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 6,
+        difficulty: "Easy",
+        recommendedBooks: ["Building Materials by S.K. Duggal", "IS 1077"],
+        pyqCount: 45
+      },
+      {
+        id: "ae_je_ce_02",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Building Materials & Construction",
+        topic: "Cement & Concrete Technology",
+        subtopic: "OPC, PPC, Hydration, Setting Times & Slump Test",
+        title: "Cement Chemistry, Grades & Workability",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Concrete Technology by M.S. Shetty", "IS 456:2000"],
+        pyqCount: 60
+      },
+      {
+        id: "ae_je_ce_03",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Surveying",
+        topic: "Chain & Compass Surveying",
+        subtopic: "Ranging, Offsets, Prismatic Compass & Local Attraction",
+        title: "Linear & Angular Measurements",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 7,
+        difficulty: "Medium",
+        recommendedBooks: ["Surveying Vol 1 & 2 by B.C. Punmia"],
+        pyqCount: 52
+      },
+      {
+        id: "ae_je_ce_04",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Surveying",
+        topic: "Levelling, Contouring & Theodolite",
+        subtopic: "Rise & Fall Method, Height of Instrument & Errors",
+        title: "Levelling Principles, Contours & Tacheometry",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Surveying by B.C. Punmia"],
+        pyqCount: 55
+      },
+      {
+        id: "ae_je_ce_05",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Mechanics & Strength of Materials",
+        topic: "Stress, Strain & Elastic Constants",
+        subtopic: "Hooke Law, Modulus of Elasticity, Poisson Ratio & Thermal Stresses",
+        title: "Elastic Constants & Compound Stresses",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Hard",
+        recommendedBooks: ["Strength of Materials by R.K. Rajput / Ramamrutham"],
+        pyqCount: 65
+      },
+      {
+        id: "ae_je_ce_06",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Mechanics & Strength of Materials",
+        topic: "Shear Force & Bending Moment",
+        subtopic: "Cantilever, Simply Supported & Overhanging Beams",
+        title: "SFD, BMD & Point of Contraflexure",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Strength of Materials by Ramamrutham"],
+        pyqCount: 70
+      },
+      {
+        id: "ae_je_ce_07",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Concrete Structures (RCC)",
+        topic: "Limit State Design of Beams & Slabs",
+        subtopic: "Singly, Doubly Reinforced Beams, Flanged Beams & One-way/Two-way Slabs",
+        title: "Limit State Method (LSM) per IS 456:2000",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 10,
+        difficulty: "Hard",
+        recommendedBooks: ["Reinforced Concrete Design by Pillai & Menon", "IS 456"],
+        pyqCount: 75
+      },
+      {
+        id: "ae_je_ce_08",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Concrete Structures (RCC)",
+        topic: "Columns, Footings & Shear Design",
+        subtopic: "Axially & Eccentrically Loaded Columns, Isolated Footing & Stirrups",
+        title: "Compression Members, Footings & Bond/Development Length",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Hard",
+        recommendedBooks: ["Reinforced Concrete by B.C. Punmia"],
+        pyqCount: 50
+      },
+      {
+        id: "ae_je_ce_09",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Design of Steel Structures",
+        topic: "Riveted, Bolted & Welded Connections",
+        subtopic: "High Strength Friction Grip Bolts, Fillet & Butt Welds per IS 800:2007",
+        title: "Steel Fasteners & Joint Efficiency",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 7,
+        difficulty: "Medium",
+        recommendedBooks: ["Design of Steel Structures by S.K. Duggal", "IS 800:2007"],
+        pyqCount: 48
+      },
+      {
+        id: "ae_je_ce_10",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Design of Steel Structures",
+        topic: "Tension, Compression Members & Plate Girders",
+        subtopic: "Slenderness Ratio, Built-up Columns, Lacing & Battening",
+        title: "Steel Members & Slenderness Limits",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Hard",
+        recommendedBooks: ["Design of Steel Structures by N. Subramanian"],
+        pyqCount: 54
+      },
+      {
+        id: "ae_je_ce_11",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Soil Mechanics & Foundation Engg",
+        topic: "Properties of Soil & Index Properties",
+        subtopic: "Phase Relationships, Void Ratio, Porosity, Water Content & Atterberg Limits",
+        title: "Soil Classification & Consistency Limits",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Soil Mechanics & Foundation Engg by K.R. Arora"],
+        pyqCount: 68
+      },
+      {
+        id: "ae_je_ce_12",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Soil Mechanics & Foundation Engg",
+        topic: "Permeability, Compaction & Shear Strength",
+        subtopic: "Darcy Law, Standard Proctor Test, Mohr-Coulomb Failure Criteria",
+        title: "Effective Stress, Seepage & Triaxial Testing",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 10,
+        difficulty: "Hard",
+        recommendedBooks: ["Geotechnical Engineering by Gopal Ranjan & A.S.R. Rao"],
+        pyqCount: 62
+      },
+      {
+        id: "ae_je_ce_13",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Fluid Mechanics & Hydraulics",
+        topic: "Fluid Statics & Buoyancy",
+        subtopic: "Pascal Law, Hydrostatic Pressure, Manometers, Metacentric Height",
+        title: "Fluid Pressure, Manometry & Flotation",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 7,
+        difficulty: "Medium",
+        recommendedBooks: ["Fluid Mechanics by Modi & Seth"],
+        pyqCount: 50
+      },
+      {
+        id: "ae_je_ce_14",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Fluid Mechanics & Hydraulics",
+        topic: "Fluid Kinematics, Dynamics & Pipe Flow",
+        subtopic: "Continuity, Bernoulli Equation, Darcy-Weisbach Equation, Hydraulic Gradient",
+        title: "Bernoulli Theorem, Venturimeter & Major/Minor Pipe Losses",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Fluid Mechanics by R.K. Bansal"],
+        pyqCount: 65
+      },
+      {
+        id: "ae_je_ce_15",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Environmental Engineering",
+        topic: "Water Quality, Demand & Treatment",
+        subtopic: "Sedimentation, Coagulation, Filtration, Disinfection & Hardness",
+        title: "Water Treatment Processes & Standards",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Environmental Engineering Vol 1 & 2 by S.K. Garg"],
+        pyqCount: 55
+      },
+      {
+        id: "ae_je_ce_16",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Environmental Engineering",
+        topic: "Sewage Treatment & Disposal",
+        subtopic: "BOD, COD, Activated Sludge Process, Trickling Filters & Septic Tanks",
+        title: "Wastewater Engineering & Effluent Standards",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Sewage Disposal & Air Pollution by S.K. Garg"],
+        pyqCount: 48
+      },
+      {
+        id: "ae_je_ce_17",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Transportation Engineering",
+        topic: "Highway Geometric Design",
+        subtopic: "Camber, Super-elevation, Sight Distances (SSD, OSD), Horizontal & Vertical Curves",
+        title: "Geometric Elements & IRC Standards",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Hard",
+        recommendedBooks: ["Highway Engineering by Khanna & Justo", "IRC 73"],
+        pyqCount: 58
+      },
+      {
+        id: "ae_je_ce_18",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Irrigation & Hydrology",
+        topic: "Water Requirements of Crops & Canal Design",
+        subtopic: "Duty, Delta, Base Period, Kennedy & Lacey Silt Theories",
+        title: "Crop Water Relations & Regime Canal Design",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Irrigation Engineering & Hydraulic Structures by S.K. Garg"],
+        pyqCount: 52
+      },
+      {
+        id: "ae_je_ce_19",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Civil)",
+        subject: "Civil Engineering",
+        chapter: "Estimating, Costing & Valuation",
+        topic: "Methods of Estimation & Specifications",
+        subtopic: "Center-Line Method, Long Wall-Short Wall Method, Analysis of Rates & Depreciation",
+        title: "Quantity Surveying, Rate Analysis & Valuation",
+        stage: "All",
+        weightage: "Medium",
+        estimatedHours: 6,
+        difficulty: "Medium",
+        recommendedBooks: ["Estimating and Costing in Civil Engineering by B.N. Dutta"],
+        pyqCount: 40
+      }
+    ];
+    SSC_JE_ELECTRICAL_SYLLABUS = [
+      {
+        id: "ae_je_ee_01",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Basic Electrical & Network Theory",
+        topic: "Circuit Laws & Network Theorems",
+        subtopic: "Ohm Law, KCL, KVL, Thevenin, Norton, Superposition & Maximum Power Transfer",
+        title: "DC Circuit Analysis & Network Theorems",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Basic Electrical Engineering by D.P. Kothari & I.J. Nagrath"],
+        pyqCount: 65
+      },
+      {
+        id: "ae_je_ee_02",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Basic Electrical & Network Theory",
+        topic: "AC Fundamentals & Polyphase Circuits",
+        subtopic: "RMS, Average Values, Form Factor, Resonance in RLC Circuits & 3-Phase Power",
+        title: "Single-Phase & Three-Phase AC Systems",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Circuit Theory by A. Chakrabarti"],
+        pyqCount: 60
+      },
+      {
+        id: "ae_je_ee_03",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Electrical Machines",
+        topic: "DC Generators & Motors",
+        subtopic: "EMF Equation, Armature Reaction, Commutation, Speed Control & Characteristics",
+        title: "DC Machine Operation, Speed Control & Losses",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Electrical Machinery by P.S. Bimbhra"],
+        pyqCount: 64
+      },
+      {
+        id: "ae_je_ee_04",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Electrical Machines",
+        topic: "Transformers",
+        subtopic: "Ideal Transformer, Equivalent Circuit, OC & SC Tests, Efficiency & All-Day Efficiency",
+        title: "Single-Phase & Three-Phase Transformers",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Electric Machines by Nagrath & Kothari"],
+        pyqCount: 70
+      },
+      {
+        id: "ae_je_ee_05",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Electrical Machines",
+        topic: "Induction & Synchronous Machines",
+        subtopic: "Torque-Slip Characteristics, Starting Methods, V-curves & Voltage Regulation",
+        title: "3-Phase Induction Motors & Synchronous Generators",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 10,
+        difficulty: "Hard",
+        recommendedBooks: ["Electrical Machinery by P.S. Bimbhra"],
+        pyqCount: 72
+      },
+      {
+        id: "ae_je_ee_06",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Power Systems",
+        topic: "Transmission & Distribution",
+        subtopic: "Skin Effect, Ferranti Effect, Corona, Sag Analysis & Insulator String Efficiency",
+        title: "Transmission Line Parameters & Performance",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Power System Engineering by C.L. Wadhwa / Nagrath-Kothari"],
+        pyqCount: 62
+      },
+      {
+        id: "ae_je_ee_07",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Power Systems",
+        topic: "Switchgear & Fault Protection",
+        subtopic: "Symmetrical & Unsymmetrical Faults, Circuit Breakers, Relays & Earthing",
+        title: "Power System Protection & Circuit Breakers",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Switchgear and Protection by Sunil S. Rao"],
+        pyqCount: 56
+      },
+      {
+        id: "ae_je_ee_08",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Measurements & Instrumentation",
+        topic: "Analog Meters & Bridge Measurements",
+        subtopic: "PMMC, MI Meters, Extension of Range, Wheatstone, Maxwell & Schering Bridges",
+        title: "Meters, Shunts/Multipliers & AC/DC Bridges",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 7,
+        difficulty: "Medium",
+        recommendedBooks: ["Electrical Measurements by A.K. Sawhney"],
+        pyqCount: 58
+      },
+      {
+        id: "ae_je_ee_09",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Electrical)",
+        subject: "Electrical Engineering",
+        chapter: "Electronics & Control Systems",
+        topic: "Semiconductors, Diodes & Transistors",
+        subtopic: "PN Junction, Rectifiers, Filters, BJT, FET, Op-Amp Fundamentals & Logic Gates",
+        title: "Analog, Digital Electronics & Control Basics",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Electronic Devices by Boylestad / Sedra-Smith"],
+        pyqCount: 54
+      }
+    ];
+    SSC_JE_MECHANICAL_SYLLABUS = [
+      {
+        id: "ae_je_me_01",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Thermodynamics & Heat Engines",
+        topic: "First & Second Laws of Thermodynamics",
+        subtopic: "Work, Heat, Reversibility, Entropy, Carnot Cycle & Availability",
+        title: "Basic Thermodynamics & Entropy",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Engineering Thermodynamics by P.K. Nag"],
+        pyqCount: 70
+      },
+      {
+        id: "ae_je_me_02",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Thermodynamics & Heat Engines",
+        topic: "Air Standard Cycles & IC Engines",
+        subtopic: "Otto, Diesel, Dual Cycles, 2-Stroke vs 4-Stroke, Carburetion & Supercharging",
+        title: "Gas Power Cycles, Petrol & Diesel Engines",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Internal Combustion Engines by V. Ganesan"],
+        pyqCount: 65
+      },
+      {
+        id: "ae_je_me_03",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Fluid Mechanics & Machinery",
+        topic: "Fluid Statics, Dynamics & Flow Measurement",
+        subtopic: "Bernoulli Equation, Boundary Layer, Flow Through Pipes & Venturi Meters",
+        title: "Fluid Mechanics & Boundary Layer Theory",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Fluid Mechanics by R.K. Bansal / Som & Biswas"],
+        pyqCount: 68
+      },
+      {
+        id: "ae_je_me_04",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Fluid Mechanics & Machinery",
+        topic: "Hydraulic Turbines & Pumps",
+        subtopic: "Pelton Wheel, Francis, Kaplan Turbines, Centrifugal & Reciprocating Pumps",
+        title: "Hydraulic Machines & Specific Speed",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Hydraulic Machines by Jagdish Lal"],
+        pyqCount: 55
+      },
+      {
+        id: "ae_je_me_05",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Theory of Machines & Vibrations",
+        topic: "Mechanisms, Cams & Gears",
+        subtopic: "Degrees of Freedom, Inversions of 4-Bar Mechanism, Law of Gearing & Epicyclic Trains",
+        title: "Kinematics of Mechanisms, Gear Trains & Governors",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Theory of Machines by S.S. Rattan"],
+        pyqCount: 60
+      },
+      {
+        id: "ae_je_me_06",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Machine Design & SOM",
+        topic: "Stress Analysis, Fatigue & Shaft Design",
+        subtopic: "Theories of Failure, Goodman-Soderberg Criteria, Keys, Couplings & Welded Joints",
+        title: "Mechanical Component Design & Failure Theories",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 9,
+        difficulty: "Hard",
+        recommendedBooks: ["Design of Machine Elements by V.B. Bhandari"],
+        pyqCount: 62
+      },
+      {
+        id: "ae_je_me_07",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Manufacturing & Material Science",
+        topic: "Casting, Welding & Forming Processes",
+        subtopic: "Pattern Allowances, Gating System, Arc Welding, Rolling, Extrusion & Sheet Metal",
+        title: "Primary Manufacturing & Metal Joining",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Manufacturing Technology by P.N. Rao"],
+        pyqCount: 58
+      },
+      {
+        id: "ae_je_me_08",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "Manufacturing & Material Science",
+        topic: "Metal Cutting & Machine Tools",
+        subtopic: "Merchant Circle Diagram, Tool Life Equation, Lathe, Milling & Grinding Machines",
+        title: "Machining, Tool Geometry & Metrology",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Production Engineering by P.C. Sharma"],
+        pyqCount: 56
+      },
+      {
+        id: "ae_je_me_09",
+        exam: "SSC_JE",
+        paper: "Paper 1 & Paper 2 (Mechanical)",
+        subject: "Mechanical Engineering",
+        chapter: "RAC & Heat Transfer",
+        topic: "Heat Exchangers & Vapor Compression Cycle",
+        subtopic: "Conduction, LMTD, NTU, Bell-Coleman Cycle, Refrigerants & Psychrometric Chart",
+        title: "Heat Transfer Modes, VCR Cycle & Air Conditioning",
+        stage: "All",
+        weightage: "High",
+        estimatedHours: 8,
+        difficulty: "Medium",
+        recommendedBooks: ["Refrigeration & Air Conditioning by C.P. Arora"],
+        pyqCount: 52
+      }
+    ];
+    SSC_JE_REASONING_SYLLABUS = [
+      {
+        id: "ae_je_ir_01",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Intelligence & Reasoning)",
+        subject: "General Intelligence & Reasoning",
+        chapter: "Verbal Reasoning",
+        topic: "Analogies & Classification",
+        subtopic: "Semantic, Number & Figural Classification",
+        title: "Analogical Reasoning & Odd One Out",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 5,
+        difficulty: "Easy",
+        recommendedBooks: ["A Modern Approach to Verbal Reasoning by R.S. Aggarwal"],
+        pyqCount: 40
+      },
+      {
+        id: "ae_je_ir_02",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Intelligence & Reasoning)",
+        subject: "General Intelligence & Reasoning",
+        chapter: "Verbal Reasoning",
+        topic: "Series & Coding-Decoding",
+        subtopic: "Number Sequences, Alphabetical Series & Letter Substitution Coding",
+        title: "Series Completion & Cryptic Coding",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 5,
+        difficulty: "Easy",
+        recommendedBooks: ["Verbal & Non-Verbal Reasoning by R.S. Aggarwal"],
+        pyqCount: 45
+      },
+      {
+        id: "ae_je_ir_03",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Intelligence & Reasoning)",
+        subject: "General Intelligence & Reasoning",
+        chapter: "Logical & Analytical Reasoning",
+        topic: "Blood Relations, Directions & Syllogisms",
+        subtopic: "Coded Relations, 8-Point Compass Traversal & Venn Diagram Deductions",
+        title: "Deductive Logic, Relations & Navigation",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 6,
+        difficulty: "Medium",
+        recommendedBooks: ["Analytical Reasoning by M.K. Pandey"],
+        pyqCount: 50
+      },
+      {
+        id: "ae_je_ir_04",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Intelligence & Reasoning)",
+        subject: "General Intelligence & Reasoning",
+        chapter: "Non-Verbal Reasoning",
+        topic: "Pattern Completion, Paper Folding & Mirror Images",
+        subtopic: "Spatial Orientation, Embedded Figures, Matrix Reasoning & Cube Dice",
+        title: "Visual Logic & Spatial Orientation",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 5,
+        difficulty: "Medium",
+        recommendedBooks: ["Non-Verbal Reasoning by R.S. Aggarwal"],
+        pyqCount: 42
+      }
+    ];
+    SSC_JE_GA_SYLLABUS = [
+      {
+        id: "ae_je_ga_01",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Awareness)",
+        subject: "General Awareness",
+        chapter: "General Science",
+        topic: "Physics, Chemistry & Life Sciences",
+        subtopic: "Everyday Applications, SI Units, Reactions, Human Physiology & Diseases",
+        title: "General Science Fundamentals",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 6,
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT General Science Classes 8-10", "Lucent General Knowledge"],
+        pyqCount: 50
+      },
+      {
+        id: "ae_je_ga_02",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Awareness)",
+        subject: "General Awareness",
+        chapter: "Indian Polity & Governance",
+        topic: "Constitution, Fundamental Rights & Administrative Setup",
+        subtopic: "Preamble, Articles, Parliament, Judiciary & Local Self Government",
+        title: "Indian Polity & Constitutional Framework",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 6,
+        difficulty: "Medium",
+        recommendedBooks: ["Indian Polity by M. Laxmikanth"],
+        pyqCount: 45
+      },
+      {
+        id: "ae_je_ga_03",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Awareness)",
+        subject: "General Awareness",
+        chapter: "History & Indian National Movement",
+        topic: "Ancient, Medieval & Freedom Struggle",
+        subtopic: "Indus Valley, Maurya, Gupta, Mughal Architecture & Freedom Movement 1857-1947",
+        title: "Indian History & National Movement",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 6,
+        difficulty: "Medium",
+        recommendedBooks: ["A Brief History of Modern India by Spectrum"],
+        pyqCount: 40
+      },
+      {
+        id: "ae_je_ga_04",
+        exam: "SSC_JE",
+        paper: "Paper 1 (General Awareness)",
+        subject: "General Awareness",
+        chapter: "Geography & Environment",
+        topic: "Physical Geography of India & Ecological Balance",
+        subtopic: "Rivers, Mountains, Minerals, Climate, National Parks & State Resources",
+        title: "Indian Geography, Ecology & Natural Resources",
+        stage: "Tier-1",
+        weightage: "High",
+        estimatedHours: 6,
+        difficulty: "Medium",
+        recommendedBooks: ["Geography of India by Majid Husain", "NCERT Class 11 Geography"],
+        pyqCount: 45
+      }
+    ];
+    ALL_AE_JE_SYLLABUS = [
+      ...SSC_JE_CIVIL_SYLLABUS,
+      ...SSC_JE_ELECTRICAL_SYLLABUS,
+      ...SSC_JE_MECHANICAL_SYLLABUS,
+      ...SSC_JE_REASONING_SYLLABUS,
+      ...SSC_JE_GA_SYLLABUS
+    ];
+  }
+});
+
 // src/data/academicData.ts
 var INITIAL_SYLLABUS_HIERARCHY, INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK;
 var init_academicData = __esm({
   "src/data/academicData.ts"() {
     init_jeeSyllabusData();
+    init_aeJeSyllabusData();
     INITIAL_SYLLABUS_HIERARCHY = [
       ...JEE_MAIN_SYLLABUS,
       ...JEE_ADVANCED_SYLLABUS,
+      ...ALL_AE_JE_SYLLABUS,
       {
         id: "u1-1",
         exam: "UPSC_CSE",
@@ -4765,8 +5511,8 @@ var init_shared = __esm({
         demoDurationMinutes: 10
       }
     };
-    APP_VERSION = process.env.APP_VERSION || "3.0.0";
-    APP_VERSION_CODE = 24;
+    APP_VERSION = process.env.APP_VERSION || "3.1.0";
+    APP_VERSION_CODE = 25;
     lastGatewaySettingsSync = 0;
     GATEWAY_SETTINGS_CACHE_MS = 1e4;
     serverOrdersDb = /* @__PURE__ */ new Map();
@@ -6197,12 +6943,52 @@ var init_examList = __esm({
       { id: "SSC_CHSL", label: "SSC CHSL \u2014 Combined Higher Secondary", category: "SSC" },
       { id: "SSC_MTS", label: "SSC MTS", category: "SSC" },
       { id: "SSC_GD", label: "SSC GD", category: "SSC" },
+      { id: "SSC_JE", label: "SSC JE \u2014 Junior Engineer (Civil / Electrical / Mechanical)", category: "SSC" },
+      { id: "SSC_JE_CIVIL", label: "SSC JE Civil \u2014 Junior Engineer (Civil & Structural)", category: "Engineering" },
+      { id: "SSC_JE_ELECTRICAL", label: "SSC JE Electrical \u2014 Junior Engineer (Electrical)", category: "Engineering" },
+      { id: "SSC_JE_MECHANICAL", label: "SSC JE Mechanical \u2014 Junior Engineer (Mechanical)", category: "Engineering" },
+      { id: "UPPSC_AE", label: "UPPSC AE \u2014 Combined State Engineering Services (Assistant Engineer)", category: "Engineering" },
+      { id: "UPSSSC_JE", label: "UPSSSC JE \u2014 Combined Junior Engineer Examination", category: "Engineering" },
+      { id: "UPPCL_AE_JE", label: "UPPCL AE / JE \u2014 UP Power Corporation Recruitment", category: "Engineering" },
+      { id: "BPSC_AE", label: "BPSC AE \u2014 Bihar Assistant Engineer Examination", category: "Engineering" },
+      { id: "BTSC_JE", label: "BTSC JE \u2014 Bihar Technical Service Commission Junior Engineer", category: "Engineering" },
+      { id: "BSPHCL_AE_JE", label: "BSPHCL AE / JE \u2014 Bihar State Power Holding Company", category: "Engineering" },
+      { id: "MPPSC_AE", label: "MPPSC AE \u2014 Madhya Pradesh State Engineering Services", category: "Engineering" },
+      { id: "MP_SUB_ENGINEER", label: "MPESB Sub Engineer \u2014 MP Vyapam Junior Engineer (Civil/Elec/Mech)", category: "Engineering" },
+      { id: "RPSC_AEN", label: "RPSC AEN \u2014 Rajasthan Assistant Engineer Examination", category: "Engineering" },
+      { id: "RSMSSB_JE", label: "RSMSSB JE \u2014 Rajasthan Subordinate Junior Engineer (RSSB JE)", category: "Engineering" },
+      { id: "UKPSC_AE", label: "UKPSC AE \u2014 Uttarakhand Combined State Engineering (Assistant Engineer)", category: "Engineering" },
+      { id: "UKPSC_JE", label: "UKPSC JE \u2014 Uttarakhand Combined State Junior Engineer", category: "Engineering" },
+      { id: "MPSC_MES_AE", label: "MPSC MES AE \u2014 Maharashtra Engineering Services (Assistant Engineer)", category: "Engineering" },
+      { id: "BMC_MAHA_JE", label: "BMC / WRD / PWD Maharashtra Junior Engineer", category: "Engineering" },
+      { id: "MAHATRANSCO_AE_JE", label: "MahaTransco / MahaGenco AE & JE Examination", category: "Engineering" },
+      { id: "WBPSC_AE", label: "WBPSC AE \u2014 West Bengal Assistant Engineer Examination", category: "Engineering" },
+      { id: "WBPSC_JE", label: "WBPSC JE \u2014 West Bengal Junior Engineer Examination", category: "Engineering" },
+      { id: "HPSC_AE", label: "HPSC AE \u2014 Haryana Public Service Commission Assistant Engineer", category: "Engineering" },
+      { id: "HSSC_JE", label: "HSSC JE \u2014 Haryana Staff Selection Commission Junior Engineer", category: "Engineering" },
+      { id: "PPSC_AE", label: "PPSC AE \u2014 Punjab Public Service Commission Assistant Engineer", category: "Engineering" },
+      { id: "PSPCL_JE", label: "PSPCL JE \u2014 Punjab State Power Corporation Junior Engineer", category: "Engineering" },
+      { id: "JPSC_AE", label: "JPSC AE \u2014 Jharkhand Combined Assistant Engineer Examination", category: "Engineering" },
+      { id: "JSSC_JE", label: "JSSC JE \u2014 Jharkhand Diploma Level Competitive Exam (JDLCCE)", category: "Engineering" },
+      { id: "OPSC_AEE", label: "OPSC AEE \u2014 Odisha Assistant Executive Engineer (Civil/Mech/Elec)", category: "Engineering" },
+      { id: "OSSSC_JE", label: "OSSSC JE \u2014 Odisha Staff Selection Junior Engineer", category: "Engineering" },
+      { id: "GPSC_AE", label: "GPSC AE \u2014 Gujarat Public Service Commission Assistant Engineer", category: "Engineering" },
+      { id: "GSECL_GETCO_JE", label: "GSECL / GETCO Junior Engineer Vidyut Sahayak (Gujarat Power)", category: "Engineering" },
+      { id: "CGPSC_AE", label: "CGPSC AE \u2014 Chhattisgarh State Engineering Service (Assistant Engineer)", category: "Engineering" },
+      { id: "CG_VYAPAM_JE", label: "CG Vyapam Sub Engineer \u2014 Chhattisgarh Junior Engineer", category: "Engineering" },
+      { id: "APPSC_AEE", label: "APPSC AEE \u2014 Andhra Pradesh Assistant Executive Engineer & AE", category: "Engineering" },
+      { id: "TSPSC_AEE", label: "TSPSC AEE \u2014 Telangana Assistant Executive Engineer & AE", category: "Engineering" },
+      { id: "KPSC_AE_JE", label: "KPSC AE / JE \u2014 Karnataka PWD & Irrigation Assistant/Junior Engineer", category: "Engineering" },
+      { id: "TNPSC_CESE_AE", label: "TNPSC Combined Engineering Services (AE Civil/Electrical/Mech)", category: "Engineering" },
+      { id: "KERALA_PSC_AE", label: "Kerala PSC AE \u2014 Assistant Engineer (Civil/Electrical/Mechanical)", category: "Engineering" },
+      { id: "DSSSB_AE_JE", label: "DSSSB AE / JE \u2014 Delhi Subordinate Services Assistant & Junior Engineer", category: "Engineering" },
+      { id: "DDA_JE", label: "DDA JE \u2014 Delhi Development Authority Junior Engineer", category: "Engineering" },
       { id: "UPSC_CAPF", label: "UPSC CAPF" },
       { id: "UPPSC_PCS", label: "UPPSC PCS" },
       { id: "WBCS", label: "WBCS" },
       { id: "BPSC_PCS", label: "BPSC PCS" },
       { id: "RRB_NTPC", label: "RRB NTPC" },
-      { id: "RRB_JE", label: "RRB JE" },
+      { id: "RRB_JE", label: "RRB JE \u2014 Railway Junior Engineer", category: "Engineering" },
       { id: "IBPS_PO", label: "IBPS PO" },
       { id: "SBI_PO", label: "SBI PO" },
       { id: "IBPS_CLERK", label: "IBPS Clerk" },
@@ -22708,8 +23494,19 @@ function normalizeExamIds(id) {
   if (upper.includes("SSC_CGL") || upper.includes("SSC-CGL")) {
     results.add("SSC_CGL");
   }
+  if (upper.includes("SSC_JE") || upper.includes("SSC-JE") || upper === "SSC_JE") {
+    results.add("SSC_JE");
+    results.add("SSC_JE_CIVIL");
+    results.add("SSC_JE_ELECTRICAL");
+    results.add("SSC_JE_MECHANICAL");
+  }
+  if (upper.includes("_JE") || upper.includes("_AE") || upper.includes("AEN") || upper.includes("AEE")) {
+    results.add(upper);
+    results.add(withUnderscoreUpper);
+  }
   if (upper.includes("RRB")) {
     results.add("RRB_NTPC");
+    results.add("RRB_JE");
   }
   if (upper.includes("CTET")) {
     results.add("CTET");
@@ -23278,6 +24075,64 @@ Object.assign(UNIVERSAL_EXAM_CONFIGS, {
                 totalMarks: 50,
                 markingScheme: { positive: 2, negative: 0.5, unattempted: 0 },
                 allowedQuestionTypes: ["SINGLE_CORRECT_MCQ"],
+                navigationRule: "FREE_NAVIGATION"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  // ── 6b. SSC JE (Junior Engineer Civil / Electrical / Mechanical) ──────────
+  SSC_JE: {
+    examId: "SSC_JE",
+    examName: "SSC JE \u2014 Junior Engineer (Civil / Electrical / Mechanical)",
+    conductingBody: "Staff Selection Commission (SSC)",
+    category: "GOVERNMENT_RECRUITMENT",
+    version: "2026-SSC-JE-v1",
+    availableLanguages: ["English", "Hindi"],
+    defaultLanguage: "English",
+    normalizationRule: "linear_interpolation",
+    stages: [
+      {
+        stageId: "paper1",
+        stageName: "Paper-1 (Computer Based Examination)",
+        papers: [
+          {
+            paperId: "ssc_je_p1",
+            paperName: "Paper-1 CBT",
+            totalDurationMinutes: 120,
+            // 2 Hours
+            timingModel: "GLOBAL_TIMER",
+            sections: [
+              {
+                id: "reasoning",
+                name: "General Intelligence and Reasoning",
+                subject: "General Intelligence & Reasoning",
+                questionCount: 50,
+                totalMarks: 50,
+                markingScheme: { positive: 1, negative: 0.25, unattempted: 0 },
+                allowedQuestionTypes: ["SINGLE_CORRECT_MCQ"],
+                navigationRule: "FREE_NAVIGATION"
+              },
+              {
+                id: "general_awareness",
+                name: "General Awareness",
+                subject: "General Awareness",
+                questionCount: 50,
+                totalMarks: 50,
+                markingScheme: { positive: 1, negative: 0.25, unattempted: 0 },
+                allowedQuestionTypes: ["SINGLE_CORRECT_MCQ"],
+                navigationRule: "FREE_NAVIGATION"
+              },
+              {
+                id: "general_engineering",
+                name: "General Engineering (Civil / Electrical / Mechanical)",
+                subject: "Engineering",
+                questionCount: 100,
+                totalMarks: 100,
+                markingScheme: { positive: 1, negative: 0.25, unattempted: 0 },
+                allowedQuestionTypes: ["SINGLE_CORRECT_MCQ", "NUMERICAL"],
                 navigationRule: "FREE_NAVIGATION"
               }
             ]
@@ -24012,6 +24867,66 @@ function getUniversalExamConfig(examId) {
   const isRailway = normalizedKey.includes("RRB") || normalizedKey.includes("RAILWAY");
   const isPolice = normalizedKey.includes("POLICE") || normalizedKey.includes("CONSTABLE") || normalizedKey.includes("SI");
   const isMedicalNursing = normalizedKey.includes("NURSING") || normalizedKey.includes("ANM") || normalizedKey.includes("GNM") || normalizedKey.includes("PNST");
+  const isAeJe = normalizedKey.includes("_JE") || normalizedKey.includes("_AE") || normalizedKey.includes("AEN") || normalizedKey.includes("AEE") || normalizedKey.includes("SUB_ENGINEER");
+  if (isAeJe) {
+    const branchName = normalizedKey.includes("CIVIL") ? "Civil Engineering" : normalizedKey.includes("ELEC") ? "Electrical Engineering" : normalizedKey.includes("MECH") ? "Mechanical Engineering" : "Engineering Core & Technical Discipline";
+    return {
+      examId: normalizedKey,
+      examName: `${normalizedKey.replace(/_/g, " ")} Examination`,
+      conductingBody: "State Public Service Commission / Recruitment Board",
+      category: "GOVERNMENT_RECRUITMENT",
+      version: "2026-AE-JE-STANDARD",
+      availableLanguages: ["English", "Hindi"],
+      defaultLanguage: "English",
+      normalizationRule: "linear_interpolation",
+      stages: [
+        {
+          stageId: "stage1",
+          stageName: "Computer Based Test / Written Exam",
+          papers: [
+            {
+              paperId: `${normalizedKey.toLowerCase()}_p1`,
+              paperName: "Technical & General Paper",
+              totalDurationMinutes: 120,
+              timingModel: "GLOBAL_TIMER",
+              sections: [
+                {
+                  id: "technical_discipline",
+                  name: `Technical Section \u2014 ${branchName}`,
+                  subject: branchName,
+                  questionCount: 100,
+                  totalMarks: 100,
+                  markingScheme: { positive: 1, negative: 0.25, unattempted: 0 },
+                  allowedQuestionTypes: ["SINGLE_CORRECT_MCQ", "NUMERICAL"],
+                  navigationRule: "FREE_NAVIGATION"
+                },
+                {
+                  id: "general_reasoning",
+                  name: "General Intelligence & Reasoning",
+                  subject: "Reasoning",
+                  questionCount: 50,
+                  totalMarks: 50,
+                  markingScheme: { positive: 1, negative: 0.25, unattempted: 0 },
+                  allowedQuestionTypes: ["SINGLE_CORRECT_MCQ"],
+                  navigationRule: "FREE_NAVIGATION"
+                },
+                {
+                  id: "general_studies",
+                  name: "General Awareness & State GK",
+                  subject: "General Knowledge",
+                  questionCount: 50,
+                  totalMarks: 50,
+                  markingScheme: { positive: 1, negative: 0.25, unattempted: 0 },
+                  allowedQuestionTypes: ["SINGLE_CORRECT_MCQ"],
+                  navigationRule: "FREE_NAVIGATION"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+  }
   if (isBanking) {
     return {
       examId: normalizedKey,
@@ -26234,11 +27149,11 @@ app.get("/api/version", (_req, res) => {
   res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.json({
     version: APP_VERSION,
-    versionCode: APP_VERSION_CODE || 24,
+    versionCode: APP_VERSION_CODE || 25,
     apkDownloadUrl: "https://studyride.in/studyride.apk",
     directApkUrl: "https://studyride.in/studyride.apk",
-    releaseDate: "October 3, 2026",
-    releaseNotes: "v3.0.0: Unified Syllabus Tracker (combining Classic Checklist with Dynamic Exam Forecast Engine, Spaced Revision, What-If Simulator & 5-Dimension Mastery), 243K+ Full Exam Question Banks, and APK Updater.",
+    releaseDate: "October 4, 2026",
+    releaseNotes: "v3.1.0: Duolingo-grade Gamified Learning Path, original Veer Falcon mascot, offline sound effects engine, 5-hearts system, and 33 new SSC & State AE/JE exams with 10,000+ authentic questions.",
     timestamp: (/* @__PURE__ */ new Date()).toISOString()
   });
 });

@@ -41,26 +41,28 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* HEADER BANNER */}
       <SlideUp>
-        <div className="bg-gradient-to-r from-amber-600 via-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="bg-[#15181F] border border-[#2A2F3A] rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-amber-300 font-semibold text-xs mb-1">
-              <Trophy className="w-4 h-4 text-amber-300" />
+            <div className="flex items-center space-x-2 text-[#FF9600] font-black text-xs mb-1">
+              <Trophy className="w-4 h-4 text-[#FF9600]" />
               <span>ALL INDIA CANDIDATE RANKINGS</span>
             </div>
-            <h1 className="text-2xl font-bold">National Leaderboard & Rank Benchmark</h1>
-            <p className="text-indigo-200 text-sm mt-1">
+            <h1 className="text-2xl font-black text-white">National Leaderboard & Rank Benchmark</h1>
+            <p className="text-[#9CA3AF] text-sm mt-1">
               Benchmark your mock test score, percentile, and XP against top aspirants nationwide.
             </p>
           </div>
 
           {/* SCOPE TABS */}
-          <div className="flex flex-wrap gap-2 bg-black/20 p-1.5 rounded-xl border border-white/10">
+          <div className="flex flex-wrap gap-2 bg-[#0F1115] p-1.5 rounded-xl border border-[#2A2F3A]">
             {(['global', 'state', 'batch', 'subject'] as const).map((sc) => (
               <PressFeedback key={sc}>
                 <button
                   onClick={() => setScope(sc)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all capitalize ${
-                    scope === sc ? 'bg-amber-400 text-slate-950 shadow-md' : 'text-indigo-200 hover:text-white'
+                  className={`px-3.5 py-1.5 text-xs font-black rounded-lg transition-all capitalize cursor-pointer ${
+                    scope === sc
+                      ? 'bg-[#FF9600] text-[#0B2300] shadow-sm'
+                      : 'text-[#9CA3AF] hover:text-white hover:bg-[#1A1D24]'
                   }`}
                 >
                   {sc} Rank
@@ -76,37 +78,37 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
         <SlideUp>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
             {/* SILVER #2 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col items-center text-center space-y-2 order-2 md:order-1 transition-all hover:scale-[1.02]">
-              <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center border-2 border-slate-300 font-extrabold text-slate-600 text-lg">
+            <div className="bg-[#15181F] rounded-2xl border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] p-5 shadow-sm flex flex-col items-center text-center space-y-2 order-2 md:order-1 transition-all hover:scale-[1.02]">
+              <div className="w-12 h-12 bg-[#0F1115] rounded-xl flex items-center justify-center border-2 border-slate-400 font-extrabold text-slate-300 text-lg">
                 🥈 #2
               </div>
-              <h3 className="font-bold text-slate-900">{leaderboard[1].userName}</h3>
-              <div className="text-xs text-slate-500">{leaderboard[1].stateName} • {leaderboard[1].batchName}</div>
-              <div className="px-3 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold">
+              <h3 className="font-extrabold text-[#F3F4F6]">{leaderboard[1].userName}</h3>
+              <div className="text-xs text-[#9CA3AF]">{leaderboard[1].stateName} • {leaderboard[1].batchName}</div>
+              <div className="px-3 py-1 bg-[#0F1115] text-[#F3F4F6] border border-[#2A2F3A] rounded-lg text-xs font-black font-mono">
                 <CountUp value={leaderboard[1].score} /> Marks ({leaderboard[1].percentile}%)
               </div>
             </div>
 
             {/* GOLD #1 */}
-            <div className="bg-gradient-to-b from-amber-500/10 via-white to-white rounded-2xl border-2 border-amber-400 p-6 shadow-md flex flex-col items-center text-center space-y-2 order-1 md:order-2 transform md:-translate-y-2 transition-all hover:scale-[1.03]">
-              <div className="w-14 h-14 bg-amber-400 rounded-full flex items-center justify-center border-2 border-amber-500 font-extrabold text-slate-950 text-xl shadow-lg">
+            <div className="bg-[#1A1D24] rounded-2xl border-2 border-[#FF9600] border-b-4 border-b-[#E08500] p-6 shadow-lg shadow-[#FF9600]/10 flex flex-col items-center text-center space-y-2 order-1 md:order-2 transform md:-translate-y-2 transition-all hover:scale-[1.03]">
+              <div className="w-14 h-14 bg-[#FF9600] rounded-xl flex items-center justify-center border-2 border-amber-300 font-black text-[#0B2300] text-xl shadow-lg">
                 👑 #1
               </div>
-              <h3 className="font-extrabold text-slate-900 text-lg">{leaderboard[0].userName}</h3>
-              <div className="text-xs text-amber-700 font-semibold">{leaderboard[0].stateName} • {leaderboard[0].batchName}</div>
-              <div className="px-4 py-1.5 bg-amber-400 text-slate-950 rounded-xl text-xs font-black shadow-sm">
+              <h3 className="font-black text-white text-lg">{leaderboard[0].userName}</h3>
+              <div className="text-xs text-[#FF9600] font-bold">{leaderboard[0].stateName} • {leaderboard[0].batchName}</div>
+              <div className="px-4 py-1.5 bg-[#FF9600] text-[#0B2300] rounded-xl text-xs font-black shadow-sm font-mono">
                 <CountUp value={leaderboard[0].score} /> Marks ({leaderboard[0].percentile}%)
               </div>
             </div>
 
             {/* BRONZE #3 */}
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col items-center text-center space-y-2 order-3 transition-all hover:scale-[1.02]">
-              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center border-2 border-amber-700 font-extrabold text-amber-900 text-lg">
+            <div className="bg-[#15181F] rounded-2xl border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] p-5 shadow-sm flex flex-col items-center text-center space-y-2 order-3 transition-all hover:scale-[1.02]">
+              <div className="w-12 h-12 bg-[#0F1115] rounded-xl flex items-center justify-center border-2 border-amber-700 font-extrabold text-amber-500 text-lg">
                 🥉 #3
               </div>
-              <h3 className="font-bold text-slate-900">{leaderboard[2].userName}</h3>
-              <div className="text-xs text-slate-500">{leaderboard[2].stateName} • {leaderboard[2].batchName}</div>
-              <div className="px-3 py-1 bg-slate-100 text-slate-800 rounded-lg text-xs font-bold">
+              <h3 className="font-extrabold text-[#F3F4F6]">{leaderboard[2].userName}</h3>
+              <div className="text-xs text-[#9CA3AF]">{leaderboard[2].stateName} • {leaderboard[2].batchName}</div>
+              <div className="px-3 py-1 bg-[#0F1115] text-[#F3F4F6] border border-[#2A2F3A] rounded-lg text-xs font-black font-mono">
                 <CountUp value={leaderboard[2].score} /> Marks ({leaderboard[2].percentile}%)
               </div>
             </div>
@@ -116,17 +118,17 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
 
       {/* SEARCH BAR & FULL RANKINGS TABLE */}
       <SlideUp>
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+        <div className="bg-[#15181F] rounded-2xl border border-[#2A2F3A] p-6 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg font-bold text-slate-900">Full Ranking Table</h3>
+            <h3 className="text-lg font-black text-white">Full Ranking Table</h3>
             <div className="relative w-full sm:w-64">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search candidate or state..."
-                className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500"
+                className="w-full pl-9 pr-3 py-2 bg-[#0F1115] border border-[#2A2F3A] rounded-xl text-xs text-white placeholder-[#6B7280] focus:outline-none focus:border-[#FF9600]"
               />
             </div>
           </div>
@@ -134,14 +136,14 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
           {loading ? (
             <div className="space-y-3 py-4">
               {[1, 2, 3, 4, 5].map(i => (
-                <SkeletonShimmer key={i} className="h-12 w-full rounded-xl" />
+                <SkeletonShimmer key={i} className="h-12 w-full rounded-xl bg-[#0F1115]" />
               ))}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase bg-slate-50">
+                  <tr className="border-b border-[#2A2F3A] text-[11px] font-bold text-[#9CA3AF] uppercase bg-[#0F1115]/50">
                     <th className="py-3 px-4">Rank</th>
                     <th className="py-3 px-4">Candidate Name</th>
                     <th className="py-3 px-4">State / Location</th>
@@ -151,28 +153,28 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
                     <th className="py-3 px-4">XP</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 text-xs">
+                <tbody className="divide-y divide-[#2A2F3A]/60 text-xs">
                   {filtered.length > 0 ? (
                     filtered.map((item) => (
-                      <tr key={item.userId} className="hover:bg-slate-50/80 transition-all font-medium text-slate-800">
-                        <td className="py-3 px-4 font-extrabold text-slate-900">#{item.rank}</td>
-                        <td className="py-3 px-4 font-bold text-indigo-900">{item.userName}</td>
-                        <td className="py-3 px-4 text-slate-600">{item.stateName}</td>
-                        <td className="py-3 px-4 text-slate-600">{item.batchName}</td>
-                        <td className="py-3 px-4 font-extrabold text-emerald-600">{item.score}</td>
-                        <td className="py-3 px-4 font-bold text-purple-600">{item.percentile}%</td>
-                        <td className="py-3 px-4 text-amber-600 font-bold">{item.xp} XP</td>
+                      <tr key={item.userId} className="hover:bg-[#1A1D24] transition-all font-medium text-[#F3F4F6]">
+                        <td className="py-3 px-4 font-black text-white font-mono">#{item.rank}</td>
+                        <td className="py-3 px-4 font-bold text-[#1CB0F6]">{item.userName}</td>
+                        <td className="py-3 px-4 text-[#9CA3AF]">{item.stateName}</td>
+                        <td className="py-3 px-4 text-[#9CA3AF]">{item.batchName}</td>
+                        <td className="py-3 px-4 font-black text-[#58CC02] font-mono">{item.score}</td>
+                        <td className="py-3 px-4 font-bold text-[#1CB0F6] font-mono">{item.percentile}%</td>
+                        <td className="py-3 px-4 text-[#FF9600] font-black font-mono">{item.xp} XP</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-500">
+                      <td colSpan={7} className="py-12 text-center text-[#9CA3AF]">
                         <div className="flex flex-col items-center justify-center space-y-3">
-                          <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-[#FF9600]/10 text-[#FF9600] flex items-center justify-center">
                             <Trophy className="w-6 h-6" />
                           </div>
-                          <div className="font-bold text-slate-700 text-sm">No candidate rankings found</div>
-                          <p className="text-xs text-slate-400 max-w-sm">
+                          <div className="font-bold text-white text-sm">No candidate rankings found</div>
+                          <p className="text-xs text-[#9CA3AF] max-w-sm">
                             Be the first aspirant in this scope to complete a CBT mock exam and claim Rank #1!
                           </p>
                         </div>

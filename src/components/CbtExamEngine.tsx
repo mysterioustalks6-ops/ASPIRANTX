@@ -2779,18 +2779,18 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                         id={`cbt-option-${optIdx}`}
                         data-testid={`cbt-option-${optIdx}`}
                         onClick={() => handleSelectOption(optIdx)}
-                        className={`w-full p-3 sm:p-4 text-left rounded-xl border transition-all flex items-start space-x-3 cursor-pointer ${
+                        className={`w-full p-3.5 sm:p-4 min-h-[52px] text-left rounded-xl border transition-all flex items-center space-x-3 cursor-pointer active:border-b-0 active:translate-y-1 ${
                           isSelected
-                            ? 'bg-sky-50 border-sky-600 text-slate-950 font-semibold ring-2 ring-sky-200'
-                            : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50 hover:border-slate-300'
+                            ? 'bg-[#1CB0F6]/15 border-[#1CB0F6] border-b-4 border-b-[#1899D6] text-slate-900 font-bold'
+                            : 'bg-white border-slate-200 border-b-4 border-b-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-300'
                         }`}
                       >
-                        <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border text-xs font-bold flex items-center justify-center shrink-0 mt-0.5 ${
-                          isSelected ? 'bg-sky-600 text-white border-sky-600' : 'bg-slate-100 text-slate-600 border-slate-300'
+                        <span className={`w-7 h-7 rounded-lg border text-xs font-black flex items-center justify-center shrink-0 ${
+                          isSelected ? 'bg-[#1CB0F6] text-[#052840] border-[#1899D6]' : 'bg-slate-100 text-slate-600 border-slate-200'
                         }`}>
                           {String.fromCharCode(65 + optIdx)}
                         </span>
-                        <span className="text-xs sm:text-sm pt-0.5 leading-relaxed break-words">{optionLabel}</span>
+                        <span className="text-xs sm:text-sm leading-relaxed break-words">{optionLabel}</span>
                       </button>
                     );
                   })}
