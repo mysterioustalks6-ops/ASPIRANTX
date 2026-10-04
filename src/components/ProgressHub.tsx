@@ -26,6 +26,8 @@ import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { loadCompletedSubtopicIds } from '../lib/syllabusStorage';
 import { loadStudySessions } from '../lib/gamification';
+import { soundFx } from '../lib/soundEffects';
+import { AspirantMascot } from './duolingo/AspirantMascot';
 
 const LeaderboardView = React.lazy(() => import('./LeaderboardView').then(m => ({ default: m.LeaderboardView })));
 const WeaknessDetector = React.lazy(() => import('./WeaknessDetector').then(m => ({ default: m.WeaknessDetector })));
@@ -210,13 +212,13 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
         </div>
 
         {/* Sub-Tab Navigation Bar */}
-        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-900 border border-slate-800 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-[#0F1115] border border-[#2A2F3A] self-start sm:self-auto">
           <button
-            onClick={() => setSubTab('readiness')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
+            onClick={() => { soundFx.playTap(); setSubTab('readiness'); }}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-0.5 ${
               subTab === 'readiness'
-                ? 'bg-emerald-500 text-slate-950 border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 shadow-md shadow-emerald-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-[#58CC02] text-[#0B2300] border-[#3C8801] shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
             }`}
           >
             <span>🎯</span>
@@ -224,11 +226,11 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
           </button>
 
           <button
-            onClick={() => setSubTab('weakness')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
+            onClick={() => { soundFx.playTap(); setSubTab('weakness'); }}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-0.5 ${
               subTab === 'weakness'
-                ? 'bg-rose-500 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 shadow-md shadow-rose-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-[#FF4B4B] text-white border-[#C72323] shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
             }`}
           >
             <span>🔍</span>
@@ -236,11 +238,11 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
           </button>
 
           <button
-            onClick={() => setSubTab('leaderboard')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
+            onClick={() => { soundFx.playTap(); setSubTab('leaderboard'); }}
+            className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 border-b-[3px] active:border-b-0 active:translate-y-0.5 ${
               subTab === 'leaderboard'
-                ? 'bg-sky-500 text-slate-950 border-b-4 border-sky-700 active:border-b-0 active:translate-y-1 shadow-md shadow-sky-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                ? 'bg-[#1CB0F6] text-[#052840] border-[#137BAE] shadow-md'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60 border-transparent'
             }`}
           >
             <span>🏆</span>
@@ -254,6 +256,26 @@ export const ProgressHub: React.FC<ProgressHubProps> = ({
       ══════════════════════════════════════════════════════════════════ */}
       {subTab === 'readiness' && (
         <div className="space-y-6">
+          {/* Veer Mascot Motivation Quote */}
+          <div 
+            onClick={() => soundFx.playChestOpen()}
+            className="p-4 rounded-3xl bg-gradient-to-r from-[#122A1E] via-[#1A1D24] to-[#122030] border-2 border-[#58CC02]/40 border-b-[6px] border-b-[#3C8801] flex items-center justify-between gap-4 cursor-pointer hover:border-[#58CC02] transition-all select-none shadow-xl"
+          >
+            <div className="flex items-center gap-3.5">
+              <AspirantMascot size="sm" state="happy" />
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/30">
+                  Veer AIR Radar
+                </span>
+                <p className="text-xs sm:text-sm font-black text-white mt-1">
+                  "Har mock test ek real opportunity hai. Accuracy {cbtAccuracy}% ko 85%+ par push karo!"
+                </p>
+              </div>
+            </div>
+            <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-[#58CC02]/20 text-[#58CC02] text-xs font-black">
+              Keep Grinding 🚀
+            </span>
+          </div>
           {/* AI SCORE PREDICTOR & NATIONAL RANK CARD */}
           <div className="p-6 sm:p-7 rounded-3xl bg-[#1A1D24] border-2 border-slate-800 border-b-4 border-b-slate-900 shadow-xl relative overflow-hidden">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">

@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '3.2.0',
-  versionCode: 26,
+  version: '3.2.1',
+  versionCode: 27,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
   releaseDate: 'October 4, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v3.2.0: Authentic Duolingo-Native Gamified Learning Path with S-curve stepping stones, animated Veer companion, lesson popovers, energy hearts HUD, and 33 AE/JE exams.',
+  releaseNotes: 'v3.2.1: Complete Duolingo-Grade Interface Transformation across Syllabus Quests, Practice Hub Arena, National Duolingo Leagues, and Tactile 3D Tools.',
 };

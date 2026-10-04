@@ -144,11 +144,11 @@ app.get('/api/version', (_req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.json({
     version: APP_VERSION,
-    versionCode: Shared.APP_VERSION_CODE || 26,
+    versionCode: Shared.APP_VERSION_CODE || 27,
     apkDownloadUrl: 'https://studyride.in/studyride.apk',
     directApkUrl: 'https://studyride.in/studyride.apk',
     releaseDate: 'October 4, 2026',
-    releaseNotes: 'v3.2.0: Authentic Duolingo-Native Gamified Learning Path with S-curve stepping stones, animated Veer companion, lesson popovers, energy hearts HUD, and 33 AE/JE exams.',
+    releaseNotes: 'v3.2.1: Complete Duolingo-Grade Interface Transformation across Syllabus Quests, Practice Hub Arena, National Duolingo Leagues, and Tactile 3D Tools.',
     timestamp: new Date().toISOString()
   });
 });

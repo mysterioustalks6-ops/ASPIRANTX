@@ -967,10 +967,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               <button
                 onClick={() => { soundFx.playTap(); setSelectedSubjectFilter('ALL'); }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:translate-y-0.5 ${
                   selectedSubjectFilter === 'ALL'
-                    ? 'bg-[#58CC02] text-[#0B2300] shadow-sm border-b-2 border-[#46A302]'
-                    : 'bg-[#15181F] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white'
+                    ? 'bg-[#58CC02] text-[#0B2300] shadow-md border-b-[4px] border-[#3C8801] active:border-b-0'
+                    : 'bg-[#15181F] border border-[#2A2F3A] border-b-[3px] border-b-[#1A1D24] text-[#9CA3AF] hover:text-white'
                 }`}
               >
                 <span>All Subjects</span>
@@ -982,10 +982,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 <button
                   key={subj.name}
                   onClick={() => { soundFx.playTap(); setSelectedSubjectFilter(subj.name); }}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:scale-95 ${
+                  className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:translate-y-0.5 ${
                     selectedSubjectFilter === subj.name
-                      ? 'bg-[#1CB0F6] text-[#052840] shadow-sm border-b-2 border-[#1899D6]'
-                      : 'bg-[#15181F] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white'
+                      ? 'bg-[#1CB0F6] text-[#052840] shadow-md border-b-[4px] border-[#137BAE] active:border-b-0'
+                      : 'bg-[#15181F] border border-[#2A2F3A] border-b-[3px] border-b-[#1A1D24] text-[#9CA3AF] hover:text-white'
                   }`}
                 >
                   <span>{subj.name}</span>
@@ -998,7 +998,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           )}
 
           {/* 2. Compact Search & Filter Toolbar */}
-          <div className="p-2.5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex flex-col sm:flex-row items-center justify-between gap-2.5">
+          <div className="p-3 rounded-2xl bg-[#15181F] border-2 border-[#2A2F3A] border-b-[4px] border-b-[#1A1D24] flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-md">
             {/* Search Input */}
             <div className="relative w-full sm:flex-1">
               <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -1007,7 +1007,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 placeholder="Search chapters or topics..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-7 py-1.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-xs text-white placeholder-[#6B7280] outline-none focus:border-[#1CB0F6] transition"
+                className="w-full pl-9 pr-7 py-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-xs text-white placeholder-[#6B7280] outline-none focus:border-[#1CB0F6] transition"
               />
               {searchQuery && (
                 <button 
@@ -1025,7 +1025,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 <select
                   value={activeStageFilter}
                   onChange={e => setActiveStageFilter(e.target.value)}
-                  className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-1.5 outline-none cursor-pointer"
+                  className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
                 >
                   {stages.map(st => (
                     <option key={st} value={st}>{st}</option>
@@ -1036,7 +1036,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               <select
                 value={masteryFilter}
                 onChange={e => setMasteryFilter(e.target.value as any)}
-                className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-1.5 outline-none cursor-pointer"
+                className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
               >
                 <option value="All">All Status</option>
                 <option value="Pending">Pending Only</option>
@@ -1048,7 +1048,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
               <button
                 onClick={() => toggleExpandAll(filteredTopics)}
-                className="p-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white text-xs font-bold shrink-0 cursor-pointer"
+                className="p-2.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white text-xs font-bold shrink-0 cursor-pointer"
                 title="Expand or collapse all chapters"
               >
                 <ChevronDown className="w-3.5 h-3.5" />
@@ -1056,7 +1056,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
               <button
                 onClick={() => setIsAddCustomTopicOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-[#1CB0F6] hover:bg-[#1899D6] text-xs font-black text-[#052840] shrink-0 cursor-pointer flex items-center gap-1 shadow-sm border-b-2 border-[#1899D6]"
+                className="px-3.5 py-2 rounded-xl bg-[#1CB0F6] hover:bg-[#1899D6] text-xs font-black text-[#052840] shrink-0 cursor-pointer flex items-center gap-1 shadow-sm border-b-[3px] border-[#137BAE] active:border-b-0 active:translate-y-0.5"
                 title="Add your own custom chapter or topic"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -1066,9 +1066,9 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           </div>
 
           {/* 3. CLEAN & CLEAR CHAPTER TOPIC CARDS ── */}
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {filteredTopics.length === 0 ? (
-              <div className="p-10 text-center rounded-2xl bg-[#15181F] border border-[#2A2F3A]">
+              <div className="p-10 text-center rounded-3xl bg-[#15181F] border border-[#2A2F3A]">
                 <BookOpen className="w-10 h-10 text-[#6B7280] mx-auto mb-2" />
                 <p className="text-[#F3F4F6] font-bold text-sm">No chapters match your filter</p>
                 <p className="text-[#9CA3AF] text-xs mt-1">Try resetting the search query or status filter.</p>
@@ -1087,7 +1087,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     return (
                       <div
                         key={topic.id}
-                        className="p-4 rounded-2xl bg-[#15181F] border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                        className="p-4 rounded-3xl bg-[#15181F] border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
@@ -1136,67 +1136,71 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     <div
                       key={topic.id}
                       id={`topic-card-${topic.id}`}
-                      className={`rounded-2xl border transition-all duration-150 overflow-hidden ${
+                      className={`rounded-3xl border-2 transition-all duration-150 overflow-hidden ${
                         isFullyCompleted
-                          ? 'bg-[#15181F]/70 border-[#2A2F3A] opacity-90'
+                          ? 'bg-[#15181F]/80 border-[#58CC02]/30 border-b-[5px] border-b-[#2A4D10]'
                           : isNextUp
-                          ? 'bg-[#1A1D24] border-[#58CC02]/80 shadow-md shadow-[#58CC02]/10 ring-1 ring-[#58CC02]/30'
+                          ? 'bg-[#1A1D24] border-[#58CC02] border-b-[6px] border-b-[#3C8801] shadow-xl shadow-[#58CC02]/10 ring-2 ring-[#58CC02]/30'
                           : isExpanded
-                          ? 'bg-[#1A1D24] border-[#3A404F] shadow-sm'
-                          : 'bg-[#15181F] border-[#2A2F3A] hover:border-[#3A404F]'
+                          ? 'bg-[#1A1D24] border-[#1CB0F6]/50 border-b-[6px] border-b-[#137BAE] shadow-md'
+                          : 'bg-[#15181F] border-[#2A2F3A] border-b-[5px] border-b-[#1A1D24] hover:border-[#3A404F]'
                       }`}
                     >
-                      {/* ── CARD HEADER (CLEAN, LOW TEXT, EASY TAP TARGET) ── */}
+                      {/* ── CARD HEADER (CLEAN DUOLINGO QUEST UNIT) ── */}
                       <div
                         onClick={() => toggleAccordion(topic.id)}
-                        className="p-3.5 sm:p-4 cursor-pointer select-none"
+                        className="p-4 sm:p-5 cursor-pointer select-none space-y-3"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            {/* Tactile Master Completion Checkbox */}
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            {/* Tactile 3D Master Completion Button */}
                             <button
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleParentTopicCompletion(topic.id);
                               }}
-                              className="w-7 h-7 rounded-lg flex items-center justify-center text-[#9CA3AF] hover:text-[#58CC02] transition shrink-0 cursor-pointer active:scale-90"
+                              className={`w-10 h-10 rounded-2xl flex items-center justify-center transition shrink-0 cursor-pointer shadow-md active:translate-y-0.5 ${
+                                isFullyCompleted
+                                  ? 'bg-[#58CC02] text-[#0B2300] border-b-[3px] border-[#3C8801]'
+                                  : 'bg-[#0F1115] text-[#9CA3AF] border-2 border-[#2A2F3A] border-b-[3px] hover:border-[#58CC02]'
+                              }`}
                               title={isFullyCompleted ? 'Mark topic as incomplete' : 'Mark topic as complete'}
                             >
                               {isFullyCompleted ? (
-                                <CheckCircle2 className="w-6 h-6 text-[#58CC02] fill-[#58CC02]/20" />
+                                <CheckCircle2 className="w-6 h-6 stroke-[3]" />
                               ) : (
-                                <Circle className="w-6 h-6 text-[#4B5563] hover:text-[#58CC02]" />
+                                <Circle className="w-5 h-5 text-[#4B5563]" />
                               )}
                             </button>
 
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className={`text-sm sm:text-base font-bold tracking-tight ${isFullyCompleted ? 'line-through text-[#9CA3AF]' : 'text-white'}`}>
+                                <h4 className={`text-sm sm:text-base font-black tracking-tight ${isFullyCompleted ? 'line-through text-[#9CA3AF]' : 'text-white'}`}>
                                   {topic.title}
                                 </h4>
 
                                 {isNextUp && !isFullyCompleted && (
-                                  <span className="px-2 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/30">
-                                    Next Up
+                                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#58CC02] text-[#0B2300] shadow-sm">
+                                    Active Quest ⚡
                                   </span>
                                 )}
 
                                 {topic.weightage === 'High' && (
-                                  <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                                    High Weightage
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                    High Weightage 🔥
                                   </span>
                                 )}
                               </div>
 
-                              <p className="text-[11px] text-[#9CA3AF] mt-0.5 flex items-center gap-1.5 flex-wrap">
-                                <span className="font-semibold text-[#1CB0F6]">{topic.category}</span>
+                              <p className="text-[11px] text-[#9CA3AF] mt-1 flex items-center gap-1.5 flex-wrap font-medium">
+                                <span className="font-bold text-[#1CB0F6]">{topic.category}</span>
                                 <span>•</span>
                                 <span>{subCount} Subtopics</span>
                                 {completedCount > 0 && (
                                   <>
                                     <span>•</span>
-                                    <span className="text-[#58CC02] font-semibold">{completedCount} Completed</span>
+                                    <span className="text-[#58CC02] font-black">{completedCount} Completed</span>
                                   </>
                                 )}
                               </p>
@@ -1205,32 +1209,46 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
                           {/* Right: Compact Percent Chip & Chevron */}
                           <div className="flex items-center gap-2.5 shrink-0">
-                            <span className="text-xs font-mono font-bold text-white px-2 py-0.5 rounded-lg bg-[#0F1115] border border-[#2A2F3A]">
+                            <span className={`text-xs font-mono font-black px-2.5 py-1 rounded-xl border ${
+                              isFullyCompleted 
+                                ? 'bg-[#58CC02]/20 text-[#58CC02] border-[#58CC02]/40' 
+                                : 'bg-[#0F1115] text-white border-[#2A2F3A]'
+                            }`}>
                               {topicPercentage}%
                             </span>
 
-                            <div className="p-1 rounded-lg text-[#9CA3AF]">
+                            <div className="p-1.5 rounded-xl text-[#9CA3AF] bg-[#0F1115] border border-[#2A2F3A]">
                               <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180 text-[#1CB0F6]' : ''}`} />
                             </div>
                           </div>
                         </div>
+
+                        {/* Duolingo Progress Bar */}
+                        <div className="w-full bg-[#0F1115] h-2 rounded-full overflow-hidden border border-[#2A2F3A]">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              isFullyCompleted ? 'bg-[#58CC02]' : 'bg-[#1CB0F6]'
+                            }`}
+                            style={{ width: `${topicPercentage}%` }}
+                          />
+                        </div>
                       </div>
 
                       {/* ── EXPANDED ACCORDION: MASTERY TOOLBAR + SUBTOPICS ── */}
-                      <AccordionTransition isOpen={isExpanded} className="border-t border-[#2A2F3A] bg-[#0F1115]/90 p-3.5 sm:p-4 space-y-3">
-                        {/* 5-Dimension Mastery Row (Only visible when studying this chapter!) */}
+                      <AccordionTransition isOpen={isExpanded} className="border-t-2 border-[#2A2F3A] bg-[#0F1115]/95 p-4 sm:p-5 space-y-4">
+                        {/* 5-Dimension Mastery Row with Tactile Buttons */}
                         <div 
                           onClick={(e) => e.stopPropagation()} 
-                          className="p-2.5 rounded-xl bg-[#15181F] border border-[#2A2F3A] flex items-center justify-between flex-wrap gap-2 text-xs"
+                          className="p-3 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex items-center justify-between flex-wrap gap-2 text-xs shadow-inner"
                         >
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {/* 1. Learning Pill */}
                             <button
                               onClick={() => toggleLearning(topic.id)}
-                              className={`px-2 py-1 rounded-lg font-bold text-[10px] transition flex items-center gap-1 cursor-pointer ${
+                              className={`px-2.5 py-1.5 rounded-xl font-black text-[10px] transition flex items-center gap-1 cursor-pointer border-b-[2px] active:border-b-0 active:translate-y-0.5 ${
                                 progress.learningStatus === 'completed'
-                                  ? 'bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/40'
-                                  : 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] hover:text-white'
+                                  ? 'bg-[#58CC02] text-[#0B2300] border-[#3C8801]'
+                                  : 'bg-[#0F1115] text-[#9CA3AF] border-[#2A2F3A] hover:text-white'
                               }`}
                               title="Concept understanding"
                             >
@@ -1241,12 +1259,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                             {/* 2. Practice Pill */}
                             <button
                               onClick={() => cyclePractice(topic.id)}
-                              className={`px-2 py-1 rounded-lg font-bold text-[10px] transition flex items-center gap-1 cursor-pointer ${
+                              className={`px-2.5 py-1.5 rounded-xl font-black text-[10px] transition flex items-center gap-1 cursor-pointer border-b-[2px] active:border-b-0 active:translate-y-0.5 ${
                                 progress.practiceStatus === 'completed'
-                                  ? 'bg-[#1CB0F6]/20 text-[#1CB0F6] border border-[#1CB0F6]/40'
+                                  ? 'bg-[#1CB0F6] text-[#052840] border-[#137BAE]'
                                   : progress.practiceStatus === 'in_progress'
-                                  ? 'bg-[#FF9600]/20 text-[#FF9600] border border-[#FF9600]/40'
-                                  : 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] hover:text-white'
+                                  ? 'bg-[#FF9600] text-[#0B2300] border-[#B86800]'
+                                  : 'bg-[#0F1115] text-[#9CA3AF] border-[#2A2F3A] hover:text-white'
                               }`}
                               title="Question solving practice"
                             >
@@ -1257,7 +1275,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                             {/* 3. PYQ % Button */}
                             <button
                               onClick={() => cyclePyq(topic.id)}
-                              className="px-2 py-1 rounded-lg font-bold text-[10px] bg-[#0F1115] hover:bg-[#1A1D24] text-[#9CA3AF] border border-[#2A2F3A] transition flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1.5 rounded-xl font-black text-[10px] bg-[#0F1115] hover:bg-[#1A1D24] text-[#9CA3AF] border border-[#2A2F3A] border-b-[2px] transition flex items-center gap-1 cursor-pointer active:translate-y-0.5"
                               title="Cycle PYQ coverage"
                             >
                               <Zap className="w-3 h-3 text-[#FF9600]" />
@@ -1267,10 +1285,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                             {/* 4. Spaced Revision Cycle */}
                             <button
                               onClick={() => cycleRevision(topic.id)}
-                              className={`px-2 py-1 rounded-lg font-bold text-[10px] transition flex items-center gap-1 cursor-pointer ${
+                              className={`px-2.5 py-1.5 rounded-xl font-black text-[10px] transition flex items-center gap-1 cursor-pointer border-b-[2px] active:border-b-0 active:translate-y-0.5 ${
                                 progress.revisionCycle > 0
-                                  ? 'bg-[#1CB0F6]/20 text-[#1CB0F6] border border-[#1CB0F6]/40'
-                                  : 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A] hover:text-white'
+                                  ? 'bg-purple-500 text-slate-950 border-purple-800'
+                                  : 'bg-[#0F1115] text-[#9CA3AF] border-[#2A2F3A] hover:text-white'
                               }`}
                               title="Advance revision cycle"
                             >
@@ -1280,17 +1298,17 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                           </div>
 
                           {/* 5. Mastery 1 to 5 Stars Rating */}
-                          <div className="flex items-center gap-1 bg-[#0F1115] px-2 py-1 rounded-lg border border-[#2A2F3A]">
-                            <span className="text-[10px] text-[#9CA3AF] font-bold mr-0.5">Stars:</span>
+                          <div className="flex items-center gap-1 bg-[#0F1115] px-2.5 py-1 rounded-xl border border-[#2A2F3A]">
+                            <span className="text-[10px] text-[#9CA3AF] font-bold mr-0.5">Rating:</span>
                             {([1, 2, 3, 4, 5] as MasteryRating[]).map((star) => (
                               <button
                                 key={star}
                                 type="button"
                                 onClick={() => setMasteryRating(topic.id, star)}
-                                className="cursor-pointer text-[#4B5563] hover:text-[#FF9600] transition"
+                                className="cursor-pointer text-[#4B5563] hover:text-[#FF9600] transition active:scale-125"
                               >
                                 <Star
-                                  className={`w-3 h-3 ${
+                                  className={`w-3.5 h-3.5 ${
                                     star <= progress.masteryLevel
                                       ? 'text-[#FF9600] fill-[#FF9600]'
                                       : 'text-[#3A404F]'
@@ -1301,11 +1319,16 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                           </div>
                         </div>
 
-                        {/* Subtopics Checklist */}
-                        <div className="space-y-1.5">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#9CA3AF] px-1 block">
-                            Sub-topics ({subList.length})
-                          </span>
+                        {/* Duolingo Gamified Subtopics Checklist */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[11px] font-black uppercase tracking-wider text-[#9CA3AF]">
+                              Lesson Checkpoints ({subList.length})
+                            </span>
+                            <span className="text-[10px] font-bold text-[#58CC02]">
+                              +10 XP each
+                            </span>
+                          </div>
 
                           {subList.map((sub, sIdx) => {
                             const isSubDone = completedSubtopicIds.has(sub.id) || sub.completed;
@@ -1313,34 +1336,45 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                               <div
                                 key={sub.id || sIdx}
                                 onClick={() => toggleSubtopicCompletion(sub.id)}
-                                className={`p-2.5 rounded-xl border transition flex items-center justify-between gap-2.5 cursor-pointer ${
+                                className={`p-3 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 cursor-pointer active:translate-y-0.5 ${
                                   isSubDone
-                                    ? 'bg-[#58CC02]/10 border-[#58CC02]/25 text-[#F3F4F6]'
-                                    : 'bg-[#15181F] border-[#2A2F3A] text-[#F3F4F6] hover:border-[#3A404F]'
+                                    ? 'bg-[#58CC02]/15 border-[#58CC02]/40 border-b-[3px] border-b-[#3C8801] text-white'
+                                    : 'bg-[#15181F] border-[#2A2F3A] border-b-[3px] border-b-[#1A1D24] text-[#F3F4F6] hover:border-[#1CB0F6]/50'
                                 }`}
                               >
-                                <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="flex items-center gap-3 min-w-0">
                                   <button
                                     type="button"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleSubtopicCompletion(sub.id);
                                     }}
-                                    className="text-[#9CA3AF] hover:text-[#58CC02] shrink-0"
+                                    className={`w-7 h-7 rounded-xl flex items-center justify-center transition shrink-0 ${
+                                      isSubDone 
+                                        ? 'bg-[#58CC02] text-[#0B2300] shadow-sm' 
+                                        : 'bg-[#0F1115] border border-[#3A404F] text-[#4B5563]'
+                                    }`}
                                   >
                                     {isSubDone ? (
-                                      <CheckCircle2 className="w-4 h-4 text-[#58CC02] fill-[#58CC02]/20" />
+                                      <Check className="w-4 h-4 stroke-[3]" />
                                     ) : (
-                                      <Circle className="w-4 h-4 text-[#4B5563]" />
+                                      <div className="w-2 h-2 rounded-full bg-[#3A404F]" />
                                     )}
                                   </button>
-                                  <span className={`text-xs font-medium ${isSubDone ? 'line-through text-[#9CA3AF]' : 'text-white'}`}>
+                                  <span className={`text-xs font-bold leading-snug ${isSubDone ? 'line-through text-[#9CA3AF]' : 'text-white'}`}>
                                     {sub.title}
                                   </span>
                                 </div>
 
-                                <div className="text-[10px] text-[#9CA3AF] shrink-0 font-mono">
-                                  ~{sub.estimatedHours || 2.5}h
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {isSubDone && (
+                                    <span className="text-[10px] font-black text-[#58CC02] bg-[#58CC02]/20 px-2 py-0.5 rounded-full font-mono">
+                                      +10 XP ✓
+                                    </span>
+                                  )}
+                                  <div className="text-[10px] text-[#9CA3AF] font-mono">
+                                    ~{sub.estimatedHours || 2.5}h
+                                  </div>
                                 </div>
                               </div>
                             );

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Award, Trophy, Medal, Search, Filter, Shield, Zap, Sparkles } from 'lucide-react';
+import { Award, Trophy, Medal, Search, Filter, Shield, Zap, Sparkles, Flame, ChevronUp, ChevronDown } from 'lucide-react';
 import { LeaderboardEntry, UserProfile } from '../types';
-import { FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, CountUp, SkeletonShimmer, EmptyState } from '../lib/animations';
+import { FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, CountUp, SkeletonShimmer, EmptyState, triggerConfetti } from '../lib/animations';
+import { soundFx } from '../lib/soundEffects';
+import { AspirantMascot } from './duolingo/AspirantMascot';
 
 interface LeaderboardViewProps {
   userProfile: UserProfile;
@@ -12,6 +14,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
   const [scope, setScope] = useState<'global' | 'state' | 'city' | 'batch' | 'subject'>('global');
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentLeague, setCurrentLeague] = useState<'Bronze' | 'Silver' | 'Gold' | 'Sapphire' | 'Ruby' | 'Diamond'>('Diamond');
 
   useEffect(() => {
     fetchLeaderboard();
@@ -38,151 +41,238 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* HEADER BANNER */}
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+      {/* ── DUOLINGO LEAGUES HEADER BANNER ── */}
       <SlideUp>
-        <div className="bg-[#15181F] border border-[#2A2F3A] rounded-2xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <div className="flex items-center space-x-2 text-[#FF9600] font-black text-xs mb-1">
-              <Trophy className="w-4 h-4 text-[#FF9600]" />
-              <span>ALL INDIA CANDIDATE RANKINGS</span>
+        <div 
+          onClick={() => { soundFx.playChestOpen(); triggerConfetti({ particleCount: 30, spread: 60 }); }}
+          className="bg-gradient-to-r from-[#18233C] via-[#1A1D24] to-[#122A1E] border-2 border-sky-400/40 border-b-[6px] border-b-sky-700 rounded-3xl p-5 sm:p-6 text-white shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer hover:border-sky-300 transition-all select-none"
+        >
+          <div className="flex items-center gap-4">
+            <AspirantMascot size="md" state="happy" />
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                  💎 {currentLeague} League
+                </span>
+                <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
+                  ⏱️ Ends in 2d 14h
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-black text-white mt-1">National All-India League</h1>
+              <p className="text-slate-300 text-xs mt-0.5 max-w-md">
+                Top 10 advance to the elite Diamond Champions. Keep solving drills to defend your rank!
+              </p>
             </div>
-            <h1 className="text-2xl font-black text-white">National Leaderboard & Rank Benchmark</h1>
-            <p className="text-[#9CA3AF] text-sm mt-1">
-              Benchmark your mock test score, percentile, and XP against top aspirants nationwide.
-            </p>
           </div>
 
-          {/* SCOPE TABS */}
-          <div className="flex flex-wrap gap-2 bg-[#0F1115] p-1.5 rounded-xl border border-[#2A2F3A]">
+          {/* SCOPE TABS WITH DUOLINGO 3D TACTILE BUTTONS */}
+          <div className="flex flex-wrap gap-1.5 bg-[#0F1115] p-1.5 rounded-2xl border border-[#2A2F3A] self-start md:self-center">
             {(['global', 'state', 'batch', 'subject'] as const).map((sc) => (
-              <PressFeedback key={sc}>
-                <button
-                  onClick={() => setScope(sc)}
-                  className={`px-3.5 py-1.5 text-xs font-black rounded-lg transition-all capitalize cursor-pointer ${
-                    scope === sc
-                      ? 'bg-[#FF9600] text-[#0B2300] shadow-sm'
-                      : 'text-[#9CA3AF] hover:text-white hover:bg-[#1A1D24]'
-                  }`}
-                >
-                  {sc} Rank
-                </button>
-              </PressFeedback>
+              <button
+                key={sc}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  soundFx.playTap();
+                  setScope(sc);
+                }}
+                className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all capitalize cursor-pointer border-b-[3px] active:border-b-0 active:translate-y-0.5 ${
+                  scope === sc
+                    ? 'bg-[#1CB0F6] text-[#052840] border-[#137BAE] shadow-sm'
+                    : 'text-[#9CA3AF] hover:text-white hover:bg-[#1A1D24] border-transparent'
+                }`}
+              >
+                {sc}
+              </button>
             ))}
           </div>
         </div>
       </SlideUp>
 
-      {/* TOP 3 PODIUM */}
+      {/* ── TOP 3 PODIUM (GAMIFIED PODIUM WITH 3D SHADOWS) ── */}
       {!loading && leaderboard.length >= 3 && (
         <SlideUp>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
             {/* SILVER #2 */}
-            <div className="bg-[#15181F] rounded-2xl border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] p-5 shadow-sm flex flex-col items-center text-center space-y-2 order-2 md:order-1 transition-all hover:scale-[1.02]">
-              <div className="w-12 h-12 bg-[#0F1115] rounded-xl flex items-center justify-center border-2 border-slate-400 font-extrabold text-slate-300 text-lg">
-                🥈 #2
+            <div 
+              onClick={() => soundFx.playTap()}
+              className="bg-[#15181F] rounded-3xl border-2 border-slate-600/40 border-b-[6px] border-b-slate-800 p-5 shadow-lg flex flex-col items-center text-center space-y-2 order-2 md:order-1 transition-all hover:scale-[1.02] cursor-pointer"
+            >
+              <div className="w-14 h-14 bg-slate-800 rounded-2xl flex items-center justify-center border-2 border-slate-400 font-black text-slate-200 text-xl shadow-md">
+                🥈
               </div>
-              <h3 className="font-extrabold text-[#F3F4F6]">{leaderboard[1].userName}</h3>
+              <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[10px] font-black uppercase">
+                Rank #2
+              </span>
+              <h3 className="font-black text-white text-base">{leaderboard[1].userName}</h3>
               <div className="text-xs text-[#9CA3AF]">{leaderboard[1].stateName} • {leaderboard[1].batchName}</div>
-              <div className="px-3 py-1 bg-[#0F1115] text-[#F3F4F6] border border-[#2A2F3A] rounded-lg text-xs font-black font-mono">
-                <CountUp value={leaderboard[1].score} /> Marks ({leaderboard[1].percentile}%)
+              <div className="px-4 py-1.5 bg-[#0F1115] text-[#1CB0F6] border border-[#2A2F3A] rounded-xl text-xs font-black font-mono">
+                <CountUp value={leaderboard[1].score} /> Marks ({leaderboard[1].percentile}%ile)
               </div>
+              <span className="text-[11px] font-black text-amber-400 font-mono">
+                ⚡ {leaderboard[1].xp || 420} XP
+              </span>
             </div>
 
             {/* GOLD #1 */}
-            <div className="bg-[#1A1D24] rounded-2xl border-2 border-[#FF9600] border-b-4 border-b-[#E08500] p-6 shadow-lg shadow-[#FF9600]/10 flex flex-col items-center text-center space-y-2 order-1 md:order-2 transform md:-translate-y-2 transition-all hover:scale-[1.03]">
-              <div className="w-14 h-14 bg-[#FF9600] rounded-xl flex items-center justify-center border-2 border-amber-300 font-black text-[#0B2300] text-xl shadow-lg">
-                👑 #1
+            <div 
+              onClick={() => { soundFx.playVictory(); triggerConfetti({ particleCount: 40, spread: 60 }); }}
+              className="bg-[#1A1D24] rounded-3xl border-2 border-amber-400 border-b-[8px] border-b-amber-600 p-6 shadow-2xl shadow-amber-500/15 flex flex-col items-center text-center space-y-2 order-1 md:order-2 transform md:-translate-y-3 transition-all hover:scale-[1.03] cursor-pointer"
+            >
+              <div className="w-16 h-16 bg-gradient-to-tr from-amber-500 to-yellow-300 rounded-2xl flex items-center justify-center border-2 border-amber-200 font-black text-[#0B2300] text-3xl shadow-xl">
+                👑
               </div>
+              <span className="px-3 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase">
+                League Champion #1
+              </span>
               <h3 className="font-black text-white text-lg">{leaderboard[0].userName}</h3>
-              <div className="text-xs text-[#FF9600] font-bold">{leaderboard[0].stateName} • {leaderboard[0].batchName}</div>
-              <div className="px-4 py-1.5 bg-[#FF9600] text-[#0B2300] rounded-xl text-xs font-black shadow-sm font-mono">
-                <CountUp value={leaderboard[0].score} /> Marks ({leaderboard[0].percentile}%)
+              <div className="text-xs text-amber-400 font-bold">{leaderboard[0].stateName} • {leaderboard[0].batchName}</div>
+              <div className="px-5 py-2 bg-amber-400 text-[#0B2300] rounded-xl text-xs font-black shadow-md font-mono border-b-2 border-amber-600">
+                <CountUp value={leaderboard[0].score} /> Marks ({leaderboard[0].percentile}%ile)
               </div>
+              <span className="text-xs font-black text-amber-300 font-mono flex items-center gap-1">
+                🔥 {leaderboard[0].xp || 680} XP
+              </span>
             </div>
 
             {/* BRONZE #3 */}
-            <div className="bg-[#15181F] rounded-2xl border border-[#2A2F3A] border-b-4 border-b-[#1A1D24] p-5 shadow-sm flex flex-col items-center text-center space-y-2 order-3 transition-all hover:scale-[1.02]">
-              <div className="w-12 h-12 bg-[#0F1115] rounded-xl flex items-center justify-center border-2 border-amber-700 font-extrabold text-amber-500 text-lg">
-                🥉 #3
+            <div 
+              onClick={() => soundFx.playTap()}
+              className="bg-[#15181F] rounded-3xl border-2 border-amber-700/40 border-b-[6px] border-b-amber-900 p-5 shadow-lg flex flex-col items-center text-center space-y-2 order-3 transition-all hover:scale-[1.02] cursor-pointer"
+            >
+              <div className="w-14 h-14 bg-amber-950/60 rounded-2xl flex items-center justify-center border-2 border-amber-700 font-black text-amber-400 text-xl shadow-md">
+                🥉
               </div>
-              <h3 className="font-extrabold text-[#F3F4F6]">{leaderboard[2].userName}</h3>
+              <span className="px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-400 text-[10px] font-black uppercase">
+                Rank #3
+              </span>
+              <h3 className="font-black text-white text-base">{leaderboard[2].userName}</h3>
               <div className="text-xs text-[#9CA3AF]">{leaderboard[2].stateName} • {leaderboard[2].batchName}</div>
-              <div className="px-3 py-1 bg-[#0F1115] text-[#F3F4F6] border border-[#2A2F3A] rounded-lg text-xs font-black font-mono">
-                <CountUp value={leaderboard[2].score} /> Marks ({leaderboard[2].percentile}%)
+              <div className="px-4 py-1.5 bg-[#0F1115] text-[#1CB0F6] border border-[#2A2F3A] rounded-xl text-xs font-black font-mono">
+                <CountUp value={leaderboard[2].score} /> Marks ({leaderboard[2].percentile}%ile)
               </div>
+              <span className="text-[11px] font-black text-amber-400 font-mono">
+                ⚡ {leaderboard[2].xp || 360} XP
+              </span>
             </div>
           </div>
         </SlideUp>
       )}
 
-      {/* SEARCH BAR & FULL RANKINGS TABLE */}
+      {/* ── PROMOTION ZONE NOTIFICATION BADGE ── */}
+      <div className="p-3 rounded-2xl bg-[#58CC02]/10 border-2 border-[#58CC02]/40 border-b-[4px] border-b-[#3C8801] flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-base">⬆️</span>
+          <div>
+            <span className="font-black text-[#58CC02] uppercase tracking-wider">Top 10 Promotion Zone</span>
+            <span className="text-slate-300 ml-2">Candidates in top 10 advance to higher diamond tier</span>
+          </div>
+        </div>
+        <span className="font-mono font-black text-[#58CC02] bg-[#58CC02]/20 px-2 py-0.5 rounded-lg">
+          +50 GEMS BONUS
+        </span>
+      </div>
+
+      {/* ── SEARCH BAR & FULL TACTILE RANKING LIST ── */}
       <SlideUp>
-        <div className="bg-[#15181F] rounded-2xl border border-[#2A2F3A] p-6 shadow-sm space-y-4">
+        <div className="bg-[#15181F] rounded-3xl border-2 border-[#2A2F3A] border-b-[6px] border-b-[#1A1D24] p-5 sm:p-6 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg font-black text-white">Full Ranking Table</h3>
+            <h3 className="text-base font-black text-white flex items-center gap-2">
+              <span>All Aspirants</span>
+              <span className="text-xs text-slate-400 font-mono">({filtered.length} active)</span>
+            </h3>
             <div className="relative w-full sm:w-64">
               <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search candidate or state..."
-                className="w-full pl-9 pr-3 py-2 bg-[#0F1115] border border-[#2A2F3A] rounded-xl text-xs text-white placeholder-[#6B7280] focus:outline-none focus:border-[#FF9600]"
+                placeholder="Search aspirant or state..."
+                className="w-full pl-9 pr-3 py-2 bg-[#0F1115] border border-[#2A2F3A] rounded-xl text-xs text-white placeholder-[#6B7280] focus:outline-none focus:border-[#1CB0F6]"
               />
             </div>
           </div>
 
           {loading ? (
             <div className="space-y-3 py-4">
-              {[1, 2, 3, 4, 5].map(i => (
-                <SkeletonShimmer key={i} className="h-12 w-full rounded-xl bg-[#0F1115]" />
+              {[1, 2, 3, 4, 5].map((i) => (
+                <SkeletonShimmer key={i} className="h-14 w-full rounded-2xl bg-[#0F1115]" />
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-[#2A2F3A] text-[11px] font-bold text-[#9CA3AF] uppercase bg-[#0F1115]/50">
-                    <th className="py-3 px-4">Rank</th>
-                    <th className="py-3 px-4">Candidate Name</th>
-                    <th className="py-3 px-4">State / Location</th>
-                    <th className="py-3 px-4">Batch</th>
-                    <th className="py-3 px-4">CBT Score</th>
-                    <th className="py-3 px-4">Percentile</th>
-                    <th className="py-3 px-4">XP</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#2A2F3A]/60 text-xs">
-                  {filtered.length > 0 ? (
-                    filtered.map((item) => (
-                      <tr key={item.userId} className="hover:bg-[#1A1D24] transition-all font-medium text-[#F3F4F6]">
-                        <td className="py-3 px-4 font-black text-white font-mono">#{item.rank}</td>
-                        <td className="py-3 px-4 font-bold text-[#1CB0F6]">{item.userName}</td>
-                        <td className="py-3 px-4 text-[#9CA3AF]">{item.stateName}</td>
-                        <td className="py-3 px-4 text-[#9CA3AF]">{item.batchName}</td>
-                        <td className="py-3 px-4 font-black text-[#58CC02] font-mono">{item.score}</td>
-                        <td className="py-3 px-4 font-bold text-[#1CB0F6] font-mono">{item.percentile}%</td>
-                        <td className="py-3 px-4 text-[#FF9600] font-black font-mono">{item.xp} XP</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="py-12 text-center text-[#9CA3AF]">
-                        <div className="flex flex-col items-center justify-center space-y-3">
-                          <div className="w-12 h-12 rounded-full bg-[#FF9600]/10 text-[#FF9600] flex items-center justify-center">
-                            <Trophy className="w-6 h-6" />
+            <div className="space-y-2">
+              {filtered.length > 0 ? (
+                filtered.map((item, idx) => {
+                  const isPromotionZone = idx < 10;
+                  return (
+                    <div
+                      key={item.userId || idx}
+                      onClick={() => soundFx.playTap()}
+                      className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                        idx === 0
+                          ? 'bg-amber-500/10 border-amber-500/40 border-b-[4px] border-b-amber-700'
+                          : idx < 3
+                          ? 'bg-[#1A1D24] border-slate-700 border-b-[4px] border-b-slate-900'
+                          : isPromotionZone
+                          ? 'bg-[#15181F] border-[#58CC02]/30 border-b-[3px] border-b-[#58CC02]/20 hover:border-[#58CC02]'
+                          : 'bg-[#15181F] border-[#2A2F3A] hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-black font-mono text-xs shrink-0 ${
+                          idx === 0
+                            ? 'bg-amber-400 text-slate-950 shadow-sm'
+                            : idx === 1
+                            ? 'bg-slate-300 text-slate-950'
+                            : idx === 2
+                            ? 'bg-amber-700 text-white'
+                            : isPromotionZone
+                            ? 'bg-[#58CC02]/20 text-[#58CC02]'
+                            : 'bg-[#0F1115] text-slate-400'
+                        }`}>
+                          #{item.rank}
+                        </span>
+
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-black text-white text-xs sm:text-sm truncate">
+                              {item.userName}
+                            </span>
+                            {idx < 10 && (
+                              <ChevronUp className="w-3.5 h-3.5 text-[#58CC02] shrink-0" />
+                            )}
                           </div>
-                          <div className="font-bold text-white text-sm">No candidate rankings found</div>
-                          <p className="text-xs text-[#9CA3AF] max-w-sm">
-                            Be the first aspirant in this scope to complete a CBT mock exam and claim Rank #1!
+                          <p className="text-[11px] text-[#9CA3AF] truncate">
+                            {item.stateName || 'All-India'} • {item.batchName || 'General'}
                           </p>
                         </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="text-right">
+                          <div className="text-xs font-mono font-black text-[#58CC02]">
+                            {item.score} Marks
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {item.percentile}%ile
+                          </div>
+                        </div>
+
+                        <div className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-xs font-mono font-black text-[#FF9600] flex items-center gap-1">
+                          <Flame className="w-3 h-3 fill-current" />
+                          <span>{item.xp || (100 - idx * 5)} XP</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-10 text-center rounded-2xl bg-[#0F1115] border border-[#2A2F3A] space-y-2">
+                  <Trophy className="w-10 h-10 text-amber-400 mx-auto" />
+                  <h4 className="text-white font-bold text-sm">No competitors found</h4>
+                  <p className="text-xs text-slate-400">Complete a CBT test to claim Rank #1!</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -190,3 +280,4 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
     </div>
   );
 };
+
