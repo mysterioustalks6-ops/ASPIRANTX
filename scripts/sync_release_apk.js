@@ -1,6 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 
+// Opt-in only via RELEASE_SYNC=1 (default off)
+if (process.env.RELEASE_SYNC !== '1') {
+  process.exit(0);
+}
+
 const rootDir = path.resolve();
 const releaseApkPath = path.join(rootDir, 'android', 'app', 'build', 'outputs', 'apk', 'release', 'app-release.apk');
 const targets = [

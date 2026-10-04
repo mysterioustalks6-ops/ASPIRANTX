@@ -99,10 +99,10 @@ export const MoreHub: React.FC<MoreHubProps> = ({
                 <h2 className="text-base sm:text-lg font-black text-[var(--sr-text)] tracking-tight truncate">
                   {user.name || 'Aspirant'}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-[11px] font-black border border-[var(--sr-blue)]/30 shrink-0">
+                <span className="px-2 py-0.5 rounded-full bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-xs font-black border border-[var(--sr-blue)]/30 shrink-0">
                   LVL {user.level || 1}
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[11px] font-black border shrink-0 ${league.badgeClass}`}>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-black border shrink-0 ${league.badgeClass}`}>
                   {league.icon} {league.name}
                 </span>
               </div>
@@ -131,7 +131,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Flame className="w-4 h-4 fill-current" />
               <span>{user.streakDays ?? 1}d</span>
             </div>
-            <span className="text-[11px] font-bold text-[var(--sr-text-subtle)] mt-0.5">Streak</span>
+            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">Streak</span>
           </div>
 
           <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--sr-surface-2)]">
@@ -139,7 +139,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Sparkles className="w-4 h-4 fill-current" />
               <span>{user.xp ?? 0}</span>
             </div>
-            <span className="text-[11px] font-bold text-[var(--sr-text-subtle)] mt-0.5">XP</span>
+            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">XP</span>
           </div>
 
           <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--sr-surface-2)]">
@@ -147,25 +147,25 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Coins className="w-4 h-4" />
               <span>{user.coins ?? 0}</span>
             </div>
-            <span className="text-[11px] font-bold text-[var(--sr-text-subtle)] mt-0.5">Coins</span>
+            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">Coins</span>
           </div>
         </div>
       </div>
 
       {/* ── CONTEXTUAL ASK VEER AI (Rule 3) ── */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] hover:border-[var(--sr-primary)]/50 transition-all flex items-center justify-between gap-3 shadow-sm">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] hover:border-[var(--sr-primary)]/50 transition-all flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-11 h-11 rounded-2xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)] shrink-0">
             <Sparkles className="w-6 h-6" />
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-black text-[var(--sr-text)]">Ask Veer AI Mentor</h3>
-              <span className="px-2 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-[10px] font-black uppercase">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)]">Veer AI Mentor</h3>
+              <span className="px-2.5 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary-depth)] dark:text-[var(--sr-primary)] text-xs font-black uppercase shrink-0 border border-[var(--sr-primary)]/30">
                 Tutor
               </span>
             </div>
-            <p className="text-xs text-[var(--sr-text-muted)] truncate mt-0.5">
+            <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-0.5">
               Ask exam doubts, formula clarifications or revision strategy
             </p>
           </div>
@@ -175,8 +175,9 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           size="sm"
           onClick={() => navigateTo('chat')}
           icon={<Sparkles className="w-3.5 h-3.5" />}
+          className="shrink-0"
         >
-          Ask Veer
+          Ask Doubts
         </TactileButton>
       </div>
 
@@ -189,13 +190,13 @@ export const MoreHub: React.FC<MoreHubProps> = ({
 
         {/* Sound Row */}
         <div className="flex items-center justify-between gap-3 py-1">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-center text-[var(--sr-text)] shrink-0">
               {isSoundOn ? <Volume2 className="w-4 h-4 text-[var(--sr-primary)]" /> : <VolumeX className="w-4 h-4 text-[var(--sr-text-subtle)]" />}
             </div>
-            <div className="min-w-0">
-              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)] truncate">Sound Effects</span>
-              <span className="block text-[11px] text-[var(--sr-text-muted)] truncate">Audio cues on correct answers & clicks</span>
+            <div className="min-w-0 flex-1">
+              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)]">Sound Effects</span>
+              <span className="block text-xs text-[var(--sr-text-muted)] leading-tight mt-0.5">Audio feedback on answers and actions</span>
             </div>
           </div>
           <button
@@ -218,13 +219,13 @@ export const MoreHub: React.FC<MoreHubProps> = ({
 
         {/* Haptics Row */}
         <div className="flex items-center justify-between gap-3 py-1 border-t border-[var(--sr-line)] pt-3">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-center text-[var(--sr-text)] shrink-0">
               <Vibrate className={`w-4 h-4 ${isHapticOn ? 'text-[var(--sr-primary)]' : 'text-[var(--sr-text-subtle)]'}`} />
             </div>
-            <div className="min-w-0">
-              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)] truncate">Vibration Haptics</span>
-              <span className="block text-[11px] text-[var(--sr-text-muted)] truncate">Micro-vibrations on tactile button presses</span>
+            <div className="min-w-0 flex-1">
+              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)]">Vibration Haptics</span>
+              <span className="block text-xs text-[var(--sr-text-muted)] leading-tight mt-0.5">Tactile micro-vibrations on button press</span>
             </div>
           </div>
           <button

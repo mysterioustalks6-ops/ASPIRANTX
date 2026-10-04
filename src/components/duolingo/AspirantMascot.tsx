@@ -27,7 +27,7 @@ export const AspirantMascot: React.FC<AspirantMascotProps> = ({
   const getDimensions = () => {
     switch (size) {
       case 'sm':
-        return { w: 64, h: 64, bubbleText: 'text-[10px]' };
+        return { w: 64, h: 64, bubbleText: 'text-xs' };
       case 'md':
         return { w: 96, h: 96, bubbleText: 'text-xs' };
       case 'lg':
@@ -262,13 +262,13 @@ export const AspirantMascot: React.FC<AspirantMascotProps> = ({
           initial={{ opacity: 0, scale: 0.85, x: -8 }}
           animate={{ opacity: 1, scale: 1, x: 0 }}
           transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-          className="relative bg-[#1A1D24] text-[#F3F4F6] border-2 border-[#2A2F3A] rounded-2xl px-3.5 py-2.5 shadow-xl max-w-[220px]"
+          className="relative bg-[var(--sr-surface)] text-[var(--sr-text)] border-2 border-[var(--sr-line-strong)] rounded-2xl px-3.5 py-2.5 shadow-xl max-w-[220px]"
         >
           {/* Bubble triangle pointer pointing left to mascot */}
-          <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-r-[8px] border-r-[#2A2F3A]" />
-          <div className="absolute top-1/2 -left-[6px] -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[7px] border-r-[#1A1D24]" />
+          <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-0 h-0 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent border-r-[8px] border-r-[var(--sr-line-strong)]" />
+          <div className="absolute top-1/2 -left-[6px] -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[7px] border-r-[var(--sr-surface)]" />
           <p className={`${bubbleText} font-extrabold leading-snug`}>
-            {speechBubble}
+            {speechBubble.replace(/^["']|["']$/g, '')}
           </p>
         </motion.div>
       )}

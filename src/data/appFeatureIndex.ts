@@ -11,7 +11,7 @@ export interface AppFeatureItem {
 export const APP_FEATURES: AppFeatureItem[] = [
   {
     id: 'dashboard',
-    label: 'Today (Daily Ride)',
+    label: 'Today',
     tab: 'dashboard',
     keywords: ['today', 'dashboard', 'home', 'ride', 'daily ride', 'progress', 'streak', 'countdown'],
     description: 'Daily study progress, streak counter, and momentum hub',
@@ -20,7 +20,7 @@ export const APP_FEATURES: AppFeatureItem[] = [
   },
   {
     id: 'syllabus',
-    label: 'Map (Syllabus Journey)',
+    label: 'Map',
     tab: 'syllabus',
     keywords: ['map', 'journey', 'syllabus', 'curriculum', 'path', 'topics', 'chapters'],
     description: 'Winding chapter journey and syllabus mastery roadmap',
@@ -29,7 +29,7 @@ export const APP_FEATURES: AppFeatureItem[] = [
   },
   {
     id: 'practice_hub',
-    label: 'Practice (Arena & Drills)',
+    label: 'Practice',
     tab: 'practice_hub',
     keywords: ['practice', 'arena', 'drills', 'mcq', 'pyq', 'cbt', 'questions', 'mock test'],
     description: 'All-in-one test arena: PYQs, CBT mocks, and topic drills',
@@ -38,7 +38,7 @@ export const APP_FEATURES: AppFeatureItem[] = [
   },
   {
     id: 'leaderboard',
-    label: 'League (National Ranks)',
+    label: 'League',
     tab: 'leaderboard',
     keywords: ['league', 'rank', 'leaderboard', 'national ranking', 'standings', 'xp'],
     description: 'Honest All-India standings, tier promotions, and rankings',
@@ -47,7 +47,7 @@ export const APP_FEATURES: AppFeatureItem[] = [
   },
   {
     id: 'more_hub',
-    label: 'Me (Profile & Settings)',
+    label: 'Me',
     tab: 'more_hub',
     keywords: ['me', 'profile', 'settings', 'account', 'sound', 'haptics', 'tools'],
     description: 'Personalized hub, sound/haptic preferences, and study tools',

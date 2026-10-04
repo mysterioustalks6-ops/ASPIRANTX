@@ -25,6 +25,7 @@ import { UserProfile } from '../../types';
 import { getExamConfig, normalizeExamId } from '../../lib/examRegistry';
 import { ExamSelectModal } from '../ExamSelectModal';
 import { triggerConfetti } from '../../lib/animations';
+import { getLocalCompletedSubtopicIds, saveCompletedSubtopicIds } from '../../lib/syllabusStorage';
 
 export interface PathNode {
   id: string;
@@ -103,26 +104,29 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
       }
     ];
 
+    const normExam = normalizeExamId(selectedExam);
+    const completedIds = getLocalCompletedSubtopicIds(userProfile?.id, normExam);
     let globalIndex = 0;
     let lessonCounter = 1;
+    let foundFirstActive = false;
 
     chaptersBySubject.forEach((sec, sIdx) => {
       sec.chapters.forEach((ch) => {
+        const nodeId = `node-${globalIndex}`;
+        const isDone = completedIds.has(nodeId) || completedIds.has(ch);
         let status: 'completed' | 'active' | 'locked' = 'locked';
         let stars = 0;
-        if (globalIndex === 0) {
+        if (isDone) {
           status = 'completed';
           stars = 3;
-        } else if (globalIndex === 1) {
-          status = 'completed';
-          stars = 2;
-        } else if (globalIndex === 2) {
+        } else if (!foundFirstActive) {
           status = 'active';
           stars = 0;
+          foundFirstActive = true;
         }
 
         nodes.push({
-          id: `node-${globalIndex}`,
+          id: nodeId,
           title: ch,
           subject: sec.subject,
           type: 'lesson',
@@ -210,6 +214,15 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
 
   const [pathNodes, setPathNodes] = useState<PathNode[]>(generatePathNodes);
 
+  // Keep path nodes synchronized whenever syllabus changes
+  useEffect(() => {
+    const handleSync = () => {
+      setPathNodes(generatePathNodes());
+    };
+    window.addEventListener('aspirantx_personal_syllabus_updated', handleSync);
+    return () => window.removeEventListener('aspirantx_personal_syllabus_updated', handleSync);
+  }, [selectedExam, userProfile.id]);
+
   // S-Curve horizontal offset generator (Duolingo snake path)
   // [0, 48, 72, 48, 0, -48, -72, -48]
   const getNodeHorizontalOffset = (index: number): number => {
@@ -255,66 +268,85 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
   };
 
   const handleLessonComplete = (nodeId: string) => {
-    setPathNodes((prev) =>
-      prev.map((n, idx) => {
+    const normExam = normalizeExamId(selectedExam);
+    const completedIds = getLocalCompletedSubtopicIds(userProfile?.id, normExam);
+    const updated = new Set(completedIds);
+    updated.add(nodeId);
+    const targetNode = pathNodes.find(n => n.id === nodeId);
+    if (targetNode) updated.add(targetNode.title);
+    saveCompletedSubtopicIds(updated, userProfile?.id, normExam);
+    window.dispatchEvent(new CustomEvent('aspirantx_personal_syllabus_updated'));
+
+    setPathNodes((prev) => {
+      let unlockedNext = false;
+      return prev.map((n, idx) => {
         if (n.id === nodeId) {
           return { ...n, status: 'completed', stars: 3 };
         }
-        // Unlock next node
         const currIdx = prev.findIndex((item) => item.id === nodeId);
-        if (idx === currIdx + 1 && n.status === 'locked') {
+        if (!unlockedNext && idx === currIdx + 1 && n.status === 'locked') {
+          unlockedNext = true;
           return { ...n, status: 'active' };
         }
         return n;
-      })
-    );
+      });
+    });
   };
+
+  const completedLessonsCount = pathNodes.filter(n => n.type === 'lesson' && n.status === 'completed').length;
+  const totalLessonsCount = pathNodes.filter(n => n.type === 'lesson').length;
+  const unitPercent = totalLessonsCount > 0 ? Math.round((completedLessonsCount / totalLessonsCount) * 100) : 0;
 
   return (
     <div className={`w-full max-w-md mx-auto flex flex-col items-center select-none font-sans relative pb-28 ${className}`}>
       {/* ── 1. DUOLINGO UNIT BANNER ───────────────────────────────────── */}
       <div className="w-full px-4 mt-4 mb-2">
-        <div className="rounded-3xl bg-gradient-to-r from-[#17301B] via-[#1A1D24] to-[#17301B] border-2 border-[#58CC02]/40 p-4 shadow-xl relative overflow-hidden">
+        <div className="rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] p-4 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#58CC02] bg-[#58CC02]/20 px-2.5 py-0.5 rounded-full border border-[#58CC02]/30">
+                <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-0.5 rounded-full border border-[var(--sr-primary)]/30">
                   SECTION 1 • UNIT 1
                 </span>
               </div>
-              <h2 className="text-base font-black text-white tracking-tight">
+              <h2 className="text-base font-black text-[var(--sr-text)] tracking-tight line-clamp-2">
                 {subjects[0] || 'Core Exam Concepts'}
               </h2>
-              <p className="text-xs text-[#9CA3AF] line-clamp-1 mt-0.5 font-medium">
+              <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-0.5 font-medium">
                 Preamble, Formulas & High-Yield MCQs
               </p>
             </div>
 
             <button
               onClick={() => onNavigate && onNavigate('syllabus')}
-              className="px-3 py-2 rounded-2xl bg-[#0F1115] hover:bg-[#1A1D24] border border-[#2A2F3A] text-xs font-black text-[#58CC02] flex items-center gap-1.5 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="px-3 py-2 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-black text-[var(--sr-primary)] flex items-center gap-1.5 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer"
               title="View Complete Curriculum Syllabus"
             >
-              <BookOpen className="w-4 h-4 text-[#58CC02]" />
-              <span className="text-[11px]">Guidebook</span>
+              <BookOpen className="w-4 h-4 text-[var(--sr-primary)]" />
+              <span className="text-xs">Guidebook</span>
             </button>
           </div>
 
           {/* Unit Progress Indicator */}
           <div className="mt-3 flex items-center gap-2">
-            <div className="flex-1 bg-[#0F1115] h-2.5 rounded-full overflow-hidden border border-[#2A2F3A]/60">
-              <div className="bg-[#58CC02] h-full rounded-full transition-all duration-500 shadow-[0_0_8px_rgba(88,204,2,0.6)]" style={{ width: '45%' }} />
+            <div className="flex-1 bg-[var(--sr-surface-2)] h-2.5 rounded-full overflow-hidden border border-[var(--sr-line)]">
+              <div
+                className="bg-[var(--sr-primary)] h-full rounded-full transition-all duration-500"
+                style={{ width: `${unitPercent}%` }}
+              />
             </div>
-            <span className="text-[10px] font-black text-[#58CC02]">2/5 Complete</span>
+            <span className="text-xs font-bold text-[var(--sr-primary)]">
+              {completedLessonsCount}/{totalLessonsCount} Done ({unitPercent}%)
+            </span>
           </div>
         </div>
       </div>
 
       {/* ── 3. S-CURVE WINDING LEARNING PATH WITH CONNECTED NODES ─────── */}
       <div className="w-full relative flex flex-col items-center py-6">
-        {/* Continuous Winding Path SVG Line */}
+        {/* Continuous Winding Path SVG Line (z-0 behind nodes) */}
         <svg 
-          className="absolute top-0 left-0 w-full h-full pointer-events-none -z-0 opacity-40"
+          className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 opacity-40"
           style={{ minHeight: `${pathNodes.length * 120}px` }}
         >
           {pathNodes.map((_, i) => {
@@ -330,8 +362,8 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
                 key={`path-line-${i}`}
                 d={`M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`}
                 fill="none"
-                stroke="#374151"
-                strokeWidth="10"
+                stroke="var(--sr-line-strong)"
+                strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray="14 10"
               />
@@ -425,14 +457,14 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
 
                   {/* Stars Pill for Completed Lessons */}
                   {isCompleted && (
-                    <div className="absolute -bottom-3 flex items-center gap-0.5 bg-[#0F1115] px-2 py-0.5 rounded-full border border-[#2A2F3A] shadow-md">
+                    <div className="absolute -bottom-3 flex items-center gap-0.5 bg-[var(--sr-surface-2)] px-2 py-0.5 rounded-full border border-[var(--sr-line-strong)] shadow-md">
                       {[1, 2, 3].map((star) => (
                         <Star
                           key={star}
                           className={`w-3 h-3 ${
                             star <= node.stars
                               ? 'text-[#FFC800] fill-[#FFC800]'
-                              : 'text-[#4B5563]'
+                              : 'text-[var(--sr-text-subtle)]'
                           }`}
                         />
                       ))}
@@ -472,16 +504,16 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
                   `}
                 >
                   <Crown className="w-9 h-9 fill-current" />
-                  <span className="text-[10px] font-black uppercase mt-1 tracking-tight">Checkpoint</span>
+                  <span className="text-xs font-black uppercase mt-1 tracking-tight">Checkpoint</span>
                 </button>
               )}
 
               {/* Node Title & Subject Label */}
               <div className="mt-3 text-center max-w-[160px]">
-                <p className="text-xs font-black text-[#F3F4F6] line-clamp-1 leading-snug">
+                <p className="text-xs font-black text-[var(--sr-text)] line-clamp-2 leading-snug">
                   {node.title}
                 </p>
-                <p className="text-[10px] font-bold text-[#9CA3AF] truncate">
+                <p className="text-xs font-bold text-[var(--sr-text-muted)] truncate">
                   {node.subject}
                 </p>
               </div>
@@ -508,34 +540,34 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
 
       {/* ── 5. CHEST REWARD CELEBRATION MODAL ────────────────────────── */}
       {chestModalNode && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-[#1A1D24] border-2 border-[#FF9600] rounded-3xl p-6 text-center space-y-5 shadow-2xl">
-            <div className="w-20 h-20 rounded-full bg-[#FF9600]/20 border border-[#FF9600] flex items-center justify-center mx-auto text-[#FF9600]">
+        <div className="fixed inset-0 z-50 bg-black/80 no-backdrop-blur flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[var(--sr-surface)] border-2 border-[var(--sr-amber)] rounded-3xl p-6 text-center space-y-5 shadow-2xl">
+            <div className="w-20 h-20 rounded-full bg-[var(--sr-amber-subtle)] border border-[var(--sr-amber)] flex items-center justify-center mx-auto text-[var(--sr-amber)]">
               <Gift className="w-10 h-10 fill-current animate-bounce" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-white">Treasure Unlocked!</h3>
-              <p className="text-xs text-[#9CA3AF]">
+              <h3 className="text-xl font-black text-[var(--sr-text)]">Treasure Unlocked!</h3>
+              <p className="text-xs text-[var(--sr-text-muted)]">
                 Shabaash! You completed 3 lessons and unlocked this mystery chest!
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-[#0F1115] border border-[#2A2F3A] flex items-center justify-around">
+            <div className="p-3.5 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-around">
               <div>
-                <div className="text-[10px] text-[#9CA3AF] font-bold uppercase">Coins</div>
-                <div className="text-base font-black text-[#FFC800]">+50 Coins</div>
+                <div className="text-xs text-[var(--sr-text-muted)] font-bold uppercase">Coins</div>
+                <div className="text-base font-black text-[var(--sr-amber)]">+50 Coins</div>
               </div>
-              <div className="h-6 w-px bg-[#2A2F3A]" />
+              <div className="h-6 w-px bg-[var(--sr-line)]" />
               <div>
-                <div className="text-[10px] text-[#9CA3AF] font-bold uppercase">XP Boost</div>
-                <div className="text-base font-black text-[#58CC02]">+100 XP</div>
+                <div className="text-xs text-[var(--sr-text-muted)] font-bold uppercase">XP Boost</div>
+                <div className="text-base font-black text-[var(--sr-primary)]">+100 XP</div>
               </div>
             </div>
 
             <button
               onClick={() => setChestModalNode(null)}
-              className="w-full py-3.5 rounded-2xl bg-[#58CC02] text-[#0B2300] font-black text-sm border-b-4 border-[#46A302] active:border-b-0 active:translate-y-1 cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-[var(--sr-primary)] text-[var(--sr-on-primary)] font-black text-sm border-b-4 border-[var(--sr-primary-depth)] active:border-b-0 active:translate-y-1 cursor-pointer"
             >
               CLAIM REWARDS
             </button>

@@ -115,34 +115,36 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
         <div className="w-12 h-1.5 rounded-full bg-[var(--sr-line-strong)] mx-auto mt-3 mb-1 sm:hidden" />
 
         {/* Search Bar Input */}
-        <div className="flex items-center gap-3 px-4 py-2 border-b border-[var(--sr-line)] bg-[var(--sr-surface)]">
-          <Search className="w-5 h-5 text-[var(--sr-primary)] shrink-0" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search tools, topics, tests..."
-            className="w-full bg-transparent text-[var(--sr-text)] placeholder-[var(--sr-text-subtle)] text-sm font-bold border-0 outline-none ring-0 focus:ring-0 focus:outline-none min-h-[44px]"
-            autoFocus
-          />
-          {query ? (
-            <button
-              onClick={() => setQuery('')}
-              aria-label="Clear search"
-              className="w-10 h-10 flex items-center justify-center rounded-full text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)] transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          ) : (
-            <button
-              onClick={onClose}
-              aria-label="Close search sheet"
-              className="min-w-[44px] min-h-[44px] px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-              <span className="hidden sm:inline text-xs font-bold">Esc</span>
-            </button>
-          )}
+        <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-[var(--sr-line)] bg-[var(--sr-surface)]">
+          <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] focus-within:border-transparent focus-within:ring-2 focus-within:ring-[var(--sr-primary)] transition-all flex-1">
+            <Search className="w-4 h-4 text-[var(--sr-text-subtle)] shrink-0" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search tools, topics, tests..."
+              style={{ outline: 'none', boxShadow: 'none' }}
+              className="w-full bg-transparent text-[var(--sr-text)] placeholder-[var(--sr-text-subtle)] text-xs sm:text-sm font-bold border-none outline-none ring-0 focus:ring-0 focus:outline-none min-h-[36px]"
+              autoFocus
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close search sheet"
+            className="min-w-[40px] min-h-[40px] px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-4 h-4" />
+            <span className="hidden sm:inline text-xs font-bold">Esc</span>
+          </button>
         </div>
 
         {/* Results Area */}
@@ -166,10 +168,10 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                        <span className="block text-sm font-black text-[var(--sr-text)] line-clamp-2 leading-snug">
                           {item.label}
                         </span>
-                        <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                        <span className="block text-xs font-medium text-[var(--sr-text-muted)] line-clamp-2 mt-0.5">
                           {item.description}
                         </span>
                       </div>
