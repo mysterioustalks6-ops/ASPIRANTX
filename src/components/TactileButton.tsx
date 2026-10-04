@@ -1,6 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { actions } from '../tokens/designSystem';
+import { soundFx } from '../lib/soundEffects';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'destructive' | 'streak' | 'ghost';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -57,9 +58,19 @@ export const TactileButton: React.FC<TactileButtonProps> = ({
 
   const isDisabled = disabled || isLoading;
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!isDisabled) {
+      soundFx.playTap();
+    }
+    if (props.onClick) {
+      props.onClick(e);
+    }
+  };
+
   return (
     <button
       {...props}
+      onClick={handleClick}
       disabled={isDisabled}
       className={`
         inline-flex items-center justify-center gap-2 select-none touch-manipulation cursor-pointer

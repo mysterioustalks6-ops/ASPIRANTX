@@ -3,7 +3,8 @@ import {
   Flame, Target,
   Sparkles, BookOpen, Zap,
   LayoutGrid, Sliders, ChevronRight,
-  CheckCircle2, Circle, Play, ArrowRight, Award, CheckSquare
+  CheckCircle2, Circle, Play, ArrowRight, Award, CheckSquare,
+  Heart, Coins, Trophy, Gamepad2, BarChart2
 } from 'lucide-react';
 import { 
   FadeIn, SlideUp, Stagger, StaggerItem, CountUp, FlameGlow,
@@ -23,6 +24,8 @@ import { TactileProgressBar } from './TactileProgressBar';
 import { AspirantMascot } from './duolingo/AspirantMascot';
 import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
+import { soundFx } from '../lib/soundEffects';
+import { getCandidateHearts } from '../lib/duolingoHearts';
 
 interface StudentDashboardProps {
   userProfile: UserProfile;
@@ -218,7 +221,26 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const primarySuggestion = data.aiSuggestions?.[0] || `Focus on ${primarySubject} today.`;
   const [showAllShortcuts, setShowAllShortcuts] = useState<boolean>(false);
   const [showTelemetryRings, setShowTelemetryRings] = useState<boolean>(false);
-  const [showDuolingoPath, setShowDuolingoPath] = useState<boolean>(false);
+  const [dashboardViewMode, setDashboardViewMode] = useState<'path' | 'analytics'>('path');
+
+  const VEER_QUOTES = [
+    "Tu banega Officer! Bas 3 questions aur laga de! 🚀",
+    "25 min focus = Exam hall me 0 panic! 🧘",
+    "Roz ka 1 drill roz ka selection pakka karega! 🎯",
+    "Streak tootni nahi chahiye boss! Keep grinding! 🔥",
+    "Rank 1 mindset: Ek ek topic pakad ke udao! ⚔️",
+    "High Five! You're already ahead of 80% candidates today! ✋"
+  ];
+  const [mascotQuoteIndex, setMascotQuoteIndex] = useState(0);
+  const [mascotState, setMascotState] = useState<'idle' | 'happy' | 'celebrating'>('happy');
+
+  const handleMascotTap = () => {
+    soundFx.playChestOpen();
+    triggerConfetti();
+    setMascotState('celebrating');
+    setMascotQuoteIndex((prev) => (prev + 1) % VEER_QUOTES.length);
+    setTimeout(() => setMascotState('happy'), 1600);
+  };
 
   // 5-Pillar Architecture: Daily Goals Engine (Persistent with Instant XP Feedback)
   const todayDateStr = new Date().toISOString().split('T')[0];
@@ -313,9 +335,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   return (
     <div id="student-dashboard" className="w-full space-y-6 pb-24 md:pb-8 font-sans">
-      {/* ── 1. HEADER: Student Context & Clear Exam Identity ───────────────── */}
+      {/* ── 1. HEADER: Student Context, Exam Identity & Gamified Segmented Switcher ── */}
       <SlideUp>
-        <TactileCard className="p-4 sm:p-6 bg-[#1A1D24] border border-[#2A2F3A]">
+        <TactileCard className="p-4 sm:p-6 bg-[#1A1D24] border border-[#2A2F3A] space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -339,6 +361,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                     if (val === '__CREATE_CUSTOM__' && onOpenProfileModal) {
                       onOpenProfileModal();
                     } else if (onExamChange) {
+                      soundFx.playTap();
                       onExamChange(val);
                     }
                   }}
@@ -358,35 +381,45 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               </div>
             </div>
 
-            {/* Right: Key Exam Timeline Telemetry (Streak + Countdown) */}
-            <div className="flex items-center gap-2.5">
-              <div className="px-3.5 py-2 rounded-xl bg-[#0F1115] border border-[#FF9600]/30 flex items-center gap-2.5 shadow-sm">
-                <FlameGlow active={(userProfile.streakDays || data.currentStreak || 0) > 0}>
-                  <Flame className="w-5 h-5 text-[#FF9600] fill-[#FF9600]" />
-                </FlameGlow>
-                <div>
-                  <div className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Streak</div>
-                  <div className="text-sm font-black text-[#F3F4F6]">
-                    <CountUp value={userProfile.streakDays || data.currentStreak || 1} suffix=" Days" />
-                  </div>
-                </div>
+            {/* Right: Key Exam Gamification Telemetry (Hearts + Streak + Gems + Countdown) */}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Energy Hearts */}
+              <div 
+                onClick={() => { soundFx.playTap(); }}
+                className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#FF4B4B]/30 flex items-center gap-1.5 shadow-sm cursor-pointer select-none"
+                title="Candidate Energy (Refills automatically or via Practice)"
+              >
+                <Heart className="w-4 h-4 text-[#FF4B4B] fill-[#FF4B4B] animate-pulse" />
+                <span className="text-xs font-black text-[#F3F4F6]">{getCandidateHearts(userProfile.id).hearts}/5</span>
               </div>
 
-              <div className="px-3.5 py-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] flex items-center gap-2.5 shadow-sm">
-                <Target className="w-5 h-5 text-[#FF4B4B]" />
-                <div>
-                  <div className="text-[10px] text-[#9CA3AF] font-bold uppercase tracking-wider">Countdown</div>
-                  <div className="text-sm font-black text-[#F3F4F6]">
-                    <CountUp value={data.daysLeftForExam} suffix=" Days" />
-                  </div>
-                </div>
+              {/* Streak */}
+              <div 
+                onClick={() => { soundFx.playChestOpen(); triggerConfetti(); }}
+                className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#FF9600]/30 flex items-center gap-1.5 shadow-sm cursor-pointer select-none"
+                title="Tap to celebrate your daily study streak!"
+              >
+                <FlameGlow active={(userProfile.streakDays || data.currentStreak || 0) > 0}>
+                  <Flame className="w-4 h-4 text-[#FF9600] fill-[#FF9600]" />
+                </FlameGlow>
+                <span className="text-xs font-black text-[#F3F4F6]">
+                  <CountUp value={userProfile.streakDays || data.currentStreak || 1} suffix="d" />
+                </span>
+              </div>
+
+              {/* Countdown to Exam */}
+              <div className="px-3 py-1.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] flex items-center gap-1.5 shadow-sm">
+                <Target className="w-4 h-4 text-[#1CB0F6]" />
+                <span className="text-xs font-black text-[#F3F4F6]">
+                  <CountUp value={data.daysLeftForExam} suffix="d" />
+                </span>
               </div>
 
               {onOpenWorkspaceCustomizer && (
                 <button
                   onClick={onOpenWorkspaceCustomizer}
                   title="Personalize Workspace"
-                  className="p-2.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] hover:border-[#1CB0F6]/50 text-[#9CA3AF] hover:text-[#1CB0F6] transition-all cursor-pointer shadow-sm active:translate-y-0.5"
+                  className="p-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] hover:border-[#1CB0F6]/50 text-[#9CA3AF] hover:text-[#1CB0F6] transition-all cursor-pointer shadow-sm active:translate-y-0.5"
                   aria-label="Personalize Workspace"
                 >
                   <Sliders className="w-4 h-4" />
@@ -394,51 +427,88 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               )}
             </div>
           </div>
+
+          {/* Segmented Dual-Mode Switcher */}
+          <div className="flex items-center gap-2 p-1 rounded-2xl bg-[#0F1115] border border-[#2A2F3A] w-full">
+            <button
+              onClick={() => { soundFx.playTap(); setDashboardViewMode('path'); }}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
+                dashboardViewMode === 'path'
+                  ? 'bg-[#58CC02] text-[#0B2300] shadow-[0_2px_12px_rgba(88,204,2,0.35)]'
+                  : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
+              }`}
+            >
+              <Gamepad2 className="w-4 h-4 stroke-[2.5]" />
+              <span className="tracking-wide">GAMIFIED LEARNING PATH</span>
+            </button>
+
+            <button
+              onClick={() => { soundFx.playTap(); setDashboardViewMode('analytics'); }}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer select-none ${
+                dashboardViewMode === 'analytics'
+                  ? 'bg-[#1CB0F6] text-[#00263D] shadow-[0_2px_12px_rgba(28,176,246,0.35)]'
+                  : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
+              }`}
+            >
+              <BarChart2 className="w-4 h-4 stroke-[2.5]" />
+              <span className="tracking-wide">PREP ANALYTICS & RADAR</span>
+            </button>
+          </div>
         </TactileCard>
       </SlideUp>
 
-      {/* ── 1.5. GAMIFIED EXAM PATH BANNER (Duolingo Style Mobile Learning Experience) ── */}
-      <TactileCard className="p-4 sm:p-5 bg-gradient-to-r from-[#16251B] via-[#1A1D24] to-[#16251B] border-2 border-[#58CC02]/40 shadow-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <AspirantMascot state="idle" size="sm" />
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded-full bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/40 text-[10px] font-black uppercase">
-                  Duolingo-Style Mode
-                </span>
-                <span className="text-[11px] text-[#9CA3AF] font-bold">Interactive Learning Tree</span>
+      {/* ── MODE 1: DUOLINGO-GRADE LEARNING TREE & MASCOT EXPERIENCE ── */}
+      {dashboardViewMode === 'path' && (
+        <div className="space-y-6">
+          {/* Interactive Mascot Companion Banner (Tap to celebrate!) */}
+          <TactileCard className="p-4 sm:p-5 bg-gradient-to-r from-[#142318] via-[#1A1D24] to-[#142318] border-2 border-[#58CC02]/40 shadow-xl overflow-hidden relative">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <AspirantMascot
+                  state={mascotState}
+                  size="md"
+                  speechBubble={VEER_QUOTES[mascotQuoteIndex]}
+                  onClick={handleMascotTap}
+                  className="cursor-pointer"
+                />
               </div>
-              <h3 className="text-base font-black text-[#F3F4F6] mt-0.5">
-                Gamified Daily Exam Journey
-              </h3>
-              <p className="text-xs text-[#9CA3AF]">
-                Bite-sized concept drills, 3D buttons, audio chimes, and milestone chests.
-              </p>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleMascotTap}
+                  className="px-3.5 py-2 rounded-xl bg-[#58CC02]/15 hover:bg-[#58CC02]/25 border border-[#58CC02]/40 text-[#58CC02] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#58CC02]" />
+                  <span>Tap Veer for Boost 🍀</span>
+                </button>
+
+                <TactileButton
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    soundFx.playTap();
+                    if (onNavigate) onNavigate('practice_hub');
+                  }}
+                  leftIcon={<Zap className="w-3.5 h-3.5" />}
+                >
+                  Quick PYQ Practice
+                </TactileButton>
+              </div>
             </div>
-          </div>
+          </TactileCard>
 
-          <TactileButton
-            variant={showDuolingoPath ? 'secondary' : 'primary'}
-            size="md"
-            onClick={() => setShowDuolingoPath(!showDuolingoPath)}
-            rightIcon={<ArrowRight className="w-4 h-4" />}
-          >
-            {showDuolingoPath ? 'SHOW STANDARD DASHBOARD' : 'OPEN EXAM PATH'}
-          </TactileButton>
+          {/* Full Duolingo Learning Path Engine */}
+          <DuolingoPathEngine
+            userProfile={userProfile}
+            selectedExam={activeExamTag}
+            onNavigate={onNavigate}
+          />
         </div>
+      )}
 
-        {/* Expandable Gamified Path */}
-        {showDuolingoPath && (
-          <div className="pt-6 border-t border-[#2A2F3A] mt-4">
-            <DuolingoPathEngine
-              userProfile={userProfile}
-              selectedExam={activeExamTag}
-              onNavigate={onNavigate}
-            />
-          </div>
-        )}
-      </TactileCard>
+      {/* ── MODE 2: CLASSIC PREPARATION ANALYTICS, RADAR & TIMELINE ── */}
+      {dashboardViewMode === 'analytics' && (
+        <div className="space-y-6">
 
       {/* ── 2. DOMINANT PRIMARY STUDY ACTION: Answers "What should I do now?" ── */}
       <TactileCard className="p-5 sm:p-6 bg-gradient-to-br from-[#16251B] to-[#1A1D24] border-2 border-[#58CC02]/40 shadow-lg relative overflow-hidden space-y-4">
@@ -629,6 +699,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
         )}
       </div>
+      </div>
+      )}
 
       {/* Non-intrusive in-feed slot for non-premium candidates */}
       <AdSenseBanner slotType="inFeed" isPremium={userProfile.isPremium} />

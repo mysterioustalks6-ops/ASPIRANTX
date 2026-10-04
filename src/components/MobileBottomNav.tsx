@@ -1,6 +1,8 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { ActiveTab } from '../types';
-import { Target, BookOpen, Award, BarChart3, Menu } from 'lucide-react';
+import { Target, BookOpen, Award, BarChart3, Menu, Compass, Zap } from 'lucide-react';
+import { soundFx } from '../lib/soundEffects';
 
 interface MobileBottomNavProps {
   activeTab: ActiveTab;
@@ -18,6 +20,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const isProgressActive = activeTab === 'progress_hub' || activeTab === 'weakness' || activeTab === 'leaderboard';
   const isMoreActive = activeTab === 'more_hub' || (!isHomeActive && !isLearnActive && !isPracticeActive && !isProgressActive);
 
+  const handleTabSwitch = (tab: ActiveTab) => {
+    soundFx.playTap();
+    setActiveTab(tab);
+  };
+
   return (
     <nav 
       id="mobile-bottom-nav"
@@ -25,84 +32,129 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       className="fixed bottom-0 left-0 right-0 z-40 bg-[#0F1115]/95 backdrop-blur-2xl border-t border-[#2A2F3A] pb-[max(0.65rem,env(safe-area-inset-bottom,0px))] md:hidden transition-all shadow-[0_-4px_24px_rgba(0,0,0,0.7)]"
     >
       <div className="flex items-center justify-around px-2 py-1.5 h-16 max-w-md mx-auto">
-        {/* 1. Home */}
+        {/* 1. Home / Path */}
         <button
-          onClick={() => setActiveTab('dashboard')}
-          aria-label="Home Dashboard"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all duration-150 min-h-[48px] touch-manipulation cursor-pointer select-none active:translate-y-0.5 ${
+          onClick={() => handleTabSwitch('dashboard')}
+          aria-label="Home Learning Path"
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
             isHomeActive
               ? 'text-[#58CC02] font-black'
               : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-all duration-150 ${isHomeActive ? 'bg-[#58CC02]/15 text-[#58CC02] border border-[#58CC02]/30 shadow-[0_0_12px_rgba(88,204,2,0.2)]' : ''}`}>
-            <Target className="w-5 h-5 stroke-[2.2]" />
-          </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Home</span>
+          <motion.div 
+            whileTap={{ scale: 0.85 }}
+            className={`p-1.5 rounded-xl transition-all duration-200 ${
+              isHomeActive 
+                ? 'bg-[#58CC02]/20 text-[#58CC02] border-2 border-[#58CC02] shadow-[0_0_16px_rgba(88,204,2,0.35)] scale-110' 
+                : 'hover:bg-slate-800/60'
+            }`}
+          >
+            <Compass className="w-5 h-5 stroke-[2.4]" />
+          </motion.div>
+          <span className={`text-[10px] mt-0.5 tracking-tight ${isHomeActive ? 'font-black text-[#58CC02]' : 'font-semibold'}`}>
+            Path
+          </span>
         </button>
 
         {/* 2. Study (Syllabus & Curriculum) */}
         <button
-          onClick={() => setActiveTab('syllabus')}
+          onClick={() => handleTabSwitch('syllabus')}
           aria-label="Study Curriculum & Syllabus"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all duration-150 min-h-[48px] touch-manipulation cursor-pointer select-none active:translate-y-0.5 ${
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
             isLearnActive
-              ? 'text-[#58CC02] font-black'
+              ? 'text-[#1CB0F6] font-black'
               : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-all duration-150 ${isLearnActive ? 'bg-[#58CC02]/15 text-[#58CC02] border border-[#58CC02]/30 shadow-[0_0_12px_rgba(88,204,2,0.2)]' : ''}`}>
-            <BookOpen className="w-5 h-5 stroke-[2.2]" />
-          </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Study</span>
+          <motion.div 
+            whileTap={{ scale: 0.85 }}
+            className={`p-1.5 rounded-xl transition-all duration-200 ${
+              isLearnActive 
+                ? 'bg-[#1CB0F6]/20 text-[#1CB0F6] border-2 border-[#1CB0F6] shadow-[0_0_16px_rgba(28,176,246,0.35)] scale-110' 
+                : 'hover:bg-slate-800/60'
+            }`}
+          >
+            <BookOpen className="w-5 h-5 stroke-[2.4]" />
+          </motion.div>
+          <span className={`text-[10px] mt-0.5 tracking-tight ${isLearnActive ? 'font-black text-[#1CB0F6]' : 'font-semibold'}`}>
+            Syllabus
+          </span>
         </button>
 
         {/* 3. Practice (PYQ, Question Bank, CBT Mocks) */}
         <button
-          onClick={() => setActiveTab('practice_hub')}
+          onClick={() => handleTabSwitch('practice_hub')}
           aria-label="Practice Mock Tests & PYQs"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all duration-150 min-h-[48px] touch-manipulation cursor-pointer select-none active:translate-y-0.5 ${
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
             isPracticeActive
-              ? 'text-[#58CC02] font-black'
+              ? 'text-[#FF9600] font-black'
               : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-all duration-150 ${isPracticeActive ? 'bg-[#58CC02]/15 text-[#58CC02] border border-[#58CC02]/30 shadow-[0_0_12px_rgba(88,204,2,0.2)]' : ''}`}>
-            <Award className="w-5 h-5 stroke-[2.2]" />
-          </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Practice</span>
+          <motion.div 
+            whileTap={{ scale: 0.85 }}
+            className={`p-1.5 rounded-xl transition-all duration-200 ${
+              isPracticeActive 
+                ? 'bg-[#FF9600]/20 text-[#FF9600] border-2 border-[#FF9600] shadow-[0_0_16px_rgba(255,150,0,0.35)] scale-110' 
+                : 'hover:bg-slate-800/60'
+            }`}
+          >
+            <Award className="w-5 h-5 stroke-[2.4]" />
+          </motion.div>
+          <span className={`text-[10px] mt-0.5 tracking-tight ${isPracticeActive ? 'font-black text-[#FF9600]' : 'font-semibold'}`}>
+            Practice
+          </span>
         </button>
 
         {/* 4. Progress (Readiness, Accuracy & Leaderboard) */}
         <button
-          onClick={() => setActiveTab('progress_hub')}
+          onClick={() => handleTabSwitch('progress_hub')}
           aria-label="Readiness & Analytics"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all duration-150 min-h-[48px] touch-manipulation cursor-pointer select-none active:translate-y-0.5 ${
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
             isProgressActive
-              ? 'text-[#58CC02] font-black'
+              ? 'text-[#CE82FF] font-black'
               : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-all duration-150 ${isProgressActive ? 'bg-[#58CC02]/15 text-[#58CC02] border border-[#58CC02]/30 shadow-[0_0_12px_rgba(88,204,2,0.2)]' : ''}`}>
-            <BarChart3 className="w-5 h-5 stroke-[2.2]" />
-          </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-bold">Progress</span>
+          <motion.div 
+            whileTap={{ scale: 0.85 }}
+            className={`p-1.5 rounded-xl transition-all duration-200 ${
+              isProgressActive 
+                ? 'bg-[#CE82FF]/20 text-[#CE82FF] border-2 border-[#CE82FF] shadow-[0_0_16px_rgba(206,130,255,0.35)] scale-110' 
+                : 'hover:bg-slate-800/60'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5 stroke-[2.4]" />
+          </motion.div>
+          <span className={`text-[10px] mt-0.5 tracking-tight ${isProgressActive ? 'font-black text-[#CE82FF]' : 'font-semibold'}`}>
+            Rank
+          </span>
         </button>
 
         {/* 5. More (Tools, Productivity, Community & Settings) */}
         <button
-          onClick={() => setActiveTab('more_hub')}
+          onClick={() => handleTabSwitch('more_hub')}
           aria-label="Open More Features & Tools"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all duration-150 min-h-[48px] touch-manipulation cursor-pointer select-none active:translate-y-0.5 ${
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
             isMoreActive
               ? 'text-[#58CC02] font-black'
               : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
           }`}
         >
-          <div className={`p-1.5 rounded-xl transition-all duration-150 ${isMoreActive ? 'bg-[#58CC02]/15 text-[#58CC02] border border-[#58CC02]/30 shadow-[0_0_12px_rgba(88,204,2,0.2)]' : ''}`}>
-            <Menu className="w-5 h-5 stroke-[2.2]" />
-          </div>
-          <span className="text-[10px] mt-0.5 tracking-tight font-bold">More</span>
+          <motion.div 
+            whileTap={{ scale: 0.85 }}
+            className={`p-1.5 rounded-xl transition-all duration-200 ${
+              isMoreActive 
+                ? 'bg-[#58CC02]/20 text-[#58CC02] border-2 border-[#58CC02] shadow-[0_0_16px_rgba(88,204,2,0.35)] scale-110' 
+                : 'hover:bg-slate-800/60'
+            }`}
+          >
+            <Menu className="w-5 h-5 stroke-[2.4]" />
+          </motion.div>
+          <span className={`text-[10px] mt-0.5 tracking-tight ${isMoreActive ? 'font-black text-[#58CC02]' : 'font-semibold'}`}>
+            More
+          </span>
         </button>
       </div>
     </nav>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check, X } from 'lucide-react';
+import { soundFx } from '../lib/soundEffects';
 
 export type OptionCardState = 'neutral' | 'selected' | 'correct' | 'incorrect';
 
@@ -44,9 +45,19 @@ export const TactileOptionCard: React.FC<TactileOptionCardProps> = ({
     }
   };
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!disabled) {
+      soundFx.playTap();
+    }
+    if (props.onClick) {
+      props.onClick(e);
+    }
+  };
+
   return (
     <button
       {...props}
+      onClick={handleClick}
       disabled={disabled}
       className={`
         w-full p-4 rounded-xl text-left font-medium text-sm transition-all duration-150
