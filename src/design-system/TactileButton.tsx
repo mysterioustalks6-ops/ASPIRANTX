@@ -30,10 +30,7 @@ export const TactileButton: React.FC<TactileButtonProps> = ({
         soundFx.playTap();
       }
     }
-    // Haptic feedback via native navigator if available
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate?.(12);
-    }
+    soundFx.triggerHaptic(12);
     onClick?.(e);
   };
 

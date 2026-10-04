@@ -5,17 +5,28 @@
 
 class SoundFxEngine {
   private ctx: AudioContext | null = null;
-  private soundEnabled: boolean = true;
+  private soundEnabled: boolean = false; // Sound OFF by default
+  private hapticsEnabled: boolean = true; // Haptics ON by default
 
   constructor() {
-    // Check user preference for sound
+    // Check user preference for sound (default: false)
     try {
-      const stored = localStorage.getItem('aspirantx_sound_enabled');
-      if (stored !== null) {
-        this.soundEnabled = stored === 'true';
+      const storedSound = localStorage.getItem('aspirantx_sound_enabled');
+      if (storedSound !== null) {
+        this.soundEnabled = storedSound === 'true';
+      } else {
+        this.soundEnabled = false;
+      }
+
+      const storedHaptics = localStorage.getItem('aspirantx_haptics_enabled');
+      if (storedHaptics !== null) {
+        this.hapticsEnabled = storedHaptics === 'true';
+      } else {
+        this.hapticsEnabled = true;
       }
     } catch {
-      this.soundEnabled = true;
+      this.soundEnabled = false;
+      this.hapticsEnabled = true;
     }
   }
 
@@ -40,6 +51,26 @@ class SoundFxEngine {
     try {
       localStorage.setItem('aspirantx_sound_enabled', String(enabled));
     } catch {}
+  }
+
+  public isHaptics(): boolean {
+    return this.hapticsEnabled;
+  }
+
+  public setHaptics(enabled: boolean) {
+    this.hapticsEnabled = enabled;
+    try {
+      localStorage.setItem('aspirantx_haptics_enabled', String(enabled));
+    } catch {}
+  }
+
+  public triggerHaptic(pattern: number | number[] = 15) {
+    if (!this.hapticsEnabled) return;
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate?.(pattern);
+      } catch {}
+    }
   }
 
   /**
@@ -74,6 +105,14 @@ class SoundFxEngine {
     } catch (e) {
       console.warn('Audio playback error:', e);
     }
+  }
+
+  public playSuccess() {
+    this.playCorrect();
+  }
+
+  public playIncorrect() {
+    this.playWrong();
   }
 
   /**

@@ -15,13 +15,11 @@ import { LandingPage } from './components/LandingPage';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
-import { FeatureCircleSection } from './components/FeatureCircleSection';
 import { GamificationBar } from './components/GamificationBar';
 import { PracticeHub } from './components/PracticeHub';
 import { ProgressHub } from './components/ProgressHub';
 import { MoreHub } from './components/MoreHub';
 import { FigmaRedesignPreview } from './components/FigmaRedesignPreview';
-import { DesignSystemShowcase } from './components/DesignSystemShowcase';
 import { DailyQuoteCard } from './components/DailyQuote';
 import { SyllabusTracker } from './components/SyllabusTracker';
 import { PyqEngine } from './components/PyqEngine';
@@ -84,6 +82,7 @@ const RewardsHub = lazy(() => import('./components/RewardsHub').then(m => ({ def
 const FocusShieldView = lazy(() => import('./components/FocusShieldView').then(m => ({ default: m.FocusShieldView })));
 const DownloadPage = lazy(() => import('./components/DownloadPage').then(m => ({ default: m.DownloadPage })));
 const GalaxyDebugScreen = lazy(() => import('./features/focus/screens/GalaxyDebugScreen').then(m => ({ default: m.GalaxyDebugScreen })));
+const DesignSystemShowcase = lazy(() => import('./components/DesignSystemShowcase').then(m => ({ default: m.DesignSystemShowcase })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
 
@@ -210,16 +209,16 @@ function AppContent() {
     })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy' || window.location.pathname === '/design-system')) {
+    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy' || (import.meta.env.DEV && window.location.pathname === '/design-system'))) {
       if (window.location.pathname.startsWith('/debug')) return 'debug_galaxy';
-      if (window.location.pathname === '/design-system') return 'design_system';
+      if (import.meta.env.DEV && window.location.pathname === '/design-system') return 'design_system';
       return 'download';
     }
     const hash = window.location.hash.replace('#', '');
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
     if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') return 'debug_galaxy';
-    if (hash === 'design-system' || hash === 'design_system') return 'design_system';
+    if (import.meta.env.DEV && (hash === 'design-system' || hash === 'design_system')) return 'design_system';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
@@ -1167,7 +1166,7 @@ function AppContent() {
     );
   }
 
-  if (activeTab === 'design_system') {
+  if (import.meta.env.DEV && activeTab === 'design_system') {
     return <DesignSystemShowcase />;
   }
 
@@ -1321,21 +1320,45 @@ function AppContent() {
         </div>
       )}
 
+      {/* Desktop Sidebar Navigation */}
+      <Sidebar
+        activeTab={activeTab}
+        setActiveTab={handleSelectTab}
+        user={user}
+        onLogout={handleLogout}
+        isAdminUnlocked={isAdminUnlocked}
+        onTriggerAdminSecret={handleTriggerAdminSecret}
+        onOpenProfileModal={() => setShowProfileModal(true)}
+        onOpenReferralModal={() => setShowReferralModal(true)}
+        onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
+        onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+        customizer={customizer}
+        selectedExam={selectedExam}
+        onExamChange={handleExamChange}
+        isCollapsed={isSidebarCollapsed}
+        onToggleCollapse={handleToggleSidebarCollapse}
+      />
+
       {/* Main Content Dashboard Area with Full-Width Screen Workspace */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
-        {/* Dedicated Circular Features Section: On mobile dashboard, DuolingoPathEngine provides native top HUD */}
+        {/* Slim Header: Visible across mobile and desktop except full-screen focus modes */}
         {!['focus_shield', 'timer'].includes(activeTab) && (
-          <div className={activeTab === 'dashboard' || activeTab === 'student_dashboard' ? 'hidden md:block' : ''}>
-            <FeatureCircleSection
-              activeTab={activeTab}
-              onSelectTab={handleSelectTab}
-              selectedExam={selectedExam}
-              onExamChange={handleExamChange}
-              user={user}
-              onOpenProfile={() => setShowProfileModal(true)}
-              onOpenSearch={() => setShowSearchModal(true)}
-            />
-          </div>
+          <Header
+            activeTab={activeTab}
+            user={user}
+            selectedExam={selectedExam}
+            onExamChange={handleExamChange}
+            onOpenProfileModal={() => setShowProfileModal(true)}
+            onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
+            onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+            onOpenSearch={() => setShowSearchModal(true)}
+            onOpenMobileMenu={() => setIsMobileDrawerOpen(true)}
+            onRequireLogin={() => setUser(null)}
+            onNavigate={(t) => setActiveTab(t as ActiveTab)}
+            demoTimeFormatted={formatDemoTime(demoSecondsRemaining)}
+            demoSecondsRemaining={demoSecondsRemaining}
+            isDemoExpired={isDemoExpired}
+          />
         )}
 
         {/* Gamification Bar: Relocated from global header to dedicated Rewards & Milestones experience to eliminate cognitive clutter */}
@@ -1777,7 +1800,7 @@ function AppContent() {
                 />
               )}
 
-              {activeTab === 'design_system' && (
+              {import.meta.env.DEV && activeTab === 'design_system' && (
                 <DesignSystemShowcase />
               )}
               </Suspense>

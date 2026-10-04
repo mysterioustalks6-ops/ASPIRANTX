@@ -1,27 +1,27 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { ActiveTab } from '../types';
-import { Target, BookOpen, Award, BarChart3, Menu, Compass, Zap } from 'lucide-react';
+import { Compass, Map, BookOpen, Trophy, User } from 'lucide-react';
 import { soundFx } from '../lib/soundEffects';
 
 interface MobileBottomNavProps {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-  onOpenMore: () => void;
+  onOpenMore?: () => void;
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   activeTab,
   setActiveTab,
 }) => {
-  const isHomeActive = activeTab === 'student_dashboard' || activeTab === 'dashboard';
-  const isLearnActive = activeTab === 'syllabus' || activeTab === 'library' || activeTab === 'flashcards' || activeTab === 'podcasts';
+  const isTodayActive = activeTab === 'student_dashboard' || activeTab === 'dashboard';
+  const isMapActive = activeTab === 'syllabus';
   const isPracticeActive = activeTab === 'practice_hub' || activeTab === 'cbt' || activeTab === 'cbt_exam' || activeTab === 'pyq' || activeTab === 'question_bank';
-  const isProgressActive = activeTab === 'progress_hub' || activeTab === 'weakness' || activeTab === 'leaderboard';
-  const isMoreActive = activeTab === 'more_hub' || (!isHomeActive && !isLearnActive && !isPracticeActive && !isProgressActive);
+  const isLeagueActive = activeTab === 'leaderboard' || activeTab === 'progress_hub' || activeTab === 'weakness';
+  const isMeActive = activeTab === 'more_hub' || (!isTodayActive && !isMapActive && !isPracticeActive && !isLeagueActive);
 
   const handleTabSwitch = (tab: ActiveTab) => {
     soundFx.playTap();
+    soundFx.triggerHaptic(12);
     setActiveTab(tab);
   };
 
@@ -29,131 +29,116 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
     <nav 
       id="mobile-bottom-nav"
       aria-label="Mobile Navigation Bar"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-[#0F1115]/95 backdrop-blur-2xl border-t border-[#2A2F3A] pb-[max(0.65rem,env(safe-area-inset-bottom,0px))] md:hidden transition-all shadow-[0_-4px_24px_rgba(0,0,0,0.7)]"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--sr-surface)] border-t-2 border-[var(--sr-line-strong)] pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] md:hidden select-none shadow-lg"
     >
-      <div className="flex items-center justify-around px-2 py-1.5 h-16 max-w-md mx-auto">
-        {/* 1. Home / Path */}
+      <div className="flex items-center justify-around px-2 py-1 h-16 max-w-md mx-auto">
+        {/* 1. Today (Aaj ki Ride) */}
         <button
           onClick={() => handleTabSwitch('dashboard')}
-          aria-label="Home Learning Path"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
-            isHomeActive
-              ? 'text-[#58CC02] font-black'
-              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
+          aria-label="Today Study Hub"
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl min-h-[48px] touch-manipulation cursor-pointer transition-all active:scale-95 ${
+            isTodayActive ? 'text-[var(--sr-primary)]' : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
           }`}
         >
-          <motion.div 
-            whileTap={{ scale: 0.85 }}
-            className={`p-1.5 rounded-xl transition-all duration-200 ${
-              isHomeActive 
-                ? 'bg-[#58CC02]/20 text-[#58CC02] border-2 border-[#58CC02] shadow-[0_0_16px_rgba(88,204,2,0.35)] scale-110' 
-                : 'hover:bg-slate-800/60'
+          <div 
+            className={`p-1.5 rounded-xl transition-all ${
+              isTodayActive 
+                ? 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] font-black' 
+                : ''
             }`}
           >
-            <Compass className="w-5 h-5 stroke-[2.4]" />
-          </motion.div>
-          <span className={`text-[10px] mt-0.5 tracking-tight ${isHomeActive ? 'font-black text-[#58CC02]' : 'font-semibold'}`}>
-            Path
+            <Compass className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <span className={`text-xs mt-0.5 tracking-tight ${isTodayActive ? 'font-black text-[var(--sr-primary)]' : 'font-bold'}`}>
+            Today
           </span>
         </button>
 
-        {/* 2. Study (Syllabus & Curriculum) */}
+        {/* 2. Map (Territory Syllabus) */}
         <button
           onClick={() => handleTabSwitch('syllabus')}
-          aria-label="Study Curriculum & Syllabus"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
-            isLearnActive
-              ? 'text-[#1CB0F6] font-black'
-              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
+          aria-label="Curriculum Territory Map"
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl min-h-[48px] touch-manipulation cursor-pointer transition-all active:scale-95 ${
+            isMapActive ? 'text-[var(--sr-blue)]' : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
           }`}
         >
-          <motion.div 
-            whileTap={{ scale: 0.85 }}
-            className={`p-1.5 rounded-xl transition-all duration-200 ${
-              isLearnActive 
-                ? 'bg-[#1CB0F6]/20 text-[#1CB0F6] border-2 border-[#1CB0F6] shadow-[0_0_16px_rgba(28,176,246,0.35)] scale-110' 
-                : 'hover:bg-slate-800/60'
+          <div 
+            className={`p-1.5 rounded-xl transition-all ${
+              isMapActive 
+                ? 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] font-black' 
+                : ''
             }`}
           >
-            <BookOpen className="w-5 h-5 stroke-[2.4]" />
-          </motion.div>
-          <span className={`text-[10px] mt-0.5 tracking-tight ${isLearnActive ? 'font-black text-[#1CB0F6]' : 'font-semibold'}`}>
-            Syllabus
+            <Map className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <span className={`text-xs mt-0.5 tracking-tight ${isMapActive ? 'font-black text-[var(--sr-blue)]' : 'font-bold'}`}>
+            Map
           </span>
         </button>
 
-        {/* 3. Practice (PYQ, Question Bank, CBT Mocks) */}
+        {/* 3. Practice (Drill / Mock / PYQ) */}
         <button
           onClick={() => handleTabSwitch('practice_hub')}
-          aria-label="Practice Mock Tests & PYQs"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
-            isPracticeActive
-              ? 'text-[#FF9600] font-black'
-              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
+          aria-label="Practice Hub & Mock Tests"
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl min-h-[48px] touch-manipulation cursor-pointer transition-all active:scale-95 ${
+            isPracticeActive ? 'text-[var(--sr-purple)]' : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
           }`}
         >
-          <motion.div 
-            whileTap={{ scale: 0.85 }}
-            className={`p-1.5 rounded-xl transition-all duration-200 ${
+          <div 
+            className={`p-1.5 rounded-xl transition-all ${
               isPracticeActive 
-                ? 'bg-[#FF9600]/20 text-[#FF9600] border-2 border-[#FF9600] shadow-[0_0_16px_rgba(255,150,0,0.35)] scale-110' 
-                : 'hover:bg-slate-800/60'
+                ? 'bg-[var(--sr-purple-subtle)] text-[var(--sr-purple)] font-black' 
+                : ''
             }`}
           >
-            <Award className="w-5 h-5 stroke-[2.4]" />
-          </motion.div>
-          <span className={`text-[10px] mt-0.5 tracking-tight ${isPracticeActive ? 'font-black text-[#FF9600]' : 'font-semibold'}`}>
+            <BookOpen className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <span className={`text-xs mt-0.5 tracking-tight ${isPracticeActive ? 'font-black text-[var(--sr-purple)]' : 'font-bold'}`}>
             Practice
           </span>
         </button>
 
-        {/* 4. Progress (Readiness, Accuracy & Leaderboard) */}
+        {/* 4. League (Ranks & Predictions) */}
         <button
-          onClick={() => handleTabSwitch('progress_hub')}
-          aria-label="Readiness & Analytics"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
-            isProgressActive
-              ? 'text-[#CE82FF] font-black'
-              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
+          onClick={() => handleTabSwitch('leaderboard')}
+          aria-label="National Leagues & Ranks"
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl min-h-[48px] touch-manipulation cursor-pointer transition-all active:scale-95 ${
+            isLeagueActive ? 'text-[var(--sr-amber)]' : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
           }`}
         >
-          <motion.div 
-            whileTap={{ scale: 0.85 }}
-            className={`p-1.5 rounded-xl transition-all duration-200 ${
-              isProgressActive 
-                ? 'bg-[#CE82FF]/20 text-[#CE82FF] border-2 border-[#CE82FF] shadow-[0_0_16px_rgba(206,130,255,0.35)] scale-110' 
-                : 'hover:bg-slate-800/60'
+          <div 
+            className={`p-1.5 rounded-xl transition-all ${
+              isLeagueActive 
+                ? 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] font-black' 
+                : ''
             }`}
           >
-            <BarChart3 className="w-5 h-5 stroke-[2.4]" />
-          </motion.div>
-          <span className={`text-[10px] mt-0.5 tracking-tight ${isProgressActive ? 'font-black text-[#CE82FF]' : 'font-semibold'}`}>
-            Rank
+            <Trophy className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <span className={`text-xs mt-0.5 tracking-tight ${isLeagueActive ? 'font-black text-[var(--sr-amber)]' : 'font-bold'}`}>
+            League
           </span>
         </button>
 
-        {/* 5. More (Tools, Productivity, Community & Settings) */}
+        {/* 5. Me (Profile, Tools, Settings) */}
         <button
           onClick={() => handleTabSwitch('more_hub')}
-          aria-label="Open More Features & Tools"
-          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl transition-all min-h-[48px] touch-manipulation cursor-pointer select-none active:scale-95 ${
-            isMoreActive
-              ? 'text-[#58CC02] font-black'
-              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
+          aria-label="Candidate Profile and Tools"
+          className={`flex-1 flex flex-col items-center justify-center py-1 rounded-2xl min-h-[48px] touch-manipulation cursor-pointer transition-all active:scale-95 ${
+            isMeActive ? 'text-[var(--sr-primary)]' : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
           }`}
         >
-          <motion.div 
-            whileTap={{ scale: 0.85 }}
-            className={`p-1.5 rounded-xl transition-all duration-200 ${
-              isMoreActive 
-                ? 'bg-[#58CC02]/20 text-[#58CC02] border-2 border-[#58CC02] shadow-[0_0_16px_rgba(88,204,2,0.35)] scale-110' 
-                : 'hover:bg-slate-800/60'
+          <div 
+            className={`p-1.5 rounded-xl transition-all ${
+              isMeActive 
+                ? 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] font-black' 
+                : ''
             }`}
           >
-            <Menu className="w-5 h-5 stroke-[2.4]" />
-          </motion.div>
-          <span className={`text-[10px] mt-0.5 tracking-tight ${isMoreActive ? 'font-black text-[#58CC02]' : 'font-semibold'}`}>
-            More
+            <User className="w-5 h-5 stroke-[2.2]" />
+          </div>
+          <span className={`text-xs mt-0.5 tracking-tight ${isMeActive ? 'font-black text-[var(--sr-primary)]' : 'font-bold'}`}>
+            Me
           </span>
         </button>
       </div>

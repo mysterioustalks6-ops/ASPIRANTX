@@ -245,28 +245,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
         title={item.label}
         className={`w-full flex items-center ${
           isCollapsed ? 'justify-center px-2' : 'justify-between px-3'
-        } py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 group relative ${
+        } py-2.5 rounded-xl text-xs font-bold transition-all duration-150 group relative cursor-pointer ${
           isActive
-            ? 'bg-sky-600 text-white shadow-md shadow-sky-600/25'
+            ? 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-2 border-[var(--sr-primary)]/40 shadow-sm'
             : isAdmin
-            ? 'text-rose-400 hover:bg-rose-500/10 hover:text-rose-300'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/80'
+            ? 'text-[var(--sr-coral)] hover:bg-[var(--sr-coral-subtle)]'
+            : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)]'
         }`}
       >
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2.5'} truncate`}>
           <Icon className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-105 ${
-            isActive ? 'text-white' : isAdmin ? 'text-rose-400' : 'text-slate-400 group-hover:text-slate-200'
+            isActive ? 'text-[var(--sr-primary)]' : isAdmin ? 'text-[var(--sr-coral)]' : 'text-[var(--sr-text-muted)] group-hover:text-[var(--sr-text)]'
           }`} />
           {!isCollapsed && <span className="truncate">{item.label}</span>}
         </div>
 
-        {!isCollapsed && (
+        {!isCollapsed && item.badge && (
           <div className="flex items-center gap-1.5 shrink-0">
             <span
-              className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+              className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
                 isActive
-                  ? 'bg-white/20 text-white'
-                  : 'bg-slate-900 text-slate-500 border border-slate-800'
+                  ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)]'
+                  : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-subtle)] border border-[var(--sr-line)]'
               }`}
             >
               {item.badge}
@@ -281,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside
       className={`hidden md:flex ${
         isCollapsed ? 'md:w-16 lg:w-16 p-2' : 'md:w-64 lg:w-72 p-4'
-      } bg-slate-950 border-r border-slate-800/80 flex-col justify-between shrink-0 z-30 sticky top-0 h-screen overflow-y-auto transition-all duration-200`}
+      } bg-[var(--sr-surface)] border-r-2 border-[var(--sr-line-strong)] text-[var(--sr-text)] flex-col justify-between shrink-0 z-30 sticky top-0 h-screen overflow-y-auto transition-all duration-200 select-none`}
     >
       <div className="space-y-4">
         {/* Logo & Brand Header */}
