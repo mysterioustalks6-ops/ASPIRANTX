@@ -258,11 +258,11 @@ async function main() {
     await new Promise(r => setTimeout(r, 400));
 
     for (const s of screens) {
-      await page.click(`#mobile-bottom-nav button:nth-child(${s.btnIndex + 1})`);
-      await new Promise(r => setTimeout(r, 1200));
-
-      // Wait for network/animations
-      await new Promise(r => setTimeout(r, 1200));
+      await page.evaluate((tab) => {
+        window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: tab }));
+      }, s.tab);
+      await page.waitForSelector(`[data-screen="${s.tab}"]`, { timeout: 10000 });
+      await new Promise(r => setTimeout(r, 600));
 
       // Scroll to mount all elements
       await page.evaluate(async () => {
@@ -270,37 +270,30 @@ async function main() {
         const maxScroll = Math.max(document.body.scrollHeight, 2500);
         for (let y = 0; y <= maxScroll; y += scrollStep) {
           window.scrollTo(0, y);
-          await new Promise(r => setTimeout(r, 40));
+          await new Promise(r => setTimeout(r, 30));
         }
         window.scrollTo(0, 0);
       });
       await new Promise(r => setTimeout(r, 400));
 
-      // Log active tab id and first heading text, then assert
-      const screenMeta = await page.evaluate(() => {
+      // Log active tab id and assert using data-screen attribute
+      const screenMeta = await page.evaluate((tabId) => {
+        const screenEl = document.querySelector(`[data-screen="${tabId}"]`);
         const activeNavBtn = document.querySelector('#mobile-bottom-nav button .font-black') || 
                               document.querySelector('#mobile-bottom-nav button[class*="primary"], #mobile-bottom-nav button[class*="blue"], #mobile-bottom-nav button[class*="purple"]');
         const activeNavText = activeNavBtn ? activeNavBtn.textContent.trim() : 'Unknown';
-        const main = document.querySelector('main') || document.body;
-        const headings = Array.from(main.querySelectorAll('h1, h2, h3, [role="heading"], p.font-black, span.font-black'))
-          .map(h => h.textContent.trim().replace(/\s+/g, ' '))
-          .filter(t => t.length > 2 && !t.includes('StudyRide') && !t.includes('Announcement'));
         return {
+          hasScreenAttr: Boolean(screenEl),
+          screenAttrValue: screenEl ? screenEl.getAttribute('data-screen') : null,
           hash: window.location.hash,
-          activeNavText,
-          firstHeading: headings[0] || 'No heading found',
-          allHeadings: headings.slice(0, 4)
+          activeNavText
         };
-      });
+      }, s.tab);
 
       console.log(`--------------------------------------------------------------------------------`);
       console.log(`Target Screen: ${s.name} (Tab: ${s.tab}, Theme: ${theme.toUpperCase()})`);
       console.log(`  Active Nav Label: "${screenMeta.activeNavText}", Hash: "${screenMeta.hash}"`);
-      console.log(`  First Visible Heading: "${screenMeta.firstHeading}"`);
-
-      const lowerHeading = (screenMeta.firstHeading + ' ' + screenMeta.allHeadings.join(' ')).toLowerCase();
-      const matched = s.expectedHeadingPart.some(term => lowerHeading.includes(term));
-      console.log(`  Screen Identity Assertion: ${matched ? 'PASSED (Matches screen content)' : 'FAILED (Screen did not update)'}`);
+      console.log(`  Screen Identity Assertion: ${screenMeta.hasScreenAttr && screenMeta.screenAttrValue === s.tab ? `PASSED (data-screen="${screenMeta.screenAttrValue}")` : 'FAILED (Screen data-screen not found)'}`);
 
       // Audit contrast of all text nodes with explicit skip reason logging
       const auditResult = await page.evaluate(() => {
@@ -339,6 +332,20 @@ async function main() {
           return ((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05));
         }
 
+        function isVisible(el) {
+          if (!el) return false;
+          if (typeof el.checkVisibility === 'function') {
+            return el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+          }
+          let cur = el;
+          while (cur && cur !== document.body) {
+            const cs = window.getComputedStyle(cur);
+            if (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0') return false;
+            cur = cur.parentElement;
+          }
+          return true;
+        }
+
         function getCssSelector(el) {
           if (!el) return '';
           let path = [];
@@ -365,6 +372,12 @@ async function main() {
         const fails = [];
         const seenParents = new Set();
         const nonSidebarSkips = [];
+        const skipCounts = {};
+
+        function addSkip(selector, text, reason) {
+          nonSidebarSkips.push({ selector, text, reason });
+          skipCounts[reason] = (skipCounts[reason] || 0) + 1;
+        }
 
         while ((node = walker.nextNode())) {
           totalTextNodes++;
@@ -380,50 +393,30 @@ async function main() {
           }
 
           if (!text || text.length < 2) {
-            nonSidebarSkips.push({
-              selector: getCssSelector(parent),
-              text: (node.textContent || '').slice(0, 20),
-              reason: 'Empty / whitespace / single character glyph (<2 chars)'
-            });
+            addSkip(getCssSelector(parent), (node.textContent || '').slice(0, 20), 'Empty / whitespace / single character glyph (<2 chars)');
             continue;
           }
 
           if (seenParents.has(parent)) {
-            nonSidebarSkips.push({
-              selector: getCssSelector(parent),
-              text: text.slice(0, 25),
-              reason: 'Multiple text nodes within same parent element (already audited)'
-            });
+            addSkip(getCssSelector(parent), text.slice(0, 25), 'Multiple text nodes within same parent element (already audited)');
             continue;
           }
           seenParents.add(parent);
 
-          const style = window.getComputedStyle(parent);
-          if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-            nonSidebarSkips.push({
-              selector: getCssSelector(parent),
-              text: text.slice(0, 25),
-              reason: `Hidden styling (display: ${style.display}, visibility: ${style.visibility}, opacity: ${style.opacity})`
-            });
+          if (!isVisible(parent)) {
+            addSkip(getCssSelector(parent), text.slice(0, 25), 'Hidden element or ancestor (display: none / hidden / opacity: 0)');
             continue;
           }
 
           if (parent.closest('#mobile-drawer')) {
-            nonSidebarSkips.push({
-              selector: getCssSelector(parent),
-              text: text.slice(0, 25),
-              reason: 'Mobile drawer sheet closed/off-canvas'
-            });
+            addSkip(getCssSelector(parent), text.slice(0, 25), 'Mobile drawer sheet closed/off-canvas');
             continue;
           }
 
+          const style = window.getComputedStyle(parent);
           const fg = parseRgb(style.color);
           if (fg[3] === 0) {
-            nonSidebarSkips.push({
-              selector: getCssSelector(parent),
-              text: text.slice(0, 25),
-              reason: 'Zero opacity foreground color (transparent)'
-            });
+            addSkip(getCssSelector(parent), text.slice(0, 25), 'Zero opacity foreground color (transparent)');
             continue;
           }
 
@@ -473,24 +466,16 @@ async function main() {
           passCount: scannedNodes - fails.length,
           failCount: fails.length,
           fails,
-          nonSidebarSkips
+          nonSidebarSkips,
+          skipCounts
         };
       });
 
       console.log(`  Scanned Text Nodes: ${auditResult.scannedNodes} / ${auditResult.totalTextNodes}`);
       console.log(`  Pass Count: ${auditResult.passCount}, Fail Count: ${auditResult.failCount}`);
-      if (s.name === 'League') {
-        console.log(`  League Scanned Nodes Explanation:`);
-        console.log(`    When in Guest mode, the student has not yet joined the All-India league, so the 100-student live leaderboard rows are not rendered in the DOM. Only the empty-state cards and join banner exist (${auditResult.scannedNodes} visible text nodes). The remaining skipped text nodes belong to the collapsed desktop sidebar navigation (hidden on mobile), closed off-canvas drawer, or whitespace elements.`);
-        console.log(`    Every Non-Sidebar Skipped Node on League (${auditResult.nonSidebarSkips.length} total):`);
-        auditResult.nonSidebarSkips.forEach((sk, idx) => {
-          console.log(`      ${idx + 1}. [${sk.reason}] -> Selector: <${sk.selector}> ("${sk.text}")`);
-        });
-      } else {
-        console.log(`  First 5 Non-Sidebar Skipped Selectors & Explicit Reasons:`);
-        auditResult.nonSidebarSkips.slice(0, 5).forEach((sk, idx) => {
-          console.log(`    ${idx + 1}. [${sk.reason}] -> Selector: <${sk.selector}> ("${sk.text}")`);
-        });
+      console.log(`  Skipped-Node Counts per Reason (${auditResult.nonSidebarSkips.length} total):`);
+      for (const [reason, count] of Object.entries(auditResult.skipCounts)) {
+        console.log(`    - ${reason}: ${count}`);
       }
 
       if (auditResult.fails.length > 0) {

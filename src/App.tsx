@@ -254,9 +254,9 @@ function AppContent() {
   useEffect(() => {
     const onHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash.startsWith('blog-submit')) {
+      if (hash.startsWith('blog-submit') || hash === 'blog_submit') {
         setActiveTab('blog_submit');
-      } else if (hash.startsWith('blog')) {
+      } else if (hash === 'blog' || hash.startsWith('blog/')) {
         setActiveTab('blog');
       } else if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') {
         setActiveTab('debug_galaxy');
@@ -1421,7 +1421,7 @@ function AppContent() {
                     <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black text-[10px] uppercase shrink-0">
                       Announcement
                     </span>
-                    <p className="text-amber-200 font-bold truncate">
+                    <p className="text-amber-800 dark:text-amber-200 font-bold truncate">
                       {customizer.announcementText}
                     </p>
                   </div>
@@ -1429,7 +1429,7 @@ function AppContent() {
                   {isAdmin && (
                     <button
                       onClick={() => setShowCustomizerModal(true)}
-                      className="text-[11px] font-extrabold text-cyan-400 hover:underline shrink-0 hidden sm:inline"
+                      className="text-[11px] font-extrabold text-cyan-600 dark:text-cyan-400 hover:underline shrink-0 hidden sm:inline"
                     >
                       Customize Ticker →
                     </button>
@@ -1439,7 +1439,7 @@ function AppContent() {
 
               {/* Photo Hero Banner (Desktop only to prevent mobile clutter) */}
               {customizer.showHeroBanner && (
-                <div className="hidden md:block relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl group">
+                <div className="hidden md:block relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl group bg-slate-950">
                   {/* Background Photo Image with Overlay */}
                   <div className="absolute inset-0 z-0">
                     <img
@@ -1499,124 +1499,147 @@ function AppContent() {
 
           {/* Active Tab View with PremiumGate Locks & Smooth Connected Transitions */}
           <section className="mt-6">
-            <AnimatePresence mode="wait">
+            <AnimatePresence initial={false}>
               <PageTransition key={activeTab}>
                 <Suspense fallback={<SuspenseFallback />}>
                 {activeTab === 'syllabus' && (
-                  <MapJourneyView
-                    user={{...user, exam: selectedExam}}
-                    selectedExam={selectedExam}
-                    isAdmin={isAdmin}
-                    featureFlagsMap={featureFlagsMap}
-                    onNavigate={(t) => setActiveTab(t)}
-                    onExamChange={handleExamChange}
-                    onOpenPremium={() => setActiveTab('premium')}
-                    onRequireLogin={() => setUser(null)}
-                  />
+                  <div data-screen="syllabus" className="w-full">
+                    <MapJourneyView
+                      user={{...user, exam: selectedExam}}
+                      selectedExam={selectedExam}
+                      isAdmin={isAdmin}
+                      featureFlagsMap={featureFlagsMap}
+                      onNavigate={(t) => setActiveTab(t)}
+                      onExamChange={handleExamChange}
+                      onOpenPremium={() => setActiveTab('premium')}
+                      onRequireLogin={() => setUser(null)}
+                    />
+                  </div>
                 )}
 
             {activeTab === 'pyq' && (
-              <PremiumGate
-                featureName="pyq"
-                featureTitle="Enterprise PYQ Archive (1991–2026)"
-                isUserPremium={user.isPremium || isAdmin}
-                isAdmin={isAdmin}
-                isGuest={user.isGuest}
-                featureFlags={featureFlagsMap}
-                onOpenPremium={() => setActiveTab('premium')}
-                onRequireLogin={() => setUser(null)}
-              >
-                <PyqEngine isAdmin={user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER'} initialExam={selectedExam} />
-              </PremiumGate>
+              <div data-screen="pyq" className="w-full">
+                <PremiumGate
+                  featureName="pyq"
+                  featureTitle="Enterprise PYQ Archive (1991–2026)"
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
+                  isGuest={user.isGuest}
+                  featureFlags={featureFlagsMap}
+                  onOpenPremium={() => setActiveTab('premium')}
+                  onRequireLogin={() => setUser(null)}
+                >
+                  <PyqEngine isAdmin={user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER'} initialExam={selectedExam} />
+                </PremiumGate>
+              </div>
             )}
 
             {activeTab === 'question_bank' && (
-              <PremiumGate
-                featureName="question_bank"
-                featureTitle="Question Bank & Practice Engine"
-                isUserPremium={user.isPremium || isAdmin}
-                isAdmin={isAdmin}
-                isGuest={user.isGuest}
-                featureFlags={featureFlagsMap}
-                onOpenPremium={() => setActiveTab('premium')}
-                onRequireLogin={() => setUser(null)}
-              >
-                <QuestionBankEngine isAdmin={user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER'} initialExam={selectedExam} />
-              </PremiumGate>
+              <div data-screen="question_bank" className="w-full">
+                <PremiumGate
+                  featureName="question_bank"
+                  featureTitle="Question Bank & Practice Engine"
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
+                  isGuest={user.isGuest}
+                  featureFlags={featureFlagsMap}
+                  onOpenPremium={() => setActiveTab('premium')}
+                  onRequireLogin={() => setUser(null)}
+                >
+                  <QuestionBankEngine isAdmin={user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER'} initialExam={selectedExam} />
+                </PremiumGate>
+              </div>
             )}
 
             {activeTab === 'timer' && (
-              <PremiumGate
-                featureName="timer"
-                featureTitle="Pomodoro Group Timer & Study Engine"
-                isUserPremium={user.isPremium || isAdmin}
-                isAdmin={isAdmin}
-                isGuest={user.isGuest}
-                featureFlags={featureFlagsMap}
-                onOpenPremium={() => setActiveTab('premium')}
-                onRequireLogin={() => setUser(null)}
-              >
-                <FocusGalaxyScreen 
-                  userId={user.id} 
-                  selectedExam={selectedExam} 
-                  initialMode="ORBIT"
-                  onBack={() => setActiveTab('dashboard')}
-                />
-              </PremiumGate>
+              <div data-screen="timer" className="w-full">
+                <PremiumGate
+                  featureName="timer"
+                  featureTitle="Pomodoro Group Timer & Study Engine"
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
+                  isGuest={user.isGuest}
+                  featureFlags={featureFlagsMap}
+                  onOpenPremium={() => setActiveTab('premium')}
+                  onRequireLogin={() => setUser(null)}
+                >
+                  <FocusGalaxyScreen 
+                    userId={user.id} 
+                    selectedExam={selectedExam} 
+                    initialMode="ORBIT"
+                    onBack={() => setActiveTab('dashboard')}
+                  />
+                </PremiumGate>
+              </div>
             )}
 
             {activeTab === 'debug_galaxy' && (
-              <Suspense fallback={<SuspenseFallback />}>
-                <GalaxyDebugScreen
-                  onBack={() => setActiveTab('timer')}
-                  onOpenGalaxy={() => setActiveTab('timer')}
-                />
-              </Suspense>
+              import.meta.env.DEV ? (
+                <div data-screen="debug_galaxy" className="w-full">
+                  <Suspense fallback={<SuspenseFallback />}>
+                    <GalaxyDebugScreen
+                      onBack={() => setActiveTab('timer')}
+                      onOpenGalaxy={() => setActiveTab('timer')}
+                    />
+                  </Suspense>
+                </div>
+              ) : (
+                <div data-screen="debug_galaxy" className="p-8 text-center text-slate-400 font-bold">
+                  Developer Debug Module (Unavailable in Production)
+                </div>
+              )
             )}
 
             {activeTab === 'tasks' && (
-              <PremiumGate
-                featureName="task"
-                featureTitle="Daily Study Planner & Task Manager"
-                isUserPremium={user.isPremium || isAdmin}
-                isAdmin={isAdmin}
-                isGuest={user.isGuest}
-                featureFlags={featureFlagsMap}
-                onOpenPremium={() => setActiveTab('premium')}
-                onRequireLogin={() => setUser(null)}
-              >
-                <TaskManager userId={user.id} selectedExam={selectedExam} />
-              </PremiumGate>
+              <div data-screen="tasks" className="w-full">
+                <PremiumGate
+                  featureName="task"
+                  featureTitle="Daily Study Planner & Task Manager"
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
+                  isGuest={user.isGuest}
+                  featureFlags={featureFlagsMap}
+                  onOpenPremium={() => setActiveTab('premium')}
+                  onRequireLogin={() => setUser(null)}
+                >
+                  <TaskManager userId={user.id} selectedExam={selectedExam} />
+                </PremiumGate>
+              </div>
             )}
 
             {activeTab === 'chat' && (
-              <PremiumGate
-                featureName="chat"
-                featureTitle="1-on-1 AI Study Mentor & Answer Evaluator"
-                isUserPremium={user.isPremium || isAdmin}
-                isAdmin={isAdmin}
-                isGuest={user.isGuest}
-                featureFlags={featureFlagsMap}
-                onOpenPremium={() => setActiveTab('premium')}
-                onRequireLogin={() => setUser(null)}
-              >
-                <AiStudyChat exam={selectedExam} userId={user.id} userEmail={user.email} />
-              </PremiumGate>
+              <div data-screen="chat" className="w-full">
+                <PremiumGate
+                  featureName="chat"
+                  featureTitle="1-on-1 AI Study Mentor & Answer Evaluator"
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
+                  isGuest={user.isGuest}
+                  featureFlags={featureFlagsMap}
+                  onOpenPremium={() => setActiveTab('premium')}
+                  onRequireLogin={() => setUser(null)}
+                >
+                  <AiStudyChat exam={selectedExam} userId={user.id} userEmail={user.email} />
+                </PremiumGate>
+              </div>
             )}
 
             {(activeTab === 'dashboard' || activeTab === 'student_dashboard') && (
+              <div data-screen={activeTab} className="w-full">
                 <StudentDashboard 
                   userProfile={{...user, exam: selectedExam}} 
-                  selectedExam={selectedExam}
-                  onExamChange={handleExamChange}
+                  selectedExam={selectedExam} 
+                  onExamChange={handleExamChange} 
                   onNavigate={(t) => setActiveTab(t)} 
                   onOpenProfileModal={() => setShowProfileModal(true)} 
-                  onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
-                  onOpenReminderSettings={() => setShowReminderSettingsModal(true)}
+                  onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)} 
+                  onOpenReminderSettings={() => setShowReminderSettingsModal(true)} 
                 />
-              )}
+              </div>
+            )}
 
-              {(activeTab === 'cbt' || activeTab === 'cbt_exam') && (
+            {activeTab === 'cbt' && (
+              <div data-screen="cbt" className="w-full">
                 <PremiumGate
                   featureName="cbt"
                   featureTitle="StudyRide All-India Mock Test & CBT Simulator"
@@ -1629,32 +1652,61 @@ function AppContent() {
                 >
                   <CbtExamEngine userProfile={{...user, exam: selectedExam}} selectedExam={selectedExam} />
                 </PremiumGate>
-              )}
+              </div>
+            )}
 
-              {activeTab === 'leaderboard' && (
+            {activeTab === 'cbt_exam' && (
+              <div data-screen="cbt_exam" className="w-full">
+                <PremiumGate
+                  featureName="cbt"
+                  featureTitle="Computer Based Test (CBT) Live Simulator"
+                  isUserPremium={user.isPremium || isAdmin}
+                  isAdmin={isAdmin}
+                  isGuest={user.isGuest}
+                  featureFlags={featureFlagsMap}
+                  onOpenPremium={() => setActiveTab('premium')}
+                  onRequireLogin={() => setUser(null)}
+                >
+                  <CbtExamEngine userProfile={{...user, exam: selectedExam}} selectedExam={selectedExam} />
+                </PremiumGate>
+              </div>
+            )}
+
+            {activeTab === 'leaderboard' && (
+              <div data-screen="leaderboard" className="w-full">
                 <LeaderboardView userProfile={{...user, exam: selectedExam}} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'community' && (
+            {activeTab === 'community' && (
+              <div data-screen="community" className="w-full">
                 <CommunityPlatform userProfile={{...user, exam: selectedExam}} selectedExam={selectedExam} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'study_buddy' && (
+            {activeTab === 'study_buddy' && (
+              <div data-screen="study_buddy" className="w-full">
                 <StudyBuddy user={{...user, exam: selectedExam}} onNavigate={(t) => setActiveTab(t as ActiveTab)} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'premium' && (
+            {activeTab === 'premium' && (
+              <div data-screen="premium" className="w-full">
                 <PremiumPlans
                   user={{...user, exam: selectedExam}}
                   onUnlockPremium={() => setUser((prev) => (prev ? { ...prev, isPremium: true } : null))}
                 />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'earn_premium' && (
+            {activeTab === 'earn_premium' && (
+              <div data-screen="earn_premium" className="w-full">
                 <EarnPremium user={{...user, exam: selectedExam}} onNavigate={(t) => setActiveTab(t)} />
-              )}
+              </div>
+            )}
 
-              {(activeTab === 'rewards' || activeTab === 'reward_milestones') && (
+            {activeTab === 'rewards' && (
+              <div data-screen="rewards" className="w-full">
                 <Suspense fallback={<SuspenseFallback />}>
                   <RewardsHub 
                     user={{...user, exam: selectedExam}} 
@@ -1663,28 +1715,47 @@ function AppContent() {
                     onOpenSyllabus={() => setActiveTab('syllabus')}
                   />
                 </Suspense>
-              )}
+              </div>
+            )}
 
-              {activeTab === 'focus_shield' && (
+            {activeTab === 'reward_milestones' && (
+              <div data-screen="reward_milestones" className="w-full">
+                <Suspense fallback={<SuspenseFallback />}>
+                  <RewardMilestones 
+                    user={{...user, exam: selectedExam}} 
+                    onOpenPremium={() => setActiveTab('premium')}
+                  />
+                </Suspense>
+              </div>
+            )}
+
+            {activeTab === 'focus_shield' && (
+              <div data-screen="focus_shield" className="w-full">
                 <Suspense fallback={<SuspenseFallback />}>
                   <FocusShieldView 
                     user={{...user, exam: selectedExam}} 
                     onTrophyUnlock={(unlocked) => setTrophyQueue(prev => [...prev, unlocked])}
                   />
                 </Suspense>
-              )}
+              </div>
+            )}
 
-              {activeTab === 'download' && (
+            {activeTab === 'download' && (
+              <div data-screen="download" className="w-full">
                 <Suspense fallback={<SuspenseFallback />}>
                   <DownloadPage onOpenApp={() => setActiveTab('syllabus')} />
                 </Suspense>
-              )}
+              </div>
+            )}
 
-              {activeTab === 'collaboration' && (
+            {activeTab === 'collaboration' && (
+              <div data-screen="collaboration" className="w-full">
                 <SponsorshipCollaboration user={{...user, exam: selectedExam}} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'library' && (
+            {activeTab === 'library' && (
+              <div data-screen="library" className="w-full">
                 <PremiumGate
                   featureName="library"
                   featureTitle="Aspirants Reference Library & NCERT Notes"
@@ -1697,18 +1768,24 @@ function AppContent() {
                 >
                   <LibraryEngine user={{...user, exam: selectedExam}} onNavigate={(t) => setActiveTab(t as ActiveTab)} />
                 </PremiumGate>
-              )}
+              </div>
+            )}
 
-              {activeTab === 'flashcards' && (
+            {activeTab === 'flashcards' && (
+              <div data-screen="flashcards" className="w-full">
                 <FlashcardEngine selectedExam={selectedExam} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'weakness' && (
+            {activeTab === 'weakness' && (
+              <div data-screen="weakness" className="w-full">
                 <WeaknessDetector selectedExam={selectedExam} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'teachers' && (
-                user.role === 'TEACHER' || user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER' || user.email === DESIGNATED_ADMIN_EMAIL ? (
+            {activeTab === 'teachers' && (
+              <div data-screen="teachers" className="w-full">
+                {user.role === 'TEACHER' || user.role === 'ADMIN' || user.role === 'CO_ADMIN' || user.role === 'DEVELOPER' || user.email === DESIGNATED_ADMIN_EMAIL ? (
                   <TeacherPortal user={{...user, exam: selectedExam}} onNavigate={(t) => setActiveTab(t as ActiveTab)} />
                 ) : (
                   <div className="p-8 max-w-2xl mx-auto text-center my-12 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
@@ -1728,52 +1805,64 @@ function AppContent() {
                       </button>
                     </div>
                   </div>
-                )
-              )}
+                )}
+              </div>
+            )}
 
-              {activeTab === 'podcasts' && (
+            {activeTab === 'podcasts' && (
+              <div data-screen="podcasts" className="w-full">
                 <PodcastSeries />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'eligibility' && (
+            {activeTab === 'eligibility' && (
+              <div data-screen="eligibility" className="w-full">
                 <EligibilityChecker />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'feedback' && (
+            {activeTab === 'feedback' && (
+              <div data-screen="feedback" className="w-full">
                 <FeedbackEngine userEmail={user?.email || 'guest@example.com'} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'blog' && (
+            {activeTab === 'blog' && (
+              <div data-screen="blog" className="w-full">
                 <BlogView user={{...user, exam: selectedExam}} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'wallpaper' && (
-                <div className="max-w-4xl mx-auto space-y-6">
-                  <div className="flex items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-500/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
-                        <Smartphone className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h2 className="text-base sm:text-lg font-bold text-white">Daily Habit Lockscreen Wallpaper</h2>
-                        <p className="text-xs text-slate-400">Export high-resolution dynamic mobile wallpapers customized to your exam countdown</p>
-                      </div>
+            {activeTab === 'wallpaper' && (
+              <div data-screen="wallpaper" className="max-w-4xl mx-auto space-y-6 w-full">
+                <div className="flex items-center justify-between gap-3 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-indigo-950/60 via-slate-900 to-purple-950/60 border border-indigo-500/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-base sm:text-lg font-bold text-white">Daily Habit Lockscreen Wallpaper</h2>
+                      <p className="text-xs text-slate-400">Export high-resolution dynamic mobile wallpapers customized to your exam countdown</p>
                     </div>
                   </div>
-                  <ExamWallpaperWidget 
-                    user={{...user, exam: selectedExam}} 
-                    selectedExam={selectedExam} 
-                    onNavigateToSyllabus={() => setActiveTab('syllabus')} 
-                  />
                 </div>
-              )}
+                <ExamWallpaperWidget 
+                  user={{...user, exam: selectedExam}} 
+                  selectedExam={selectedExam} 
+                  onNavigateToSyllabus={() => setActiveTab('syllabus')} 
+                />
+              </div>
+            )}
 
-              {activeTab === 'blog_submit' && (
+            {activeTab === 'blog_submit' && (
+              <div data-screen="blog_submit" className="w-full">
                 <TeacherBlogSubmit onNavigateHome={() => setActiveTab('blog')} />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'admin' && (
-                isAdminUnlocked || user?.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase() || user?.role === 'ADMIN' ? (
+            {activeTab === 'admin' && (
+              <div data-screen="admin" className="w-full">
+                {isAdminUnlocked || user?.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase() || user?.role === 'ADMIN' ? (
                   <AdminPanel
                     user={user}
                     onUpdateRole={(role) => setUser((prev) => (prev ? { ...prev, role } : null))}
@@ -1784,26 +1873,33 @@ function AppContent() {
                   <div className="p-8 text-center text-rose-400 font-bold text-sm bg-rose-950/20 rounded-2xl border border-rose-500/30">
                     Access Denied: Admin authorization required. Redirecting to dashboard...
                   </div>
-                )
-              )}
-              {activeTab === 'practice_hub' && (
+                )}
+              </div>
+            )}
+
+            {activeTab === 'practice_hub' && (
+              <div data-screen="practice_hub" className="w-full">
                 <PracticeHub
                   userProfile={{...user, exam: selectedExam}}
                   selectedExam={selectedExam}
                   isAdmin={isAdmin}
                   onNavigate={(t) => setActiveTab(t)}
                 />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'progress_hub' && (
+            {activeTab === 'progress_hub' && (
+              <div data-screen="progress_hub" className="w-full">
                 <ProgressHub
                   userProfile={{...user, exam: selectedExam}}
                   selectedExam={selectedExam}
                   onNavigate={(t) => setActiveTab(t)}
                 />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'more_hub' && (
+            {activeTab === 'more_hub' && (
+              <div data-screen="more_hub" className="w-full">
                 <MoreHub
                   user={{...user, exam: selectedExam}}
                   selectedExam={selectedExam}
@@ -1814,14 +1910,23 @@ function AppContent() {
                   onOpenReminderSettings={() => setShowReminderSettingsModal(true)}
                   isAdminUnlocked={isAdminUnlocked}
                 />
-              )}
+              </div>
+            )}
 
-              {activeTab === 'figma_preview' && (
-                <FigmaRedesignPreview
-                  onClose={() => setActiveTab('dashboard')}
-                  onNavigateTab={(t) => setActiveTab(t as ActiveTab)}
-                />
-              )}
+            {activeTab === 'figma_preview' && (
+              import.meta.env.DEV ? (
+                <div data-screen="figma_preview" className="w-full">
+                  <FigmaRedesignPreview
+                    onClose={() => setActiveTab('dashboard')}
+                    onNavigateTab={(t) => setActiveTab(t as ActiveTab)}
+                  />
+                </div>
+              ) : (
+                <div data-screen="figma_preview" className="p-8 text-center text-slate-400 font-bold">
+                  Developer Design Preview (Unavailable in Production)
+                </div>
+              )
+            )}
               </Suspense>
             </PageTransition>
           </AnimatePresence>

@@ -159,12 +159,23 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
       </div>
 
       {/* ── ROW 1: FULL-WIDTH EXAM TITLE SELECTOR (MAX 2 LINES) ── */}
-      <div className="w-full mb-3">
+      <div className="relative w-full mb-3">
+        <div className="w-full bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2 transition cursor-pointer select-none">
+          <div className="min-w-0 flex-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--sr-text-muted)] block mb-0.5">
+              Active Examination
+            </span>
+            <div className="text-xs sm:text-sm font-black text-[var(--sr-text)] line-clamp-2 leading-snug break-words">
+              {EXAM_LIST.find(ex => ex.id === selectedExam)?.label || examName || selectedExam}
+            </div>
+          </div>
+          <ChevronDown className="w-4 h-4 text-[var(--sr-text-muted)] shrink-0" />
+        </div>
         <select
           value={selectedExam}
           onChange={(e) => setSelectedExam(e.target.value as ExamType)}
           aria-label="Target Examination"
-          className="w-full bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[var(--sr-text)] text-xs sm:text-sm font-black rounded-xl px-3 py-2 outline-none cursor-pointer transition leading-snug line-clamp-2 block"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
         >
           {EXAM_LIST.map((ex) => (
             <option key={ex.id} value={ex.id} className="bg-[var(--sr-surface)] text-[var(--sr-text)] font-bold">

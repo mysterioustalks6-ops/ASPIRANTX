@@ -4,9 +4,10 @@ import path from 'path';
 import {defineConfig} from 'vite';
 import { visualizer } from 'rollup-plugin-visualizer';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const isCapacitor = process.env.CAPACITOR === 'true' || process.env.CAPACITOR_BUILD === '1' || mode === 'capacitor' || Boolean(process.env.npm_lifecycle_event?.includes('mobile') || process.env.npm_lifecycle_event?.includes('cap') || process.env.npm_lifecycle_event?.includes('apk'));
   return {
-    base: './',
+    base: isCapacitor ? './' : '/',
     plugins: [
       react(), 
       tailwindcss(),

@@ -868,7 +868,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-[#0F1115] hover:bg-[#1A1D24] border border-[#2A2F3A] text-xs font-bold text-[#58CC02] flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-primary)] flex items-center gap-1.5 cursor-pointer shadow-sm transition"
             title="Import syllabus from spreadsheet"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -877,7 +877,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={handleResetProgress}
-            className="p-2 rounded-xl bg-[#0F1115] hover:bg-rose-500/10 text-[#9CA3AF] hover:text-rose-400 border border-[#2A2F3A] transition cursor-pointer"
+            className="p-2 rounded-xl bg-[var(--sr-surface-2)] hover:bg-rose-500/10 text-[var(--sr-text-muted)] hover:text-rose-500 border border-[var(--sr-line)] transition cursor-pointer shadow-sm"
             title="Reset All Progress"
           >
             <RotateCcw className="w-3.5 h-3.5" />

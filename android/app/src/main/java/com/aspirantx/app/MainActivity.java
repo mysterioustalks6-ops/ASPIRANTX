@@ -10,7 +10,9 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(AspirantXWallpaperPlugin.class);
         registerPlugin(FocusShieldPlugin.class);
         super.onCreate(savedInstanceState);
-        android.webkit.WebView.setWebContentsDebuggingEnabled(true);
+        if (BuildConfig.DEBUG) {
+            android.webkit.WebView.setWebContentsDebuggingEnabled(true);
+        }
         if (bridge != null && bridge.getWebView() != null) {
             bridge.getWebView().getSettings().setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
             android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(bridge.getWebView(), true);

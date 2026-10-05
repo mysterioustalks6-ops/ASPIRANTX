@@ -228,19 +228,19 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
     const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('run.app'));
 
     return (
-      <div className={`my-4 relative group overflow-hidden text-center rounded-xl bg-slate-900/40 p-2 border border-slate-800/60 w-full flex flex-col justify-center items-center ${minHeightClass} ${className}`}>
+      <div className={`my-4 relative group overflow-hidden text-center rounded-xl bg-[var(--sr-surface-2)] p-2 border border-[var(--sr-line)] w-full flex flex-col justify-center items-center ${minHeightClass} ${className}`}>
         <button
           onClick={() => setIsDismissed(true)}
-          className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-black/60 hover:bg-black text-slate-400 hover:text-white flex items-center justify-center text-[10px] border border-white/10 transition-all opacity-60 hover:opacity-100"
+          className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-[var(--sr-surface-3)] hover:bg-[var(--sr-surface)] text-[var(--sr-text-secondary)] hover:text-[var(--sr-text)] flex items-center justify-center text-[10px] border border-[var(--sr-line)] transition-all opacity-70 hover:opacity-100"
           title="Dismiss ad"
         >
           ✕
         </button>
 
         {/* Ad Label */}
-        <div className="w-full flex items-center justify-between px-2 pb-1 text-xs text-[var(--sr-text-muted)] uppercase tracking-wider font-bold">
+        <div className="w-full flex items-center justify-between px-2 pb-1 text-xs text-[var(--sr-text-secondary)] uppercase tracking-wider font-bold">
           <span>Advertisement</span>
-          {isDev && <span className="text-[var(--sr-warning-text)]">Connecting AdSense...</span>}
+          {isDev && <span className="text-[var(--sr-primary)] font-bold">Connecting AdSense...</span>}
         </div>
 
         <ins

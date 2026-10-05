@@ -333,8 +333,8 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                 </div>
               </div>
 
-              {/* Compact 2-column Grid of MasteryCells */}
-              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {/* Responsive Grid of MasteryCells (1-column on narrow/zoomed viewports, 2-column on standard widths) */}
+              <div className="grid grid-cols-1 min-[380px]:grid-cols-2 gap-2.5 sm:gap-3">
                 {territory.cells.map((cell) => {
                   const badge = getMasteryBadge(cell.mastery);
                   const Icon = badge.icon;
@@ -363,7 +363,10 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                         )}
                       </div>
 
-                      <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] line-clamp-2 leading-snug">
+                      <h4 
+                        className="text-xs sm:text-sm font-bold text-[var(--sr-text)] line-clamp-2 leading-snug break-words"
+                        style={{ overflowWrap: 'anywhere', hyphens: 'auto' }}
+                      >
                         {cell.title}
                       </h4>
                     </button>

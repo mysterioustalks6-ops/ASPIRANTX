@@ -29,7 +29,7 @@ export const DesignSystemShowcase: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-[var(--sr-bg)] text-[var(--sr-text)] p-4 sm:p-8 transition-colors duration-200 theme-${theme}`}>
+    <div data-screen="design_system" className={`min-h-screen bg-[var(--sr-bg)] text-[var(--sr-text)] p-4 sm:p-8 transition-colors duration-200 theme-${theme}`}>
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Top Header & Theme Switcher */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)]">
