@@ -23,7 +23,7 @@ export const APP_FEATURES: AppFeatureItem[] = [
     label: 'Map',
     tab: 'syllabus',
     keywords: ['map', 'journey', 'syllabus', 'curriculum', 'path', 'topics', 'chapters'],
-    description: 'Winding chapter journey and syllabus mastery roadmap',
+    description: 'Subject territory regions and topic mastery roadmap',
     badge: 'Journey',
     iconName: 'Map',
   },

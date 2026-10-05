@@ -202,7 +202,31 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     };
   }, [activeExamTag, userProfile.id, userProfile.streakDays, userProfile.xp]);
 
-  // Derive "Continue Where You Left Off" data from localStorage
+  // Honest Daily Pace Formula: Compares real progress against expected milestone
+  const calculatePaceStatus = (
+    topicsCompleted: number,
+    totalSyllabusTopics: number,
+    daysLeftForExam: number,
+    totalPrepDays: number = 365
+  ) => {
+    const safeTotal = Math.max(1, totalSyllabusTopics || 14);
+    const daysElapsed = Math.max(0, Math.min(totalPrepDays, totalPrepDays - daysLeftForExam));
+    const expectedRate = safeTotal / totalPrepDays;
+    const expectedCompleted = Math.round(expectedRate * daysElapsed);
+    const diff = expectedCompleted - topicsCompleted;
+
+    if (diff <= 0) {
+      return { isBehind: false, label: 'On Track', behindCount: 0, expectedCompleted };
+    }
+    return {
+      isBehind: true,
+      label: `${diff} ${diff === 1 ? 'topic' : 'topics'} behind`,
+      behindCount: diff,
+      expectedCompleted,
+    };
+  };
+
+  // Derive "Continue Where You Left Off" data from localStorage or active exam syllabus
   const getLastStudiedTopic = () => {
     try {
       const histKey = `aspirantx_last_topic_${userProfile.id}_${activeExamTag}`;
@@ -210,8 +234,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       if (stored) return JSON.parse(stored) as { subject: string; chapter: string; subtopic: string; tab: ActiveTab };
     } catch {}
     const examCfg = getExamConfig(activeExamTag);
-    const subject = examCfg.subjects?.[0] || 'Core Subject';
-    return { subject, chapter: 'Chapter 1', subtopic: 'Foundational Overview', tab: 'syllabus' as ActiveTab };
+    const subject = examCfg.subjects?.[0] || 'Physics';
+    const firstTopic = examCfg.syllabusTree?.[subject]?.topics?.[0] || 'Mechanics & Motion';
+    return { 
+      subject, 
+      chapter: firstTopic, 
+      subtopic: `${firstTopic} — High-Yield Mastery`, 
+      tab: 'syllabus' as ActiveTab 
+    };
   };
 
   const lastTopic = getLastStudiedTopic();
@@ -361,8 +391,18 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
   const recAction = getRecommendationAction();
 
-  const isPaceBehind = data.topicsCompleted < 3 && data.daysLeftForExam < 300;
-  const paceLabel = isPaceBehind ? '2 topics behind' : 'On Track';
+  const totalCoreTopics = Object.values(examCfg2.syllabusTree || {}).reduce(
+    (acc, node) => acc + (node.topics?.length || 0),
+    0
+  ) || 14;
+
+  const paceStatus = calculatePaceStatus(
+    data.topicsCompleted,
+    totalCoreTopics,
+    data.daysLeftForExam
+  );
+  const isPaceBehind = paceStatus.isBehind;
+  const paceLabel = paceStatus.label;
 
   const rideStops = [
     {
@@ -421,12 +461,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="w-2 h-2 rounded-full bg-[var(--sr-primary)] animate-pulse" />
+                <span className="w-2.5 h-2.5 rounded-full bg-[var(--sr-primary)] animate-pulse shrink-0 flex-shrink-0" />
                 <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-primary)]">
                   Veer's Daily Ride Advice
                 </span>
               </div>
-              <p className="text-xs sm:text-sm font-bold text-[var(--sr-text)] line-clamp-2">
+              <p className="text-xs sm:text-sm font-bold text-[var(--sr-text)] leading-snug">
                 {VEER_QUOTES[mascotQuoteIndex % VEER_QUOTES.length]}
               </p>
               <span className="text-xs text-[var(--sr-text-muted)] font-medium mt-0.5 block">
@@ -583,22 +623,22 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       <div className="rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] overflow-hidden shadow-sm">
         <button
           onClick={() => setShowMoreForToday(!showMoreForToday)}
-          className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--sr-surface-2)] transition-colors cursor-pointer select-none"
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-[var(--sr-surface-2)] transition-colors cursor-pointer select-none gap-3"
         >
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)]">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <div className="w-7 h-7 rounded-xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)] shrink-0">
               <CheckSquare className="w-4 h-4" />
             </div>
-            <div>
-              <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)] uppercase tracking-wider">More for today</h3>
-              <p className="text-xs text-[var(--sr-text-muted)]">Daily supplementary targets & bonus XP</p>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)] uppercase tracking-wider truncate">More for today</h3>
+              <p className="text-xs text-[var(--sr-text-muted)] truncate">Daily supplementary targets & bonus XP</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-[var(--sr-primary)]">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-bold text-[var(--sr-primary)] whitespace-nowrap">
               {dailyGoals.filter((g) => g.completed).length}/{dailyGoals.length} Done
             </span>
-            <ChevronRight className={`w-4 h-4 text-[var(--sr-text-muted)] transition-transform duration-200 ${showMoreForToday ? 'rotate-90' : ''}`} />
+            <ChevronRight className={`w-4 h-4 text-[var(--sr-text-muted)] shrink-0 transition-transform duration-200 ${showMoreForToday ? 'rotate-90' : ''}`} />
           </div>
         </button>
 

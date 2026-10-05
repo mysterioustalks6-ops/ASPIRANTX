@@ -10,24 +10,27 @@ if (!fs.existsSync(DOCS_DIR)) {
   fs.mkdirSync(DOCS_DIR, { recursive: true });
 }
 
-// Clean out previous files in docs/screenshots/phase4 to strictly maintain <= 10 files
+// Clean out previous files in docs/screenshots/phase4 to maintain clean screenshot directory
 for (const f of fs.readdirSync(DOCS_DIR)) {
   try {
     fs.unlinkSync(path.join(DOCS_DIR, f));
   } catch (e) {}
 }
 
-// Exactly the 10 key files to keep in docs/screenshots/phase4
+// Key files to keep in docs/screenshots/phase4
 const KEY_COMMITTED_FILES = new Set([
-  'today_dark_390x844.png',
-  'today_light_390x844.png',
-  'today_light_360x800.png',
-  'today_dark_font130.png',
-  'today_light_font130.png',
+  'map_bottomsheet_390x844_dark.png',
+  'map_list_390x844_dark.png',
+  'map_path_390x844_dark.png',
+  'map_dark_360x800.png',
+  'map_light_360x800.png',
+  'map_dark_412x915.png',
+  'map_light_412x915.png',
   'map_dark_390x844.png',
   'map_light_390x844.png',
-  'map_dark_font130.png',
-  'map_light_font130.png',
+  'today_dark_font130_scrolled.png',
+  'today_dark_390x844.png',
+  'today_light_390x844.png',
   'search_focus_ring_390x844.png'
 ]);
 
@@ -44,7 +47,7 @@ async function captureScreen(page, filename) {
 }
 
 async function main() {
-  console.log('Starting Phase 4a mobile verification capture...');
+  console.log('Starting Phase 4a (fixed 2) mobile verification capture...');
 
   const browser = await puppeteer.launch({
     executablePath: EDGE_PATH,
@@ -70,7 +73,7 @@ async function main() {
   const navTab = async (index) => {
     // Ensure all modals are closed before switching tabs
     await page.evaluate(() => {
-      document.querySelectorAll('.fixed.inset-0.z-50 button[aria-label*="Close"]').forEach(b => b.click());
+      document.querySelectorAll('.fixed.inset-0 button[aria-label*="Close"]').forEach(b => b.click());
     });
     await new Promise(r => setTimeout(r, 300));
 
@@ -80,7 +83,6 @@ async function main() {
     }, index);
     await new Promise(r => setTimeout(r, 800));
 
-    // Wait for content container
     if (index === 0) {
       await page.waitForSelector('#student-dashboard', { visible: true, timeout: 10000 });
     }
@@ -124,27 +126,78 @@ async function main() {
       await navTab(0);
       await captureScreen(page, `today_${theme}_${vp.name}.png`);
 
-      // Map
+      // Map (Territory view)
       await navTab(1);
       await captureScreen(page, `map_${theme}_${vp.name}.png`);
     }
 
-    // 130% Font Scale verification (using 390x844)
-    console.log(`\n--- Viewport: 390x844 with 130% Font Scale (${theme}) ---`);
-    await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
-    await setFontScale(130);
+    if (theme === 'dark') {
+      // Detailed Map Sub-views at 390x844 Dark
+      console.log('\n--- Capturing Map Sub-Views (BottomSheet, List, Path) at 390x844 Dark ---');
+      await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+      await navTab(1);
 
-    // Today 130%
-    await navTab(0);
-    await captureScreen(page, `today_${theme}_font130.png`);
+      // 1. Open BottomSheet by clicking first topic cell
+      await page.evaluate(() => {
+        const cell = document.querySelector('button[aria-label*="Mechanics & Motion"]') 
+          || Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Mechanics & Motion'));
+        if (cell) cell.click();
+      });
+      await new Promise(r => setTimeout(r, 600));
+      await captureScreen(page, 'map_bottomsheet_390x844_dark.png');
 
-    // Map 130%
-    await navTab(1);
-    await captureScreen(page, `map_${theme}_font130.png`);
+      // Close BottomSheet
+      await page.evaluate(() => {
+        const closeBtn = document.querySelector('.fixed.inset-0 button');
+        if (closeBtn) closeBtn.click();
+      });
+      await new Promise(r => setTimeout(r, 400));
+
+      // 2. Switch to List View
+      await page.evaluate(() => {
+        const listBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.trim() === 'List');
+        if (listBtn) listBtn.click();
+      });
+      await new Promise(r => setTimeout(r, 600));
+      await captureScreen(page, 'map_list_390x844_dark.png');
+
+      // 3. Switch to Path View
+      await page.evaluate(() => {
+        const pathBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Path');
+        if (pathBtn) pathBtn.click();
+      });
+      await new Promise(r => setTimeout(r, 600));
+      await captureScreen(page, 'map_path_390x844_dark.png');
+
+      // Switch back to Territory View
+      await page.evaluate(() => {
+        const terrBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.trim() === 'Territory');
+        if (terrBtn) terrBtn.click();
+      });
+      await new Promise(r => setTimeout(r, 400));
+    }
   }
 
-  // Blocker 2 Focus Verification Screenshot:
-  // Open search modal, focus search input, capture 390x844 showing ring on wrapper and NO double outline on input
+  // 130% Font Scale: Today scrolled to show START RIDE button
+  console.log('\n--- Capturing Today 130% Font Scrolled to START RIDE (390x844 Dark) ---');
+  await setTheme('dark');
+  await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await setFontScale(130);
+  await navTab(0);
+  await new Promise(r => setTimeout(r, 600));
+
+  await page.evaluate(() => {
+    const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('START RIDE'));
+    if (btn) {
+      btn.scrollIntoView({ behavior: 'instant', block: 'center' });
+    } else {
+      window.scrollTo(0, 320);
+    }
+  });
+  await new Promise(r => setTimeout(r, 600));
+  await captureScreen(page, 'today_dark_font130_scrolled.png');
+
+  // Search Focus Ring
   console.log('\n--- Capturing Search Focus Ring at 390x844 ---');
   await setTheme('dark');
   await setFontScale(100);

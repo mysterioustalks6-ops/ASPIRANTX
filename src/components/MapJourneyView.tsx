@@ -35,7 +35,7 @@ interface MapJourneyViewProps {
   onRequireLogin: () => void;
 }
 
-type MasteryState = 'new' | 'learning' | 'strong' | 'fading';
+type MasteryState = 'new' | 'learning' | 'strong';
 
 interface TopicCellData {
   id: string;
@@ -61,6 +61,26 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
   const [completedTopicIds, setCompletedTopicIds] = useState<Set<string>>(() =>
     getLocalCompletedSubtopicIds(user.id, selectedExam)
   );
+
+  const normExam = normalizeExamId(selectedExam);
+  const startedKey = `aspirantx_started_topics_${user.id || 'guest'}_${normExam}`;
+  const [startedTopicIds, setStartedTopicIds] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(startedKey);
+      if (raw) return new Set(JSON.parse(raw));
+    } catch {}
+    return new Set();
+  });
+
+  const handleStartTopic = (topic: TopicCellData) => {
+    const updated = new Set(startedTopicIds);
+    updated.add(topic.id);
+    updated.add(topic.title);
+    setStartedTopicIds(updated);
+    try {
+      localStorage.setItem(startedKey, JSON.stringify(Array.from(updated)));
+    } catch {}
+  };
 
   useEffect(() => {
     const handleSync = () => {
@@ -98,14 +118,13 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
       const cells: TopicCellData[] = topicList.map((topicTitle, tIdx) => {
         const topicId = `topic-${norm}-${sIdx}-${tIdx}`;
         const isDone = completedTopicIds.has(topicId) || completedTopicIds.has(topicTitle);
+        const isStarted = startedTopicIds.has(topicId) || startedTopicIds.has(topicTitle);
 
         let mastery: MasteryState = 'new';
         if (isDone) {
           mastery = 'strong';
-        } else if (tIdx === 0 && !isDone) {
+        } else if (isStarted) {
           mastery = 'learning';
-        } else if (tIdx === 1 && sIdx === 0) {
-          mastery = 'fading';
         } else {
           mastery = 'new';
         }
@@ -130,7 +149,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
         progressPercent,
       };
     });
-  }, [examConfig, completedTopicIds, selectedExam]);
+  }, [examConfig, completedTopicIds, startedTopicIds, selectedExam]);
 
   const handleToggleCompletion = (topic: TopicCellData) => {
     soundFx.playTap();
@@ -175,13 +194,6 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
           badgeClass: 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30',
           icon: Clock,
           color: 'var(--sr-blue)',
-        };
-      case 'fading':
-        return {
-          label: 'Revise Soon',
-          badgeClass: 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] border-[var(--sr-amber)]/30',
-          icon: AlertTriangle,
-          color: 'var(--sr-amber)',
         };
       case 'new':
       default:
@@ -270,22 +282,29 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
               className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] space-y-4 shadow-sm"
             >
               {/* Region Header */}
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-center text-[var(--sr-primary)] font-black text-xs">
-                    {sIdx + 1}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-center text-[var(--sr-primary)] font-black text-xs shrink-0">
+                      {sIdx + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)] truncate">
+                        {territory.subject} Region
+                      </h3>
+                      <p className="text-xs text-[var(--sr-text-muted)] truncate">
+                        {territory.completedCount} of {territory.totalCount} topics mastered ({territory.progressPercent}%)
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)]">
-                      {territory.subject} Region
-                    </h3>
-                    <p className="text-xs text-[var(--sr-text-muted)]">
-                      {territory.completedCount} of {territory.totalCount} topics mastered ({territory.progressPercent}%)
-                    </p>
-                  </div>
+
+                  <span className="text-xs font-black text-[var(--sr-primary)] shrink-0">
+                    {territory.progressPercent}%
+                  </span>
                 </div>
 
-                <div className="w-24 sm:w-32 bg-[var(--sr-surface-2)] h-2 rounded-full overflow-hidden border border-[var(--sr-line)]">
+                {/* Region progress bar full width under the region title */}
+                <div className="w-full bg-[var(--sr-surface-2)] h-2 rounded-full overflow-hidden border border-[var(--sr-line)]">
                   <div
                     className="bg-[var(--sr-primary)] h-full rounded-full transition-all duration-300"
                     style={{ width: `${territory.progressPercent}%` }}
@@ -293,8 +312,8 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                 </div>
               </div>
 
-              {/* Grid of MasteryCells */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {/* Compact 2-column Grid of MasteryCells */}
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                 {territory.cells.map((cell) => {
                   const badge = getMasteryBadge(cell.mastery);
                   const Icon = badge.icon;
@@ -305,32 +324,27 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                         soundFx.playTap();
                         setSelectedTopic(cell);
                       }}
-                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2.5 active:scale-[0.98] ${
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 active:scale-[0.98] min-h-[82px] select-none ${
                         cell.isCompleted
                           ? 'bg-[var(--sr-surface-2)] border-[var(--sr-primary)]/40 hover:border-[var(--sr-primary)]'
                           : 'bg-[var(--sr-surface-2)] border-[var(--sr-line)] hover:border-[var(--sr-line-strong)]'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-2 w-full">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-black uppercase border flex items-center gap-1 ${badge.badgeClass}`}>
+                      <div className="flex items-center justify-between gap-1.5 w-full">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-black uppercase border flex items-center gap-1 shrink-0 ${badge.badgeClass}`}>
                           <Icon className="w-3 h-3" />
                           <span>{badge.label}</span>
                         </span>
                         {cell.isCompleted && (
-                          <span className="w-5 h-5 rounded-full bg-[var(--sr-primary)] text-[var(--sr-on-primary)] flex items-center justify-center text-xs font-black">
+                          <span className="w-4 h-4 rounded-full bg-[var(--sr-primary)] text-[var(--sr-on-primary)] flex items-center justify-center text-[10px] font-black shrink-0">
                             ✓
                           </span>
                         )}
                       </div>
 
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] line-clamp-2 leading-snug">
-                          {cell.title}
-                        </h4>
-                        <span className="text-xs text-[var(--sr-text-muted)] block mt-0.5">
-                          Tap to view tools & PYQs
-                        </span>
-                      </div>
+                      <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] line-clamp-2 leading-snug">
+                        {cell.title}
+                      </h4>
                     </button>
                   );
                 })}
@@ -397,6 +411,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
               {/* 1. Learn */}
               <button
                 onClick={() => {
+                  handleStartTopic(selectedTopic);
                   setSelectedTopic(null);
                   onNavigate('syllabus');
                 }}
@@ -417,6 +432,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
               {/* 2. PYQs */}
               <button
                 onClick={() => {
+                  handleStartTopic(selectedTopic);
                   setSelectedTopic(null);
                   onNavigate('pyq');
                 }}
@@ -437,6 +453,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
               {/* 3. Flashcards */}
               <button
                 onClick={() => {
+                  handleStartTopic(selectedTopic);
                   setSelectedTopic(null);
                   onNavigate('flashcards');
                 }}
@@ -457,6 +474,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
               {/* 4. Ask Veer */}
               <button
                 onClick={() => {
+                  handleStartTopic(selectedTopic);
                   setSelectedTopic(null);
                   onNavigate('chat');
                 }}

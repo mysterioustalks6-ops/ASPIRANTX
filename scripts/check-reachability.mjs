@@ -30,21 +30,17 @@ page.on('pageerror', err => {
   errors.push(err.message);
 });
 
-await page.goto('http://localhost:5173', { waitUntil: 'networkidle0', timeout: 30000 });
+await page.goto('http://localhost:5173/?no_splash=1', { waitUntil: 'networkidle0', timeout: 30000 });
+await new Promise(r => setTimeout(r, 1200));
 
-// Ensure app is loaded and bypass any onboarding
+// Enter app shell via Guest Demo button
 await page.evaluate(() => {
-  localStorage.setItem('aspirantx_onboarding_completed', 'true');
-  localStorage.setItem('aspirantx_current_user', JSON.stringify({
-    id: 'test_user',
-    name: 'Aspirant Student',
-    email: 'test@studyride.in',
-    selectedExam: 'NEET',
-    role: 'student',
-    isAdmin: false
-  }));
+  const b = document.querySelector('#hero-guest-btn') || Array.from(document.querySelectorAll('button')).find(x => x.textContent?.includes('Guest Demo'));
+  if (b) b.click();
 });
-await page.reload({ waitUntil: 'networkidle0' });
+
+await page.waitForSelector('#mobile-bottom-nav', { timeout: 15000 });
+await new Promise(r => setTimeout(r, 1000));
 
 console.log('| Tab ID | Status | Rendered Container / Evidence | Errors |');
 console.log('|---|---|---|---|');
@@ -56,16 +52,32 @@ for (const tabId of tabIds) {
   
   const status = await page.evaluate(async (id) => {
     try {
-      window.dispatchEvent(new CustomEvent('aspirantx_navigate', { detail: { tab: id } }));
-      // Give React a moment to render
-      await new Promise(r => setTimeout(r, 250));
+      // Dismiss any popups or modals
+      document.querySelectorAll('.fixed.inset-0 button[aria-label*="Close"]').forEach(b => b.click());
+      window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: { tab: id } }));
+      // Give React, AnimatePresence, and lazy components time to mount
+      await new Promise(r => setTimeout(r, 750));
       
       const main = document.querySelector('main') || document.body;
       const html = main ? main.innerHTML.trim() : '';
-      const text = main ? (main.innerText || '').slice(0, 100).replace(/\s+/g, ' ') : '';
+      
+      // Look for active view title, heading, or primary badge
+      const candidates = Array.from(main.querySelectorAll('h1, h2, h3, [role="heading"], p.font-black, span.font-black, h4'))
+        .map(el => el.innerText.trim().replace(/\s+/g, ' '))
+        .filter(t => t.length > 3 && !t.includes('Announcement') && !t.includes('StudyRide AI'));
+      
+      let evidence = candidates[0];
+      if (!evidence) {
+        const textLines = (main.innerText || '')
+          .split('\n')
+          .map(s => s.trim())
+          .filter(s => s.length > 3 && !s.includes('Announcement') && !s.includes('StudyRide AI'));
+        evidence = textLines[0] || 'DOM content rendered';
+      }
+      evidence = evidence.slice(0, 45);
       
       if (html.length > 50) {
-        return { ok: true, evidence: text.slice(0, 45) || 'DOM node rendered' };
+        return { ok: true, evidence: evidence || 'DOM node rendered' };
       }
       return { ok: false, evidence: 'Empty main container' };
     } catch (e) {
