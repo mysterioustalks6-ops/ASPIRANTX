@@ -93,37 +93,6 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
     setTimeout(() => setToastMsg(null), 3000);
   };
 
-  const DEFAULT_FALLBACK_GROUPS: CommunityGroup[] = [
-    { id: 'group-neet', name: 'NEET Top Rankers 2026', description: 'NCERT Biology diagrams, Physics high-yield formulas & test strategies.', exam: 'NEET_UG', memberCount: 1840, isJoined: true },
-    { id: 'group-jee', name: 'JEE Advanced Rankers Club', description: 'Advanced problem discussions & calculus shortcuts.', exam: 'JEE_ADVANCED', memberCount: 1220, isJoined: false },
-    { id: 'group-general', name: 'National Aspirants Central', description: 'General strategy, revision timetables & peer accountability.', exam: 'ALL', memberCount: 3100, isJoined: true }
-  ];
-
-  const DEFAULT_FALLBACK_POSTS: CommunityPost[] = [
-    {
-      id: 'post-1',
-      title: 'Top High-Yield NCERT Biology Diagrams for NEET 2026',
-      content: 'Review cell cycle checkpoints, nephron counter-current exchange, and Calvin cycle before the next full mock test.',
-      authorName: 'Aspirant Veer',
-      authorRole: 'Peer Mentor',
-      createdAt: new Date().toISOString(),
-      likesCount: 38,
-      commentsCount: 6,
-      tags: ['Biology', 'HighYield', 'Strategy']
-    },
-    {
-      id: 'post-2',
-      title: 'Daily PYQ Solving Discipline: Avoiding the Negative Marking Trap',
-      content: 'Eliminate 2 choices first. Never guess on 50-50 questions during the first round; flag them for review.',
-      authorName: 'Ranker Priya',
-      authorRole: 'Topper 2025',
-      createdAt: new Date().toISOString(),
-      likesCount: 45,
-      commentsCount: 9,
-      tags: ['PYQ', 'ExamTips', 'Speed']
-    }
-  ];
-
   const fetchGroups = async () => {
     try {
       const res = await fetch('/api/community/groups', { cache: 'no-store' });
@@ -136,8 +105,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
         }
       }
     } catch (err) {}
-    setGroups(DEFAULT_FALLBACK_GROUPS);
-    if (!postTargetGroupId) setPostTargetGroupId(DEFAULT_FALLBACK_GROUPS[0].id);
+    setGroups([]);
   };
 
   const fetchPosts = async () => {
@@ -161,7 +129,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
         }
       }
     } catch (err) {}
-    setPosts(DEFAULT_FALLBACK_POSTS);
+    setPosts([]);
     setLoading(false);
   };
 
@@ -756,7 +724,13 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                 </button>
 
                 <div className="space-y-2">
-                  {groups.map((g) => {
+                  {groups.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-slate-500 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                      <p className="font-bold text-slate-700">No circles yet</p>
+                      <p className="text-[11px] text-slate-500">Click New Circle to create the first study group.</p>
+                    </div>
+                  ) : (
+                    groups.map((g) => {
                     const isSelected = selectedGroupId === g.id;
                     return (
                       <div
@@ -792,7 +766,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                         </div>
                       </div>
                     );
-                  })}
+                  }))}
                 </div>
               </div>
             </div>

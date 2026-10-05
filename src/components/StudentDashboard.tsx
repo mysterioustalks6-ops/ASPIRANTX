@@ -63,7 +63,16 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const computeLiveDashboardData = (examTag: string, userId: string): StudentDashboardData => {
     // 1. Calculate Real Days Left for Selected Exam
     const today = new Date();
-    const targetExamDateStr = getDefaultExamDate(examTag);
+    let customExamDate: string | undefined;
+    try {
+      const storeKey = `aspirantx_local_store_v1_${userId || 'guest'}_${examTag}`;
+      const rawStore = localStorage.getItem(storeKey);
+      if (rawStore) {
+        const parsed = JSON.parse(rawStore);
+        if (parsed.examDate) customExamDate = parsed.examDate;
+      }
+    } catch {}
+    const targetExamDateStr = customExamDate || getDefaultExamDate(examTag);
     const targetExamDate = new Date(targetExamDateStr);
     const diffMs = targetExamDate.getTime() - today.getTime();
     const daysLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
@@ -192,16 +201,33 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     };
   }, [activeExamTag, userProfile.id, userProfile.streakDays, userProfile.xp]);
 
+  // Canonical user active days resolution
+  const getRealActiveDaysCount = (): number => {
+    try {
+      const key = `aspirantx_active_days_history_${userProfile.id || 'guest'}`;
+      const todayStr = new Date().toISOString().split('T')[0];
+      let days: string[] = [];
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) days = parsed;
+      }
+      if (!days.includes(todayStr)) {
+        days.push(todayStr);
+        localStorage.setItem(key, JSON.stringify(days));
+      }
+      return days.length;
+    } catch {
+      return 1;
+    }
+  };
+
   // Canonical user start date resolution
   const getUserStartDate = (): Date => {
     try {
       const stored = localStorage.getItem(`aspirantx_start_date_${userProfile.id || 'guest'}`);
       if (stored) {
         const d = new Date(stored);
-        if (!isNaN(d.getTime())) return d;
-      }
-      if (userProfile.createdAt && !userProfile.isGuest) {
-        const d = new Date(userProfile.createdAt);
         if (!isNaN(d.getTime())) return d;
       }
     } catch {}
@@ -219,11 +245,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     daysLeftForExam: number
   ) => {
     const safeTotal = Math.max(1, totalSyllabusTopics || 14);
+    const activeDaysCount = getRealActiveDaysCount();
     const startDate = getUserStartDate();
     const daysSinceStart = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-    // With no activity or < 7 days active, show "Just starting"
-    if (topicsCompleted === 0 || daysSinceStart < 7) {
+    // With no activity or < 7 days of real activity (for both guest and registered non-guest users), show "Just starting"
+    if (topicsCompleted === 0 || activeDaysCount < 7 || daysSinceStart < 7) {
       return { 
         isBehind: false, 
         label: 'Just starting', 
@@ -232,7 +259,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       };
     }
 
-    // After >= 7 days of activity, calculate expected pace based on remaining time to exam
+    // After >= 7 days of real activity, calculate expected pace based on remaining time to exam
     const totalPlanDays = Math.max(daysSinceStart + Math.max(1, daysLeftForExam), 30);
     const expectedRate = safeTotal / totalPlanDays;
     const expectedCompleted = Math.round(expectedRate * daysSinceStart);

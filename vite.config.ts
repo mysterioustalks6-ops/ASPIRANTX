@@ -9,12 +9,14 @@ export default defineConfig(() => {
     plugins: [
       react(), 
       tailwindcss(),
-      visualizer({
-        filename: 'dist/stats.html',
-        json: true,
-        open: false,
-        gzipSize: true
-      })
+      ...(process.env.ANALYZE === '1' ? [
+        visualizer({
+          filename: 'dist/stats.html',
+          template: 'raw-data',
+          open: false,
+          gzipSize: true
+        })
+      ] : [])
     ],
     resolve: {
       alias: {

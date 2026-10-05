@@ -54,10 +54,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
         </div>
 
         {/* Tab Pills */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#15181F] rounded-xl border border-[#2A2F3A] self-start overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface)] rounded-xl border border-[var(--sr-line-strong)] self-start overflow-x-auto max-w-full">
           {[
             { id: 'overview', label: 'Hub' },
-            { id: 'duo_path', label: '🎯 Exam Path (Duo Drills)' },
+            { id: 'duo_path', label: '🎯 Path Drills' },
             { id: 'pyq', label: 'PYQ Archive' },
             { id: 'question_bank', label: 'Question Bank' },
             { id: 'cbt', label: 'CBT Simulator' },
@@ -68,8 +68,8 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               onClick={() => { soundFx.playTap(); setSubTab(t.id as any); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                 subTab === t.id
-                  ? 'bg-[#1CB0F6] text-[#052840] shadow-sm'
-                  : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
+                  ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] shadow-sm'
+                  : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)]'
               }`}
             >
               {t.label}
@@ -98,7 +98,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   </span>
                 </div>
                 <h3 className="text-base sm:text-lg font-black text-[var(--sr-text)] mt-1">
-                  "Practice makes permanent. Topic-wise questions lagao aur CBT mock me AIR check karo!"
+                  Practice makes permanent. Topic-wise questions lagao aur CBT mock me AIR check karo!
                 </h3>
                 <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
                   Complete your 3 daily practice quests to earn gems and protect your league standing.
@@ -131,7 +131,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 </div>
               </div>
               <span className="text-xs font-black text-[var(--sr-amber)] bg-[var(--sr-amber-subtle)] px-2.5 py-1 rounded-xl border border-[var(--sr-amber)]/30">
-                1 / 3 Done
+                0 / 3 Done
               </span>
             </div>
 
@@ -142,10 +142,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   <span className="font-bold text-[var(--sr-text)] flex items-center gap-1.5">
                     <span>📄</span> Solve 10 PYQs
                   </span>
-                  <span className="font-bold text-[var(--sr-blue)]">6/10</span>
+                  <span className="font-bold text-[var(--sr-blue)]">0/10</span>
                 </div>
                 <div className="w-full bg-[var(--sr-surface)] h-2 rounded-full overflow-hidden border border-[var(--sr-line)]">
-                  <div className="bg-[var(--sr-blue)] h-full rounded-full transition-all duration-500" style={{ width: '60%' }} />
+                  <div className="bg-[var(--sr-blue)] h-full rounded-full transition-all duration-500" style={{ width: '0%' }} />
                 </div>
                 <div className="flex items-center justify-between text-xs text-[var(--sr-text-muted)]">
                   <span>Reward: +30 XP</span>
@@ -164,14 +164,19 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                   <span className="font-bold text-[var(--sr-text)] flex items-center gap-1.5">
                     <span>⚡</span> 1 Topic Drill
                   </span>
-                  <span className="font-bold text-[var(--sr-primary)]">1/1 ✓</span>
+                  <span className="font-bold text-[var(--sr-primary)]">0/1</span>
                 </div>
                 <div className="w-full bg-[var(--sr-surface)] h-2 rounded-full overflow-hidden border border-[var(--sr-line)]">
-                  <div className="bg-[var(--sr-primary)] h-full rounded-full" style={{ width: '100%' }} />
+                  <div className="bg-[var(--sr-primary)] h-full rounded-full" style={{ width: '0%' }} />
                 </div>
                 <div className="flex items-center justify-between text-xs text-[var(--sr-text-muted)]">
                   <span>Reward: +40 XP</span>
-                  <span className="text-[var(--sr-primary)] font-black">CLAIMED!</span>
+                  <button 
+                    onClick={() => { soundFx.playTap(); setSubTab('duo_path'); }}
+                    className="text-[var(--sr-primary)] font-bold hover:underline cursor-pointer"
+                  >
+                    Drill →
+                  </button>
                 </div>
               </div>
 
@@ -282,7 +287,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               </div>
               <div className="pt-2 flex items-center justify-between">
                 <span className="text-xs text-[var(--sr-text-muted)]">National Percentile & AIR</span>
-                <span className="px-4 py-2 rounded-xl bg-[var(--sr-purple)] text-white font-black text-xs uppercase tracking-wider border-b-[3px] border-[var(--sr-purple-depth)] group-hover:shadow-md">
+                <span className="px-4 py-2 rounded-xl bg-[var(--sr-purple-depth)] text-white font-black text-xs uppercase tracking-wider border-b-[3px] border-[var(--sr-purple)] group-hover:shadow-md">
                   Enter Exam ⚡
                 </span>
               </div>

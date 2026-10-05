@@ -7,6 +7,7 @@ interface AspirantMascotProps {
   state?: MascotState;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   speechBubble?: string;
+  bubblePlacement?: 'right' | 'top';
   className?: string;
   onClick?: () => void;
 }
@@ -21,6 +22,7 @@ export const AspirantMascot: React.FC<AspirantMascotProps> = ({
   state = 'idle',
   size = 'md',
   speechBubble,
+  bubblePlacement = 'right',
   className = '',
   onClick,
 }) => {
@@ -69,9 +71,25 @@ export const AspirantMascot: React.FC<AspirantMascotProps> = ({
 
   return (
     <div 
-      className={`inline-flex items-center gap-3 select-none ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`inline-flex select-none ${bubblePlacement === 'top' ? 'flex-col items-center gap-1.5' : 'items-center gap-3'} ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
+      {/* DUOLINGO-STYLE SPEECH BUBBLE (TOP PLACEMENT) */}
+      {speechBubble && bubblePlacement === 'top' && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85, y: 4 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+          className="relative bg-[var(--sr-surface)] text-[var(--sr-text)] border-2 border-[var(--sr-line-strong)] rounded-2xl px-2.5 py-1.5 shadow-xl max-w-[170px] text-center pointer-events-none"
+        >
+          {/* Bubble triangle pointer pointing down to mascot */}
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[7px] border-t-[var(--sr-line-strong)]" />
+          <div className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-[var(--sr-surface)]" />
+          <p className={`${bubbleText} font-extrabold leading-snug text-[11px]`}>
+            {speechBubble.replace(/^["']|["']$/g, '')}
+          </p>
+        </motion.div>
+      )}
       <motion.div
         variants={mascotVariants}
         animate={state}
@@ -256,8 +274,8 @@ export const AspirantMascot: React.FC<AspirantMascotProps> = ({
         </svg>
       </motion.div>
 
-      {/* DUOLINGO-STYLE SPEECH BUBBLE */}
-      {speechBubble && (
+      {/* DUOLINGO-STYLE SPEECH BUBBLE (DEFAULT RIGHT PLACEMENT) */}
+      {speechBubble && bubblePlacement === 'right' && (
         <motion.div
           initial={{ opacity: 0, scale: 0.85, x: -8 }}
           animate={{ opacity: 1, scale: 1, x: 0 }}

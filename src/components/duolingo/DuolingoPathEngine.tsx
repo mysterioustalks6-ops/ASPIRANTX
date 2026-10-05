@@ -77,29 +77,16 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
   // Generate learning nodes structured along an authentic S-curve
   const generatePathNodes = (): PathNode[] => {
     const nodes: PathNode[] = [];
+    const firstSubject = subjects[0] || 'Core Subject 1';
     const chaptersBySubject: { subject: string; chapters: string[] }[] = [
       {
-        subject: subjects[0] || 'Core Subject 1',
+        subject: firstSubject,
         chapters: [
-          'Foundational Principles & Core Concepts',
-          'Axioms, Theorems & Formula Rules',
-          'High-Yield Applications & Rapid Shortcuts',
-          'Previous Years High-Frequency Questions'
-        ]
-      },
-      {
-        subject: subjects[1] || subjects[0] || 'Core Subject 2',
-        chapters: [
-          'Standard Formulas & Boundary Conditions',
-          'Applied Real-world Case Analysis',
-          'High-Speed Calculation Sprint'
-        ]
-      },
-      {
-        subject: subjects[2] || subjects[0] || 'Core Subject 3',
-        chapters: [
-          'Advanced Multi-Concept Integration',
-          'Comprehensive Unit Mastery Assessment'
+          `${firstSubject} Fundamental Overview`,
+          'Standard Laws & Principles',
+          'High-Yield Problem Solving',
+          'Applied Real-World Cases',
+          'Unit Assessment & PYQs'
         ]
       }
     ];
@@ -302,27 +289,27 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
       {/* ── 1. DUOLINGO UNIT BANNER ───────────────────────────────────── */}
       <div className="w-full px-4 mt-4 mb-2">
         <div className="rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] p-4 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2.5">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-0.5 rounded-full border border-[var(--sr-primary)]/30">
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-0.5 rounded-full border border-[var(--sr-primary)]/30 whitespace-nowrap shrink-0">
                   SECTION 1 • UNIT 1
                 </span>
               </div>
-              <h2 className="text-base font-black text-[var(--sr-text)] tracking-tight line-clamp-2">
+              <h2 className="text-sm sm:text-base font-black text-[var(--sr-text)] tracking-tight line-clamp-2 leading-snug">
                 {subjects[0] || 'Core Exam Concepts'}
               </h2>
-              <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-0.5 font-medium">
+              <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-0.5 font-medium leading-tight">
                 Preamble, Formulas & High-Yield MCQs
               </p>
             </div>
 
             <button
               onClick={() => onNavigate && onNavigate('syllabus')}
-              className="px-3 py-2 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-black text-[var(--sr-primary)] flex items-center gap-1.5 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-black text-[var(--sr-primary)] flex items-center gap-1.5 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
               title="View Complete Curriculum Syllabus"
             >
-              <BookOpen className="w-4 h-4 text-[var(--sr-primary)]" />
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--sr-primary)]" />
               <span className="text-xs">Guidebook</span>
             </button>
           </div>
@@ -335,7 +322,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
                 style={{ width: `${unitPercent}%` }}
               />
             </div>
-            <span className="text-xs font-bold text-[var(--sr-primary)]">
+            <span className="text-xs font-bold text-[var(--sr-primary)] whitespace-nowrap shrink-0">
               {completedLessonsCount}/{totalLessonsCount} Done ({unitPercent}%)
             </span>
           </div>
@@ -387,15 +374,16 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
               }}
               className="relative flex flex-col items-center transition-transform duration-300 z-10"
             >
-              {/* ── VEER MASCOT IN DEDICATED SIDE LANE (NEVER SITS ON PLAY NODE) ── */}
+              {/* ── VEER MASCOT IN FIXED IN-BOUNDS LANE (BUBBLE NEVER OVERLAPS PLAY NODE) ── */}
               {isActive && (
                 <div 
-                  className={`absolute -top-10 ${xOffset >= 0 ? '-left-36 sm:-left-44' : '-right-36 sm:-right-44'} z-20 flex flex-col items-center pointer-events-auto`}
+                  className={`absolute -top-16 ${xOffset >= 0 ? '-left-28 sm:-left-36' : '-right-28 sm:-right-36'} z-20 flex flex-col items-center pointer-events-auto max-w-[170px]`}
                 >
                   <AspirantMascot
                     state="celebrating"
                     size="sm"
                     speechBubble={VEER_TIPS[tipIndex]}
+                    bubblePlacement="top"
                     onClick={() => {
                       soundFx.playChestOpen();
                       triggerConfetti();
@@ -411,9 +399,9 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
                 <div className="absolute -top-28 z-30 flex flex-col items-center animate-bounce-short">
                   <div className="bg-[#1CB0F6] text-white px-4 py-3 rounded-2xl shadow-2xl border-b-4 border-[#1899D6] min-w-[210px] text-center">
                     <div className="text-[10px] font-black uppercase tracking-wider text-sky-100">
-                      Lesson {node.nodeNumber || 1} of 6
+                      Lesson {node.nodeNumber || 1} of {totalLessonsCount}
                     </div>
-                    <div className="text-xs font-black truncate max-w-[190px] mt-0.5">
+                    <div className="text-xs font-black line-clamp-2 max-w-[190px] mt-0.5 leading-snug">
                       {node.title}
                     </div>
                     <button

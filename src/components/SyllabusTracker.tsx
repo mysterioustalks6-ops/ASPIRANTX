@@ -616,7 +616,22 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
     if (isNowDone) {
       newCompleted.add(subId);
-      awardXPAndCoins(10, 2, 'Completed Syllabus Subtopic', userId);
+      
+      // Client-side XP guard: deduplicate per subtopic id
+      const xpKey = `aspirantx_awarded_subtopic_xp_${userId || 'guest'}_${selectedExam}`;
+      let awardedIds: string[] = [];
+      try {
+        const raw = localStorage.getItem(xpKey);
+        if (raw) awardedIds = JSON.parse(raw);
+      } catch {}
+      if (!awardedIds.includes(subId)) {
+        awardedIds.push(subId);
+        try {
+          localStorage.setItem(xpKey, JSON.stringify(awardedIds));
+        } catch {}
+        awardXPAndCoins(10, 2, 'Completed Syllabus Subtopic', userId);
+      }
+
       soundFx.playCorrect();
       triggerConfetti({ particleCount: 25, spread: 45 });
       setRecentlyCheckedSubId(subId);
@@ -647,7 +662,23 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
     });
 
     if (shouldCompleteAll) {
-      awardXPAndCoins(topic.subtopics.length * 10, topic.subtopics.length * 2, 'Completed Syllabus Topic', userId);
+      // Client-side XP guard: only award for previously unawarded subtopics
+      const xpKey = `aspirantx_awarded_subtopic_xp_${userId || 'guest'}_${selectedExam}`;
+      let awardedIds: string[] = [];
+      try {
+        const raw = localStorage.getItem(xpKey);
+        if (raw) awardedIds = JSON.parse(raw);
+      } catch {}
+
+      const newSubsToAward = topic.subtopics.filter(s => !awardedIds.includes(s.id));
+      if (newSubsToAward.length > 0) {
+        newSubsToAward.forEach(s => awardedIds.push(s.id));
+        try {
+          localStorage.setItem(xpKey, JSON.stringify(awardedIds));
+        } catch {}
+        awardXPAndCoins(newSubsToAward.length * 10, newSubsToAward.length * 2, 'Completed Syllabus Topic', userId);
+      }
+
       soundFx.playVictory();
       triggerConfetti({ particleCount: 50, spread: 65 });
     } else {
@@ -775,56 +806,60 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       )}
 
       {/* ── SYLLABUS SOURCE TABS: OFFICIAL vs MY SYLLABUS vs DIRECTORY ──────── */}
-      <div className="p-2 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-1.5 w-full sm:w-auto p-1 bg-[#0F1115] rounded-xl border border-[#2A2F3A] overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('official')}
-            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'official'
-                ? 'bg-[#1CB0F6] text-[#052840] shadow-sm border-b-2 border-[#1899D6] font-extrabold'
-                : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Official Syllabus</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-black/20">
-              {officialTopics.filter(t => t.completed).length}/{officialTopics.length}
-            </span>
-          </button>
+      <div className="p-2 rounded-2xl bg-[var(--sr-surface)] border border-[var(--sr-line-strong)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+        <div className="relative w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface-2)] rounded-xl border border-[var(--sr-line)] overflow-x-auto scrollbar-none w-full sm:w-auto">
+            <button
+              onClick={() => setActiveTab('official')}
+              className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'official'
+                  ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] shadow-sm font-extrabold'
+                  : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-3)]'
+              }`}
+            >
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Official Syllabus</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--sr-line)] text-[var(--sr-text)]">
+                {officialTopics.filter(t => t.completed).length}/{officialTopics.length}
+              </span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('personal')}
-            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'personal'
-                ? 'bg-[#58CC02] text-[#0B2300] shadow-sm border-b-2 border-[#46A302] font-extrabold'
-                : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
-            }`}
-          >
-            <User className="w-3.5 h-3.5" />
-            <span>My Plan</span>
-            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-black/20">
-              {personalTopics.filter(t => t.completed).length}/{personalTopics.length}
-            </span>
-          </button>
+            <button
+              onClick={() => setActiveTab('personal')}
+              className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'personal'
+                  ? 'bg-[var(--sr-blue)] text-white shadow-sm font-extrabold'
+                  : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-3)]'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>My Plan</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--sr-line)] text-[var(--sr-text)]">
+                {personalTopics.filter(t => t.completed).length}/{personalTopics.length}
+              </span>
+            </button>
 
-          <button
-            onClick={() => setActiveTab('directory')}
-            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'directory'
-                ? 'bg-[#1A1D24] text-[#F3F4F6] border border-[#3A404F]'
-                : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>48 Exams</span>
-          </button>
+            <button
+              onClick={() => setActiveTab('directory')}
+              className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
+                activeTab === 'directory'
+                  ? 'bg-[var(--sr-surface)] text-[var(--sr-text)] border border-[var(--sr-line-strong)] font-extrabold shadow-sm'
+                  : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-3)]'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>48 Exams</span>
+            </button>
+          </div>
+          {/* Subtle scroll fade gradient on right edge for small screens */}
+          <div className="absolute right-0 top-0 bottom-0 w-6 pointer-events-none bg-gradient-to-l from-[var(--sr-surface)] to-transparent sm:hidden" />
         </div>
 
         {/* Global Action Toolbar */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
-            className="px-3 py-1.5 rounded-xl bg-[#0F1115] hover:bg-[#1A1D24] border border-[#2A2F3A] text-xs font-bold text-[#1CB0F6] flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-blue)] flex items-center gap-1.5 cursor-pointer"
             title="Global syllabus keyword search"
           >
             <Search className="w-3.5 h-3.5" />
@@ -940,25 +975,25 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           {/* Playful Veer Mascot Study Motivation Banner */}
           <div 
             onClick={() => { soundFx.playChestOpen(); triggerConfetti({ particleCount: 35, spread: 50 }); }}
-            className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-teal-950/30 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-md cursor-pointer hover:border-emerald-400/50 transition-all select-none active:scale-[0.99]"
+            className="p-3 sm:p-3.5 rounded-2xl bg-[var(--sr-surface)] border border-[var(--sr-line-strong)] flex items-center justify-between gap-3 shadow-sm cursor-pointer hover:border-[var(--sr-primary)] transition-all select-none active:scale-[0.99] text-[var(--sr-text)]"
           >
             <div className="flex items-center gap-3">
               <AspirantMascot size="sm" state="encouraging" />
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/30">
                     Syllabus Mastery
                   </span>
-                  <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
+                  <span className="text-xs text-[var(--sr-amber)] font-extrabold flex items-center gap-1">
                     🎯 +10 XP per subtopic
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
+                <p className="text-xs sm:text-sm font-bold text-[var(--sr-text)] mt-0.5">
                   Roz 2 chapters mark off karo. Consistency hi AIR-1 banati hai! Tap Veer for power!
                 </p>
               </div>
             </div>
-            <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-black">
+            <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/30 text-xs font-black">
               Tap Mascot 🪶
             </span>
           </div>
@@ -970,8 +1005,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 onClick={() => { soundFx.playTap(); setSelectedSubjectFilter('ALL'); }}
                 className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:translate-y-0.5 ${
                   selectedSubjectFilter === 'ALL'
-                    ? 'bg-[#58CC02] text-[#0B2300] shadow-md border-b-[4px] border-[#3C8801] active:border-b-0'
-                    : 'bg-[#15181F] border border-[#2A2F3A] border-b-[3px] border-b-[#1A1D24] text-[#9CA3AF] hover:text-white'
+                    ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] shadow-md border-b-[4px] border-[var(--sr-primary-depth)] active:border-b-0'
+                    : 'bg-[var(--sr-surface)] border border-[var(--sr-line-strong)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)]'
                 }`}
               >
                 <span>All Subjects</span>
@@ -985,8 +1020,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                   onClick={() => { soundFx.playTap(); setSelectedSubjectFilter(subj.name); }}
                   className={`px-4 py-2 rounded-2xl text-xs font-black whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 active:translate-y-0.5 ${
                     selectedSubjectFilter === subj.name
-                      ? 'bg-[#1CB0F6] text-[#052840] shadow-md border-b-[4px] border-[#137BAE] active:border-b-0'
-                      : 'bg-[#15181F] border border-[#2A2F3A] border-b-[3px] border-b-[#1A1D24] text-[#9CA3AF] hover:text-white'
+                      ? 'bg-[var(--sr-blue)] text-white shadow-md border-b-[4px] border-[var(--sr-blue-depth)] active:border-b-0'
+                      : 'bg-[var(--sr-surface)] border border-[var(--sr-line-strong)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)]'
                   }`}
                 >
                   <span>{subj.name}</span>

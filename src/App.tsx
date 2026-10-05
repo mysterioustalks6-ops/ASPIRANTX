@@ -221,16 +221,16 @@ function AppContent() {
     })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy' || (import.meta.env.DEV && window.location.pathname === '/design-system'))) {
+    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy' || window.location.pathname === '/design-system')) {
       if (window.location.pathname.startsWith('/debug')) return 'debug_galaxy';
-      if (import.meta.env.DEV && window.location.pathname === '/design-system') return 'design_system';
+      if (window.location.pathname === '/design-system') return 'design_system';
       return 'download';
     }
     const hash = window.location.hash.replace('#', '');
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
     if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') return 'debug_galaxy';
-    if (import.meta.env.DEV && (hash === 'design-system' || hash === 'design_system')) return 'design_system';
+    if (hash === 'design-system' || hash === 'design_system') return 'design_system';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
@@ -1194,7 +1194,7 @@ function AppContent() {
     );
   }
 
-  if (import.meta.env.DEV && activeTab === 'design_system') {
+  if (activeTab === 'design_system') {
     return <DesignSystemShowcase />;
   }
 
@@ -1819,10 +1819,6 @@ function AppContent() {
                   onClose={() => setActiveTab('dashboard')}
                   onNavigateTab={(t) => setActiveTab(t as ActiveTab)}
                 />
-              )}
-
-              {import.meta.env.DEV && activeTab === 'design_system' && (
-                <DesignSystemShowcase />
               )}
               </Suspense>
             </PageTransition>

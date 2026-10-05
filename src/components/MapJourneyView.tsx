@@ -256,7 +256,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
             onClick={() => { soundFx.playTap(); setViewMode('path'); }}
             className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
               viewMode === 'path'
-                ? 'bg-[var(--sr-purple)] text-white shadow-sm'
+                ? 'bg-[var(--sr-purple-depth)] text-white shadow-sm'
                 : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
             }`}
           >
