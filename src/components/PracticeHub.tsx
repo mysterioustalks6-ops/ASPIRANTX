@@ -13,12 +13,12 @@ import {
   BookOpen
 } from 'lucide-react';
 import { UserProfile, ExamType, ActiveTab } from '../types';
-import { PyqEngine } from './PyqEngine';
-import { QuestionBankEngine } from './QuestionBankEngine';
 import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
 import { soundFx } from '../lib/soundEffects';
 import { AspirantMascot } from './duolingo/AspirantMascot';
 
+const PyqEngine = React.lazy(() => import('./PyqEngine').then(m => ({ default: m.PyqEngine })));
+const QuestionBankEngine = React.lazy(() => import('./QuestionBankEngine').then(m => ({ default: m.QuestionBankEngine })));
 const CbtExamEngine = React.lazy(() => import('./CbtExamEngine').then(m => ({ default: m.CbtExamEngine })));
 const WeaknessDetector = React.lazy(() => import('./WeaknessDetector').then(m => ({ default: m.WeaknessDetector })));
 
@@ -321,65 +321,67 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       )}
 
       {/* SUB-TAB VIEWS */}
-      {subTab === 'duo_path' && (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setSubTab('overview')}
-            className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
-          >
-            ← Back to Practice Hub
-          </button>
-          <DuolingoPathEngine userProfile={userProfile} selectedExam={selectedExam} onNavigate={onNavigate} />
-        </div>
-      )}
+      <React.Suspense fallback={<div className="p-8 text-center text-slate-400 font-bold text-xs">Loading Practice Engine...</div>}>
+        {subTab === 'duo_path' && (
+          <div className="space-y-4">
+            <button 
+              onClick={() => setSubTab('overview')}
+              className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
+            >
+              ← Back to Practice Hub
+            </button>
+            <DuolingoPathEngine userProfile={userProfile} selectedExam={selectedExam} onNavigate={onNavigate} />
+          </div>
+        )}
 
-      {subTab === 'pyq' && (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setSubTab('overview')}
-            className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
-          >
-            ← Back to Practice Hub
-          </button>
-          <PyqEngine isAdmin={isAdmin} initialExam={selectedExam} />
-        </div>
-      )}
+        {subTab === 'pyq' && (
+          <div className="space-y-4">
+            <button 
+              onClick={() => setSubTab('overview')}
+              className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
+            >
+              ← Back to Practice Hub
+            </button>
+            <PyqEngine isAdmin={isAdmin} initialExam={selectedExam} />
+          </div>
+        )}
 
-      {subTab === 'question_bank' && (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setSubTab('overview')}
-            className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
-          >
-            ← Back to Practice Hub
-          </button>
-          <QuestionBankEngine isAdmin={isAdmin} initialExam={selectedExam} />
-        </div>
-      )}
+        {subTab === 'question_bank' && (
+          <div className="space-y-4">
+            <button 
+              onClick={() => setSubTab('overview')}
+              className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
+            >
+              ← Back to Practice Hub
+            </button>
+            <QuestionBankEngine isAdmin={isAdmin} initialExam={selectedExam} />
+          </div>
+        )}
 
-      {subTab === 'cbt' && (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setSubTab('overview')}
-            className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
-          >
-            ← Back to Practice Hub
-          </button>
-          <CbtExamEngine userProfile={userProfile} selectedExam={selectedExam} />
-        </div>
-      )}
+        {subTab === 'cbt' && (
+          <div className="space-y-4">
+            <button 
+              onClick={() => setSubTab('overview')}
+              className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
+            >
+              ← Back to Practice Hub
+            </button>
+            <CbtExamEngine userProfile={userProfile} selectedExam={selectedExam} />
+          </div>
+        )}
 
-      {subTab === 'weakness' && (
-        <div className="space-y-4">
-          <button 
-            onClick={() => setSubTab('overview')}
-            className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
-          >
-            ← Back to Practice Hub
-          </button>
-          <WeaknessDetector selectedExam={selectedExam} />
-        </div>
-      )}
+        {subTab === 'weakness' && (
+          <div className="space-y-4">
+            <button 
+              onClick={() => setSubTab('overview')}
+              className="text-xs text-sky-400 font-semibold hover:underline flex items-center gap-1"
+            >
+              ← Back to Practice Hub
+            </button>
+            <WeaknessDetector selectedExam={selectedExam} />
+          </div>
+        )}
+      </React.Suspense>
     </div>
   );
 };

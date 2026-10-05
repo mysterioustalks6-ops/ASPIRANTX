@@ -14,6 +14,7 @@ import { awardXPAndCoins } from '../lib/gamification';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
+import { getDefaultExamDate } from '../lib/packetSyncService';
 import { AdSenseBanner } from './AdSenseBanner';
 import { DailyStudySummaryCard } from './DailyStudySummaryCard';
 import { CircularPerformanceHub } from './CircularPerformanceMeter';
@@ -62,16 +63,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const computeLiveDashboardData = (examTag: string, userId: string): StudentDashboardData => {
     // 1. Calculate Real Days Left for Selected Exam
     const today = new Date();
-    const currentYear = today.getFullYear();
-    let targetExamDate = new Date(`${currentYear + 1}-05-03`); // default
-    if (examTag.includes('JEE_MAIN')) targetExamDate = new Date(`${currentYear + 1}-04-06`);
-    else if (examTag.includes('JEE_ADV')) targetExamDate = new Date(`${currentYear + 1}-05-24`);
-    else if (examTag.includes('UPSC')) targetExamDate = new Date(`${currentYear + 1}-05-25`);
-    else if (examTag.includes('GATE')) targetExamDate = new Date(`${currentYear + 1}-02-08`);
-    else if (examTag.includes('CAT')) targetExamDate = new Date(`${currentYear}-11-29`);
-    else if (examTag.includes('SSC')) targetExamDate = new Date(`${currentYear + 1}-09-15`);
-    else if (examTag.includes('NDA') || examTag.includes('CDS')) targetExamDate = new Date(`${currentYear + 1}-04-18`);
-    
+    const targetExamDateStr = getDefaultExamDate(examTag);
+    const targetExamDate = new Date(targetExamDateStr);
     const diffMs = targetExamDate.getTime() - today.getTime();
     const daysLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
@@ -151,12 +144,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       testAccuracyPercent: testAccuracy,
       rankTrend: [],
       studyHeatmap: todayMinutes > 0 ? [{ date: today.toISOString().split('T')[0], hours: Math.round(todayMinutes / 60) }] : [],
-      aiSuggestions: completedTopicsCount === 0 && testAccuracy === 0 ? [
-        `Start your ${examCfg.displayName} preparation with ${primarySubject} foundational topics.`,
-        `Complete your first study session or 10 PYQs in ${secondarySubject} to see live accuracy metrics.`
-      ] : [
-        `Focus on high-yield ${primarySubject} topics today for ${examCfg.displayName}.`,
-        `Practice 20 ${secondarySubject} PYQ MCQs to maintain your speed and accuracy momentum.`,
+      aiSuggestions: [
+        `${completedTopicsCount > 0 ? `${completedTopicsCount} topics mastered` : '0 topics completed'} · Focus on ${primarySubject} today`,
+        `Practice 20 ${secondarySubject} PYQs to maintain speed and accuracy.`
       ]
     };
   };
@@ -210,7 +200,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         const d = new Date(stored);
         if (!isNaN(d.getTime())) return d;
       }
-      if (userProfile.createdAt) {
+      if (userProfile.createdAt && !userProfile.isGuest) {
         const d = new Date(userProfile.createdAt);
         if (!isNaN(d.getTime())) return d;
       }
@@ -393,10 +383,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     } catch {}
 
     if (isChecking) {
-      setRewardBadge(`+${target.xp} XP`);
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      const awardKey = `aspirantx_xp_awarded_goals_${userProfile.id || 'guest'}_${todayDateStr}`;
+      let awardedGoalIds: string[] = [];
       try {
-        await awardXPAndCoins(target.xp, 5, `Completed goal: ${target.title}`, userProfile.id);
+        awardedGoalIds = JSON.parse(localStorage.getItem(awardKey) || '[]');
       } catch {}
+
+      if (!awardedGoalIds.includes(goalId)) {
+        awardedGoalIds.push(goalId);
+        try {
+          localStorage.setItem(awardKey, JSON.stringify(awardedGoalIds));
+        } catch {}
+        setRewardBadge(`+${target.xp} XP`);
+        try {
+          await awardXPAndCoins(target.xp, 5, `Completed goal: ${target.title}`, userProfile.id);
+        } catch {}
+      }
 
       const allDone = updated.every((g) => g.completed);
       if (allDone) {
@@ -664,12 +667,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             <div className="w-7 h-7 rounded-xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)] shrink-0">
               <CheckSquare className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)] uppercase tracking-wider truncate">More for today</h3>
-              <p className="text-xs text-[var(--sr-text-muted)] truncate">Daily supplementary targets & bonus XP</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)] uppercase tracking-wider leading-snug line-clamp-2">More for today</h3>
+              <p className="text-xs text-[var(--sr-text-muted)] leading-snug line-clamp-2">Daily supplementary targets & bonus XP</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 ml-auto whitespace-nowrap">
             <span className="text-xs font-bold text-[var(--sr-primary)] whitespace-nowrap">
               {dailyGoals.filter((g) => g.completed).length}/{dailyGoals.length} Done
             </span>
@@ -757,7 +760,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] mt-1">
               {examCfg2.displayName} 2026
             </h4>
-            <p className="text-xs text-[var(--sr-text-muted)] font-mono mt-0.5">
+            <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
               {data.daysLeftForExam} Days Remaining
             </p>
           </div>

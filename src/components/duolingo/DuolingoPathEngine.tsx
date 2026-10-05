@@ -387,10 +387,10 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
               }}
               className="relative flex flex-col items-center transition-transform duration-300 z-10"
             >
-              {/* ── VEER MASCOT STANDING BESIDE ACTIVE NODE ── */}
+              {/* ── VEER MASCOT IN DEDICATED SIDE LANE (NEVER SITS ON PLAY NODE) ── */}
               {isActive && (
                 <div 
-                  className={`absolute -top-6 ${xOffset >= 0 ? '-left-28' : '-right-28'} z-20 flex flex-col items-center pointer-events-auto`}
+                  className={`absolute -top-10 ${xOffset >= 0 ? '-left-36 sm:-left-44' : '-right-36 sm:-right-44'} z-20 flex flex-col items-center pointer-events-auto`}
                 >
                   <AspirantMascot
                     state="celebrating"

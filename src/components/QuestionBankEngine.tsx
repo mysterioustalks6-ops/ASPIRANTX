@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SlideUp, Stagger, StaggerItem, PressFeedback, EmptyState, SkeletonShimmer, ModalTransition, triggerConfetti } from '../lib/animations';
 import { soundFx } from '../lib/soundEffects';
-import { getStandardSubject, getExamSubjects } from './PyqEngine';
+import { getStandardSubject, getExamSubjects } from '../lib/subjectUtils';
 import { dedupFetch } from '../lib/apiDeduplicator';
 import { getApiUrl } from '../lib/apiConfig';
 import { QuestionBankRecord } from '../types';

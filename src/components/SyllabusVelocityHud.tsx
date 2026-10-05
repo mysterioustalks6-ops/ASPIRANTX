@@ -121,7 +121,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
                 value={selectedExam}
                 onChange={(e) => setSelectedExam(e.target.value as ExamType)}
                 aria-label="Target Examination"
-                className="bg-[#0F1115] hover:bg-[#1A1D24] border border-[#2A2F3A] text-white text-sm font-extrabold rounded-lg px-2.5 py-1 outline-none cursor-pointer transition"
+                className="bg-[#0F1115] hover:bg-[#1A1D24] border border-[#2A2F3A] text-white text-sm font-extrabold rounded-lg px-2.5 py-1 outline-none cursor-pointer transition max-w-[190px] sm:max-w-xs truncate"
               >
                 {EXAM_LIST.map((ex) => (
                   <option key={ex.id} value={ex.id}>
@@ -179,7 +179,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             <CheckCircle2 className="w-3.5 h-3.5 text-[#58CC02]" />
             Syllabus Completion
           </span>
-          <span className="text-[#58CC02] font-black font-mono text-sm">
+          <span className="text-[#58CC02] font-black text-sm">
             {completionPct}%
           </span>
         </div>

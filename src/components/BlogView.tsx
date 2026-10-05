@@ -9,12 +9,19 @@ import { FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, SkeletonShimmer, 
 
 import { UserProfile } from '../types';
 import { getExamConfig } from '../lib/examRegistry';
+import { useExam } from '../context/ExamContext';
 
 interface BlogViewProps {
   user?: UserProfile | null;
 }
 
 export const BlogView: React.FC<BlogViewProps> = ({ user }) => {
+  let examFromCtx = '';
+  try {
+    const ctx = useExam();
+    examFromCtx = ctx.selectedExamId;
+  } catch {}
+
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -22,7 +29,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ user }) => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
-  const activeExam = user?.exam || localStorage.getItem('aspirantx_active_exam') || 'NEET';
+  const activeExam = user?.exam || examFromCtx || localStorage.getItem('aspirantx_global_selected_exam') || 'NEET_UG';
   const examCfg = getExamConfig(activeExam);
   const examName = examCfg?.displayName || 'National Exam';
   const norm = activeExam.toUpperCase();

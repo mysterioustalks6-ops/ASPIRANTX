@@ -42,6 +42,7 @@ import { MySyllabusDndTree } from './MySyllabusDndTree';
 import { OpenKoshExamDirectory } from './OpenKoshExamDirectory';
 import { convertOpenKoshToSyllabusNodes } from '../data/openkoshData';
 import { getExamConfig } from '../lib/examRegistry';
+import { getDefaultExamDate } from '../lib/packetSyncService';
 import { SyllabusVelocityHud } from './SyllabusVelocityHud';
 import { soundFx } from '../lib/soundEffects';
 import { AspirantMascot } from './duolingo/AspirantMascot';
@@ -495,8 +496,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
       id: selectedExam || 'JEE_MAIN',
       name: config?.displayName || config?.name || selectedItem?.label || (selectedExam ? String(selectedExam).replace(/_/g, ' ') : 'Exam'),
       category: 'Engineering',
-      examDate: '2027-01-24',
-      targetSyllabusCompletionDate: targetDateInput && !isNaN(new Date(targetDateInput).getTime()) ? targetDateInput : '2027-01-24',
+      examDate: getDefaultExamDate(selectedExam || 'JEE_MAIN'),
+      targetSyllabusCompletionDate: targetDateInput && !isNaN(new Date(targetDateInput).getTime()) ? targetDateInput : getDefaultExamDate(selectedExam || 'JEE_MAIN'),
       defaultDailyProductiveHours: 5.5,
       minRevisionBufferDays: 14,
       subjects: Array.from(new Set(examTasks.map(t => t.subject)))
@@ -778,7 +779,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         <div className="flex items-center gap-1.5 w-full sm:w-auto p-1 bg-[#0F1115] rounded-xl border border-[#2A2F3A] overflow-x-auto">
           <button
             onClick={() => setActiveTab('official')}
-            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'official'
                 ? 'bg-[#1CB0F6] text-[#052840] shadow-sm border-b-2 border-[#1899D6] font-extrabold'
                 : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
@@ -793,7 +794,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={() => setActiveTab('personal')}
-            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'personal'
                 ? 'bg-[#58CC02] text-[#0B2300] shadow-sm border-b-2 border-[#46A302] font-extrabold'
                 : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
@@ -808,7 +809,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           <button
             onClick={() => setActiveTab('directory')}
-            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 sm:flex-initial px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
               activeTab === 'directory'
                 ? 'bg-[#1A1D24] text-[#F3F4F6] border border-[#3A404F]'
                 : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1A1D24]'
@@ -953,7 +954,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
-                  "Roz 2 chapters mark off karo. Consistency hi AIR-1 banati hai! Tap Veer for power! ⚡"
+                  Roz 2 chapters mark off karo. Consistency hi AIR-1 banati hai! Tap Veer for power!
                 </p>
               </div>
             </div>

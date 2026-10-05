@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Play, Sparkles, CheckCircle2, Clock, Tv, Award, ShieldCheck, Flame } from 'lucide-react';
 import { UserProfile, ActiveTab } from '../types';
 import { AdSenseBanner } from './AdSenseBanner';
+import { getExamConfig } from '../lib/examRegistry';
 
 interface EarnPremiumProps {
   user?: UserProfile | null;
@@ -9,6 +10,7 @@ interface EarnPremiumProps {
 }
 
 export const EarnPremium: React.FC<EarnPremiumProps> = ({ user, onNavigate }) => {
+  const examCfg = getExamConfig(user?.exam);
   const [viewsToday, setViewsToday] = useState(0);
   const [viewsNeeded, setViewsNeeded] = useState(5);
   const [rewardActive, setRewardActive] = useState(false);
@@ -263,7 +265,7 @@ export const EarnPremium: React.FC<EarnPremiumProps> = ({ user, onNavigate }) =>
               <span className="text-[10px] uppercase font-black tracking-widest text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
                 Rewarded Ad Placeholder
               </span>
-              <h3 className="text-xl font-black text-white">UPSC/SSC Topper Study Tips & PYQ Masterclass</h3>
+              <h3 className="text-xl font-black text-white">{examCfg?.displayName || 'Exam'} Topper Study Tips & PYQ Masterclass</h3>
               <p className="text-xs text-slate-400">
                 Please watch this sponsored educational message. Your reward will be credited automatically when the timer reaches zero.
               </p>

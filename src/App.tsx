@@ -9,20 +9,17 @@ import { recordPerfMarker } from './lib/apiDeduplicator';
 import { logAuthDiagnostic } from './lib/authDiagnostics';
 import { EXAM_LIST } from './lib/examList';
 import { ExamProvider, useExam } from './context/ExamContext';
-import { normalizeExamId } from './lib/examRegistry';
+import { normalizeExamId } from './lib/examNormalize';
 import { academicService } from './lib/services';
-import { LandingPage } from './components/LandingPage';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { GamificationBar } from './components/GamificationBar';
-import { PracticeHub } from './components/PracticeHub';
 import { ProgressHub } from './components/ProgressHub';
 import { MoreHub } from './components/MoreHub';
 import { DailyQuoteCard } from './components/DailyQuote';
 import { PomodoroTimer } from './components/PomodoroTimer';
 import { CommunityChat } from './components/CommunityChat';
-import { UserProfileModal } from './components/UserProfileModal';
 import { ReferralModal } from './components/ReferralModal';
 import { AppCustomizerModal } from './components/AppCustomizerModal';
 import { BackgroundFX } from './components/BackgroundFX';
@@ -40,10 +37,8 @@ import { WorkspaceCustomizer } from './components/WorkspaceCustomizer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileDrawer } from './components/MobileDrawer';
 import { ReminderSettingsModal } from './components/ReminderSettingsModal';
-import { ExamWallpaperWidget } from './components/ExamWallpaperWidget';
 import { LiveWallpaperSetupModal } from './components/LiveWallpaperSetupModal';
 import { AppSplashScreen } from './components/AppSplashScreen';
-import { MapJourneyView } from './components/MapJourneyView';
 import { shouldPromptWallpaperSetup, fetchWallpaperStatus, isAndroidPlatform } from './lib/nativeWallpaperBridge';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
 import { fetchServerWorkspaceConfig, recordFeatureUsage } from './lib/workspacePreferences';
@@ -84,6 +79,11 @@ const FocusGalaxyScreen = lazy(() => import('./features/focus/galaxy/FocusGalaxy
 const TaskManager = lazy(() => import('./components/TaskManager').then(m => ({ default: m.TaskManager })));
 const AiStudyChat = lazy(() => import('./components/AiStudyChat').then(m => ({ default: m.AiStudyChat })));
 const FigmaRedesignPreview = lazy(() => import('./components/FigmaRedesignPreview').then(m => ({ default: m.FigmaRedesignPreview })));
+const LandingPage = lazy(() => import('./components/LandingPage').then(m => ({ default: m.LandingPage })));
+const PracticeHub = lazy(() => import('./components/PracticeHub').then(m => ({ default: m.PracticeHub })));
+const UserProfileModal = lazy(() => import('./components/UserProfileModal').then(m => ({ default: m.UserProfileModal })));
+const ExamWallpaperWidget = lazy(() => import('./components/ExamWallpaperWidget').then(m => ({ default: m.ExamWallpaperWidget })));
+const MapJourneyView = lazy(() => import('./components/MapJourneyView').then(m => ({ default: m.MapJourneyView })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
 
@@ -1201,52 +1201,54 @@ function AppContent() {
   if (!user) {
     logAuthDiagnostic('NAVIGATION', 'Rendering Sign In page (LandingPage)', { reason: 'No active user in app state' });
     return (
-      <LandingPage
-        onLoginSuccess={(u) => {
-          logAuthDiagnostic('AUTH', 'onLoginSuccess triggered', { userId: u.id, email: u.email });
-          
-          const storedExam = localStorage.getItem('aspirantx_global_selected_exam') || u.exam || 'NEET_UG';
-          setSelectedExamId(storedExam, { persist: true, syncUser: false, userId: u.id });
-          localStorage.setItem('aspirantx_global_selected_exam', storedExam);
+      <Suspense fallback={<SuspenseFallback />}>
+        <LandingPage
+          onLoginSuccess={(u) => {
+            logAuthDiagnostic('AUTH', 'onLoginSuccess triggered', { userId: u.id, email: u.email });
+            
+            const storedExam = localStorage.getItem('aspirantx_global_selected_exam') || u.exam || 'NEET_UG';
+            setSelectedExamId(storedExam, { persist: true, syncUser: false, userId: u.id });
+            localStorage.setItem('aspirantx_global_selected_exam', storedExam);
 
-          const immediateUser: UserProfile = {
-            ...u,
-            avatar_url: resolveUserAvatar(u.avatar_url, u.id, u.email),
-            exam: storedExam,
-            isProfileComplete: true,
-            role: (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) ? 'ADMIN' : (u.role || 'USER'),
-          };
+            const immediateUser: UserProfile = {
+              ...u,
+              avatar_url: resolveUserAvatar(u.avatar_url, u.id, u.email),
+              exam: storedExam,
+              isProfileComplete: true,
+              role: (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) ? 'ADMIN' : (u.role || 'USER'),
+            };
 
-          // INSTANT SYNCHRONOUS TRANSITION TO APP SHELL
-          localStorage.setItem('aspirantx_auth_user', JSON.stringify(immediateUser));
-          setUser(immediateUser);
-          if (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) {
-            setIsAdminUnlocked(true);
-          }
-
-          // Background Profile Enrichment (Non-blocking)
-          (async () => {
-            try {
-              const profile = await loadUserProfile(u.id);
-              const resolvedExam = profile.exam || storedExam;
-              setSelectedExamId(resolvedExam, { persist: true, syncUser: false, userId: u.id });
-              localStorage.setItem('aspirantx_global_selected_exam', resolvedExam);
-
-              setUser((prev) => {
-                if (!prev) return prev;
-                return {
-                  ...profile,
-                  ...prev,
-                  exam: resolvedExam,
-                  isProfileComplete: true,
-                };
-              });
-            } catch (err) {
-              console.warn('Background profile enrichment warning:', err);
+            // INSTANT SYNCHRONOUS TRANSITION TO APP SHELL
+            localStorage.setItem('aspirantx_auth_user', JSON.stringify(immediateUser));
+            setUser(immediateUser);
+            if (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) {
+              setIsAdminUnlocked(true);
             }
-          })();
-        }}
-      />
+
+            // Background Profile Enrichment (Non-blocking)
+            (async () => {
+              try {
+                const profile = await loadUserProfile(u.id);
+                const resolvedExam = profile.exam || storedExam;
+                setSelectedExamId(resolvedExam, { persist: true, syncUser: false, userId: u.id });
+                localStorage.setItem('aspirantx_global_selected_exam', resolvedExam);
+
+                setUser((prev) => {
+                  if (!prev) return prev;
+                  return {
+                    ...profile,
+                    ...prev,
+                    exam: resolvedExam,
+                    isProfileComplete: true,
+                  };
+                });
+              } catch (err) {
+                console.warn('Background profile enrichment warning:', err);
+              }
+            })();
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -1740,7 +1742,7 @@ function AppContent() {
               )}
 
               {activeTab === 'blog' && (
-                <BlogView user={user} />
+                <BlogView user={{...user, exam: selectedExam}} />
               )}
 
               {activeTab === 'wallpaper' && (
@@ -1834,29 +1836,31 @@ function AppContent() {
 
       {/* Student Profile Dashboard Modal */}
       {user && (
-        <UserProfileModal
-          user={user}
-          isOpen={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-          onProfileUpdated={(updated) => {
-            setUser(updated);
-            if (updated.exam) {
-              handleExamChange(updated.exam);
-            }
-          }}
-          onOpenReferralModal={() => {
-            setShowProfileModal(false);
-            setShowReferralModal(true);
-          }}
-          onNavigateToRewards={() => {
-            setShowProfileModal(false);
-            setActiveTab('reward_milestones');
-          }}
-          onOpenCustomizerModal={isAdmin ? () => {
-            setShowProfileModal(false);
-            setShowCustomizerModal(true);
-          } : undefined}
-        />
+        <Suspense fallback={null}>
+          <UserProfileModal
+            user={user}
+            isOpen={showProfileModal}
+            onClose={() => setShowProfileModal(false)}
+            onProfileUpdated={(updated) => {
+              setUser(updated);
+              if (updated.exam) {
+                handleExamChange(updated.exam);
+              }
+            }}
+            onOpenReferralModal={() => {
+              setShowProfileModal(false);
+              setShowReferralModal(true);
+            }}
+            onNavigateToRewards={() => {
+              setShowProfileModal(false);
+              setActiveTab('reward_milestones');
+            }}
+            onOpenCustomizerModal={isAdmin ? () => {
+              setShowProfileModal(false);
+              setShowCustomizerModal(true);
+            } : undefined}
+          />
+        </Suspense>
       )}
 
       {/* Global Achievement Unlock Celebration Modal */}

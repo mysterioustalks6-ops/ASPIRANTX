@@ -1,6 +1,6 @@
 {
-  "name": "ProTrack - Exam Prep & Progress Suite",
-  "description": "Gen-Z aesthetic SaaS platform for UPSC & SSC aspirants with smart syllabus tracking, pomodoro study timers, AI study chat mentor, task manager, and motivational daily quotes.",
+  "name": "StudyRide - Exam Prep & Progress Suite",
+  "description": "Tactile gamified study platform for national competitive exams (NEET, JEE, UPSC, SSC, GATE) with interactive syllabus tracking, pomodoro timers, AI study chat mentor, and Duolingo-style learning paths.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

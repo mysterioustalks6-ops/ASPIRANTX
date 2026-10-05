@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
-import { SyllabusTracker } from './SyllabusTracker';
 import { UserProfile, ActiveTab } from '../types';
+import { awardXPAndCoins } from '../lib/gamification';
+
+const SyllabusTracker = React.lazy(() => import('./SyllabusTracker').then(m => ({ default: m.SyllabusTracker })));
 import { 
   Map, 
   BookOpen, 
@@ -156,11 +158,26 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
     const updated = new Set(completedTopicIds);
     const willComplete = !topic.isCompleted;
 
+    const xpKey = `aspirantx_mastered_xp_${user.id || 'guest'}_${selectedExam}`;
+    let awardedTopicIds: string[] = [];
+    try {
+      awardedTopicIds = JSON.parse(localStorage.getItem(xpKey) || '[]');
+    } catch {}
+
     if (willComplete) {
       updated.add(topic.id);
       updated.add(topic.title);
       triggerConfetti();
       soundFx.playChestOpen();
+
+      // Guard: strictly award XP once per topic; never re-award on unmark/remark
+      if (!awardedTopicIds.includes(topic.id)) {
+        awardedTopicIds.push(topic.id);
+        try {
+          localStorage.setItem(xpKey, JSON.stringify(awardedTopicIds));
+        } catch {}
+        awardXPAndCoins(50, 5, `Mastered ${topic.title}`, user.id);
+      }
     } else {
       updated.delete(topic.id);
       updated.delete(topic.title);
@@ -356,15 +373,17 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
 
       {/* ── 2. LIST VIEW (Checklist Guidebook) ───────────────────────────── */}
       {viewMode === 'list' && (
-        <SyllabusTracker
-          exam={selectedExam as any}
-          userId={user.id}
-          isGuest={user.isGuest}
-          isUserPremium={user.isPremium || isAdmin}
-          featureFlags={featureFlagsMap}
-          onOpenPremium={onOpenPremium}
-          onRequireLogin={onRequireLogin}
-        />
+        <React.Suspense fallback={<div className="p-8 text-center text-slate-400 font-bold text-xs">Loading Syllabus Checklist...</div>}>
+          <SyllabusTracker
+            exam={selectedExam as any}
+            userId={user.id}
+            isGuest={user.isGuest}
+            isUserPremium={user.isPremium || isAdmin}
+            featureFlags={featureFlagsMap}
+            onOpenPremium={onOpenPremium}
+            onRequireLogin={onRequireLogin}
+          />
+        </React.Suspense>
       )}
 
       {/* ── 3. PATH VIEW (Themed Duolingo S-Curve) ───────────────────────── */}

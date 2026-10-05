@@ -29,7 +29,13 @@ export default defineConfig(() => {
             if (id.includes('openkoshDetailedSyllabus') || id.includes('jeeSyllabusData') || id.includes('syllabusTemplates')) {
               return 'data-syllabus';
             }
+            if (id.includes('examRegistry') || id.includes('aeJeRegistryConfigs')) {
+              return 'data-exams';
+            }
             if (id.includes('node_modules')) {
+              if (id.includes('@dnd-kit')) {
+                return 'vendor-dndkit';
+              }
               if (id.includes('three')) {
                 return 'vendor-three';
               }
