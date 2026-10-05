@@ -238,9 +238,9 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
         </button>
 
         {/* Ad Label */}
-        <div className="w-full flex items-center justify-between px-2 pb-1 text-[9px] text-slate-500 uppercase tracking-widest font-mono">
+        <div className="w-full flex items-center justify-between px-2 pb-1 text-xs text-[var(--sr-text-muted)] uppercase tracking-wider font-bold">
           <span>Advertisement</span>
-          {isDev && <span className="text-amber-400/80">Connecting AdSense...</span>}
+          {isDev && <span className="text-[var(--sr-warning-text)]">Connecting AdSense...</span>}
         </div>
 
         <ins
@@ -263,90 +263,91 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
     switch (slotType) {
       case 'header':
         return (
-          <div className="bg-gradient-to-r from-indigo-950/60 via-slate-900/60 to-purple-950/60 border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#7000FF]/5 rounded-full blur-xl" />
-            
+          <div className="bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md relative overflow-hidden">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 shrink-0">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/30 shrink-0">
                 <Sparkles className="w-5 h-5 animate-pulse" />
               </div>
               <div className="text-left space-y-0.5">
-                <h4 className="font-extrabold text-white text-xs sm:text-sm flex items-center gap-2">
+                <h4 className="font-extrabold text-[var(--sr-text)] text-xs sm:text-sm flex items-center gap-2">
                   Upgrade to StudyRide Premium Pass
-                  <span className="text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded font-black tracking-wide">20% OFF</span>
+                  <span className="text-xs bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-black tracking-wide">20% OFF</span>
                 </h4>
-                <p className="text-[10px] sm:text-xs text-slate-400">
+                <p className="text-xs text-[var(--sr-text-muted)]">
                   Ad-free study experience, detailed mock answers, and unlimited syllabus pdf downloads.
                 </p>
               </div>
             </div>
 
-            <a 
-              href="#premium" 
-              className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-[11px] rounded-xl transition-all shadow-lg shrink-0 flex items-center gap-1"
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'premium' }))}
+              className="px-4 py-2 bg-[var(--sr-primary)] hover:bg-[var(--sr-primary-hover)] text-[var(--sr-on-primary)] font-black text-xs rounded-xl transition-all shadow-sm shrink-0 flex items-center gap-1 cursor-pointer"
             >
               <span>Unlock Premium</span>
               <ChevronRight className="w-3.5 h-3.5" />
-            </a>
+            </button>
           </div>
         );
 
       case 'sidebar':
         return (
-          <div className="bg-gradient-to-b from-[#0b0e17] to-slate-950 border border-white/10 rounded-2xl p-4 space-y-4 shadow-lg text-left relative overflow-hidden">
+          <div className="bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] rounded-2xl p-4 space-y-4 shadow-sm text-left relative overflow-hidden">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">NCERT Study Guide</span>
+              <BookOpen className="w-4 h-4 text-[var(--sr-primary)]" />
+              <span className="text-xs text-[var(--sr-primary)] font-extrabold uppercase tracking-wider">NCERT Study Guide</span>
             </div>
             
             <div className="space-y-1">
-              <h4 className="font-bold text-white text-xs">Complete NCERT Notes Bundle</h4>
-              <p className="text-[10px] text-slate-400 leading-normal">
-                Class 6-12 concise summary cards for Polity, History & Economy. Pre-mapped to syllabus tracker.
+              <h4 className="font-bold text-[var(--sr-text)] text-xs">Complete NCERT Notes Bundle</h4>
+              <p className="text-xs text-[var(--sr-text-muted)] leading-normal">
+                Class 6-12 concise summary cards for foundational concepts. Pre-mapped to syllabus tracker.
               </p>
             </div>
 
-            <a 
-              href="#library"
-              className="w-full py-2 bg-slate-900 border border-white/10 hover:border-emerald-500/30 text-white font-extrabold text-[10px] rounded-lg transition-all flex items-center justify-center gap-1.5"
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'library' }))}
+              className="w-full py-2 bg-[var(--sr-surface-2)] border border-[var(--sr-line)] hover:border-[var(--sr-primary)] text-[var(--sr-text)] font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>Browse Library</span>
-              <ChevronRight className="w-3 h-3 text-emerald-400" />
-            </a>
+              <ChevronRight className="w-3.5 h-3.5 text-[var(--sr-primary)]" />
+            </button>
           </div>
         );
 
       case 'footer':
         return (
-          <div className="bg-gradient-to-r from-slate-950 via-indigo-950/20 to-slate-950 border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-4 text-left">
+          <div className="bg-[var(--sr-surface)] border border-[var(--sr-line)] rounded-2xl p-4 flex items-center justify-between gap-4 text-left">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 shrink-0">
+              <div className="p-2 rounded-lg bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/20 shrink-0">
                 <Clock className="w-4 h-4" />
               </div>
               <div>
-                <h5 className="font-bold text-white text-xs">Stay Focused with Pomodoro Rooms</h5>
-                <p className="text-[10px] text-slate-500">Join other civil service aspirants study together live.</p>
+                <h5 className="font-bold text-[var(--sr-text)] text-xs">Stay Focused with Pomodoro Rooms</h5>
+                <p className="text-xs text-[var(--sr-text-muted)]">Join other aspirants studying together live.</p>
               </div>
             </div>
-            <a 
-              href="#timer" 
-              className="text-[10px] text-cyan-400 font-bold hover:underline shrink-0"
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'timer' }))}
+              className="text-xs text-[var(--sr-primary)] font-bold hover:underline shrink-0 cursor-pointer"
             >
               Start Timer →
-            </a>
+            </button>
           </div>
         );
 
       default: // inFeed
         return (
-          <div className="bg-gradient-to-r from-[#0b0e17] via-slate-900 to-[#0b0e17] border border-white/5 rounded-xl p-3 flex items-center justify-between text-xs my-2">
+          <div className="bg-[var(--sr-surface)] border border-[var(--sr-line)] rounded-2xl p-3 flex items-center justify-between text-xs my-2">
             <div className="flex items-center gap-2">
-              <div className="px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-400 text-[9px] font-bold">PRO Tip</div>
-              <p className="text-slate-400 text-[11px]">Keep your daily streak going to earn free Premium days!</p>
+              <div className="px-2 py-0.5 rounded bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-xs font-bold">PRO Tip</div>
+              <p className="text-[var(--sr-text-muted)] text-xs">Keep your daily streak going to earn free Premium days!</p>
             </div>
-            <a href="#reward_milestones" className="text-[10px] text-cyan-400 font-bold hover:underline shrink-0">
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'streak' }))}
+              className="text-xs text-[var(--sr-primary)] font-bold hover:underline shrink-0 cursor-pointer"
+            >
               Claim Perks →
-            </a>
+            </button>
           </div>
         );
     }
@@ -356,7 +357,7 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
     <div className={`my-4 relative group ${className}`}>
       <button
         onClick={() => setIsDismissed(true)}
-        className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-black/60 hover:bg-black text-slate-400 hover:text-white flex items-center justify-center text-[10px] border border-white/10 transition-all opacity-60 hover:opacity-100"
+        className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center justify-center text-xs border border-[var(--sr-line)] transition-all opacity-60 hover:opacity-100 cursor-pointer"
         title="Dismiss banner"
       >
         ✕

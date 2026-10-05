@@ -298,7 +298,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                     </div>
                   </div>
 
-                  <span className="text-xs font-black text-[var(--sr-primary)] shrink-0">
+                  <span className="text-xs font-black text-[var(--sr-text)] shrink-0">
                     {territory.progressPercent}%
                   </span>
                 </div>

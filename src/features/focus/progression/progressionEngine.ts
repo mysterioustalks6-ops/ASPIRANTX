@@ -163,7 +163,7 @@ export function getLevelFromDust(totalDust: number): LevelProgression {
 
 /**
  * 5. MILESTONE ENTITY LOOKUP
- * - Level 1–99: "Moon & Protoplanet" (Rocky)
+ * - Level 1–99: "Moon & Orbit" (Rocky)
  * - Level 100–299: "Habitable Terrestrial Planet"
  * - Level 300–499: "Gas Giant with Rings"
  * - Level 500–749: "Lava / Molten Core"
@@ -172,10 +172,10 @@ export function getLevelFromDust(totalDust: number): LevelProgression {
  */
 export const MILESTONES: MilestoneEntity[] = [
   {
-    name: 'Moon & Protoplanet',
+    name: 'Moon & Orbit',
     category: 'rocky',
-    description: 'Dense rocky protoplanetary mass coalescing under the initial gravitational pull of deep focus.',
-    badge: 'PROTOPLANET',
+    description: 'Dense rocky orbital mass coalescing under the initial gravitational pull of deep focus.',
+    badge: 'ORBIT',
     levelRange: 'Lv. 1–99',
     accentColor: '#38bdf8',
     secondaryColor: '#0284c7',

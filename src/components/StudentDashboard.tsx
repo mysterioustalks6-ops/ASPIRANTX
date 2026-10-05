@@ -202,17 +202,50 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     };
   }, [activeExamTag, userProfile.id, userProfile.streakDays, userProfile.xp]);
 
+  // Canonical user start date resolution
+  const getUserStartDate = (): Date => {
+    try {
+      const stored = localStorage.getItem(`aspirantx_start_date_${userProfile.id || 'guest'}`);
+      if (stored) {
+        const d = new Date(stored);
+        if (!isNaN(d.getTime())) return d;
+      }
+      if (userProfile.createdAt) {
+        const d = new Date(userProfile.createdAt);
+        if (!isNaN(d.getTime())) return d;
+      }
+    } catch {}
+    const now = new Date();
+    try {
+      localStorage.setItem(`aspirantx_start_date_${userProfile.id || 'guest'}`, now.toISOString());
+    } catch {}
+    return now;
+  };
+
   // Honest Daily Pace Formula: Compares real progress against expected milestone
   const calculatePaceStatus = (
     topicsCompleted: number,
     totalSyllabusTopics: number,
-    daysLeftForExam: number,
-    totalPrepDays: number = 365
+    daysLeftForExam: number
   ) => {
     const safeTotal = Math.max(1, totalSyllabusTopics || 14);
-    const daysElapsed = Math.max(0, Math.min(totalPrepDays, totalPrepDays - daysLeftForExam));
-    const expectedRate = safeTotal / totalPrepDays;
-    const expectedCompleted = Math.round(expectedRate * daysElapsed);
+    const startDate = getUserStartDate();
+    const daysSinceStart = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // With no activity or < 7 days active, show "Just starting"
+    if (topicsCompleted === 0 || daysSinceStart < 7) {
+      return { 
+        isBehind: false, 
+        label: 'Just starting', 
+        behindCount: 0, 
+        expectedCompleted: 0 
+      };
+    }
+
+    // After >= 7 days of activity, calculate expected pace based on remaining time to exam
+    const totalPlanDays = Math.max(daysSinceStart + Math.max(1, daysLeftForExam), 30);
+    const expectedRate = safeTotal / totalPlanDays;
+    const expectedCompleted = Math.round(expectedRate * daysSinceStart);
     const diff = expectedCompleted - topicsCompleted;
 
     if (diff <= 0) {
@@ -428,9 +461,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     {
       stopNumber: 3,
       title: 'Revise',
-      label: 'Spaced Repetition Recall',
+      label: data.topicsCompleted === 0 ? 'No reviews due yet' : 'Spaced Repetition Recall',
       subject: primarySubject,
-      description: 'Active flashcard recall before memory fades',
+      description: data.topicsCompleted === 0 
+        ? 'Complete topics in Learn or Practice to queue spaced recall' 
+        : 'Active flashcard recall before memory fades',
       icon: Sparkles,
       actionTab: 'flashcards' as ActiveTab,
       status: 'pending' as const,
@@ -691,7 +726,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2 mb-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[var(--sr-amber)]" />
-              <span className="text-[10px] font-black uppercase tracking-wider text-[var(--sr-amber)]">
+              <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-amber)]">
                 RECOMMENDED PRACTICE
               </span>
             </div>
@@ -715,21 +750,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         {/* TARGET EXAM COUNTDOWN CARD */}
         <div className="sm:col-span-4 p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex flex-col justify-between space-y-2 shadow-sm">
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[var(--sr-coral)]">
+            <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--sr-coral)]">
               <Target className="w-3.5 h-3.5" />
               <span>Exam Target</span>
             </div>
             <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] mt-1">
               {examCfg2.displayName} 2026
             </h4>
-            <p className="text-[11px] text-[var(--sr-text-muted)] font-mono mt-0.5">
+            <p className="text-xs text-[var(--sr-text-muted)] font-mono mt-0.5">
               {data.daysLeftForExam} Days Remaining
             </p>
           </div>
 
-          <div className="pt-2 flex items-center justify-between text-[11px] border-t border-[var(--sr-line)]">
+          <div className="pt-2 flex items-center justify-between text-xs border-t border-[var(--sr-line)]">
             <span className="text-[var(--sr-text-muted)]">Pace:</span>
-            <span className="text-[var(--sr-primary)] font-black">On Track</span>
+            <span className={`font-black ${isPaceBehind ? 'text-[var(--sr-coral)]' : 'text-[var(--sr-primary)]'}`}>
+              {paceLabel}
+            </span>
           </div>
         </div>
       </div>
@@ -746,11 +783,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
             <div>
               <h3 className="text-xs font-black text-[var(--sr-text)]">Live Study Telemetry</h3>
-              <p className="text-[11px] text-[var(--sr-text-muted)]">Syllabus, accuracy & daily focus metrics</p>
+              <p className="text-xs text-[var(--sr-text-muted)]">Syllabus, accuracy & daily focus metrics</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-[var(--sr-primary)]">
+            <span className="text-xs font-bold text-[var(--sr-primary)]">
               {showTelemetryRings ? 'Collapse' : 'Tap to View'}
             </span>
             <ChevronRight className={`w-4 h-4 text-[var(--sr-text-muted)] transition-transform duration-200 ${showTelemetryRings ? 'rotate-90' : ''}`} />
@@ -784,7 +821,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)]">
                 Quick Shortcuts
               </h3>
-              <p className="text-[10px] text-[var(--sr-text-muted)]">Direct access to primary study engines</p>
+              <p className="text-xs text-[var(--sr-text-muted)]">Direct access to primary study engines</p>
             </div>
           </div>
 
@@ -792,7 +829,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             {allFeatures.length > 4 && (
               <button
                 onClick={() => setShowAllShortcuts(!showAllShortcuts)}
-                className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[11px] font-bold text-[var(--sr-text)] transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-text)] transition-all cursor-pointer"
               >
                 {showAllShortcuts ? 'Show Top 4' : `All (${allFeatures.length})`}
               </button>
@@ -800,7 +837,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             {onOpenWorkspaceCustomizer && (
               <button
                 onClick={onOpenWorkspaceCustomizer}
-                className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[11px] font-bold text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center gap-1 transition-all cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center gap-1 transition-all cursor-pointer"
               >
                 <Sliders className="w-3 h-3 text-[var(--sr-blue)]" />
                 <span>Customize</span>
@@ -824,7 +861,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   {item.label.charAt(0)}
                 </div>
                 <div className="min-w-0 w-full text-center">
-                  <span className="text-[11px] font-bold text-[var(--sr-text)] group-hover:text-[var(--sr-primary)] transition-colors block truncate">
+                  <span className="text-xs font-bold text-[var(--sr-text)] group-hover:text-[var(--sr-primary)] transition-colors block truncate">
                     {item.label}
                   </span>
                 </div>

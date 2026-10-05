@@ -2,10 +2,20 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(), 
+      tailwindcss(),
+      visualizer({
+        filename: 'dist/stats.html',
+        json: true,
+        open: false,
+        gzipSize: true
+      })
+    ],
     resolve: {
       alias: {
         '@': path.resolve('.'),
@@ -16,6 +26,9 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            if (id.includes('openkoshDetailedSyllabus') || id.includes('jeeSyllabusData') || id.includes('syllabusTemplates')) {
+              return 'data-syllabus';
+            }
             if (id.includes('node_modules')) {
               if (id.includes('three')) {
                 return 'vendor-three';

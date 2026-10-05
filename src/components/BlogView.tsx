@@ -7,7 +7,14 @@ import {
 } from 'lucide-react';
 import { FadeIn, SlideUp, Stagger, StaggerItem, PressFeedback, SkeletonShimmer, EmptyState } from '../lib/animations';
 
-export const BlogView: React.FC = () => {
+import { UserProfile } from '../types';
+import { getExamConfig } from '../lib/examRegistry';
+
+interface BlogViewProps {
+  user?: UserProfile | null;
+}
+
+export const BlogView: React.FC<BlogViewProps> = ({ user }) => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -15,16 +22,37 @@ export const BlogView: React.FC = () => {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
 
-  const categories = [
-    'All', 
-    'Current Affairs', 
-    'Editorial Analysis', 
-    'GS Paper 1', 
-    'GS Paper 2', 
-    'GS Paper 3', 
-    'Economy', 
-    'Strategy'
-  ];
+  const activeExam = user?.exam || localStorage.getItem('aspirantx_active_exam') || 'NEET';
+  const examCfg = getExamConfig(activeExam);
+  const examName = examCfg?.displayName || 'National Exam';
+  const norm = activeExam.toUpperCase();
+  const isMedical = norm.includes('NEET') || norm.includes('AIIMS') || norm.includes('NORCET');
+  const isEngg = norm.includes('JEE') || norm.includes('GATE') || norm.includes('BITSAT');
+  const isCivil = norm.includes('UPSC') || norm.includes('CIVIL') || norm.includes('IAS') || norm.includes('PSC');
+
+  const categories = isMedical
+    ? ['All', 'High-Yield Concepts', 'Biology Insights', 'Physics Problem Solving', 'Chemistry Trends', 'Strategy']
+    : isEngg
+    ? ['All', 'Advanced Concepts', 'Physics Analysis', 'Organic Synthesis', 'Calculus Insights', 'Strategy']
+    : isCivil
+    ? ['All', 'Current Affairs', 'Editorial Analysis', 'GS Paper 1', 'GS Paper 2', 'GS Paper 3', 'Economy', 'Strategy']
+    : ['All', 'Core Concepts', 'Question Trends', 'Subject Analysis', 'Exam Updates', 'Strategy'];
+
+  const blogTitle = isMedical
+    ? 'High-Yield Medical & Concept Desk'
+    : isEngg
+    ? 'Advanced Engineering & Formula Desk'
+    : isCivil
+    ? 'Current Affairs & Editorial Desk'
+    : `${examName} Editorial & Strategy Desk`;
+
+  const blogSubtitle = isMedical
+    ? `Expert medical analysis, NCERT high-yield breakdowns, and exam strategies curated for ${examName} aspirants.`
+    : isEngg
+    ? `Problem-solving shortcuts, formula breakdowns, and mock exam analysis curated for ${examName} aspirants.`
+    : isCivil
+    ? `Expert analysis, daily current affairs, and strategic exam insights curated directly by top faculty.`
+    : `Expert insights, syllabus mastery breakdowns, and exam strategy curated for ${examName} aspirants.`;
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -134,10 +162,10 @@ export const BlogView: React.FC = () => {
             <span>StudyRide Daily Insights</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-3">
-            Current Affairs & Editorial Desk
+            {blogTitle}
           </h1>
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-            Expert analysis, daily current affairs, and strategic exam insights curated directly by top Civil Services educators and UPSC faculty.
+            {blogSubtitle}
           </p>
         </div>
       </div>

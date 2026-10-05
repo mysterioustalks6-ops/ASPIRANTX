@@ -19,15 +19,8 @@ import { GamificationBar } from './components/GamificationBar';
 import { PracticeHub } from './components/PracticeHub';
 import { ProgressHub } from './components/ProgressHub';
 import { MoreHub } from './components/MoreHub';
-import { FigmaRedesignPreview } from './components/FigmaRedesignPreview';
 import { DailyQuoteCard } from './components/DailyQuote';
-import { SyllabusTracker } from './components/SyllabusTracker';
-import { PyqEngine } from './components/PyqEngine';
-import { QuestionBankEngine } from './components/QuestionBankEngine';
 import { PomodoroTimer } from './components/PomodoroTimer';
-import { FocusGalaxyScreen } from './features/focus/galaxy/FocusGalaxyScreen';
-import { TaskManager } from './components/TaskManager';
-import { AiStudyChat } from './components/AiStudyChat';
 import { CommunityChat } from './components/CommunityChat';
 import { UserProfileModal } from './components/UserProfileModal';
 import { ReferralModal } from './components/ReferralModal';
@@ -84,6 +77,13 @@ const FocusShieldView = lazy(() => import('./components/FocusShieldView').then(m
 const DownloadPage = lazy(() => import('./components/DownloadPage').then(m => ({ default: m.DownloadPage })));
 const GalaxyDebugScreen = lazy(() => import('./features/focus/screens/GalaxyDebugScreen').then(m => ({ default: m.GalaxyDebugScreen })));
 const DesignSystemShowcase = lazy(() => import('./components/DesignSystemShowcase').then(m => ({ default: m.DesignSystemShowcase })));
+const SyllabusTracker = lazy(() => import('./components/SyllabusTracker').then(m => ({ default: m.SyllabusTracker })));
+const PyqEngine = lazy(() => import('./components/PyqEngine').then(m => ({ default: m.PyqEngine })));
+const QuestionBankEngine = lazy(() => import('./components/QuestionBankEngine').then(m => ({ default: m.QuestionBankEngine })));
+const FocusGalaxyScreen = lazy(() => import('./features/focus/galaxy/FocusGalaxyScreen').then(m => ({ default: m.FocusGalaxyScreen })));
+const TaskManager = lazy(() => import('./components/TaskManager').then(m => ({ default: m.TaskManager })));
+const AiStudyChat = lazy(() => import('./components/AiStudyChat').then(m => ({ default: m.AiStudyChat })));
+const FigmaRedesignPreview = lazy(() => import('./components/FigmaRedesignPreview').then(m => ({ default: m.FigmaRedesignPreview })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
 
@@ -267,8 +267,9 @@ function AppContent() {
       }
     };
     const onNavigateTab = (e: any) => {
-      if (e.detail?.tab) {
-        setActiveTab(e.detail.tab as ActiveTab);
+      const target = typeof e.detail === 'string' ? e.detail : e.detail?.tab;
+      if (target) {
+        setActiveTab(target as ActiveTab);
       }
     };
     window.addEventListener('hashchange', onHashChange);
@@ -1496,6 +1497,7 @@ function AppContent() {
           <section className="mt-6">
             <AnimatePresence mode="wait">
               <PageTransition key={activeTab}>
+                <Suspense fallback={<SuspenseFallback />}>
                 {activeTab === 'syllabus' && (
                   <MapJourneyView
                     user={{...user, exam: selectedExam}}
@@ -1598,8 +1600,7 @@ function AppContent() {
               </PremiumGate>
             )}
 
-            <Suspense fallback={<SuspenseFallback />}>
-              {(activeTab === 'dashboard' || activeTab === 'student_dashboard') && (
+            {(activeTab === 'dashboard' || activeTab === 'student_dashboard') && (
                 <StudentDashboard 
                   userProfile={{...user, exam: selectedExam}} 
                   selectedExam={selectedExam}
@@ -1739,7 +1740,7 @@ function AppContent() {
               )}
 
               {activeTab === 'blog' && (
-                <BlogView />
+                <BlogView user={user} />
               )}
 
               {activeTab === 'wallpaper' && (

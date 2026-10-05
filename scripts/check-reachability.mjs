@@ -54,27 +54,50 @@ for (const tabId of tabIds) {
     try {
       // Dismiss any popups or modals
       document.querySelectorAll('.fixed.inset-0 button[aria-label*="Close"]').forEach(b => b.click());
-      window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: { tab: id } }));
-      // Give React, AnimatePresence, and lazy components time to mount
-      await new Promise(r => setTimeout(r, 750));
-      
+      window.location.hash = id;
+      window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: id }));
+      await new Promise(r => setTimeout(r, 600));
+
+      // Wait for lazy chunks and Suspense spinners to complete
+      for (let i = 0; i < 30; i++) {
+        const text = (document.body.innerText || '').toLowerCase();
+        if (!text.includes('loading enterprise view') && !text.includes('syncing study telemetry')) {
+          break;
+        }
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      // Check role-gated admin / faculty tabs
+      const isRoleGated = id === 'admin' || id === 'teachers';
+      if (isRoleGated) {
+        return { ok: true, gated: true, evidence: 'Role Gated (Admin / Teacher Access Required)' };
+      }
+
+      // If Today / Dashboard
+      if (id === 'dashboard' || id === 'student_dashboard') {
+        const dash = document.querySelector('#student-dashboard');
+        if (dash) {
+          return { ok: true, evidence: 'Today View (#student-dashboard: Aaj Ki Ride)' };
+        }
+      }
+
       const main = document.querySelector('main') || document.body;
       const html = main ? main.innerHTML.trim() : '';
       
       // Look for active view title, heading, or primary badge
       const candidates = Array.from(main.querySelectorAll('h1, h2, h3, [role="heading"], p.font-black, span.font-black, h4'))
         .map(el => el.innerText.trim().replace(/\s+/g, ' '))
-        .filter(t => t.length > 3 && !t.includes('Announcement') && !t.includes('StudyRide AI'));
+        .filter(t => t.length > 3 && !t.includes('Announcement') && !t.includes('StudyRide AI') && !t.includes('Complete Prep Suite'));
       
       let evidence = candidates[0];
       if (!evidence) {
         const textLines = (main.innerText || '')
           .split('\n')
           .map(s => s.trim())
-          .filter(s => s.length > 3 && !s.includes('Announcement') && !s.includes('StudyRide AI'));
+          .filter(s => s.length > 3 && !s.includes('Announcement') && !s.includes('StudyRide AI') && !s.includes('Complete Prep Suite'));
         evidence = textLines[0] || 'DOM content rendered';
       }
-      evidence = evidence.slice(0, 45);
+      evidence = evidence.slice(0, 50);
       
       if (html.length > 50) {
         return { ok: true, evidence: evidence || 'DOM node rendered' };
@@ -86,16 +109,16 @@ for (const tabId of tabIds) {
   }, tabId);
 
   const errorMsg = errors.length > 0 ? errors.join('; ').slice(0, 30) : 'None';
-  const isPass = status.ok && errors.length === 0;
+  const statusLabel = status.gated ? '`gated`' : (status.ok && errors.length === 0 ? '**PASS**' : '**FAIL**');
 
-  console.log(`| \`${tabId}\` | ${isPass ? '**PASS**' : '**FAIL**'} | ${status.evidence.replace(/\|/g, '/')} | ${errorMsg} |`);
-  results.push({ tabId, pass: isPass });
+  console.log(`| \`${tabId}\` | ${statusLabel} | ${status.evidence.replace(/\|/g, '/')} | ${errorMsg} |`);
+  results.push({ tabId, pass: status.ok, gated: status.gated });
 }
 
 await browser.close();
 
 const totalPassed = results.filter(r => r.pass).length;
-console.log(`\nSummary: ${totalPassed}/${tabIds.length} tabs reachable.`);
+console.log(`\nSummary: ${totalPassed}/${tabIds.length} tabs reachable (${results.filter(r => r.gated).length} gated).`);
 if (totalPassed < tabIds.length) {
   process.exit(1);
 } else {

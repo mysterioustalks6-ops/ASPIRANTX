@@ -16,8 +16,8 @@
 
   /* Typography / Text */
   --sr-text: #F8FAFC;          /* 15.2:1 contrast */
-  --sr-text-muted: #94A3B8;    /* 7.1:1 contrast */
-  --sr-text-subtle: #64748B;   /* 4.5:1 contrast */
+  --sr-text-muted: #CBD5E1;    /* 10.2:1 contrast */
+  --sr-text-subtle: #94A3B8;   /* 7.1:1 contrast (well over 4.5:1) */
 
   /* Ride Green Primary Action (Vibrant on dark surface, dark text for high contrast) */
   --sr-primary: #2BC46F;
@@ -31,12 +31,14 @@
   --sr-blue: #38BDF8;
   --sr-blue-depth: #0284C7;
   --sr-blue-subtle: rgba(56, 189, 248, 0.12);
+  --sr-on-blue: #021E36;
   --sr-purple: #A78BFA;
   --sr-purple-depth: #7C3AED;
   --sr-purple-subtle: rgba(167, 139, 250, 0.12);
   --sr-amber: #FBBF24;
   --sr-amber-depth: #D97706;
   --sr-amber-subtle: rgba(251, 191, 36, 0.14);
+  --sr-on-amber: #1E1202;
   --sr-coral: #F87171;
   --sr-coral-depth: #DC2626;
   --sr-coral-subtle: rgba(248, 113, 113, 0.12);
@@ -88,14 +90,14 @@
 
   /* Typography / Text (Verified against #F8FAFC & #FFFFFF) */
   --sr-text: #0F172A;          /* 15.6:1 contrast */
-  --sr-text-muted: #475569;    /* 6.2:1 contrast */
-  --sr-text-subtle: #64748B;   /* 4.54:1 contrast (AA pass) */
+  --sr-text-muted: #334155;    /* 8.9:1 contrast */
+  --sr-text-subtle: #475569;   /* 6.2:1 contrast (well over 4.5:1) */
 
-  /* Ride Green Primary Action (Verified: #18803E on #FFFFFF = 4.96:1 contrast) */
-  --sr-primary: #18803E;
-  --sr-primary-hover: #137333;
-  --sr-primary-active: #0F5B28;
-  --sr-primary-depth: #0D5023;
+  /* Ride Green Primary Action (Verified: #137333 on #F8FAFC = 5.2:1, on #FFFFFF = 6.0:1) */
+  --sr-primary: #137333;
+  --sr-primary-hover: #0F5B28;
+  --sr-primary-active: #0D5023;
+  --sr-primary-depth: #0A3D1B;
   --sr-primary-subtle: #E8F5E9;
   --sr-on-primary: #FFFFFF;
 
@@ -103,12 +105,14 @@
   --sr-blue: #1D4ED8;          /* Signal Blue (Learn / PYQ) */
   --sr-blue-depth: #1E40AF;
   --sr-blue-subtle: #EFF6FF;
+  --sr-on-blue: #FFFFFF;
   --sr-purple: #6D28D9;        /* Checkpoint Purple (Mocks / Leagues) */
   --sr-purple-depth: #5B21B6;
   --sr-purple-subtle: #F5F3FF;
   --sr-amber: #92400E;         /* High-contrast amber (5.8:1 on white, passes AA) */
   --sr-amber-depth: #78350F;
   --sr-amber-subtle: #FEF3C7;
+  --sr-on-amber: #FFFFFF;
   --sr-coral: #DC2626;         /* Coral (Error / Wrong) */
   --sr-coral-depth: #B91C1C;
   --sr-coral-subtle: #FEF2F2;

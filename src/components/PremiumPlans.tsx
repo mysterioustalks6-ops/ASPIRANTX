@@ -21,6 +21,8 @@ import {
   Send
 } from 'lucide-react';
 
+import { getExamConfig } from '../lib/examRegistry';
+
 interface PremiumPlansProps {
   user?: UserProfile | null;
   onUnlockPremium?: () => void;
@@ -28,6 +30,8 @@ interface PremiumPlansProps {
 
 export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremium }) => {
   const [upgraded, setUpgraded] = useState<boolean>(Boolean(user?.isPremium));
+  const examCfg = getExamConfig(user?.exam);
+  const targetExamName = examCfg?.displayName || 'National Exam';
   
   // Dynamic Pricing & Razorpay Gateway state from Admin Settings
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual' | 'lifetime'>('monthly');
@@ -307,11 +311,11 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
   };
 
   const planFeatures = [
-    'Unlimited AI Mains Answer & Essay Evaluation',
+    'Unlimited AI Mains Answer & Concept Evaluation',
     'Personalized PYQ Trend Analysis & Prediction Engine',
     'Live Pomodoro Group Study Rooms with Toppers',
-    'Full Access to UPSC & SSC Test Series (500+ Mocks)',
-    '1-on-1 AI Interview Simulator with Real-time Speech',
+    `Full Access to ${targetExamName} Test Series (500+ Mocks)`,
+    '1-on-1 AI Interview & Viva Simulator with Real-time Speech',
     'Offline Study Notes PDF Exporter & Priority Support',
   ];
 
@@ -368,7 +372,7 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
                   <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
                     <div>
                       <span className="font-bold text-amber-300">StudyRide PRO {selectedPlan.toUpperCase()} Pass</span>
-                      <p className="text-[10px] text-slate-400">Full UPSC & SSC AI Suite</p>
+                      <p className="text-xs text-slate-400">Full {targetExamName} AI Suite</p>
                     </div>
                     <span className="text-lg font-black text-white">₹{getActiveAmount()}</span>
                   </div>
@@ -482,7 +486,7 @@ export const PremiumPlans: React.FC<PremiumPlansProps> = ({ user, onUnlockPremiu
           <Crown className="w-4 h-4 text-amber-400" /> Official StudyRide PRO Subscription
         </div>
         <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          Level Up Your UPSC & SSC Preparation
+          Level Up Your {targetExamName} Preparation
         </h2>
         <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
           PRO access requires verified payment or direct Admin approval. Unlock unlimited AI Mains evaluation, PYQ predictors, and study rooms.

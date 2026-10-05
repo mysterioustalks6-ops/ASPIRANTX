@@ -42,13 +42,13 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-20">
       {/* Quiet Header & Category Switcher */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#2A2F3A] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--sr-line)] pb-4">
         <div>
-          <span className="text-[11px] font-mono font-black uppercase tracking-wider text-[#1CB0F6]">
+          <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-primary)]">
             Practice & Test Engine
           </span>
-          <h1 className="text-xl sm:text-2xl font-black text-[#F3F4F6] mt-0.5">Reinforce & Test Knowledge</h1>
-          <p className="text-xs text-[#9CA3AF] mt-1">
+          <h1 className="text-xl sm:text-2xl font-black text-[var(--sr-text)] mt-0.5">Reinforce & Test Knowledge</h1>
+          <p className="text-xs text-[var(--sr-text-muted)] mt-1">
             Topic drills, 35-year PYQ archives, and All-India timed CBT mock simulations.
           </p>
         </div>
@@ -84,23 +84,23 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           {/* Duolingo Gamified Veer Mascot Practice Arena Banner */}
           <div 
             onClick={() => { soundFx.playChestOpen(); }}
-            className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-[#0F2212] via-[#121B2A] to-[#1D122A] border-2 border-[#58CC02]/40 border-b-[6px] border-b-[#3C8801] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl cursor-pointer hover:border-[#58CC02] transition-all select-none active:translate-y-1 active:border-b-2"
+            className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl cursor-pointer hover:border-[var(--sr-primary)] transition-all select-none active:translate-y-1"
           >
             <div className="flex items-center gap-4">
               <AspirantMascot size="md" state="encouraging" />
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-[11px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#58CC02]/20 text-[#58CC02] border border-[#58CC02]/40">
+                  <span className="text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/30">
                     Veer Practice Arena ⚡
                   </span>
-                  <span className="text-xs text-amber-300 font-black flex items-center gap-1">
+                  <span className="text-xs text-[var(--sr-amber)] font-black flex items-center gap-1">
                     🔥 Daily Streak Bonus: +50 XP
                   </span>
                 </div>
-                <h3 className="text-base sm:text-lg font-black text-white mt-1">
+                <h3 className="text-base sm:text-lg font-black text-[var(--sr-text)] mt-1">
                   "Practice makes permanent. Topic-wise questions lagao aur CBT mock me AIR check karo!"
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
                   Complete your 3 daily practice quests to earn gems and protect your league standing.
                 </p>
               </div>
@@ -111,7 +111,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 soundFx.playTap();
                 setSubTab('duo_path');
               }}
-              className="px-5 py-3 rounded-2xl bg-[#58CC02] hover:bg-[#46A302] text-[#0B2300] font-black text-xs uppercase tracking-wider shadow-lg border-b-[4px] border-[#3C8801] active:border-b-0 active:translate-y-1 transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-3 rounded-2xl bg-[var(--sr-primary)] hover:opacity-95 text-[var(--sr-on-primary)] font-black text-xs uppercase tracking-wider shadow-lg border-b-[4px] border-[var(--sr-primary-depth)] active:border-b-0 active:translate-y-1 transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
             >
               <span>Play Path Drills</span>
               <ArrowRight className="w-4 h-4" />
@@ -119,39 +119,39 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           </div>
 
           {/* DUOLINGO DAILY PRACTICE QUESTS WIDGET */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-[#15181F] border-2 border-[#2A2F3A] border-b-[5px] border-b-[#1A1D24] shadow-xl space-y-4">
+          <div className="p-5 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-[#FF9600] flex items-center justify-center font-black text-base border border-amber-500/30">
+                <div className="w-9 h-9 rounded-xl bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] flex items-center justify-center font-black text-base border border-[var(--sr-amber)]/30">
                   🎯
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-black text-white">Daily Practice Quests</h3>
-                  <p className="text-[11px] text-[#9CA3AF]">Complete all 3 quests before midnight to earn 150 XP</p>
+                  <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)]">Daily Practice Quests</h3>
+                  <p className="text-xs text-[var(--sr-text-muted)]">Complete all 3 quests before midnight to earn 150 XP</p>
                 </div>
               </div>
-              <span className="text-xs font-mono font-black text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20">
+              <span className="text-xs font-black text-[var(--sr-amber)] bg-[var(--sr-amber-subtle)] px-2.5 py-1 rounded-xl border border-[var(--sr-amber)]/30">
                 1 / 3 Done
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Quest 1 */}
-              <div className="p-3.5 rounded-2xl bg-[#0F1115] border border-[#2A2F3A] space-y-2">
+              <div className="p-3.5 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-white flex items-center gap-1.5">
+                  <span className="font-bold text-[var(--sr-text)] flex items-center gap-1.5">
                     <span>📄</span> Solve 10 PYQs
                   </span>
-                  <span className="font-mono font-black text-[#1CB0F6]">6/10</span>
+                  <span className="font-bold text-[var(--sr-blue)]">6/10</span>
                 </div>
-                <div className="w-full bg-[#1A1D24] h-2 rounded-full overflow-hidden border border-[#2A2F3A]">
-                  <div className="bg-[#1CB0F6] h-full rounded-full transition-all duration-500" style={{ width: '60%' }} />
+                <div className="w-full bg-[var(--sr-surface)] h-2 rounded-full overflow-hidden border border-[var(--sr-line)]">
+                  <div className="bg-[var(--sr-blue)] h-full rounded-full transition-all duration-500" style={{ width: '60%' }} />
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-[#9CA3AF]">
+                <div className="flex items-center justify-between text-xs text-[var(--sr-text-muted)]">
                   <span>Reward: +30 XP</span>
                   <button 
                     onClick={() => { soundFx.playTap(); setSubTab('pyq'); }}
-                    className="text-[#1CB0F6] font-bold hover:underline cursor-pointer"
+                    className="text-[var(--sr-blue)] font-bold hover:underline cursor-pointer"
                   >
                     Solve →
                   </button>
@@ -159,38 +159,38 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               </div>
 
               {/* Quest 2 */}
-              <div className="p-3.5 rounded-2xl bg-[#0F1115] border border-[#2A2F3A] space-y-2">
+              <div className="p-3.5 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-white flex items-center gap-1.5">
+                  <span className="font-bold text-[var(--sr-text)] flex items-center gap-1.5">
                     <span>⚡</span> 1 Topic Drill
                   </span>
-                  <span className="font-mono font-black text-[#58CC02]">1/1 ✓</span>
+                  <span className="font-bold text-[var(--sr-primary)]">1/1 ✓</span>
                 </div>
-                <div className="w-full bg-[#1A1D24] h-2 rounded-full overflow-hidden border border-[#2A2F3A]">
-                  <div className="bg-[#58CC02] h-full rounded-full" style={{ width: '100%' }} />
+                <div className="w-full bg-[var(--sr-surface)] h-2 rounded-full overflow-hidden border border-[var(--sr-line)]">
+                  <div className="bg-[var(--sr-primary)] h-full rounded-full" style={{ width: '100%' }} />
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-[#9CA3AF]">
+                <div className="flex items-center justify-between text-xs text-[var(--sr-text-muted)]">
                   <span>Reward: +40 XP</span>
-                  <span className="text-[#58CC02] font-black">CLAIMED!</span>
+                  <span className="text-[var(--sr-primary)] font-black">CLAIMED!</span>
                 </div>
               </div>
 
               {/* Quest 3 */}
-              <div className="p-3.5 rounded-2xl bg-[#0F1115] border border-[#2A2F3A] space-y-2">
+              <div className="p-3.5 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-white flex items-center gap-1.5">
+                  <span className="font-bold text-[var(--sr-text)] flex items-center gap-1.5">
                     <span>🏆</span> 1 Full Mock
                   </span>
-                  <span className="font-mono font-black text-purple-400">0/1</span>
+                  <span className="font-bold text-[var(--sr-purple)]">0/1</span>
                 </div>
-                <div className="w-full bg-[#1A1D24] h-2 rounded-full overflow-hidden border border-[#2A2F3A]">
-                  <div className="bg-purple-500 h-full rounded-full" style={{ width: '0%' }} />
+                <div className="w-full bg-[var(--sr-surface)] h-2 rounded-full overflow-hidden border border-[var(--sr-line)]">
+                  <div className="bg-[var(--sr-purple)] h-full rounded-full" style={{ width: '0%' }} />
                 </div>
-                <div className="flex items-center justify-between text-[10px] text-[#9CA3AF]">
+                <div className="flex items-center justify-between text-xs text-[var(--sr-text-muted)]">
                   <span>Reward: +80 XP + 🪙 10</span>
                   <button 
                     onClick={() => { soundFx.playTap(); setSubTab('cbt'); }}
-                    className="text-purple-400 font-bold hover:underline cursor-pointer"
+                    className="text-[var(--sr-purple)] font-bold hover:underline cursor-pointer"
                   >
                     Enter Mock →
                   </button>
@@ -204,27 +204,27 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 1. PYQ Archive */}
             <div 
               onClick={() => { soundFx.playTap(); setSubTab('pyq'); }}
-              className="p-5 sm:p-6 rounded-3xl bg-[#15181F] border-2 border-[#1CB0F6]/30 border-b-[6px] border-b-[#137BAE] hover:border-[#1CB0F6] hover:bg-[#1A1D24] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
+              className="p-5 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-blue)]/30 border-b-[6px] border-b-[var(--sr-blue-depth)] hover:border-[var(--sr-blue)] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
             >
               <div className="flex items-center justify-between">
-                <div className="w-13 h-13 rounded-2xl bg-[#1CB0F6]/15 border-2 border-[#1CB0F6]/40 text-[#1CB0F6] flex items-center justify-center font-black text-xl shadow-md">
+                <div className="w-13 h-13 rounded-2xl bg-[var(--sr-blue-subtle)] border-2 border-[var(--sr-blue)]/40 text-[var(--sr-blue)] flex items-center justify-center font-black text-xl shadow-md">
                   <FileText className="w-6 h-6" />
                 </div>
-                <span className="px-3 py-1 rounded-full bg-[#1CB0F6]/10 text-[#1CB0F6] text-[11px] font-black uppercase tracking-wider border border-[#1CB0F6]/30">
+                <span className="px-3 py-1 rounded-full bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-xs font-black uppercase tracking-wider border border-[var(--sr-blue)]/30">
                   +10 XP per Q
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-black text-white group-hover:text-[#1CB0F6] transition-colors">
+                <h3 className="text-lg font-black text-[var(--sr-text)] group-hover:text-[var(--sr-blue)] transition-colors">
                   Enterprise PYQ Archive (1991–2026)
                 </h3>
-                <p className="text-xs text-[#9CA3AF] mt-1.5 leading-relaxed">
+                <p className="text-xs text-[var(--sr-text-muted)] mt-1.5 leading-relaxed">
                   35 years of official Prelims & Mains examination papers with complete verified answer keys and instant topic filter.
                 </p>
               </div>
               <div className="pt-2 flex items-center justify-between">
-                <span className="text-xs font-mono text-[#9CA3AF]">Official UPSC / State Papers</span>
-                <span className="px-4 py-2 rounded-xl bg-[#1CB0F6] text-[#052840] font-black text-xs uppercase tracking-wider border-b-[3px] border-[#137BAE] group-hover:shadow-md">
+                <span className="text-xs text-[var(--sr-text-muted)]">Official State & National Papers</span>
+                <span className="px-4 py-2 rounded-xl bg-[var(--sr-blue)] text-[var(--sr-on-blue)] font-black text-xs uppercase tracking-wider border-b-[3px] border-[var(--sr-blue-depth)] group-hover:shadow-md">
                   Start PYQ 🚀
                 </span>
               </div>
@@ -233,27 +233,27 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 2. Question Bank */}
             <div 
               onClick={() => { soundFx.playTap(); setSubTab('question_bank'); }}
-              className="p-5 sm:p-6 rounded-3xl bg-[#15181F] border-2 border-[#58CC02]/30 border-b-[6px] border-b-[#3C8801] hover:border-[#58CC02] hover:bg-[#1A1D24] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
+              className="p-5 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-primary)]/30 border-b-[6px] border-b-[var(--sr-primary-depth)] hover:border-[var(--sr-primary)] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
             >
               <div className="flex items-center justify-between">
-                <div className="w-13 h-13 rounded-2xl bg-[#58CC02]/15 border-2 border-[#58CC02]/40 text-[#58CC02] flex items-center justify-center font-black text-xl shadow-md">
+                <div className="w-13 h-13 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)]/40 text-[var(--sr-primary)] flex items-center justify-center font-black text-xl shadow-md">
                   <HelpCircle className="w-6 h-6" />
                 </div>
-                <span className="px-3 py-1 rounded-full bg-[#58CC02]/10 text-[#58CC02] text-[11px] font-black uppercase tracking-wider border border-[#58CC02]/30">
+                <span className="px-3 py-1 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-xs font-black uppercase tracking-wider border border-[var(--sr-primary)]/30">
                   6,000+ MCQs
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-black text-white group-hover:text-[#58CC02] transition-colors">
+                <h3 className="text-lg font-black text-[var(--sr-text)] group-hover:text-[var(--sr-primary)] transition-colors">
                   Topic Question Bank & NCERT Drills
                 </h3>
-                <p className="text-xs text-[#9CA3AF] mt-1.5 leading-relaxed">
+                <p className="text-xs text-[var(--sr-text-muted)] mt-1.5 leading-relaxed">
                   Curated conceptual MCQs structured by chapter, difficulty tier, and NCERT standard with instant detailed solutions.
                 </p>
               </div>
               <div className="pt-2 flex items-center justify-between">
-                <span className="text-xs font-mono text-[#9CA3AF]">Easy • Medium • Hard</span>
-                <span className="px-4 py-2 rounded-xl bg-[#58CC02] text-[#0B2300] font-black text-xs uppercase tracking-wider border-b-[3px] border-[#3C8801] group-hover:shadow-md">
+                <span className="text-xs text-[var(--sr-text-muted)]">Easy • Medium • Hard</span>
+                <span className="px-4 py-2 rounded-xl bg-[var(--sr-primary)] text-[var(--sr-on-primary)] font-black text-xs uppercase tracking-wider border-b-[3px] border-[var(--sr-primary-depth)] group-hover:shadow-md">
                   Start Drill 🎯
                 </span>
               </div>
@@ -262,27 +262,27 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 3. CBT Simulator */}
             <div 
               onClick={() => { soundFx.playTap(); setSubTab('cbt'); }}
-              className="p-5 sm:p-6 rounded-3xl bg-[#15181F] border-2 border-purple-500/30 border-b-[6px] border-b-purple-800 hover:border-purple-400 hover:bg-[#1A1D24] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
+              className="p-5 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-purple)]/30 border-b-[6px] border-b-[var(--sr-purple-depth)] hover:border-[var(--sr-purple)] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
             >
               <div className="flex items-center justify-between">
-                <div className="w-13 h-13 rounded-2xl bg-purple-500/15 border-2 border-purple-500/40 text-purple-400 flex items-center justify-center font-black text-xl shadow-md">
+                <div className="w-13 h-13 rounded-2xl bg-[var(--sr-purple-subtle)] border-2 border-[var(--sr-purple)]/40 text-[var(--sr-purple)] flex items-center justify-center font-black text-xl shadow-md">
                   <Award className="w-6 h-6" />
                 </div>
-                <span className="px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 text-[11px] font-black uppercase tracking-wider border border-purple-500/30">
+                <span className="px-3 py-1 rounded-full bg-[var(--sr-purple-subtle)] text-[var(--sr-purple)] text-xs font-black uppercase tracking-wider border border-[var(--sr-purple)]/30">
                   Timed CBT Exam
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-black text-white group-hover:text-purple-300 transition-colors">
+                <h3 className="text-lg font-black text-[var(--sr-text)] group-hover:text-[var(--sr-purple)] transition-colors">
                   All-India CBT Mock Simulator
                 </h3>
-                <p className="text-xs text-[#9CA3AF] mt-1.5 leading-relaxed">
+                <p className="text-xs text-[var(--sr-text-muted)] mt-1.5 leading-relaxed">
                   Official NTA/TCS-style timed test interface with negative marking, question palette, and national rank prediction.
                 </p>
               </div>
               <div className="pt-2 flex items-center justify-between">
-                <span className="text-xs font-mono text-[#9CA3AF]">National Percentile & AIR</span>
-                <span className="px-4 py-2 rounded-xl bg-purple-500 text-slate-950 font-black text-xs uppercase tracking-wider border-b-[3px] border-purple-800 group-hover:shadow-md">
+                <span className="text-xs text-[var(--sr-text-muted)]">National Percentile & AIR</span>
+                <span className="px-4 py-2 rounded-xl bg-[var(--sr-purple)] text-white font-black text-xs uppercase tracking-wider border-b-[3px] border-[var(--sr-purple-depth)] group-hover:shadow-md">
                   Enter Exam ⚡
                 </span>
               </div>
@@ -291,27 +291,27 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             {/* 4. Weakness Re-tester */}
             <div 
               onClick={() => { soundFx.playTap(); setSubTab('weakness'); }}
-              className="p-5 sm:p-6 rounded-3xl bg-[#15181F] border-2 border-[#FF9600]/30 border-b-[6px] border-b-[#B86800] hover:border-[#FF9600] hover:bg-[#1A1D24] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
+              className="p-5 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-amber)]/30 border-b-[6px] border-b-[var(--sr-amber-depth)] hover:border-[var(--sr-amber)] transition-all cursor-pointer group space-y-4 shadow-xl active:translate-y-1 active:border-b-2"
             >
               <div className="flex items-center justify-between">
-                <div className="w-13 h-13 rounded-2xl bg-[#FF9600]/15 border-2 border-[#FF9600]/40 text-[#FF9600] flex items-center justify-center font-black text-xl shadow-md">
+                <div className="w-13 h-13 rounded-2xl bg-[var(--sr-amber-subtle)] border-2 border-[var(--sr-amber)]/40 text-[var(--sr-amber)] flex items-center justify-center font-black text-xl shadow-md">
                   <Target className="w-6 h-6" />
                 </div>
-                <span className="px-3 py-1 rounded-full bg-[#FF9600]/10 text-[#FF9600] text-[11px] font-black uppercase tracking-wider border border-[#FF9600]/30">
+                <span className="px-3 py-1 rounded-full bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] text-xs font-black uppercase tracking-wider border border-[var(--sr-amber)]/30">
                   AI Mistake Log
                 </span>
               </div>
               <div>
-                <h3 className="text-lg font-black text-white group-hover:text-[#FF9600] transition-colors">
+                <h3 className="text-lg font-black text-[var(--sr-text)] group-hover:text-[var(--sr-amber)] transition-colors">
                   Weakness Diagnostic & Mistake Log
                 </h3>
-                <p className="text-xs text-[#9CA3AF] mt-1.5 leading-relaxed">
+                <p className="text-xs text-[var(--sr-text-muted)] mt-1.5 leading-relaxed">
                   Automatic negative marking detection. Isolates your mistakes from mocks & drills to generate targeted re-tests.
                 </p>
               </div>
               <div className="pt-2 flex items-center justify-between">
-                <span className="text-xs font-mono text-[#9CA3AF]">Spaced Memory Curve</span>
-                <span className="px-4 py-2 rounded-xl bg-[#FF9600] text-[#0B2300] font-black text-xs uppercase tracking-wider border-b-[3px] border-[#B86800] group-hover:shadow-md">
+                <span className="text-xs text-[var(--sr-text-muted)]">Spaced Memory Curve</span>
+                <span className="px-4 py-2 rounded-xl bg-[var(--sr-amber)] text-[var(--sr-on-amber)] font-black text-xs uppercase tracking-wider border-b-[3px] border-[var(--sr-amber-depth)] group-hover:shadow-md">
                   Fix Mistakes 🛡️
                 </span>
               </div>

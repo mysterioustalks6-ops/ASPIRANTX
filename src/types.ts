@@ -16,6 +16,7 @@ export interface UserProfile {
   targetYear: number;
   streakDays: number;
   lastActiveDate?: string;
+  createdAt?: string;
   isPremium: boolean;
   premiumUntil?: string; // ISO date string
   premiumSource?: 'paid' | 'reward' | null;
