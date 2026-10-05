@@ -11,33 +11,20 @@ import { EXAM_LIST } from './lib/examList';
 import { ExamProvider, useExam } from './context/ExamContext';
 import { normalizeExamId } from './lib/examNormalize';
 import { academicService } from './lib/services';
-import { OnboardingWizard } from './components/OnboardingWizard';
-import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { GamificationBar } from './components/GamificationBar';
-import { ProgressHub } from './components/ProgressHub';
-import { MoreHub } from './components/MoreHub';
 import { DailyQuoteCard } from './components/DailyQuote';
-import { PomodoroTimer } from './components/PomodoroTimer';
-import { CommunityChat } from './components/CommunityChat';
-import { ReferralModal } from './components/ReferralModal';
-import { AppCustomizerModal } from './components/AppCustomizerModal';
 import { BackgroundFX } from './components/BackgroundFX';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { reportFrontendError } from './lib/errorReporter';
 import { loadCustomizerSettings, fetchServerCustomizerSettings, AppCustomizerSettings } from './lib/customizer';
 import { getRemainingDemoSeconds, formatDemoTime, startDemoSession, fetchServerDemoDurationMinutes } from './lib/demoSession';
-import { DemoExpiredModal } from './components/DemoExpiredModal';
 import { PremiumGate, FeatureFlagsMap } from './components/PremiumGate';
 import { AdSenseBanner } from './components/AdSenseBanner';
 import { NetworkStatusIndicator } from './components/NetworkStatusIndicator';
-import { GlobalSearchModal } from './components/GlobalSearchModal';
 import { VersionUpdateNotifier } from './components/VersionUpdateNotifier';
-import { WorkspaceCustomizer } from './components/WorkspaceCustomizer';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { MobileDrawer } from './components/MobileDrawer';
-import { ReminderSettingsModal } from './components/ReminderSettingsModal';
-import { LiveWallpaperSetupModal } from './components/LiveWallpaperSetupModal';
 import { AppSplashScreen } from './components/AppSplashScreen';
 import { shouldPromptWallpaperSetup, fetchWallpaperStatus, isAndroidPlatform } from './lib/nativeWallpaperBridge';
 import { checkAndTriggerStudyReminder, getDailyStudySummary } from './lib/studyReminderService';
@@ -84,6 +71,17 @@ const PracticeHub = lazy(() => import('./components/PracticeHub').then(m => ({ d
 const UserProfileModal = lazy(() => import('./components/UserProfileModal').then(m => ({ default: m.UserProfileModal })));
 const ExamWallpaperWidget = lazy(() => import('./components/ExamWallpaperWidget').then(m => ({ default: m.ExamWallpaperWidget })));
 const MapJourneyView = lazy(() => import('./components/MapJourneyView').then(m => ({ default: m.MapJourneyView })));
+const Sidebar = lazy(() => import('./components/Sidebar').then(m => ({ default: m.Sidebar })));
+const ProgressHub = lazy(() => import('./components/ProgressHub').then(m => ({ default: m.ProgressHub })));
+const MoreHub = lazy(() => import('./components/MoreHub').then(m => ({ default: m.MoreHub })));
+const AppCustomizerModal = lazy(() => import('./components/AppCustomizerModal').then(m => ({ default: m.AppCustomizerModal })));
+const WorkspaceCustomizer = lazy(() => import('./components/WorkspaceCustomizer').then(m => ({ default: m.WorkspaceCustomizer })));
+const ReferralModal = lazy(() => import('./components/ReferralModal').then(m => ({ default: m.ReferralModal })));
+const DemoExpiredModal = lazy(() => import('./components/DemoExpiredModal').then(m => ({ default: m.DemoExpiredModal })));
+const GlobalSearchModal = lazy(() => import('./components/GlobalSearchModal').then(m => ({ default: m.GlobalSearchModal })));
+const ReminderSettingsModal = lazy(() => import('./components/ReminderSettingsModal').then(m => ({ default: m.ReminderSettingsModal })));
+const LiveWallpaperSetupModal = lazy(() => import('./components/LiveWallpaperSetupModal').then(m => ({ default: m.LiveWallpaperSetupModal })));
+const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
 
@@ -221,20 +219,20 @@ function AppContent() {
     })();
   };
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
-    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy' || window.location.pathname === '/design-system')) {
+    if (typeof window !== 'undefined' && (window.location.pathname === '/download' || window.location.pathname === '/debug-galaxy' || window.location.pathname === '/debug/galaxy' || (import.meta.env.DEV && window.location.pathname === '/design-system'))) {
       if (window.location.pathname.startsWith('/debug')) return 'debug_galaxy';
-      if (window.location.pathname === '/design-system') return 'design_system';
+      if (import.meta.env.DEV && window.location.pathname === '/design-system') return 'design_system';
       return 'download';
     }
     const hash = window.location.hash.replace('#', '');
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
     if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') return 'debug_galaxy';
-    if (hash === 'design-system' || hash === 'design_system') return 'design_system';
+    if (import.meta.env.DEV && (hash === 'design-system' || hash === 'design_system')) return 'design_system';
     const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
-      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy', 'design_system'];
+      'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy', ...(import.meta.env.DEV ? ['design_system'] : [])];
     return (validTabs.includes(hash) ? hash : 'dashboard') as ActiveTab;
   });
   const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
@@ -1194,7 +1192,7 @@ function AppContent() {
     );
   }
 
-  if (activeTab === 'design_system') {
+  if (import.meta.env.DEV && activeTab === 'design_system') {
     return <DesignSystemShowcase />;
   }
 
@@ -1254,17 +1252,19 @@ function AppContent() {
 
   if (user && user.isProfileComplete === false && !user.exam) {
     return (
-      <OnboardingWizard
-        user={user}
-        onComplete={async (updatedProfile) => {
-          const finalProfile: UserProfile = { ...updatedProfile, isProfileComplete: true };
-          await saveUserProfile(finalProfile);
-          if (finalProfile.exam) {
-            handleExamChange(finalProfile.exam);
-          }
-          setUser(finalProfile);
-        }}
-      />
+      <Suspense fallback={<SuspenseFallback />}>
+        <OnboardingWizard
+          user={user}
+          onComplete={async (updatedProfile) => {
+            const finalProfile: UserProfile = { ...updatedProfile, isProfileComplete: true };
+            await saveUserProfile(finalProfile);
+            if (finalProfile.exam) {
+              handleExamChange(finalProfile.exam);
+            }
+            setUser(finalProfile);
+          }}
+        />
+      </Suspense>
     );
   }
 
@@ -1352,23 +1352,25 @@ function AppContent() {
       )}
 
       {/* Desktop Sidebar Navigation */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={handleSelectTab}
-        user={user}
-        onLogout={handleLogout}
-        isAdminUnlocked={isAdminUnlocked}
-        onTriggerAdminSecret={handleTriggerAdminSecret}
-        onOpenProfileModal={() => setShowProfileModal(true)}
-        onOpenReferralModal={() => setShowReferralModal(true)}
-        onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
-        onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
-        customizer={customizer}
-        selectedExam={selectedExam}
-        onExamChange={handleExamChange}
-        isCollapsed={isSidebarCollapsed}
-        onToggleCollapse={handleToggleSidebarCollapse}
-      />
+      <Suspense fallback={null}>
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={handleSelectTab}
+          user={user}
+          onLogout={handleLogout}
+          isAdminUnlocked={isAdminUnlocked}
+          onTriggerAdminSecret={handleTriggerAdminSecret}
+          onOpenProfileModal={() => setShowProfileModal(true)}
+          onOpenReferralModal={() => setShowReferralModal(true)}
+          onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
+          onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+          customizer={customizer}
+          selectedExam={selectedExam}
+          onExamChange={handleExamChange}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleToggleSidebarCollapse}
+        />
+      </Suspense>
 
       {/* Main Content Dashboard Area with Full-Width Screen Workspace */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
@@ -1866,58 +1868,61 @@ function AppContent() {
         onViewCollection={() => setActiveTab('rewards')}
       />
 
-      {/* Refer & Earn Program Modal */}
-      {user && (
-        <ReferralModal
-          user={user}
-          isOpen={showReferralModal}
-          onClose={() => setShowReferralModal(false)}
-          onUserUpdated={(updated) => setUser(updated)}
+      {/* Lazy Loaded Secondary Dialogs and Modals */}
+      <Suspense fallback={null}>
+        {/* Refer & Earn Program Modal */}
+        {user && (
+          <ReferralModal
+            user={user}
+            isOpen={showReferralModal}
+            onClose={() => setShowReferralModal(false)}
+            onUserUpdated={(updated) => setUser(updated)}
+          />
+        )}
+
+        {/* Live App Customizer Studio Modal */}
+        <AppCustomizerModal
+          isOpen={showCustomizerModal}
+          onClose={() => setShowCustomizerModal(false)}
+          onSettingsSaved={(updated) => setCustomizer(updated)}
         />
-      )}
 
-      {/* Live App Customizer Studio Modal */}
-      <AppCustomizerModal
-        isOpen={showCustomizerModal}
-        onClose={() => setShowCustomizerModal(false)}
-        onSettingsSaved={(updated) => setCustomizer(updated)}
-      />
+        {/* Workspace Personalization & Reordering Modal */}
+        <WorkspaceCustomizer
+          isOpen={showWorkspaceCustomizer}
+          onClose={() => setShowWorkspaceCustomizer(false)}
+          userId={user?.id}
+        />
 
-      {/* Workspace Personalization & Reordering Modal */}
-      <WorkspaceCustomizer
-        isOpen={showWorkspaceCustomizer}
-        onClose={() => setShowWorkspaceCustomizer(false)}
-        userId={user?.id}
-      />
+        {/* Demo Session Expired Modal */}
+        <DemoExpiredModal
+          isOpen={Boolean(user?.isGuest && isDemoExpired)}
+          onRequireLogin={() => setUser(null)}
+          onResetDemoSession={() => {
+            startDemoSession();
+            setIsDemoExpired(false);
+            setDemoSecondsRemaining(getRemainingDemoSeconds());
+          }}
+        />
 
-      {/* Demo Session Expired Modal */}
-      <DemoExpiredModal
-        isOpen={Boolean(user?.isGuest && isDemoExpired)}
-        onRequireLogin={() => setUser(null)}
-        onResetDemoSession={() => {
-          startDemoSession();
-          setIsDemoExpired(false);
-          setDemoSecondsRemaining(getRemainingDemoSeconds());
-        }}
-      />
-
-      {/* Global Search Engine Modal */}
-      <GlobalSearchModal
-        isOpen={showSearchModal}
-        onClose={() => setShowSearchModal(false)}
-        onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
-      />
-
-      {/* Reminder Preferences & Schedule Modal */}
-      {user && (
-        <ReminderSettingsModal
-          isOpen={showReminderSettingsModal}
-          onClose={() => setShowReminderSettingsModal(false)}
-          user={user}
-          selectedExam={selectedExam}
+        {/* Global Search Engine Modal */}
+        <GlobalSearchModal
+          isOpen={showSearchModal}
+          onClose={() => setShowSearchModal(false)}
           onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
         />
-      )}
+
+        {/* Reminder Preferences & Schedule Modal */}
+        {user && (
+          <ReminderSettingsModal
+            isOpen={showReminderSettingsModal}
+            onClose={() => setShowReminderSettingsModal(false)}
+            user={user}
+            selectedExam={selectedExam}
+            onNavigate={(tab) => setActiveTab(tab as ActiveTab)}
+          />
+        )}
+      </Suspense>
 
 
 
@@ -1950,12 +1955,14 @@ function AppContent() {
 
       {/* Universal Android Live Wallpaper Setup Modal */}
       {user && (
-        <LiveWallpaperSetupModal
-          isOpen={showWallpaperSetupModal}
-          onClose={() => setShowWallpaperSetupModal(false)}
-          user={user}
-          selectedExam={selectedExam}
-        />
+        <Suspense fallback={null}>
+          <LiveWallpaperSetupModal
+            isOpen={showWallpaperSetupModal}
+            onClose={() => setShowWallpaperSetupModal(false)}
+            user={user}
+            selectedExam={selectedExam}
+          />
+        </Suspense>
       )}
     </div>
       </SecurityWrapper>

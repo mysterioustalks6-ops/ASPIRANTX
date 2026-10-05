@@ -164,6 +164,17 @@ export function getDefaultExamDate(examId: string): string {
   }
 }
 
+/**
+ * Canonical calculation of remaining days until exam
+ */
+export function getExamDaysLeft(examId: string, customDate?: string): number {
+  const targetStr = customDate || getDefaultExamDate(examId);
+  const targetDate = new Date(targetStr);
+  const now = new Date();
+  const diffMs = targetDate.getTime() - now.getTime();
+  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
 let syncTimeout: any = null;
 
 /**

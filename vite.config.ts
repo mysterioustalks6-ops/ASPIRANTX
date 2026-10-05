@@ -9,7 +9,7 @@ export default defineConfig(() => {
     plugins: [
       react(), 
       tailwindcss(),
-      ...(process.env.ANALYZE === '1' ? [
+      ...(process.env.ANALYZE?.trim() === '1' ? [
         visualizer({
           filename: 'dist/stats.html',
           template: 'raw-data',

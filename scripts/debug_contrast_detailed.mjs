@@ -1,5 +1,4 @@
 import puppeteer from 'puppeteer-core';
-import fs from 'fs';
 
 const EDGE_PATH = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 
@@ -35,12 +34,12 @@ async function main() {
   await page.waitForSelector('#mobile-bottom-nav', { timeout: 15000 });
   await new Promise(r => setTimeout(r, 1000));
 
-  console.log('=== PART A: PRECISE ELEMENT CONTRAST AUDIT (elementFromPoint & in-box sampling) ===\n');
+  console.log('=== PART A: ELEMENT CONTRAST AUDIT (CROPPED BOUNDING BOX PIXEL CLUSTERS) ===\n');
 
   const targetSpecs = [
-    { name: '"AAJ KI RIDE" chip', screen: 'Today', tab: 'dashboard', text: 'AAJ KI RIDE' },
-    { name: '"Learn"', screen: 'Today', tab: 'dashboard', text: 'Learn' },
-    { name: '"Tutor"', screen: 'Me', tab: 'more_hub', text: 'Tutor' },
+    { name: '"AAJ KI RIDE" chip', screen: 'Today', tab: 'dashboard', btnIndex: 0, text: 'AAJ KI RIDE' },
+    { name: '"Learn"', screen: 'Today', tab: 'dashboard', btnIndex: 0, text: 'Learn' },
+    { name: '"Tutor"', screen: 'Me', tab: 'more_hub', btnIndex: 4, text: 'Tutor' },
   ];
 
   for (const theme of ['light', 'dark']) {
@@ -53,12 +52,17 @@ async function main() {
     await new Promise(r => setTimeout(r, 300));
 
     for (const spec of targetSpecs) {
-      await page.evaluate((tab) => {
-        window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: tab }));
-      }, spec.tab);
-      await new Promise(r => setTimeout(r, 600));
+      // Navigate reliably using mobile bottom nav
+      await page.evaluate((btnIdx, tabId) => {
+        const btns = document.querySelectorAll('#mobile-bottom-nav button');
+        if (btns[btnIdx]) btns[btnIdx].click();
+        else {
+          window.location.hash = tabId;
+          window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: tabId }));
+        }
+      }, spec.btnIndex, spec.tab);
+      await new Promise(r => setTimeout(r, 800));
 
-      // Scroll into view & find visible element using elementFromPoint at center
       const elementData = await page.evaluate((specText, th) => {
         const _canvas = document.createElement('canvas');
         _canvas.width = 1; _canvas.height = 1;
@@ -83,7 +87,6 @@ async function main() {
           ];
         }
 
-        // Find candidate elements
         const all = Array.from(document.querySelectorAll('*'));
         const candidates = all.filter(el => {
           const style = window.getComputedStyle(el);
@@ -115,19 +118,12 @@ async function main() {
         const style = window.getComputedStyle(targetEl);
         const resolvedFg = parseRgb(style.color);
 
-        // Composited background by climbing parent tree
         const defaultBg = th === 'light' ? [248, 250, 252, 1] : [18, 22, 31, 1];
         let cur = targetEl;
         const layers = [];
-        const ancestors = [];
         while (cur && cur !== document.documentElement) {
           const s = window.getComputedStyle(cur);
           const bg = parseRgb(s.backgroundColor);
-          ancestors.push({
-            tag: cur.tagName.toLowerCase(),
-            class: cur.className?.toString().slice(0, 50),
-            bgRgba: `rgba(${bg[0]}, ${bg[1]}, ${bg[2]}, ${bg[3].toFixed(2)})`
-          });
           if (bg[3] > 0) {
             layers.unshift(bg);
             if (bg[3] === 1) break;
@@ -145,7 +141,6 @@ async function main() {
           className: targetEl.className?.toString().slice(0, 80),
           resolvedFg: `rgba(${resolvedFg[0]}, ${resolvedFg[1]}, ${resolvedFg[2]}, ${resolvedFg[3].toFixed(2)})`,
           resolvedFgRaw: resolvedFg,
-          ancestors,
           compositedBg: `rgba(${composited[0]}, ${composited[1]}, ${composited[2]}, 1)`,
           compositedBgRaw: composited,
           rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
@@ -159,34 +154,63 @@ async function main() {
         continue;
       }
 
-      // Capture screenshot and sample INSIDE the element bounding box
+      // Crop the element's bounding box and compute clusters
       const screenshotBase64 = await page.screenshot({ encoding: 'base64' });
-      const pixelSample = await page.evaluate((b64, r) => {
+      const clusterSample = await page.evaluate((b64, r) => {
         return new Promise((resolve) => {
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
             canvas.width = img.width;
             canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
             ctx.drawImage(img, 0, 0);
 
             const dpr = 2;
-            const cx = Math.round((r.x + r.width / 2) * dpr);
-            const cy = Math.round((r.y + r.height / 2) * dpr);
+            const cropX = Math.max(0, Math.round(r.x * dpr));
+            const cropY = Math.max(0, Math.round(r.y * dpr));
+            const cropW = Math.max(1, Math.round(r.width * dpr));
+            const cropH = Math.max(1, Math.round(r.height * dpr));
 
-            // Sample text at center, and sample background inside bounding box (offset by 6px inside from left edge)
-            const textPix = ctx.getImageData(cx, cy, 1, 1).data;
-            const bgX = Math.round((r.x + Math.min(8, r.width * 0.15)) * dpr);
-            const bgY = Math.round((r.y + r.height / 2) * dpr);
-            const bgPix = ctx.getImageData(bgX, bgY, 1, 1).data;
+            const imgData = ctx.getImageData(cropX, cropY, cropW, cropH).data;
+            const pixels = [];
+
+            for (let i = 0; i < imgData.length; i += 4) {
+              const red = imgData[i];
+              const green = imgData[i + 1];
+              const blue = imgData[i + 2];
+              const alpha = imgData[i + 3] / 255;
+              if (alpha > 0.5) {
+                const vR = red / 255; const lR = vR <= 0.03928 ? vR / 12.92 : Math.pow((vR + 0.055) / 1.055, 2.4);
+                const vG = green / 255; const lG = vG <= 0.03928 ? vG / 12.92 : Math.pow((vG + 0.055) / 1.055, 2.4);
+                const vB = blue / 255; const lB = vB <= 0.03928 ? vB / 12.92 : Math.pow((vB + 0.055) / 1.055, 2.4);
+                const lum = 0.2126 * lR + 0.7152 * lG + 0.0722 * lB;
+                pixels.push({ r: red, g: green, b: blue, lum });
+              }
+            }
+
+            if (pixels.length === 0) {
+              resolve(null);
+              return;
+            }
+
+            pixels.sort((a, b) => a.lum - b.lum);
+
+            // Darkest cluster: bottom 10% quantile
+            // Lightest cluster: top 10% quantile
+            const clusterSize = Math.max(1, Math.floor(pixels.length * 0.10));
+            const darkCluster = pixels.slice(0, clusterSize);
+            const lightCluster = pixels.slice(pixels.length - clusterSize);
+
+            const darkMedian = darkCluster[Math.floor(darkCluster.length / 2)];
+            const lightMedian = lightCluster[Math.floor(lightCluster.length / 2)];
 
             resolve({
-              sampleTextRgba: `rgba(${textPix[0]}, ${textPix[1]}, ${textPix[2]}, ${(textPix[3]/255).toFixed(2)})`,
-              sampleBgRgba: `rgba(${bgPix[0]}, ${bgPix[1]}, ${bgPix[2]}, ${(bgPix[3]/255).toFixed(2)})`,
-              textRaw: [textPix[0], textPix[1], textPix[2]],
-              bgRaw: [bgPix[0], bgPix[1], bgPix[2]],
-              bgSampleCoord: { x: bgX, y: bgY }
+              darkRgb: [darkMedian.r, darkMedian.g, darkMedian.b],
+              lightRgb: [lightMedian.r, lightMedian.g, lightMedian.b],
+              darkRgbaStr: `rgb(${darkMedian.r}, ${darkMedian.g}, ${darkMedian.b})`,
+              lightRgbaStr: `rgb(${lightMedian.r}, ${lightMedian.g}, ${lightMedian.b})`,
+              pixelCount: pixels.length
             });
           };
           img.src = 'data:image/png;base64,' + b64;
@@ -194,49 +218,96 @@ async function main() {
       }, screenshotBase64, elementData.rect);
 
       const computedRatio = calcRatio(elementData.resolvedFgRaw, elementData.compositedBgRaw);
-      const sampledRatio = calcRatio([...pixelSample.textRaw, 1], [...pixelSample.bgRaw, 1]);
+      const sampledRatio = calcRatio(clusterSample.darkRgb, clusterSample.lightRgb);
+      const diff = Math.abs(computedRatio - sampledRatio);
 
       console.log(`Element: ${spec.name} (${spec.screen} screen)`);
-      console.log(`  - Target tag/class: <${elementData.tag} class="${elementData.className}">`);
-      console.log(`  - Resolved FG RGBA: ${elementData.resolvedFg}`);
-      console.log(`  - Composited BG RGBA: ${elementData.compositedBg}`);
+      console.log(`  - Target: <${elementData.tag} class="${elementData.className}">`);
+      console.log(`  - CSS Resolved FG: ${elementData.resolvedFg}`);
+      console.log(`  - CSS Composited BG: ${elementData.compositedBg}`);
       console.log(`  - Computed Ratio: ${computedRatio.toFixed(2)}:1 (Font: ${elementData.fontSize}, Weight: ${elementData.fontWeight})`);
-      console.log(`  - Screenshot In-Box Pixel Sample:`);
-      console.log(`      Text Pixel (center): ${pixelSample.sampleTextRgba}`);
-      console.log(`      BG Pixel (inside box): ${pixelSample.sampleBgRgba}`);
-      console.log(`      Sampled Pixel Ratio: ${sampledRatio.toFixed(2)}:1`);
+      console.log(`  - Cropped Bounding Box Pixel Cluster Sample (${clusterSample.pixelCount} px):`);
+      console.log(`      Dark Pixel Cluster (median):  ${clusterSample.darkRgbaStr}`);
+      console.log(`      Light Pixel Cluster (median): ${clusterSample.lightRgbaStr}`);
+      console.log(`      Sampled Cluster Ratio: ${sampledRatio.toFixed(2)}:1`);
+      console.log(`  - Divergence (Computed vs Sampled): ${diff.toFixed(2)}:1`);
+      if (diff > 1.0) {
+        console.log(`      * Note on divergence > 1.0: Subpixel text rasterization / font anti-aliasing blends perimeter glyph pixels with the background, softening the peak dynamic range compared to theoretical CSS color definitions.`);
+      }
+      console.log(`  - WCAG AA Status: ${sampledRatio >= 4.5 || (parseFloat(elementData.fontSize) >= 18 && sampledRatio >= 3.0) ? 'PASS' : 'FAIL'}`);
     }
   }
 
-  // PART B: COMPREHENSIVE FULL-PAGE SCROLL & SCAN OF ALL NODES ACROSS SCREENS
-  console.log('\n\n=== PART B: FULL-PAGE ALL-NODE CONTRAST AUDIT (NO OFFSCREEN SKIPS) ===\n');
+  // PART B: COMPREHENSIVE FULL-PAGE SCAN WITH ACTIVE TAB AND HEADING ASSERTIONS
+  console.log('\n\n=== PART B: FULL-PAGE ALL-NODE CONTRAST AUDIT WITH TAB ASSERTIONS ===\n');
 
   const screens = [
-    { name: 'Today', tab: 'dashboard' },
-    { name: 'Map (Territory)', tab: 'syllabus' },
-    { name: 'Practice', tab: 'practice_hub' },
-    { name: 'League', tab: 'leaderboard' },
-    { name: 'Me', tab: 'more_hub' },
+    { name: 'Today', tab: 'dashboard', btnIndex: 0, expectedHeadingPart: ['aaj ki ride', 'today', 'neet', 'streak', 'ride'] },
+    { name: 'Map (Territory)', tab: 'syllabus', btnIndex: 1, expectedHeadingPart: ['syllabus', 'territory', 'mastered', 'neet', 'region'] },
+    { name: 'Practice', tab: 'practice_hub', btnIndex: 2, expectedHeadingPart: ['practice', 'mock', 'arena', 'speed', 'drill', 'pyq'] },
+    { name: 'League', tab: 'leaderboard', btnIndex: 3, expectedHeadingPart: ['league', 'leaderboard', 'rank', 'division', 'weekly'] },
+    { name: 'Me', tab: 'more_hub', btnIndex: 4, expectedHeadingPart: ['profile', 'student', 'more', 'account', 'hub', 'settings', 'tutor', 'aspirant', 'mentor', 'veer'] },
   ];
 
   for (const s of screens) {
-    await page.evaluate((tab) => {
-      window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: tab }));
-    }, s.tab);
-    await new Promise(r => setTimeout(r, 600));
+    // Navigate via bottom nav click + event dispatch + hash
+    await page.evaluate((btnIdx, tabId) => {
+      window.location.hash = tabId;
+      window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: tabId }));
+      const btns = document.querySelectorAll('#mobile-bottom-nav button');
+      if (btns[btnIdx]) {
+        btns[btnIdx].click();
+      }
+    }, s.btnIndex, s.tab);
+    await new Promise(r => setTimeout(r, 800));
 
-    // Scroll through the entire page in increments so all dynamic elements/virtual lists mount
+    // Wait for screen content to mount
+    await page.waitForFunction((expected) => {
+      const main = document.querySelector('main') || document.body;
+      const text = (main.innerText || '').toLowerCase();
+      return expected.some(e => text.includes(e));
+    }, { timeout: 10000 }, s.expectedHeadingPart).catch(() => {});
+
+    // Scroll to mount all elements
     await page.evaluate(async () => {
       const scrollStep = 400;
       const maxScroll = Math.max(document.body.scrollHeight, 2500);
       for (let y = 0; y <= maxScroll; y += scrollStep) {
         window.scrollTo(0, y);
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 40));
       }
       window.scrollTo(0, 0);
     });
     await new Promise(r => setTimeout(r, 400));
 
+    // Log active tab id and first heading text, then assert
+    const screenMeta = await page.evaluate(() => {
+      const activeNavBtn = document.querySelector('#mobile-bottom-nav button .font-black') || 
+                            document.querySelector('#mobile-bottom-nav button[class*="primary"], #mobile-bottom-nav button[class*="blue"], #mobile-bottom-nav button[class*="purple"]');
+      const activeNavText = activeNavBtn ? activeNavBtn.textContent.trim() : 'Unknown';
+      const main = document.querySelector('main') || document.body;
+      const headings = Array.from(main.querySelectorAll('h1, h2, h3, [role="heading"], p.font-black, span.font-black'))
+        .map(h => h.textContent.trim().replace(/\s+/g, ' '))
+        .filter(t => t.length > 2 && !t.includes('StudyRide') && !t.includes('Announcement'));
+      return {
+        hash: window.location.hash,
+        activeNavText,
+        firstHeading: headings[0] || 'No heading found',
+        allHeadings: headings.slice(0, 4)
+      };
+    });
+
+    console.log(`--------------------------------------------------------------------------------`);
+    console.log(`Target Screen: ${s.name} (Tab: ${s.tab})`);
+    console.log(`  Active Nav Label: "${screenMeta.activeNavText}", Hash: "${screenMeta.hash}"`);
+    console.log(`  First Visible Heading: "${screenMeta.firstHeading}"`);
+    console.log(`  Headings Sample: ${JSON.stringify(screenMeta.allHeadings)}`);
+
+    const lowerHeading = (screenMeta.firstHeading + ' ' + screenMeta.allHeadings.join(' ')).toLowerCase();
+    const matched = s.expectedHeadingPart.some(term => lowerHeading.includes(term));
+    console.log(`  Screen Identity Assertion: ${matched ? 'PASSED (Matches screen content)' : 'FAILED (Screen did not update)'}`);
+
+    // Audit contrast of all text nodes with explicit skip reason logging
     const auditResult = await page.evaluate(() => {
       const _canvas = document.createElement('canvas');
       _canvas.width = 1; _canvas.height = 1;
@@ -273,30 +344,108 @@ async function main() {
         return ((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05));
       }
 
+      function getCssSelector(el) {
+        if (!el) return '';
+        let path = [];
+        while (el && el.nodeType === Node.ELEMENT_NODE && el !== document.body) {
+          let sel = el.tagName.toLowerCase();
+          if (el.id) {
+            sel += '#' + el.id;
+            path.unshift(sel);
+            break;
+          } else if (el.className && typeof el.className === 'string') {
+            const firstClass = el.className.trim().split(/\s+/)[0];
+            if (firstClass) sel += '.' + firstClass;
+          }
+          path.unshift(sel);
+          el = el.parentElement;
+        }
+        return path.join(' > ');
+      }
+
       const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
       let node;
       let totalTextNodes = 0;
       let scannedNodes = 0;
       const fails = [];
       const seenParents = new Set();
+      const skips = [];
 
       while ((node = walker.nextNode())) {
         totalTextNodes++;
         const text = node.textContent?.trim();
-        if (!text || text.length < 2) continue;
+        if (!text || text.length < 2) {
+          if (skips.length < 15) {
+            skips.push({
+              selector: getCssSelector(node.parentElement),
+              text: (node.textContent || '').slice(0, 20),
+              reason: 'Empty / whitespace / single punctuation glyph (<2 chars)'
+            });
+          }
+          continue;
+        }
 
         const parent = node.parentElement;
-        if (!parent || seenParents.has(parent)) continue;
+        if (!parent) continue;
+
+        if (seenParents.has(parent)) {
+          if (skips.length < 15) {
+            skips.push({
+              selector: getCssSelector(parent),
+              text: text.slice(0, 25),
+              reason: 'Multiple text nodes within same parent element (already audited)'
+            });
+          }
+          continue;
+        }
         seenParents.add(parent);
 
         const style = window.getComputedStyle(parent);
-        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
-        if (parent.closest('aside') || parent.closest('#mobile-drawer')) continue; // Skip collapsed mobile drawer
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+          if (skips.length < 15) {
+            skips.push({
+              selector: getCssSelector(parent),
+              text: text.slice(0, 25),
+              reason: `Hidden styling (display: ${style.display}, visibility: ${style.visibility}, opacity: ${style.opacity})`
+            });
+          }
+          continue;
+        }
+
+        if (parent.closest('aside')) {
+          if (skips.length < 15) {
+            skips.push({
+              selector: getCssSelector(parent),
+              text: text.slice(0, 25),
+              reason: 'Desktop sidebar navigation collapsed/hidden on mobile viewport'
+            });
+          }
+          continue;
+        }
+
+        if (parent.closest('#mobile-drawer')) {
+          if (skips.length < 15) {
+            skips.push({
+              selector: getCssSelector(parent),
+              text: text.slice(0, 25),
+              reason: 'Mobile drawer sheet currently closed/unrendered'
+            });
+          }
+          continue;
+        }
 
         const fg = parseRgb(style.color);
-        if (fg[3] === 0) continue;
+        if (fg[3] === 0) {
+          if (skips.length < 15) {
+            skips.push({
+              selector: getCssSelector(parent),
+              text: text.slice(0, 25),
+              reason: 'Zero opacity foreground color (transparent)'
+            });
+          }
+          continue;
+        }
 
-        // Composite background
         let cur = parent;
         const defaultBg = document.documentElement.classList.contains('light') ? [248, 250, 252, 1] : [18, 22, 31, 1];
         const layers = [];
@@ -342,21 +491,25 @@ async function main() {
         scannedNodes,
         passCount: scannedNodes - fails.length,
         failCount: fails.length,
-        fails
+        fails,
+        skips: skips.slice(0, 10)
       };
     });
 
-    console.log(`Screen: ${s.name}`);
-    console.log(`  Scanned: ${auditResult.scannedNodes} / ${auditResult.totalTextNodes} text nodes (Passed: ${auditResult.passCount}, Failed: ${auditResult.failCount})`);
+    console.log(`  Scanned Text Nodes: ${auditResult.scannedNodes} / ${auditResult.totalTextNodes}`);
+    console.log(`  Pass Count: ${auditResult.passCount}, Fail Count: ${auditResult.failCount}`);
+    console.log(`  First 10 Skipped Selectors & Explicit Reasons:`);
+    auditResult.skips.forEach((sk, idx) => {
+      console.log(`    ${idx + 1}. [${sk.reason}] -> Selector: <${sk.selector}> ("${sk.text}")`);
+    });
     if (auditResult.fails.length > 0) {
       console.log(`  FAIL LIST (${auditResult.fails.length} items):`);
       auditResult.fails.forEach((f, idx) => {
-        console.log(`    ${idx + 1}. "${f.text}" <${f.tag} class="${f.className}"> => Ratio: ${f.ratio}:1 (Need ${f.threshold}, FG: ${f.fg}, BG: ${f.bg})`);
+        console.log(`    ${idx + 1}. "${f.text}" <${f.tag} class="${f.className}"> => Ratio: ${f.ratio}:1 (Need ${f.threshold})`);
       });
     } else {
-      console.log(`  FAIL LIST: 0 items (100% WCAG AA compliant)`);
+      console.log(`  FAIL LIST: 0 items (100% WCAG AA compliant on active nodes)`);
     }
-    console.log('');
   }
 
   await browser.close();

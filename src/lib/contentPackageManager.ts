@@ -11,8 +11,6 @@
 
 import { localDb, ContentPackageMeta, LocalSyllabusRecord, LocalQuestionRecord, LocalPyqRecord, LocalCbtRecord } from './localDatabase';
 import { normalizeExamId, getExamConfig } from './examRegistry';
-import { INITIAL_CBT_TESTS } from '../data/cbtData';
-import { UPSC_SYLLABUS_DATA } from '../data/syllabus';
 import { getApiUrl } from './apiConfig';
 
 export interface PackageManifest {
@@ -83,7 +81,8 @@ export class ContentPackageManager {
     const normExam = normalizeExamId(examId);
     const config = getExamConfig(normExam);
 
-    // 1. Seed Syllabus
+    // 1. Seed Syllabus (Dynamic import to keep main bundle lean)
+    const { UPSC_SYLLABUS_DATA } = await import('../data/syllabus');
     const template = UPSC_SYLLABUS_DATA;
     const syllabusRecords: LocalSyllabusRecord[] = [];
 
@@ -116,7 +115,8 @@ export class ContentPackageManager {
     // Questions and PYQs are synchronized authoritatively from the live Academic API / package downloads
     // without injecting mock diagnostic records.
 
-    // 4. Seed CBT Tests
+    // 4. Seed CBT Tests (Dynamic import so cbtData is only loaded when needed)
+    const { INITIAL_CBT_TESTS } = await import('../data/cbtData');
     const matchingCbt = INITIAL_CBT_TESTS.filter(
       t => normalizeExamId(t.exam) === normExam
     );

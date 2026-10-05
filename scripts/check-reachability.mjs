@@ -52,19 +52,19 @@ for (const tabId of tabIds) {
   
   const status = await page.evaluate(async (id) => {
     try {
-      // Dismiss any popups or modals
-      document.querySelectorAll('.fixed.inset-0 button[aria-label*="Close"]').forEach(b => b.click());
+      const main = document.querySelector('main') || document.body;
+      const prevText = main ? (main.innerText || '') : '';
       window.location.hash = id;
       window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: id }));
-      await new Promise(r => setTimeout(r, 600));
-
-      // Wait for lazy chunks and Suspense spinners to complete
+      
+      // Wait for tab switch transition and lazy loading
       for (let i = 0; i < 30; i++) {
-        const text = (document.body.innerText || '').toLowerCase();
-        if (!text.includes('loading enterprise view') && !text.includes('syncing study telemetry')) {
+        await new Promise(r => setTimeout(r, 150));
+        const currentText = main ? (main.innerText || '') : '';
+        const lower = currentText.toLowerCase();
+        if (currentText !== prevText && !lower.includes('loading enterprise view') && !lower.includes('syncing study telemetry')) {
           break;
         }
-        await new Promise(r => setTimeout(r, 200));
       }
 
       // Check role-gated admin / faculty tabs
@@ -81,20 +81,19 @@ for (const tabId of tabIds) {
         }
       }
 
-      const main = document.querySelector('main') || document.body;
       const html = main ? main.innerHTML.trim() : '';
       
       // Look for active view title, heading, or primary badge
       const candidates = Array.from(main.querySelectorAll('h1, h2, h3, [role="heading"], p.font-black, span.font-black, h4'))
         .map(el => el.innerText.trim().replace(/\s+/g, ' '))
-        .filter(t => t.length > 3 && !t.includes('Announcement') && !t.includes('StudyRide AI') && !t.includes('Complete Prep Suite'));
+        .filter(t => t.length > 3 && !t.includes('Announcement') && !t.includes('StudyRide') && !t.includes('Complete Prep Suite'));
       
       let evidence = candidates[0];
       if (!evidence) {
         const textLines = (main.innerText || '')
           .split('\n')
           .map(s => s.trim())
-          .filter(s => s.length > 3 && !s.includes('Announcement') && !s.includes('StudyRide AI') && !s.includes('Complete Prep Suite'));
+          .filter(s => s.length > 3 && !s.includes('Announcement') && !s.includes('StudyRide') && !s.includes('Complete Prep Suite'));
         evidence = textLines[0] || 'DOM content rendered';
       }
       evidence = evidence.slice(0, 50);

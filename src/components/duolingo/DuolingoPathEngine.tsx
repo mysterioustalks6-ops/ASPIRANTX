@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Star, 
@@ -23,6 +23,7 @@ import { DuolingoDrillModal, DrillQuestion } from './DuolingoDrillModal';
 import { getCandidateHearts, HeartState } from '../../lib/duolingoHearts';
 import { UserProfile } from '../../types';
 import { getExamConfig, normalizeExamId } from '../../lib/examRegistry';
+import { getDefaultExamDate, getExamDaysLeft } from '../../lib/packetSyncService';
 import { ExamSelectModal } from '../ExamSelectModal';
 import { triggerConfetti } from '../../lib/animations';
 import { getLocalCompletedSubtopicIds, saveCompletedSubtopicIds } from '../../lib/syllabusStorage';
@@ -74,23 +75,34 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
   ];
   const [tipIndex, setTipIndex] = useState(0);
 
-  // Generate learning nodes structured along an authentic S-curve
-  const generatePathNodes = (): PathNode[] => {
-    const nodes: PathNode[] = [];
-    const firstSubject = subjects[0] || 'Core Subject 1';
-    const chaptersBySubject: { subject: string; chapters: string[] }[] = [
-      {
-        subject: firstSubject,
-        chapters: [
-          `${firstSubject} Fundamental Overview`,
+  // Multi-unit subject chapters matching Territory
+  const chaptersBySubject: { subject: string; chapters: string[] }[] = useMemo(() => {
+    return subjects.slice(0, 3).map((subj) => {
+      const treeNode = examCfg.syllabusTree?.[subj];
+      let topicList: string[] = [];
+      if (treeNode && Array.isArray(treeNode.topics) && treeNode.topics.length > 0) {
+        topicList = treeNode.topics;
+      } else {
+        topicList = [
+          `${subj} Fundamental Overview`,
           'Standard Laws & Principles',
           'High-Yield Problem Solving',
           'Applied Real-World Cases',
           'Unit Assessment & PYQs'
-        ]
+        ];
       }
-    ];
+      return {
+        subject: subj,
+        chapters: topicList
+      };
+    });
+  }, [subjects, examCfg]);
 
+  const [selectedUnitIdx, setSelectedUnitIdx] = useState<number>(0);
+
+  // Generate learning nodes structured along an authentic S-curve
+  const generatePathNodes = (): PathNode[] => {
+    const nodes: PathNode[] = [];
     const normExam = normalizeExamId(selectedExam);
     const completedIds = getLocalCompletedSubtopicIds(userProfile?.id, normExam);
     let globalIndex = 0;
@@ -99,7 +111,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
 
     chaptersBySubject.forEach((sec, sIdx) => {
       sec.chapters.forEach((ch) => {
-        const nodeId = `node-${globalIndex}`;
+        const nodeId = `node-${sIdx}-${globalIndex}`;
         const isDone = completedIds.has(nodeId) || completedIds.has(ch);
         let status: 'completed' | 'active' | 'locked' = 'locked';
         let stars = 0;
@@ -280,24 +292,60 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
     });
   };
 
-  const completedLessonsCount = pathNodes.filter(n => n.type === 'lesson' && n.status === 'completed').length;
-  const totalLessonsCount = pathNodes.filter(n => n.type === 'lesson').length;
-  const unitPercent = totalLessonsCount > 0 ? Math.round((completedLessonsCount / totalLessonsCount) * 100) : 0;
+  const unitSummaries = useMemo(() => {
+    return chaptersBySubject.map((sec, uIdx) => {
+      const secNodes = pathNodes.filter(n => n.subject === sec.subject && n.type === 'lesson');
+      const done = secNodes.filter(n => n.status === 'completed').length;
+      const total = secNodes.length;
+      return {
+        unitIndex: uIdx,
+        unitNum: uIdx + 1,
+        subject: sec.subject,
+        done,
+        total,
+        percent: total > 0 ? Math.round((done / total) * 100) : 0
+      };
+    });
+  }, [chaptersBySubject, pathNodes]);
+
+  const currentUnit = unitSummaries[selectedUnitIdx] || unitSummaries[0];
+  const visibleNodes = pathNodes.filter(n => n.subject === currentUnit?.subject);
 
   return (
     <div className={`w-full max-w-md mx-auto flex flex-col items-center select-none font-sans relative pb-28 ${className}`}>
       {/* ── 1. DUOLINGO UNIT BANNER ───────────────────────────────────── */}
       <div className="w-full px-4 mt-4 mb-2">
         <div className="rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] p-4 shadow-sm relative overflow-hidden">
+          {/* Unit Switcher Tabs with Unit 1, Unit 2, Unit 3 counts & Days Left */}
+          <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1 scrollbar-none w-full">
+            {unitSummaries.map((u) => (
+              <button
+                key={u.unitIndex}
+                onClick={() => setSelectedUnitIdx(u.unitIndex)}
+                className={`px-2.5 py-1 rounded-xl text-[10px] font-black border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                  selectedUnitIdx === u.unitIndex
+                    ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] border-[var(--sr-primary)] shadow-sm'
+                    : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)] hover:text-[var(--sr-text)]'
+                }`}
+              >
+                <span>Unit {u.unitNum}:</span>
+                <span>{u.done}/{u.total} Done</span>
+              </button>
+            ))}
+            <span className="text-[10px] font-bold text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-1 rounded-xl border border-[var(--sr-primary)]/30 shrink-0 whitespace-nowrap ml-auto">
+              {getExamDaysLeft(selectedExam)} days left
+            </span>
+          </div>
+
           <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2.5">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-0.5 rounded-full border border-[var(--sr-primary)]/30 whitespace-nowrap shrink-0">
-                  SECTION 1 • UNIT 1
+                  SECTION 1 • UNIT {currentUnit?.unitNum || 1}
                 </span>
               </div>
               <h2 className="text-sm sm:text-base font-black text-[var(--sr-text)] tracking-tight line-clamp-2 leading-snug">
-                {subjects[0] || 'Core Exam Concepts'}
+                {currentUnit?.subject || subjects[0] || 'Core Exam Concepts'}
               </h2>
               <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-0.5 font-medium leading-tight">
                 Preamble, Formulas & High-Yield MCQs
@@ -319,11 +367,11 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
             <div className="flex-1 bg-[var(--sr-surface-2)] h-2.5 rounded-full overflow-hidden border border-[var(--sr-line)]">
               <div
                 className="bg-[var(--sr-primary)] h-full rounded-full transition-all duration-500"
-                style={{ width: `${unitPercent}%` }}
+                style={{ width: `${currentUnit?.percent || 0}%` }}
               />
             </div>
             <span className="text-xs font-bold text-[var(--sr-primary)] whitespace-nowrap shrink-0">
-              {completedLessonsCount}/{totalLessonsCount} Done ({unitPercent}%)
+              {currentUnit?.done || 0}/{currentUnit?.total || 0} Done ({currentUnit?.percent || 0}%)
             </span>
           </div>
         </div>
@@ -334,10 +382,10 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
         {/* Continuous Winding Path SVG Line (z-0 behind nodes) */}
         <svg 
           className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 opacity-40"
-          style={{ minHeight: `${pathNodes.length * 120}px` }}
+          style={{ minHeight: `${visibleNodes.length * 120}px` }}
         >
-          {pathNodes.map((_, i) => {
-            if (i === pathNodes.length - 1) return null;
+          {visibleNodes.map((_, i) => {
+            if (i === visibleNodes.length - 1) return null;
             const startX = 200 + getNodeHorizontalOffset(i);
             const startY = 50 + i * 115;
             const endX = 200 + getNodeHorizontalOffset(i + 1);
@@ -358,7 +406,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
           })}
         </svg>
 
-        {pathNodes.map((node, index) => {
+        {visibleNodes.map((node, index) => {
           const xOffset = getNodeHorizontalOffset(index);
           const isCompleted = node.status === 'completed';
           const isActive = node.status === 'active';
@@ -399,7 +447,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
                 <div className="absolute -top-28 z-30 flex flex-col items-center animate-bounce-short">
                   <div className="bg-[#1CB0F6] text-white px-4 py-3 rounded-2xl shadow-2xl border-b-4 border-[#1899D6] min-w-[210px] text-center">
                     <div className="text-[10px] font-black uppercase tracking-wider text-sky-100">
-                      Lesson {node.nodeNumber || 1} of {totalLessonsCount}
+                      Lesson {node.nodeNumber || 1} of {currentUnit?.total || visibleNodes.length}
                     </div>
                     <div className="text-xs font-black line-clamp-2 max-w-[190px] mt-0.5 leading-snug">
                       {node.title}

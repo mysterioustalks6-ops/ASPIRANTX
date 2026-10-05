@@ -21,6 +21,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
+import { getDefaultExamDate, getExamDaysLeft } from '../lib/packetSyncService';
 import { getLocalCompletedSubtopicIds, saveCompletedSubtopicIds } from '../lib/syllabusStorage';
 import { triggerConfetti } from '../lib/animations';
 import { soundFx } from '../lib/soundEffects';
@@ -286,6 +287,9 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-1 rounded-full border border-[var(--sr-primary)]/30 shrink-0">
+                {getExamDaysLeft(selectedExam)} days left
+              </span>
               <span className="text-xs font-bold text-[var(--sr-text-muted)]">
                 {territories.reduce((acc, t) => acc + t.completedCount, 0)}/{territories.reduce((acc, t) => acc + t.totalCount, 0)} Mastered
               </span>

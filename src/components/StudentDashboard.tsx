@@ -14,7 +14,7 @@ import { awardXPAndCoins } from '../lib/gamification';
 import { StudentDashboardData, UserProfile, ActiveTab } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { getExamConfig, normalizeExamId } from '../lib/examRegistry';
-import { getDefaultExamDate } from '../lib/packetSyncService';
+import { getDefaultExamDate, getExamDaysLeft } from '../lib/packetSyncService';
 import { AdSenseBanner } from './AdSenseBanner';
 import { DailyStudySummaryCard } from './DailyStudySummaryCard';
 import { CircularPerformanceHub } from './CircularPerformanceMeter';
@@ -74,8 +74,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     } catch {}
     const targetExamDateStr = customExamDate || getDefaultExamDate(examTag);
     const targetExamDate = new Date(targetExamDateStr);
-    const diffMs = targetExamDate.getTime() - today.getTime();
-    const daysLeft = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    const daysLeft = getExamDaysLeft(examTag, customExamDate);
 
     // 2. Calculate Real Syllabus Topics Completed from LocalStorage
     let completedTopicsCount = 0;
@@ -201,21 +200,25 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     };
   }, [activeExamTag, userProfile.id, userProfile.streakDays, userProfile.xp]);
 
-  // Canonical user active days resolution
+  // Canonical user active days resolution - explicitly writes aspirantx_active_days_${userId}
   const getRealActiveDaysCount = (): number => {
     try {
-      const key = `aspirantx_active_days_history_${userProfile.id || 'guest'}`;
+      const historyKey = `aspirantx_active_days_history_${userProfile.id || 'guest'}`;
+      const activeDaysKey = `aspirantx_active_days_${userProfile.id || 'guest'}`;
       const todayStr = new Date().toISOString().split('T')[0];
       let days: string[] = [];
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) days = parsed;
+      const rawHistory = localStorage.getItem(historyKey);
+      if (rawHistory) {
+        try {
+          const parsed = JSON.parse(rawHistory);
+          if (Array.isArray(parsed)) days = parsed;
+        } catch {}
       }
       if (!days.includes(todayStr)) {
         days.push(todayStr);
-        localStorage.setItem(key, JSON.stringify(days));
       }
+      localStorage.setItem(historyKey, JSON.stringify(days));
+      localStorage.setItem(activeDaysKey, String(days.length));
       return days.length;
     } catch {
       return 1;
@@ -238,19 +241,20 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return now;
   };
 
-  // Honest Daily Pace Formula: Compares real progress against expected milestone
+  // Mathematical Pace Formula: Based on canonical exam date, syllabus size, and completed topics
   const calculatePaceStatus = (
     topicsCompleted: number,
     totalSyllabusTopics: number,
     daysLeftForExam: number
   ) => {
-    const safeTotal = Math.max(1, totalSyllabusTopics || 14);
-    const activeDaysCount = getRealActiveDaysCount();
+    const safeTotal = Math.max(1, totalSyllabusTopics || 15);
+    const activeDaysCount = Math.max(1, getRealActiveDaysCount());
     const startDate = getUserStartDate();
-    const daysSinceStart = Math.max(0, Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const daysSinceStart = Math.max(1, Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const elapsedDays = Math.max(activeDaysCount, daysSinceStart);
 
-    // With no activity or < 7 days of real activity (for both guest and registered non-guest users), show "Just starting"
-    if (topicsCompleted === 0 || activeDaysCount < 7 || daysSinceStart < 7) {
+    // Only brand new accounts with 0 completed topics on day 1 show 'Just starting'
+    if (topicsCompleted === 0 && elapsedDays <= 1) {
       return { 
         isBehind: false, 
         label: 'Just starting', 
@@ -259,10 +263,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       };
     }
 
-    // After >= 7 days of real activity, calculate expected pace based on remaining time to exam
-    const totalPlanDays = Math.max(daysSinceStart + Math.max(1, daysLeftForExam), 30);
-    const expectedRate = safeTotal / totalPlanDays;
-    const expectedCompleted = Math.round(expectedRate * daysSinceStart);
+    // Dynamic timeline pace: Total Timeline = Elapsed Days + Days Left For Exam
+    const totalTimelineDays = elapsedDays + Math.max(1, daysLeftForExam);
+    const expectedCompleted = Math.round((safeTotal * elapsedDays) / totalTimelineDays);
     const diff = expectedCompleted - topicsCompleted;
 
     if (diff <= 0) {
