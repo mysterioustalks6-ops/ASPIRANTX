@@ -71,12 +71,12 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="w-full bg-[var(--sr-surface)] border-b-2 border-[var(--sr-line-strong)] px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3 sticky top-0 z-30 pt-safe select-none shadow-sm">
-      {/* ── 1. LEFT: EXAM PICKER CHIP ── */}
-      <div className="flex items-center gap-2 min-w-0">
+      {/* ── 1. LEFT: EXAM PICKER CHIP (TRUNCATES ON NARROW / 130% ZOOM) ── */}
+      <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[170px] sm:max-w-xs">
         <button
           onClick={handleOpenExamPicker}
           aria-label={`Current target exam: ${currentExamLabel}. Tap to change.`}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border-2 border-[var(--sr-line)] text-left cursor-pointer transition-transform active:scale-95 min-h-[44px] max-w-[210px] sm:max-w-xs"
+          className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border-2 border-[var(--sr-line)] text-left cursor-pointer transition-transform active:scale-95 min-h-[40px] w-full min-w-0"
         >
           <div className="w-7 h-7 rounded-lg bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] flex items-center justify-center shrink-0">
             <GraduationCap className="w-4 h-4" />
@@ -90,9 +90,9 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
       </div>
 
-      {/* ── 2. CENTER: STREAK FLAME ── */}
+      {/* ── 2. CENTER: STREAK FLAME (NEVER TRUNCATED OR OVERLAPPED) ── */}
       <div 
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[var(--sr-amber-subtle)] border-2 border-[var(--sr-amber)]/30 text-xs font-black text-[var(--sr-amber)] shrink-0 min-h-[40px]"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[var(--sr-amber-subtle)] border-2 border-[var(--sr-amber)]/30 text-xs font-black text-[var(--sr-amber)] shrink-0 min-h-[40px] whitespace-nowrap"
         title={`${user?.streakDays ?? 1} Days Active Study Streak`}
       >
         <Flame className="w-4 h-4 fill-current animate-pulse text-[var(--sr-amber)]" />

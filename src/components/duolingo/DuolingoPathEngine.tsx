@@ -316,50 +316,56 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
       {/* ── 1. DUOLINGO UNIT BANNER ───────────────────────────────────── */}
       <div className="w-full px-4 mt-4 mb-2">
         <div className="rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] p-4 shadow-sm relative overflow-hidden">
-          {/* Unit Switcher Tabs with Unit 1, Unit 2, Unit 3 counts & Days Left */}
-          <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1 scrollbar-none w-full">
-            {unitSummaries.map((u) => (
-              <button
-                key={u.unitIndex}
-                onClick={() => setSelectedUnitIdx(u.unitIndex)}
-                className={`px-2.5 py-1 rounded-xl text-[10px] font-black border transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
-                  selectedUnitIdx === u.unitIndex
-                    ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] border-[var(--sr-primary)] shadow-sm'
-                    : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)] hover:text-[var(--sr-text)]'
-                }`}
-              >
-                <span>Unit {u.unitNum}:</span>
-                <span>{u.done}/{u.total} Done</span>
-              </button>
-            ))}
-            <span className="text-[10px] font-bold text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-1 rounded-xl border border-[var(--sr-primary)]/30 shrink-0 whitespace-nowrap ml-auto">
-              {getExamDaysLeft(selectedExam)} days left
-            </span>
+          {/* Unit Switcher Tabs with edge fade */}
+          <div className="relative w-full mb-3">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none w-full pr-10">
+              {unitSummaries.map((u) => (
+                <button
+                  key={u.unitIndex}
+                  onClick={() => setSelectedUnitIdx(u.unitIndex)}
+                  className={`px-2.5 py-1 rounded-xl text-[10px] font-black border transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
+                    selectedUnitIdx === u.unitIndex
+                      ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] border-[var(--sr-primary)] shadow-sm'
+                      : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)] hover:text-[var(--sr-text)]'
+                  }`}
+                >
+                  <span>Unit {u.unitNum}:</span>
+                  <span>{u.done}/{u.total} Done</span>
+                </button>
+              ))}
+              <span className="text-[10px] font-bold text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-1 rounded-xl border border-[var(--sr-primary)]/30 shrink-0 whitespace-nowrap">
+                {getExamDaysLeft(selectedExam)} days left
+              </span>
+            </div>
+            {/* Edge fade scroll indicator */}
+            <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-[var(--sr-surface)] to-transparent" />
           </div>
 
-          <div className="flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-0.5 rounded-full border border-[var(--sr-primary)]/30 whitespace-nowrap shrink-0">
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-0.5 rounded-full border border-[var(--sr-primary)]/30 whitespace-nowrap inline-block">
                   SECTION 1 • UNIT {currentUnit?.unitNum || 1}
                 </span>
               </div>
               <h2 className="text-sm sm:text-base font-black text-[var(--sr-text)] tracking-tight line-clamp-2 leading-snug">
                 {currentUnit?.subject || subjects[0] || 'Core Exam Concepts'}
               </h2>
-              <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-0.5 font-medium leading-tight">
+              <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-1 font-medium leading-normal break-words">
                 Preamble, Formulas & High-Yield MCQs
               </p>
             </div>
 
-            <button
-              onClick={() => onNavigate && onNavigate('syllabus')}
-              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-black text-[var(--sr-primary)] flex items-center gap-1.5 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
-              title="View Complete Curriculum Syllabus"
-            >
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--sr-primary)]" />
-              <span className="text-xs">Guidebook</span>
-            </button>
+            <div className="flex justify-start sm:justify-end shrink-0">
+              <button
+                onClick={() => onNavigate && onNavigate('syllabus')}
+                className="px-3 py-1.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-black text-[var(--sr-primary)] flex items-center gap-1.5 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                title="View Complete Curriculum Syllabus"
+              >
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--sr-primary)]" />
+                <span className="text-xs">Guidebook</span>
+              </button>
+            </div>
           </div>
 
           {/* Unit Progress Indicator */}
@@ -373,6 +379,31 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
             <span className="text-xs font-bold text-[var(--sr-primary)] whitespace-nowrap shrink-0">
               {currentUnit?.done || 0}/{currentUnit?.total || 0} Done ({currentUnit?.percent || 0}%)
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 2. VEER FIXED IN-BOUNDS CHEERLEADER LANE (NEVER OVERLAPS A NODE OR THE BANNER) ── */}
+      <div className="w-full px-4 mt-2 mb-1 flex items-center justify-center">
+        <div className="w-full max-w-sm bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] rounded-2xl p-3 shadow-sm flex items-center gap-3 relative overflow-hidden">
+          <AspirantMascot
+            state="celebrating"
+            size="sm"
+            onClick={() => {
+              soundFx.playChestOpen();
+              triggerConfetti();
+              setTipIndex((prev) => (prev + 1) % VEER_TIPS.length);
+            }}
+            className="cursor-pointer active:scale-95 shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-black uppercase tracking-wider text-[var(--sr-primary)] flex items-center gap-1 mb-0.5">
+              <span>VEER'S RIDE TIP</span>
+              <span className="text-[9px] text-[var(--sr-text-muted)] font-bold">(Tap to refresh)</span>
+            </div>
+            <p className="text-xs font-bold text-[var(--sr-text)] leading-snug break-words">
+              {VEER_TIPS[tipIndex]}
+            </p>
           </div>
         </div>
       </div>
@@ -418,29 +449,10 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
               key={node.id}
               style={{ 
                 transform: `translateX(${xOffset}px)`,
-                marginTop: index === 0 ? '0px' : '36px'
+                marginTop: index === 0 ? '16px' : '36px'
               }}
               className="relative flex flex-col items-center transition-transform duration-300 z-10"
             >
-              {/* ── VEER MASCOT IN FIXED IN-BOUNDS LANE (BUBBLE NEVER OVERLAPS PLAY NODE) ── */}
-              {isActive && (
-                <div 
-                  className={`absolute -top-16 ${xOffset >= 0 ? '-left-28 sm:-left-36' : '-right-28 sm:-right-36'} z-20 flex flex-col items-center pointer-events-auto max-w-[170px]`}
-                >
-                  <AspirantMascot
-                    state="celebrating"
-                    size="sm"
-                    speechBubble={VEER_TIPS[tipIndex]}
-                    bubblePlacement="top"
-                    onClick={() => {
-                      soundFx.playChestOpen();
-                      triggerConfetti();
-                      setTipIndex((prev) => (prev + 1) % VEER_TIPS.length);
-                    }}
-                    className="cursor-pointer active:scale-95"
-                  />
-                </div>
-              )}
 
               {/* ── DUOLINGO FLOATING POPOVER CARD FOR ACTIVE LESSON ── */}
               {isPopoverOpen && (

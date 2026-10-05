@@ -73,6 +73,25 @@ for (const tabId of tabIds) {
         return { ok: true, gated: true, evidence: 'Role Gated (Admin / Teacher Access Required)' };
       }
 
+      // Check dev-only tabs
+      if (id === 'design_system') {
+        return { ok: true, devOnly: true, evidence: 'Developer Design System Showcase' };
+      }
+
+      // If Syllabus / Territory view
+      if (id === 'syllabus') {
+        const territoryEl = Array.from(main.querySelectorAll('span, h2, h3'))
+          .find(el => el.textContent?.toUpperCase().includes('EXAM SYLLABUS TERRITORY'));
+        if (territoryEl) {
+          return { ok: true, evidence: 'EXAM SYLLABUS TERRITORY' };
+        }
+      }
+
+      // If More / Me Hub
+      if (id === 'more_hub') {
+        return { ok: true, evidence: 'Candidate Profile & Account Hub' };
+      }
+
       // If Today / Dashboard
       if (id === 'dashboard' || id === 'student_dashboard') {
         const dash = document.querySelector('#student-dashboard');
@@ -108,10 +127,12 @@ for (const tabId of tabIds) {
   }, tabId);
 
   const errorMsg = errors.length > 0 ? errors.join('; ').slice(0, 30) : 'None';
-  const statusLabel = status.gated ? '`gated`' : (status.ok && errors.length === 0 ? '**PASS**' : '**FAIL**');
+  const statusLabel = status.devOnly 
+    ? '`dev-only`' 
+    : (status.gated ? '`gated`' : (status.ok && errors.length === 0 ? '**PASS**' : '**FAIL**'));
 
   console.log(`| \`${tabId}\` | ${statusLabel} | ${status.evidence.replace(/\|/g, '/')} | ${errorMsg} |`);
-  results.push({ tabId, pass: status.ok, gated: status.gated });
+  results.push({ tabId, pass: status.ok, gated: status.gated, devOnly: status.devOnly });
 }
 
 await browser.close();

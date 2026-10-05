@@ -310,10 +310,10 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                       {sIdx + 1}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)] truncate">
+                      <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)] line-clamp-2 leading-snug break-words">
                         {territory.subject} Region
                       </h3>
-                      <p className="text-xs text-[var(--sr-text-muted)] truncate">
+                      <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 leading-normal break-words mt-0.5">
                         {territory.completedCount} of {territory.totalCount} topics mastered ({territory.progressPercent}%)
                       </p>
                     </div>

@@ -53,28 +53,31 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           </p>
         </div>
 
-        {/* Tab Pills */}
-        <div className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface)] rounded-xl border border-[var(--sr-line-strong)] self-start overflow-x-auto max-w-full">
-          {[
-            { id: 'overview', label: 'Hub' },
-            { id: 'duo_path', label: '🎯 Path Drills' },
-            { id: 'pyq', label: 'PYQ Archive' },
-            { id: 'question_bank', label: 'Question Bank' },
-            { id: 'cbt', label: 'CBT Simulator' },
-            { id: 'weakness', label: 'Weak Areas' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => { soundFx.playTap(); setSubTab(t.id as any); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
-                subTab === t.id
-                  ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] shadow-sm'
-                  : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)]'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Tab Pills with edge fade scroll hint */}
+        <div className="relative max-w-full self-start">
+          <div className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface)] rounded-xl border border-[var(--sr-line-strong)] overflow-x-auto scrollbar-none pr-8">
+            {[
+              { id: 'overview', label: 'Hub' },
+              { id: 'duo_path', label: '🎯 Path Drills' },
+              { id: 'pyq', label: 'PYQ Archive' },
+              { id: 'question_bank', label: 'Question Bank' },
+              { id: 'cbt', label: 'CBT Simulator' },
+              { id: 'weakness', label: 'Weak Areas' },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => { soundFx.playTap(); setSubTab(t.id as any); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-extrabold whitespace-nowrap transition-all cursor-pointer active:scale-95 shrink-0 ${
+                  subTab === t.id
+                    ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] shadow-sm'
+                    : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)]'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--sr-surface)] to-transparent rounded-r-xl" />
         </div>
       </div>
 

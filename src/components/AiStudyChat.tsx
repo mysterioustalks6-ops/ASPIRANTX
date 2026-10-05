@@ -682,7 +682,7 @@ export const AiStudyChat: React.FC<AiStudyChatProps> = ({ exam, userId, userEmai
               <h3 className="text-xs sm:text-sm font-black text-white flex items-center gap-2 truncate">
                 <span>StudyRide Academic AI Mentor</span>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 uppercase tracking-widest hidden sm:inline-block">
-                  Gemini 3.6 SSE
+                  Academic AI
                 </span>
               </h3>
               <p className="text-[10px] text-slate-400 truncate flex items-center gap-2">

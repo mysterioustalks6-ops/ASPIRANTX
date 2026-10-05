@@ -807,8 +807,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
       {/* ── SYLLABUS SOURCE TABS: OFFICIAL vs MY SYLLABUS vs DIRECTORY ──────── */}
       <div className="p-2 rounded-2xl bg-[var(--sr-surface)] border border-[var(--sr-line-strong)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
-        <div className="relative w-full sm:w-auto">
-          <div className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface-2)] rounded-xl border border-[var(--sr-line)] overflow-x-auto scrollbar-none w-full sm:w-auto">
+        <div className="relative w-full sm:w-auto flex-1 max-w-full">
+          <div className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface-2)] rounded-xl border border-[var(--sr-line)] overflow-x-auto scrollbar-none w-full pr-8">
             <button
               onClick={() => setActiveTab('official')}
               className={`px-3.5 py-2 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
@@ -851,8 +851,8 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               <span>48 Exams</span>
             </button>
           </div>
-          {/* Subtle scroll fade gradient on right edge for small screens */}
-          <div className="absolute right-0 top-0 bottom-0 w-6 pointer-events-none bg-gradient-to-l from-[var(--sr-surface)] to-transparent sm:hidden" />
+          {/* Scroll fade gradient on right edge */}
+          <div className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none bg-gradient-to-l from-[var(--sr-surface-2)] to-transparent rounded-r-xl" />
         </div>
 
         {/* Global Action Toolbar */}

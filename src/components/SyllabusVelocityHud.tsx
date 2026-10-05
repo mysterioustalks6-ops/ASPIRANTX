@@ -119,46 +119,23 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
 
   return (
     <div className="rounded-2xl bg-[var(--sr-surface)] border border-[var(--sr-line-strong)] p-4 sm:p-5 shadow-lg relative overflow-hidden transition-all text-[var(--sr-text)]">
-      {/* ── TOP HEADER ROW: EXAM SELECTOR + STATUS BADGE + TOOLS TOGGLE ── */}
-      <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
-          <div className="w-9 h-9 rounded-xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)] shrink-0 mt-0.5 sm:mt-0">
-            <Flame className="w-5 h-5 fill-current" />
+      {/* ── TOP HEADER ROW: CONTROLS & STATUS BADGES ── */}
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-[var(--sr-primary-subtle)] border border-[var(--sr-primary)]/30 flex items-center justify-center text-[var(--sr-primary)] shrink-0">
+            <Flame className="w-4 h-4 fill-current" />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <select
-                value={selectedExam}
-                onChange={(e) => setSelectedExam(e.target.value as ExamType)}
-                aria-label="Target Examination"
-                className="bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[var(--sr-text)] text-xs sm:text-sm font-black rounded-xl px-2.5 py-1.5 outline-none cursor-pointer transition max-w-full sm:max-w-md leading-snug whitespace-normal"
-              >
-                {EXAM_LIST.map((ex) => (
-                  <option key={ex.id} value={ex.id} className="bg-[var(--sr-surface)] text-[var(--sr-text)] font-bold">
-                    {ex.label}
-                  </option>
-                ))}
-              </select>
-              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border shrink-0 whitespace-nowrap ${speedBadge.color}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${speedBadge.dot} animate-pulse`} />
-                {simulatedPace}h/day
-              </span>
-            </div>
-            <p className="text-xs text-[var(--sr-text-muted)] mt-1 font-medium">
-              Exam: <strong className="text-[var(--sr-text)] font-bold">{formatNiceDate(examDate)}</strong>
-              <span className="mx-1.5 text-[var(--sr-text-subtle)]">•</span>
-              Target Finish: <strong className="text-[var(--sr-text)] font-bold">{formatNiceDate(forecast.realisticDate)}</strong>
-              {forecast.revisionBufferDays > 0 && (
-                <span className="text-[var(--sr-primary)] font-bold ml-1.5">
-                  ({forecast.revisionBufferDays}d buffer)
-                </span>
-              )}
-            </p>
-          </div>
+          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--sr-primary)]">
+            TARGET SYLLABUS
+          </span>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Speed badge & action controls */}
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border shrink-0 whitespace-nowrap ${speedBadge.color}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${speedBadge.dot} animate-pulse`} />
+            {simulatedPace}h/day
+          </span>
           <button
             onClick={onOpenAddCustomTopic}
             className="px-2.5 py-1.5 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] text-[var(--sr-blue)] border border-[var(--sr-line)] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
@@ -167,7 +144,6 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Add Topic</span>
           </button>
-
           <button
             onClick={() => setIsToolsExpanded(!isToolsExpanded)}
             className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
@@ -178,10 +154,39 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             title="Adjust study velocity and pace simulation"
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Pace Tools</span>
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isToolsExpanded ? 'rotate-180' : ''}`} />
           </button>
         </div>
+      </div>
+
+      {/* ── ROW 1: FULL-WIDTH EXAM TITLE SELECTOR (MAX 2 LINES) ── */}
+      <div className="w-full mb-3">
+        <select
+          value={selectedExam}
+          onChange={(e) => setSelectedExam(e.target.value as ExamType)}
+          aria-label="Target Examination"
+          className="w-full bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[var(--sr-text)] text-xs sm:text-sm font-black rounded-xl px-3 py-2 outline-none cursor-pointer transition leading-snug line-clamp-2 block"
+        >
+          {EXAM_LIST.map((ex) => (
+            <option key={ex.id} value={ex.id} className="bg-[var(--sr-surface)] text-[var(--sr-text)] font-bold">
+              {ex.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* ── ROW 2: EXAM DATE & PROJECTED SYLLABUS COMPLETION (SEPARATE ROWS) ── */}
+      <div className="space-y-1 mb-4 text-xs">
+        <p className="text-[var(--sr-text-muted)] font-medium">
+          Exam Date: <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(examDate)}</strong>
+        </p>
+        <p className="text-[var(--sr-text-muted)] font-medium">
+          Projected syllabus completion: <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(forecast.realisticDate)}</strong>
+          {forecast.revisionBufferDays > 0 && (
+            <span className="text-[var(--sr-primary)] font-bold ml-1.5">
+              ({forecast.revisionBufferDays}d buffer)
+            </span>
+          )}
+        </p>
       </div>
 
       {/* ── CENTRAL PROGRESS BAR (DUOLINGO TACTILE STYLE) ── */}
