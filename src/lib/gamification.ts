@@ -11,7 +11,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   email: 'aspirant@example.com',
   exam: '',
   targetYear: 2026,
-  streakDays: 1,
+  streakDays: 0,
   lastActiveDate: getISTDateString(),
   isPremium: false,
   studyHoursToday: 0,

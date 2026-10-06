@@ -27,6 +27,7 @@ import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { soundFx } from '../lib/soundEffects';
 import { getCandidateHearts } from '../lib/duolingoHearts';
+import { loadSessions, computeWeeklyStudyMetrics, computeStreakDays } from '../lib/focus/sessionStore';
 
 interface StudentDashboardProps {
   userProfile: UserProfile;
@@ -95,22 +96,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       ? Math.min(100, Math.round((completedTopicsCount / totalTopicsEstimate) * 100)) 
       : 0;
 
-    // 3. Calculate Real Study Minutes Logged Today
-    let todayMinutes = 0;
-    try {
-      const storeKey = `aspirantx_local_store_v1_${userId || 'guest'}_${examTag}`;
-      const rawStore = localStorage.getItem(storeKey);
-      if (rawStore) {
-        const parsedStore = JSON.parse(rawStore);
-        if (typeof parsedStore.todayStudyMinutes === 'number') {
-          todayMinutes = Math.max(0, parsedStore.todayStudyMinutes);
-        }
-      }
-    } catch {}
-
-    if (todayMinutes === 0 && userProfile.studyHoursToday) {
-      todayMinutes = Math.max(0, Math.round(userProfile.studyHoursToday * 60));
-    }
+    // 3. Calculate Real Study Minutes Logged Today and Streak from sessionStore
+    const userSessions = loadSessions(userId || 'guest');
+    const weeklyMetrics = computeWeeklyStudyMetrics(userSessions);
+    const liveStreak = computeStreakDays(userSessions);
+    const todayMinutes = Math.round(weeklyMetrics.todayHours * 60);
+    const weeklyHours = Math.round(weeklyMetrics.totalWeeklyHours * 10) / 10;
 
     // 4. Calculate Real Accuracy from CBT tests
     let testAccuracy = 0;
@@ -136,10 +127,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
     return {
       todayStudyMinutes: todayMinutes,
-      weeklyStudyHours: Math.round(todayMinutes / 60),
-      monthlyStudyHours: Math.round(todayMinutes / 60),
-      currentStreak: userProfile.streakDays || 0,
-      longestStreak: userProfile.streakDays || 0,
+      weeklyStudyHours: Math.round(weeklyHours),
+      monthlyStudyHours: Math.round(weeklyHours),
+      currentStreak: liveStreak,
+      longestStreak: liveStreak,
       topicsCompleted: completedTopicsCount,
       totalTopics: totalTopicsEstimate,
       overallProgressPercent: syllabusProgressPercent,

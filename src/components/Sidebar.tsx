@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ActiveTab, UserProfile } from '../types';
 import { resolveUserAvatar } from '../lib/avatarStorage';
 import { EXAM_LIST } from '../lib/examList';
+import { loadSessions, computeStreakDays } from '../lib/focus/sessionStore';
 import { 
   BookOpen, 
   Timer, 
@@ -119,6 +120,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [workspaceConfig, setWorkspaceConfig] = useState<WorkspaceConfig>(() =>
     loadWorkspaceConfig(user?.id)
   );
+
+  const liveStreak = user ? computeStreakDays(loadSessions(user.id)) : 0;
 
   const [showCustomizeHint, setShowCustomizeHint] = useState<boolean>(() => {
     try {
@@ -390,7 +393,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
               <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
                 <Flame className="w-3 h-3 text-amber-400 fill-amber-400/30" />
-                {user?.streakDays ?? 1}d Streak
+                {liveStreak}d Streak
               </span>
             </div>
 

@@ -62,6 +62,8 @@ const DesignSystemShowcase = lazy(() => import('./components/DesignSystemShowcas
 const SyllabusTracker = lazy(() => import('./components/SyllabusTracker').then(m => ({ default: m.SyllabusTracker })));
 const PyqEngine = lazy(() => import('./components/PyqEngine').then(m => ({ default: m.PyqEngine })));
 const QuestionBankEngine = lazy(() => import('./components/QuestionBankEngine').then(m => ({ default: m.QuestionBankEngine })));
+const HighwayFocusTimer = lazy(() => import('./features/focus/bike/HighwayFocusTimer').then(m => ({ default: m.HighwayFocusTimer })));
+const GarageScreen = lazy(() => import('./features/focus/bike/GarageScreen').then(m => ({ default: m.GarageScreen })));
 const FocusGalaxyScreen = lazy(() => import('./features/focus/galaxy/FocusGalaxyScreen').then(m => ({ default: m.FocusGalaxyScreen })));
 const TaskManager = lazy(() => import('./components/TaskManager').then(m => ({ default: m.TaskManager })));
 const AiStudyChat = lazy(() => import('./components/AiStudyChat').then(m => ({ default: m.AiStudyChat })));
@@ -229,7 +231,7 @@ function AppContent() {
     if (hash.startsWith('blog')) return 'blog';
     if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') return 'debug_galaxy';
     if (import.meta.env.DEV && (hash === 'design-system' || hash === 'design_system')) return 'design_system';
-    const validTabs = ['syllabus','pyq','question_bank','timer','tasks','chat',
+    const validTabs = ['syllabus','pyq','question_bank','timer','garage','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
       'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy', ...(import.meta.env.DEV ? ['design_system'] : [])];
@@ -1567,13 +1569,25 @@ function AppContent() {
                   onOpenPremium={() => setActiveTab('premium')}
                   onRequireLogin={() => setUser(null)}
                 >
-                  <FocusGalaxyScreen 
+                  <HighwayFocusTimer 
                     userId={user.id} 
                     selectedExam={selectedExam} 
-                    initialMode="ORBIT"
+                    onOpenGarage={() => setActiveTab('garage')}
                     onBack={() => setActiveTab('dashboard')}
                   />
                 </PremiumGate>
+              </div>
+            )}
+
+            {activeTab === 'garage' && (
+              <div data-screen="garage" className="w-full">
+                <Suspense fallback={<SuspenseFallback />}>
+                  <GarageScreen 
+                    userId={user.id} 
+                    onBack={() => setActiveTab('timer')}
+                    onStartRide={() => setActiveTab('timer')}
+                  />
+                </Suspense>
               </div>
             )}
 

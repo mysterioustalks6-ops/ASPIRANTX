@@ -1,3 +1,5 @@
+import { loadSessions, computeWeeklyStudyMetrics, computeStreakDays } from '../lib/focus/sessionStore';
+
 export interface StudyTelemetryData {
   totalStudyHours: number;
   todayStudyHours: number;
@@ -18,49 +20,30 @@ export interface StudyTelemetryData {
 /**
  * Computes deterministic real study telemetry from active Pomodoro sessions,
  * CBT mock test records, syllabus tracking, and gamification logs.
- * Zero dummy values.
+ * Zero dummy values. Authoritative source of truth: sessionStore.
  */
 export function computeStudyTelemetry(user: any): StudyTelemetryData {
   const userId = user?.id || 'guest';
+  const sessions = loadSessions(userId);
+  const weeklyMetrics = computeWeeklyStudyMetrics(sessions);
+  const streakDays = computeStreakDays(sessions);
+
   let totalStudySeconds = 0;
-  let todayStudySeconds = 0;
   let pomodoroCount = 0;
   let stopwatchCount = 0;
   let totalSessions = 0;
 
-  // 1. Pull Real Study Sessions (Pomodoro + Stopwatch)
-  try {
-    const rawSessions = localStorage.getItem(`aspirantx_study_sessions_v3_${userId}`) ||
-      localStorage.getItem(`aspirantx_study_sessions_v3_guest`);
-    if (rawSessions) {
-      const parsed = JSON.parse(rawSessions);
-      if (Array.isArray(parsed)) {
-        totalSessions = parsed.length;
-        const now = new Date();
-        const istOffset = 5.5 * 60 * 60 * 1000;
-        const todayIST = new Date(now.getTime() + istOffset).toISOString().split('T')[0];
-
-        parsed.forEach((s: any) => {
-          const sec = Number(s.durationSeconds || 0);
-          totalStudySeconds += sec;
-          if (s.mode === 'pomodoro') pomodoroCount++;
-          if (s.mode === 'stopwatch') stopwatchCount++;
-
-          if (s.createdAt && s.createdAt.startsWith(todayIST)) {
-            todayStudySeconds += sec;
-          }
-        });
-      }
+  sessions.forEach((s) => {
+    if (s.completed) {
+      totalSessions++;
+      totalStudySeconds += s.actualSeconds;
+      if (s.mode === 'pomodoro') pomodoroCount++;
+      if (s.mode === 'stopwatch') stopwatchCount++;
     }
-  } catch (_) {}
+  });
 
-  // Fallback for today study hours if user has studyHoursToday in profile
-  if (todayStudySeconds === 0 && user?.studyHoursToday) {
-    todayStudySeconds = Math.round(Number(user.studyHoursToday) * 3600);
-    if (totalStudySeconds < todayStudySeconds) {
-      totalStudySeconds = todayStudySeconds;
-    }
-  }
+  const todayStudyHours = weeklyMetrics.todayHours;
+  const totalStudyHours = Math.round((totalStudySeconds / 3600) * 10) / 10;
 
   // 2. Pull Real CBT Mock Test Results
   let cbtCount = 0;
@@ -97,9 +80,6 @@ export function computeStudyTelemetry(user: any): StudyTelemetryData {
     }
   } catch (_) {}
 
-  const totalStudyHours = Math.round((totalStudySeconds / 3600) * 10) / 10;
-  const todayStudyHours = Math.round((todayStudySeconds / 3600) * 10) / 10;
-
   return {
     totalStudyHours,
     todayStudyHours,
@@ -109,7 +89,7 @@ export function computeStudyTelemetry(user: any): StudyTelemetryData {
     cbtMocksCount: cbtCount,
     cbtAvgAccuracy,
     completedSubtopicsCount: completedSubtopics,
-    streakDays: Number(user?.streakDays || 0),
+    streakDays,
     xp: Number(user?.xp || 0),
     coins: Number(user?.coins || 0),
     level: Math.max(1, Number(user?.level || 1)),

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   User, Flame, Coins, Clock, Smartphone, Award, Users, MessageSquare, 
   Sparkles, Gift, Share2, Crown, Palette, Bell, HelpCircle, ShieldCheck, 
@@ -11,6 +11,7 @@ import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { soundFx } from '../lib/soundEffects';
 import { TactileButton } from '../design-system/TactileButton';
 import { VeerMascot } from '../design-system/VeerMascot';
+import { loadSessions, computeStreakDays } from '../lib/focus/sessionStore';
 
 interface MoreHubProps {
   user: UserProfile;
@@ -78,6 +79,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
     return { name: 'Diamond League', icon: '💎', badgeClass: 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]/30' };
   };
   const league = getLeagueInfo(userXp);
+  const liveStreak = useMemo(() => computeStreakDays(loadSessions(user.id)), [user.id]);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-28 px-3 sm:px-4 text-[var(--sr-text)]">
@@ -129,7 +131,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--sr-surface-2)]">
             <div className="flex items-center gap-1 text-[var(--sr-amber)] font-black text-sm">
               <Flame className="w-4 h-4 fill-current" />
-              <span>{user.streakDays ?? 1}d</span>
+              <span>{liveStreak}d</span>
             </div>
             <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">Streak</span>
           </div>

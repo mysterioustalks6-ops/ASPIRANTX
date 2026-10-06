@@ -15,7 +15,11 @@ import {
   Crown,
   BookOpen,
   X,
-  Zap
+  Zap,
+  Bike,
+  Wrench,
+  Shield,
+  Navigation
 } from 'lucide-react';
 import { soundFx } from '../../lib/soundEffects';
 import { AspirantMascot, MascotState } from './AspirantMascot';
@@ -418,34 +422,21 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
         </div>
       </div>
 
-      {/* ── 3. S-CURVE WINDING LEARNING PATH WITH CONNECTED NODES ─────── */}
+      {/* ── 3. CALM HIGHWAY CORRIDOR WITH MILESTONE STONES & ACTIVE BIKE MARKER ─────── */}
       <div className="w-full relative flex flex-col items-center py-6">
-        {/* Continuous Winding Path SVG Line (z-0 behind nodes) */}
-        <svg 
-          className="absolute top-0 left-0 w-full h-full pointer-events-none z-0 opacity-40"
-          style={{ minHeight: `${visibleNodes.length * 120}px` }}
+        {/* Asphalt Highway Road Corridor Background */}
+        <div 
+          className="absolute top-0 bottom-0 w-[270px] sm:w-[320px] bg-slate-900/90 border-x-4 border-amber-500/30 shadow-2xl rounded-3xl overflow-hidden pointer-events-none z-0"
+          style={{ minHeight: `${visibleNodes.length * 130}px` }}
         >
-          {visibleNodes.map((_, i) => {
-            if (i === visibleNodes.length - 1) return null;
-            const startX = 200 + getNodeHorizontalOffset(i);
-            const startY = 50 + i * 115;
-            const endX = 200 + getNodeHorizontalOffset(i + 1);
-            const endY = 50 + (i + 1) * 115;
-            const midY = (startY + endY) / 2;
-
-            return (
-              <path
-                key={`path-line-${i}`}
-                d={`M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`}
-                fill="none"
-                stroke="var(--sr-line-strong)"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray="14 10"
-              />
-            );
-          })}
-        </svg>
+          {/* Subtle Road Asphalt Texture */}
+          <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:12px_12px] opacity-40" />
+          {/* Highway Dividing Center Lane (Dashed Yellow/White Line) */}
+          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-0.5 border-r-2 border-dashed border-amber-400/60" />
+          {/* Roadside Shoulder White Ribbons */}
+          <div className="absolute inset-y-0 left-3 w-0.5 bg-white/20" />
+          <div className="absolute inset-y-0 right-3 w-0.5 bg-white/20" />
+        </div>
 
         {visibleNodes.map((node, index) => {
           const xOffset = getNodeHorizontalOffset(index);
@@ -453,6 +444,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
           const isActive = node.status === 'active';
           const isLocked = node.status === 'locked';
           const isPopoverOpen = selectedActiveNode?.id === node.id;
+          const kmDistance = index * 12 + 10;
 
           return (
             <div
@@ -464,116 +456,152 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
               className="relative flex flex-col items-center transition-transform duration-300 z-10"
             >
 
-              {/* ── DUOLINGO FLOATING POPOVER CARD FOR ACTIVE LESSON ── */}
+              {/* ── HIGHWAY OVERHEAD ROUTE SIGNBOARD POPOVER ── */}
               {isPopoverOpen && (
-                <div className="absolute -top-28 z-30 flex flex-col items-center animate-bounce-short">
-                  <div className="bg-[#1CB0F6] text-white px-4 py-3 rounded-2xl shadow-2xl border-b-4 border-[#1899D6] min-w-[210px] text-center">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-sky-100">
-                      Lesson {node.nodeNumber || 1} of {currentUnit?.total || visibleNodes.length}
+                <div className="absolute -top-32 z-30 flex flex-col items-center animate-bounce-short">
+                  <div className="bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl border-2 border-emerald-400/90 min-w-[220px] text-center">
+                    <div className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center justify-center gap-1">
+                      <Navigation className="w-3 h-3" />
+                      <span>Highway Milestone • KM {kmDistance}</span>
                     </div>
-                    <div className="text-xs font-black line-clamp-2 max-w-[190px] mt-0.5 leading-snug">
+                    <div className="text-xs font-black line-clamp-2 max-w-[200px] mt-1 leading-snug text-slate-100">
                       {node.title}
                     </div>
                     <button
                       onClick={() => handleStartDrill(node)}
-                      className="mt-2.5 w-full py-2 bg-[#58CC02] hover:bg-[#5FDB02] text-[#0B2300] font-black text-xs rounded-xl border-b-3 border-[#46A302] active:border-b-0 active:translate-y-0.5 shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="mt-2.5 w-full py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>START</span>
-                      <span className="bg-[#46A302]/30 px-1.5 py-0.5 rounded text-[10px] font-black">+10 XP</span>
+                      <span>ENGAGE GEAR & RIDE</span>
+                      <span className="bg-slate-950/20 px-1.5 py-0.5 rounded text-[10px] font-black">+10 XP</span>
                     </button>
                   </div>
-                  {/* Speech triangle pointing down */}
-                  <div className="w-3 h-3 bg-[#1CB0F6] rotate-45 -mt-1.5 border-r-2 border-b-2 border-[#1899D6]" />
+                  {/* Road arrow pointing down */}
+                  <div className="w-3 h-3 bg-slate-900 rotate-45 -mt-1.5 border-r-2 border-b-2 border-emerald-400/90" />
                 </div>
               )}
 
-              {/* ── 3D TACTILE STEPPING STONE BUTTONS ── */}
-
-              {/* 1. LESSON NODE */}
+              {/* ── 1. LESSON NODE: AUTHENTIC HIGHWAY MILESTONE STONE ── */}
               {node.type === 'lesson' && (
-                <button
-                  onClick={() => handleNodeClick(node)}
-                  className={`
-                    w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all duration-150 relative cursor-pointer select-none
-                    ${
-                      isCompleted
-                        ? 'bg-[#58CC02] hover:bg-[#5FDB02] text-[#0B2300] border-b-[6px] border-[#46A302] active:border-b-0 active:translate-y-1.5 shadow-[0_6px_20px_rgba(88,204,2,0.4)]'
-                        : isActive
-                        ? 'bg-[#1CB0F6] hover:bg-[#28BCFF] text-[#00263D] border-b-[6px] border-[#1899D6] active:border-b-0 active:translate-y-1.5 ring-4 ring-[#1CB0F6]/40 ring-offset-4 ring-offset-[#0F1115] animate-pulse shadow-[0_6px_24px_rgba(28,176,246,0.5)]'
-                        : 'bg-[#2A2F3A] text-[#6B7280] border-b-[6px] border-[#1E232D] cursor-not-allowed opacity-75'
-                    }
-                  `}
-                >
-                  {isCompleted ? (
-                    <Check className="w-8 h-8 stroke-[3.5]" />
-                  ) : isActive ? (
-                    <Play className="w-8 h-8 fill-current translate-x-0.5" />
-                  ) : (
-                    <Lock className="w-7 h-7" />
-                  )}
-
-                  {/* Stars Pill for Completed Lessons */}
-                  {isCompleted && (
-                    <div className="absolute -bottom-3 flex items-center gap-0.5 bg-[var(--sr-surface-2)] px-2 py-0.5 rounded-full border border-[var(--sr-line-strong)] shadow-md">
-                      {[1, 2, 3].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-3 h-3 ${
-                            star <= node.stars
-                              ? 'text-[#FFC800] fill-[#FFC800]'
-                              : 'text-[var(--sr-text-subtle)]'
-                          }`}
-                        />
-                      ))}
+                <div className="relative flex flex-col items-center group">
+                  {/* Active Bike Marker moving on the highway! */}
+                  {isActive && (
+                    <div className="absolute -top-11 z-20 flex items-center gap-1.5 animate-bounce-short">
+                      <div className="px-2.5 py-1 rounded-full bg-amber-500 text-slate-950 text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1">
+                        <Bike className="w-3.5 h-3.5" />
+                        <span>Rider Here</span>
+                      </div>
+                      <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
                     </div>
                   )}
-                </button>
+
+                  {/* Milestone Stone: curved dome top + rectangular base */}
+                  <button
+                    onClick={() => handleNodeClick(node)}
+                    className={`
+                      w-20 h-24 rounded-t-3xl rounded-b-xl flex flex-col overflow-hidden transition-all duration-200 relative cursor-pointer select-none border-2 shadow-xl
+                      ${
+                        isCompleted
+                          ? 'bg-slate-900 border-emerald-500/80 shadow-[0_4px_16px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95'
+                          : isActive
+                          ? 'bg-slate-900 border-amber-400 ring-4 ring-amber-400/30 ring-offset-2 ring-offset-slate-950 shadow-[0_6px_24px_rgba(251,191,36,0.4)] hover:scale-105 active:scale-95'
+                          : 'bg-slate-950/90 border-slate-800 text-slate-600 cursor-not-allowed opacity-75'
+                      }
+                    `}
+                  >
+                    {/* Milestone Top Curved Dome (Highway Yellow Tag) */}
+                    <div className={`w-full py-1.5 text-center text-[10px] font-black tracking-wider uppercase ${
+                      isCompleted ? 'bg-emerald-500 text-slate-950' : isActive ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      KM {kmDistance}
+                    </div>
+
+                    {/* Milestone Body */}
+                    <div className="flex-1 flex flex-col items-center justify-center p-1 bg-slate-900 text-center">
+                      {isCompleted ? (
+                        <div className="flex flex-col items-center">
+                          <Check className="w-5 h-5 text-emerald-400 stroke-[3]" />
+                          <span className="text-[9px] font-extrabold text-emerald-300 uppercase mt-0.5">Cleared</span>
+                        </div>
+                      ) : isActive ? (
+                        <div className="flex flex-col items-center">
+                          <Play className="w-5 h-5 text-amber-400 fill-current translate-x-0.5 animate-pulse" />
+                          <span className="text-[9px] font-black text-amber-300 uppercase mt-0.5">Start</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <Lock className="w-4 h-4 text-slate-600" />
+                          <span className="text-[9px] font-bold text-slate-600 uppercase mt-0.5">Locked</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stars Pill at Bottom */}
+                    {isCompleted && (
+                      <div className="w-full py-0.5 bg-slate-950 flex items-center justify-center gap-0.5">
+                        {[1, 2, 3].map((star) => (
+                          <Star key={star} className={`w-2.5 h-2.5 ${star <= node.stars ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                </div>
               )}
 
-              {/* 2. MYSTERY CHEST NODE */}
+              {/* ── 2. PITSTOP SERVICE BAY (REPLACING DUOLINGO CHEST) ── */}
               {node.type === 'chest' && (
                 <button
                   onClick={() => handleNodeClick(node)}
                   className={`
-                    w-18 h-18 rounded-2xl flex items-center justify-center transition-all duration-150 relative cursor-pointer select-none
+                    w-24 h-20 rounded-2xl flex flex-col items-center justify-center transition-all duration-200 relative cursor-pointer select-none border-2 shadow-xl
                     ${
                       isCompleted
-                        ? 'bg-[#FF9600] text-[#2E1400] border-b-[6px] border-[#D87D00] shadow-[0_6px_20px_rgba(255,150,0,0.4)] active:border-b-0 active:translate-y-1.5'
-                        : 'bg-[#2A2F3A] text-[#6B7280] border-b-[6px] border-[#1E232D] cursor-not-allowed opacity-70'
+                        ? 'bg-slate-900 border-amber-500 text-amber-400 shadow-[0_4px_20px_rgba(245,158,11,0.3)] active:scale-95'
+                        : 'bg-slate-950 border-slate-800 text-slate-600 cursor-not-allowed opacity-70'
                     }
                   `}
                 >
-                  <Gift className="w-8 h-8 fill-current animate-bounce-short" />
+                  <div className="w-7 h-7 rounded-xl bg-amber-500/20 flex items-center justify-center mb-1 text-amber-400">
+                    <Wrench className="w-4 h-4 animate-bounce-short" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">Pitstop Bay</span>
+                  <span className="text-[8px] text-slate-400">Bike Tuning</span>
                 </button>
               )}
 
-              {/* 3. CHECKPOINT CASTLE NODE */}
+              {/* ── 3. HIGHWAY TOLL PLAZA CHECKPOINT (REPLACING CASTLE) ── */}
               {node.type === 'checkpoint' && (
                 <button
                   onClick={() => handleNodeClick(node)}
                   className={`
-                    w-24 h-22 rounded-3xl flex flex-col items-center justify-center transition-all duration-150 relative cursor-pointer select-none
+                    w-32 h-20 rounded-2xl flex flex-col items-center justify-center transition-all duration-200 relative cursor-pointer select-none border-2 shadow-2xl
                     ${
                       isActive || isCompleted
-                        ? 'bg-gradient-to-b from-[#A855F7] to-[#7E22CE] text-white border-b-[6px] border-[#6B21A8] shadow-[0_6px_24px_rgba(168,85,247,0.5)] active:border-b-0 active:translate-y-1.5'
-                        : 'bg-[#2A2F3A] text-[#6B7280] border-b-[6px] border-[#1E232D] cursor-not-allowed opacity-75'
+                        ? 'bg-gradient-to-r from-blue-900/80 via-indigo-900/90 to-blue-900/80 border-cyan-400 text-cyan-300 shadow-[0_6px_28px_rgba(6,182,212,0.4)] active:scale-95'
+                        : 'bg-slate-950 border-slate-800 text-slate-600 cursor-not-allowed opacity-75'
                     }
                   `}
                 >
-                  <Crown className="w-9 h-9 fill-current" />
-                  <span className="text-xs font-black uppercase mt-1 tracking-tight">Checkpoint</span>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Shield className="w-4 h-4 text-cyan-400" />
+                    <span className="text-[10px] font-black tracking-widest uppercase text-white">Toll Plaza</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-cyan-200 px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/30">
+                    Unit Gateway
+                  </span>
                 </button>
               )}
 
-              {/* Node Title & Subject Label */}
-              <div className="mt-3 text-center max-w-[160px]">
-                <p className="text-xs font-black text-[var(--sr-text)] line-clamp-2 leading-snug">
-                  {node.title}
-                </p>
-                <p className="text-xs font-bold text-[var(--sr-text-muted)] truncate">
-                  {node.subject}
-                </p>
+              {/* Node Title Signboard */}
+              <div className="mt-2 text-center max-w-[170px]">
+                <div className="inline-block px-2.5 py-1 rounded-lg bg-slate-900/90 border border-slate-800 shadow-md">
+                  <p className="text-xs font-black text-slate-200 line-clamp-2 leading-snug">
+                    {node.title}
+                  </p>
+                  <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                    {node.subject}
+                  </p>
+                </div>
               </div>
             </div>
           );
@@ -596,38 +624,43 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
         />
       )}
 
-      {/* ── 5. CHEST REWARD CELEBRATION MODAL ────────────────────────── */}
+      {/* ── 5. HIGHWAY PITSTOP GEAR REWARD CELEBRATION MODAL ────────────────────────── */}
       {chestModalNode && (
         <div className="fixed inset-0 z-50 bg-black/80 no-backdrop-blur flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-[var(--sr-surface)] border-2 border-[var(--sr-amber)] rounded-3xl p-6 text-center space-y-5 shadow-2xl">
-            <div className="w-20 h-20 rounded-full bg-[var(--sr-amber-subtle)] border border-[var(--sr-amber)] flex items-center justify-center mx-auto text-[var(--sr-amber)]">
-              <Gift className="w-10 h-10 fill-current animate-bounce" />
+          <div className="w-full max-w-sm bg-slate-900 border-2 border-amber-400 rounded-3xl p-6 text-center space-y-5 shadow-2xl">
+            <div className="w-20 h-20 rounded-full bg-amber-500/20 border border-amber-400 flex items-center justify-center mx-auto text-amber-400">
+              <Wrench className="w-10 h-10 fill-current animate-bounce" />
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-[var(--sr-text)]">Treasure Unlocked!</h3>
-              <p className="text-xs text-[var(--sr-text-muted)]">
-                Shabaash! You completed 3 lessons and unlocked this mystery chest!
+              <h3 className="text-xl font-black text-white">Pitstop Service Bay!</h3>
+              <p className="text-xs text-slate-300">
+                Shabaash! You conquered 3 milestones. Bike tuning parts, highway fuel, and bonus Ride XP claimed!
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-around">
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-around">
               <div>
-                <div className="text-xs text-[var(--sr-text-muted)] font-bold uppercase">Coins</div>
-                <div className="text-base font-black text-[var(--sr-amber)]">+50 Coins</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Coins</div>
+                <div className="text-base font-black text-amber-400">+50 Coins</div>
               </div>
-              <div className="h-6 w-px bg-[var(--sr-line)]" />
+              <div className="h-6 w-px bg-slate-800" />
               <div>
-                <div className="text-xs text-[var(--sr-text-muted)] font-bold uppercase">XP Boost</div>
-                <div className="text-base font-black text-[var(--sr-primary)]">+100 XP</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Ride XP</div>
+                <div className="text-base font-black text-emerald-400">+100 XP</div>
+              </div>
+              <div className="h-6 w-px bg-slate-800" />
+              <div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Tuning</div>
+                <div className="text-base font-black text-cyan-400">+1 Kit</div>
               </div>
             </div>
 
             <button
               onClick={() => setChestModalNode(null)}
-              className="w-full py-3.5 rounded-2xl bg-[var(--sr-primary)] text-[var(--sr-on-primary)] font-black text-sm border-b-4 border-[var(--sr-primary-depth)] active:border-b-0 active:translate-y-1 cursor-pointer"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
             >
-              CLAIM REWARDS
+              CLAIM PITSTOP GEAR & CONTINUE
             </button>
           </div>
         </div>
