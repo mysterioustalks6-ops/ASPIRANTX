@@ -3038,10 +3038,10 @@ var init_aeJeSyllabusData = __esm({
 });
 
 // src/data/neetSyllabusData.ts
-var NEET_UG_OFFICIAL_SYLLABUS;
+var RAW_NEET_UG_SYLLABUS, NEET_UG_OFFICIAL_SYLLABUS;
 var init_neetSyllabusData = __esm({
   "src/data/neetSyllabusData.ts"() {
-    NEET_UG_OFFICIAL_SYLLABUS = [
+    RAW_NEET_UG_SYLLABUS = [
       // =========================================================================
       // PHYSICS (20 UNITS)
       // =========================================================================
@@ -4199,6 +4199,10 @@ var init_neetSyllabusData = __esm({
         ]
       }
     ];
+    NEET_UG_OFFICIAL_SYLLABUS = RAW_NEET_UG_SYLLABUS.map((node) => ({
+      ...node,
+      isVerified: false
+    }));
   }
 });
 

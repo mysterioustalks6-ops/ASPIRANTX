@@ -161,6 +161,7 @@ export interface SyllabusTopic {
   weightage: 'High' | 'Medium' | 'Low';
   notes?: string;
   subtopics?: SubTopic[];
+  isVerified?: boolean;
 }
 
 export interface PredictorSettings {
@@ -326,6 +327,7 @@ export interface SyllabusHierarchyNode {
   version?: number;
   updatedAt?: string;
   subtopics?: SubTopic[];
+  isVerified?: boolean;
 }
 
 export interface ResourceBook {

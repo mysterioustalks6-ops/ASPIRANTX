@@ -801,7 +801,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>Official Syllabus</span>
+              <span>{selectedExam === 'NEET_UG' ? 'Curriculum (Unverified)' : 'Official Syllabus'}</span>
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--sr-line)] text-[var(--sr-text)]">
                 {officialTopics.filter(t => t.completed).length}/{officialTopics.length}
               </span>
@@ -980,6 +980,14 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               Tap Mascot 🪶
             </span>
           </div>
+
+          {/* Unverified Curriculum Notice */}
+          {selectedExam === 'NEET_UG' && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-amber-300 text-xs font-semibold">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+              <span>Curriculum (Unverified): Official statutory syllabus from NTA/NMC could not be retrieved via live fetch in this offline environment.</span>
+            </div>
+          )}
 
           {/* 1. Primary Subject Switcher Pills (Physics, Chemistry, Maths, etc.) */}
           {availableSubjects.length > 1 && (
@@ -1214,6 +1222,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                 {topic.weightage === 'High' && (
                                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
                                     High Weightage 🔥
+                                  </span>
+                                )}
+
+                                {(topic.isVerified === false || selectedExam === 'NEET_UG') && (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                                    Unverified
                                   </span>
                                 )}
                               </div>

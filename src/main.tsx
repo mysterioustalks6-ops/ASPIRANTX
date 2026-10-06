@@ -6,8 +6,12 @@ import App from './App.tsx';
 import './index.css';
 import { registerServiceWorker } from './pwaRegister.ts';
 import { initTactileTouchListener } from './lib/haptics.ts';
+import { initNetworkMonitoring, reportFetchFailure } from './lib/networkSync.ts';
 
 import { API_BASE_URL } from './lib/apiConfig';
+
+// Initialize network monitoring to synchronize native offline status with window.navigator.onLine
+initNetworkMonitoring();
 
 // ── Native App Network Interceptor ───────────────────────────────────────────
 // In standalone native APK build, WebView origin is https://localhost.
@@ -17,6 +21,14 @@ const BACKEND_API_ROOT = API_BASE_URL || 'https://studyride.in';
 
 if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
   const originalFetch = window.fetch;
+  const safeFetch = async (target: RequestInfo | URL, reqInit?: RequestInit) => {
+    try {
+      return await originalFetch(target, reqInit);
+    } catch (err) {
+      reportFetchFailure();
+      throw err;
+    }
+  };
   window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('aspirantx_auth_token') : null;
 
@@ -35,16 +47,16 @@ if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
     if (typeof input === 'string') {
       if (input.startsWith('/api/')) {
         const targetUrl = `${BACKEND_API_ROOT}${input}`;
-        return originalFetch(targetUrl, prepareInit(targetUrl, init));
+        return safeFetch(targetUrl, prepareInit(targetUrl, init));
       }
       if (/^https?:\/\/localhost(:\d+)?\/api\//.test(input)) {
         const targetUrl = input.replace(/^https?:\/\/localhost(:\d+)?\/api\//, `${BACKEND_API_ROOT}/api/`);
-        return originalFetch(targetUrl, prepareInit(targetUrl, init));
+        return safeFetch(targetUrl, prepareInit(targetUrl, init));
       }
     } else if (input instanceof URL) {
       if (input.pathname.startsWith('/api/')) {
         const targetUrl = `${BACKEND_API_ROOT}${input.pathname}${input.search}`;
-        return originalFetch(targetUrl, prepareInit(targetUrl, init));
+        return safeFetch(targetUrl, prepareInit(targetUrl, init));
       }
     } else if (input instanceof Request) {
       try {
@@ -60,13 +72,13 @@ if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
             ...input,
             headers: newHeaders
           });
-          return originalFetch(newReq, init);
+          return safeFetch(newReq, init);
         }
       } catch {
         if (input.url.startsWith('/api/')) {
           const targetUrl = `${BACKEND_API_ROOT}${input.url}`;
           const newReq = new Request(targetUrl, input);
-          return originalFetch(newReq, prepareInit(targetUrl, init));
+          return safeFetch(newReq, prepareInit(targetUrl, init));
         }
       }
     }

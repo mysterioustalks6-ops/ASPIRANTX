@@ -1,33 +1,24 @@
 import { SyllabusHierarchyNode } from '../types';
 
 /**
- * CANONICAL NEET (UG) OFFICIAL SYLLABUS DATA
+ * PROVISIONAL NEET (UG) SYLLABUS DATA (UNVERIFIED)
  * 
- * Source: National Testing Agency (NTA) NEET (UG) & National Medical Commission (NMC)
- * Official Public Bulletin: https://neet.nta.nic.in/
- * NMC Statutory Curriculum: https://www.nmc.org.in/wp-content/uploads/2023/10/NEET-UG-2024-Syllabus.pdf
- * 
- * Structure: 50 Official Units defined by NTA/NMC:
- * - Physics: 20 Units
- * - Chemistry: 20 Units (Physical: 8, Inorganic: 4, Organic: 8)
- * - Biology: 10 Units (Botany & Zoology integrated core)
- * 
- * Note on 50 Units vs 97 NCERT Chapters:
- * 97 is the combined chapter count across unrationalized NCERT 11th and 12th textbooks.
- * NTA and NMC organize the national competitive examination explicitly into these 50 Units.
+ * Status: UNVERIFIED (The official statutory PDF from NTA/NMC could not be reached via HTTP during the session;
+ * the previously cited NMC PDF URL returned HTTP 404).
+ * The "50 official units" claim is explicitly retracted as an authoritative official regulatory count
+ * until a verified document hash from NTA (neet.nta.nic.in) is downloaded.
+ * Every topic node below is marked as unverified and must NOT be presented as "Official Syllabus".
  */
 
 export const NEET_UG_SYLLABUS_SOURCE = {
-  authority: 'National Testing Agency (NTA) & National Medical Commission (NMC)',
-  officialUrl: 'https://neet.nta.nic.in/',
-  bulletinAppendix: 'https://www.nmc.org.in/wp-content/uploads/2023/10/NEET-UG-2024-Syllabus.pdf',
-  totalUnits: 50,
-  physicsUnits: 20,
-  chemistryUnits: 20,
-  biologyUnits: 10
+  authority: 'National Testing Agency (NTA)',
+  officialPortal: 'https://neet.nta.nic.in/',
+  isVerified: false,
+  status: 'Unverified curriculum (official source PDF not downloaded/hashed)',
+  totalUnits: 50
 };
 
-export const NEET_UG_OFFICIAL_SYLLABUS: SyllabusHierarchyNode[] = [
+const RAW_NEET_UG_SYLLABUS: SyllabusHierarchyNode[] = [
   // =========================================================================
   // PHYSICS (20 UNITS)
   // =========================================================================
@@ -1187,3 +1178,8 @@ export const NEET_UG_OFFICIAL_SYLLABUS: SyllabusHierarchyNode[] = [
     ]
   }
 ];
+
+export const NEET_UG_OFFICIAL_SYLLABUS: SyllabusHierarchyNode[] = RAW_NEET_UG_SYLLABUS.map((node) => ({
+  ...node,
+  isVerified: false
+}));
