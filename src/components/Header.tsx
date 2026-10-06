@@ -47,6 +47,17 @@ export const Header: React.FC<HeaderProps> = ({
     return currentExamId.replace(/_/g, ' ');
   }, [currentExamId]);
 
+  const shortExamLabel = useMemo(() => {
+    if (currentExamLabel.includes('NEET')) return 'NEET (UG)';
+    if (currentExamLabel.includes('JEE Main')) return 'JEE Main';
+    if (currentExamLabel.includes('JEE Adv')) return 'JEE Adv';
+    if (currentExamLabel.includes('UPSC')) return 'UPSC';
+    if (currentExamLabel.includes('GATE')) return 'GATE';
+    if (currentExamLabel.includes('CAT')) return 'CAT';
+    if (currentExamLabel.length > 12) return currentExamLabel.slice(0, 10) + '…';
+    return currentExamLabel;
+  }, [currentExamLabel]);
+
   const handleOpenExamPicker = () => {
     soundFx.playTap();
     soundFx.triggerHaptic(12);
@@ -71,19 +82,19 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="w-full bg-[var(--sr-surface)] border-b-2 border-[var(--sr-line-strong)] px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3 sticky top-0 z-30 pt-safe select-none shadow-sm">
-      {/* ── 1. LEFT: EXAM PICKER CHIP (TRUNCATES ON NARROW / 130% ZOOM) ── */}
-      <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[170px] sm:max-w-xs">
+      {/* ── 1. LEFT: EXAM PICKER CHIP (NEVER COLLAPSES TO SINGLE LETTER) ── */}
+      <div className="flex items-center gap-2 min-w-[110px] flex-1 max-w-[200px] sm:max-w-xs shrink-0">
         <button
           onClick={handleOpenExamPicker}
           aria-label={`Current target exam: ${currentExamLabel}. Tap to change.`}
-          className="flex items-center gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border-2 border-[var(--sr-line)] text-left cursor-pointer transition-transform active:scale-95 min-h-[40px] w-full min-w-0"
+          className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border-2 border-[var(--sr-line)] text-left cursor-pointer transition-transform active:scale-95 min-h-[40px] w-full min-w-0"
         >
           <div className="w-7 h-7 rounded-lg bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] flex items-center justify-center shrink-0">
             <GraduationCap className="w-4 h-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-xs font-black text-[var(--sr-text)] truncate">
-              {currentExamLabel}
+            <span className="block text-xs font-black text-[var(--sr-text)] truncate" title={currentExamLabel}>
+              {shortExamLabel}
             </span>
           </div>
           <ChevronDown className="w-4 h-4 text-[var(--sr-text-subtle)] shrink-0" />

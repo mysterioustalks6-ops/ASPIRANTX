@@ -318,7 +318,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
         <div className="rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] p-4 shadow-sm relative overflow-hidden">
           {/* Unit Switcher Tabs with edge fade */}
           <div className="relative w-full mb-3">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none w-full pr-10">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none w-full pr-12">
               {unitSummaries.map((u) => (
                 <button
                   key={u.unitIndex}
@@ -338,15 +338,25 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
               </span>
             </div>
             {/* Edge fade scroll indicator */}
-            <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-8 bg-gradient-to-l from-[var(--sr-surface)] to-transparent" />
+            <div className="pointer-events-none absolute right-0 top-0 bottom-1.5 w-10 bg-gradient-to-l from-[var(--sr-surface)] to-transparent" />
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1.5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="min-w-0 flex-1 w-full">
+              <div className="flex items-center justify-between sm:justify-start gap-2 mb-1.5">
                 <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-0.5 rounded-full border border-[var(--sr-primary)]/30 whitespace-nowrap inline-block">
                   SECTION 1 • UNIT {currentUnit?.unitNum || 1}
                 </span>
+                <div className="sm:hidden">
+                  <button
+                    onClick={() => onNavigate && onNavigate('syllabus')}
+                    className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-[11px] font-black text-[var(--sr-primary)] flex items-center gap-1 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                    title="View Complete Curriculum Syllabus"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-[var(--sr-primary)]" />
+                    <span>Guidebook</span>
+                  </button>
+                </div>
               </div>
               <h2 className="text-sm sm:text-base font-black text-[var(--sr-text)] tracking-tight line-clamp-2 leading-snug">
                 {currentUnit?.subject || subjects[0] || 'Core Exam Concepts'}
@@ -356,13 +366,13 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
               </p>
             </div>
 
-            <div className="flex justify-start sm:justify-end shrink-0">
+            <div className="hidden sm:flex justify-end shrink-0">
               <button
                 onClick={() => onNavigate && onNavigate('syllabus')}
                 className="px-3 py-1.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-black text-[var(--sr-primary)] flex items-center gap-1.5 shrink-0 shadow-sm transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                 title="View Complete Curriculum Syllabus"
               >
-                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[var(--sr-primary)]" />
+                <BookOpen className="w-4 h-4 text-[var(--sr-primary)]" />
                 <span className="text-xs">Guidebook</span>
               </button>
             </div>

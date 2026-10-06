@@ -788,7 +788,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <span>Exam Target</span>
             </div>
             <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] mt-1">
-              {examCfg2.displayName} 2026
+              {examCfg2.displayName} {new Date(getDefaultExamDate(activeExamTag)).getFullYear()}
             </h4>
             <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
               {data.daysLeftForExam} Days Remaining
@@ -796,9 +796,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           </div>
 
           <div className="pt-2 flex items-center justify-between text-xs border-t border-[var(--sr-line)]">
-            <span className="text-[var(--sr-text-muted)]">Pace:</span>
+            <span className="text-[var(--sr-text-muted)]">Target Velocity:</span>
             <span className={`font-black ${isPaceBehind ? 'text-[var(--sr-coral)]' : 'text-[var(--sr-primary)]'}`}>
-              {paceLabel}
+              {paceLabel === 'Just starting' ? 'Calibration phase' : paceLabel}
             </span>
           </div>
         </div>

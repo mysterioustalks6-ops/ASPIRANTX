@@ -169,10 +169,11 @@ export function getDefaultExamDate(examId: string): string {
  */
 export function getExamDaysLeft(examId: string, customDate?: string): number {
   const targetStr = customDate || getDefaultExamDate(examId);
-  const targetDate = new Date(targetStr);
+  const parts = targetStr.split('T')[0].split('-').map(Number);
   const now = new Date();
-  const diffMs = targetDate.getTime() - now.getTime();
-  return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const targetLocal = new Date(parts[0], parts[1] - 1, parts[2]).getTime();
+  return Math.max(0, Math.round((targetLocal - todayLocal) / (1000 * 60 * 60 * 24)));
 }
 
 let syncTimeout: any = null;

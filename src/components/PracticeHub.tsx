@@ -53,9 +53,12 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           </p>
         </div>
 
-        {/* Tab Pills with edge fade scroll hint */}
-        <div className="relative max-w-full self-start">
-          <div className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface)] rounded-xl border border-[var(--sr-line-strong)] overflow-x-auto scrollbar-none pr-8">
+        {/* Tab Pills with edge fade scroll hint and peeking next tab */}
+        <div className="relative max-w-full w-full sm:w-auto self-start">
+          <div 
+            id="practice-tabs-scroll-row"
+            className="flex items-center gap-1.5 p-1 bg-[var(--sr-surface)] rounded-xl border border-[var(--sr-line-strong)] overflow-x-auto scrollbar-none pr-10 w-full"
+          >
             {[
               { id: 'overview', label: 'Hub' },
               { id: 'duo_path', label: '🎯 Path Drills' },
@@ -77,7 +80,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
               </button>
             ))}
           </div>
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[var(--sr-surface)] to-transparent rounded-r-xl" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-[var(--sr-surface)] to-transparent rounded-r-xl" />
         </div>
       </div>
 
@@ -87,12 +90,14 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
           {/* Duolingo Gamified Veer Mascot Practice Arena Banner */}
           <div 
             onClick={() => { soundFx.playChestOpen(); }}
-            className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl cursor-pointer hover:border-[var(--sr-primary)] transition-all select-none active:translate-y-1"
+            className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 shadow-xl cursor-pointer hover:border-[var(--sr-primary)] transition-all select-none active:translate-y-1"
           >
-            <div className="flex items-center gap-4">
-              <AspirantMascot size="md" state="encouraging" />
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4 text-center sm:text-left min-w-0 flex-1">
+              <div className="shrink-0">
+                <AspirantMascot size="sm" state="encouraging" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-1">
                   <span className="text-xs font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/30">
                     Veer Practice Arena ⚡
                   </span>
@@ -100,10 +105,10 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                     🔥 Daily Streak Bonus: +50 XP
                   </span>
                 </div>
-                <h3 className="text-base sm:text-lg font-black text-[var(--sr-text)] mt-1">
+                <h3 className="text-sm sm:text-base md:text-lg font-black text-[var(--sr-text)] mt-1 line-clamp-3 leading-snug">
                   Practice makes permanent. Topic-wise questions lagao aur CBT mock me AIR check karo!
                 </h3>
-                <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
+                <p className="text-xs text-[var(--sr-text-muted)] mt-1 line-clamp-2">
                   Complete your 3 daily practice quests to earn gems and protect your league standing.
                 </p>
               </div>
@@ -114,7 +119,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
                 soundFx.playTap();
                 setSubTab('duo_path');
               }}
-              className="px-5 py-3 rounded-2xl bg-[var(--sr-primary)] hover:opacity-95 text-[var(--sr-on-primary)] font-black text-xs uppercase tracking-wider shadow-lg border-b-[4px] border-[var(--sr-primary-depth)] active:border-b-0 active:translate-y-1 transition-all shrink-0 cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2.5 sm:py-3 rounded-2xl bg-[var(--sr-primary)] hover:opacity-95 text-[var(--sr-on-primary)] font-black text-xs uppercase tracking-wider shadow-lg border-b-[4px] border-[var(--sr-primary-depth)] active:border-b-0 active:translate-y-1 transition-all shrink-0 cursor-pointer flex items-center gap-1.5 self-center sm:self-auto"
             >
               <span>Play Path Drills</span>
               <ArrowRight className="w-4 h-4" />

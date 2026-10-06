@@ -89,20 +89,26 @@ export const SecurityWrapper: React.FC<SecurityWrapperProps> = ({
     };
 
     // 5. Anti-Debugging Loop (Freeze code execution if DevTools is open)
-    const intervalId = setInterval(() => {
-      // This debugger pauses execution only if DevTools is open.
-      // If DevTools is closed, it passes instantly without notice.
-      const startTime = performance.now();
-      debugger;
-      const endTime = performance.now();
-      
-      // If the execution took more than 100ms, it means the debugger statement paused the browser
-      // because DevTools is open!
-      if (endTime - startTime > 100) {
-        setIsViolationTriggered(true);
-        setViolationType('Active debugger tool attachment detected.');
-      }
-    }, 1000);
+    let intervalId: any;
+    const isLocalOrNative = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      Boolean((window as any).Capacitor?.isNativePlatform?.()) ||
+      localStorage.getItem('studyride_skip_splash') === 'true'
+    );
+
+    if (!isLocalOrNative) {
+      intervalId = setInterval(() => {
+        const startTime = performance.now();
+        debugger;
+        const endTime = performance.now();
+        
+        if (endTime - startTime > 100) {
+          setIsViolationTriggered(true);
+          setViolationType('Active debugger tool attachment detected.');
+        }
+      }, 1000);
+    }
 
     // 6. Docked DevTools Detection (Checks window size ratios on desktop)
     const handleResize = () => {

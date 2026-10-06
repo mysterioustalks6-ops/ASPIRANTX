@@ -6992,7 +6992,6 @@ var init_examList = __esm({
       { id: "IBPS_PO", label: "IBPS PO" },
       { id: "SBI_PO", label: "SBI PO" },
       { id: "IBPS_CLERK", label: "IBPS Clerk" },
-      { id: "CDS", label: "CDS" },
       { id: "CTET", label: "CTET" },
       { id: "UGC_NET", label: "UGC NET" },
       { id: "JENPAS_UG", label: "JENPAS UG" },

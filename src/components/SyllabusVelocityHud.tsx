@@ -18,7 +18,7 @@ import {
 import { ForecastResult, WhatIfConfig } from '../lib/forecast/types';
 import { ExamType } from '../types';
 import { EXAM_LIST } from '../lib/examList';
-import { getDefaultExamDate } from '../lib/packetSyncService';
+import { getDefaultExamDate, getExamDaysLeft } from '../lib/packetSyncService';
 
 interface SyllabusVelocityHudProps {
   forecast: ForecastResult;
@@ -68,16 +68,12 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
   const basePace = forecast.currentDailyProductiveAverage || defaultDailyHours || 5.5;
   const simulatedPace = Math.max(1.0, Math.round((basePace + whatIfConfig.dailyHourDelta) * 10) / 10);
 
-  // Days remaining calculation
-  // Unified Exam Date: canonical days to exam
+  // Days remaining calculation: canonical days to exam using local calendar date
   const examDate = examDateStr || getDefaultExamDate(selectedExam);
-  const examDateObj = new Date(examDate);
-  const nowObj = new Date();
-  const daysUntilExam = !isNaN(examDateObj.getTime())
-    ? Math.max(1, Math.ceil((examDateObj.getTime() - nowObj.getTime()) / (1000 * 60 * 60 * 24)))
-    : 210;
+  const daysUntilExam = getExamDaysLeft(selectedExam, examDate);
 
   // Days until syllabus completion at current pace
+  const nowObj = new Date();
   const realisticDateObj = new Date(forecast.realisticDate);
   const daysUntilSyllabusFinish = !isNaN(realisticDateObj.getTime())
     ? Math.max(0, Math.ceil((realisticDateObj.getTime() - nowObj.getTime()) / (1000 * 60 * 60 * 24)))

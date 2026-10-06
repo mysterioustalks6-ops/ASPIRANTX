@@ -3,7 +3,7 @@ import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
 import { UserProfile, ActiveTab } from '../types';
 import { awardXPAndCoins } from '../lib/gamification';
 
-const SyllabusTracker = React.lazy(() => import('./SyllabusTracker').then(m => ({ default: m.SyllabusTracker })));
+import { SyllabusTracker } from './SyllabusTracker';
 import { 
   Map, 
   BookOpen, 
@@ -227,42 +227,42 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4 px-3 sm:px-4 text-[var(--sr-text)]">
       {/* ── TOP SEGMENTED VIEW SWITCHER: Territory (default), List, Path ── */}
-      <div className="flex items-center justify-center pt-1">
-        <div className="flex items-center gap-1 p-1 rounded-2xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] max-w-sm w-full shadow-sm">
+      <div className="flex items-center justify-center pt-1 px-1">
+        <div className="flex items-center justify-between gap-1 p-1 rounded-2xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] max-w-sm w-full shadow-sm overflow-hidden">
           <button
             onClick={() => { soundFx.playTap(); setViewMode('territory'); }}
-            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap min-w-0 ${
               viewMode === 'territory'
                 ? 'bg-[var(--sr-primary)] text-[var(--sr-on-primary)] shadow-sm'
                 : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
             }`}
           >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Territory</span>
+            <Compass className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Territory</span>
           </button>
 
           <button
             onClick={() => { soundFx.playTap(); setViewMode('list'); }}
-            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap min-w-0 ${
               viewMode === 'list'
                 ? 'bg-[var(--sr-blue)] text-white shadow-sm'
                 : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
             }`}
           >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>List</span>
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">List</span>
           </button>
 
           <button
             onClick={() => { soundFx.playTap(); setViewMode('path'); }}
-            className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap ${
+            className={`flex-1 py-1.5 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap min-w-0 ${
               viewMode === 'path'
                 ? 'bg-[var(--sr-purple-depth)] text-white shadow-sm'
                 : 'text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
             }`}
           >
-            <Map className="w-3.5 h-3.5" />
-            <span>Path</span>
+            <Map className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Path</span>
           </button>
         </div>
       </div>
@@ -380,17 +380,15 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
 
       {/* ── 2. LIST VIEW (Checklist Guidebook) ───────────────────────────── */}
       {viewMode === 'list' && (
-        <React.Suspense fallback={<div className="p-8 text-center text-slate-400 font-bold text-xs">Loading Syllabus Checklist...</div>}>
-          <SyllabusTracker
-            exam={selectedExam as any}
-            userId={user.id}
-            isGuest={user.isGuest}
-            isUserPremium={user.isPremium || isAdmin}
-            featureFlags={featureFlagsMap}
-            onOpenPremium={onOpenPremium}
-            onRequireLogin={onRequireLogin}
-          />
-        </React.Suspense>
+        <SyllabusTracker
+          exam={selectedExam as any}
+          userId={user.id}
+          isGuest={user.isGuest}
+          isUserPremium={user.isPremium || isAdmin}
+          featureFlags={featureFlagsMap}
+          onOpenPremium={onOpenPremium}
+          onRequireLogin={onRequireLogin}
+        />
       )}
 
       {/* ── 3. PATH VIEW (Themed Duolingo S-Curve) ───────────────────────── */}
