@@ -7,6 +7,18 @@ import './index.css';
 import { registerServiceWorker } from './pwaRegister.ts';
 import { initTactileTouchListener } from './lib/haptics.ts';
 import { initNetworkMonitoring, reportFetchFailure } from './lib/networkSync.ts';
+import { fetchWithRetry } from './lib/apiClient.ts';
+import { syncWorker } from './lib/syncWorker.ts';
+import { queueBackgroundPacketSync, getLocalDeviceStore } from './lib/packetSyncService.ts';
+
+if (typeof window !== 'undefined') {
+  (window as any).__studyride_offline_bridge = {
+    fetchWithRetry,
+    syncWorker,
+    queueBackgroundPacketSync,
+    getLocalDeviceStore
+  };
+}
 
 import { API_BASE_URL } from './lib/apiConfig';
 

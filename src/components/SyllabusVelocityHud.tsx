@@ -214,7 +214,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
           <span className="text-sm font-black text-[var(--sr-text)]">{daysUntilExam} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">days left</span></span>
         </div>
         <div className="p-2 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
-          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">Workload</span>
+          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">Estimated Workload</span>
           <span className="text-sm font-black text-[var(--sr-text)]">{forecast.remainingWorkloadHours} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">hrs</span></span>
         </div>
         <div className="p-2 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
@@ -223,6 +223,11 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             {forecast.revisionBufferDays} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">days</span>
           </span>
         </div>
+      </div>
+
+      {/* ── FORMULA ASSUMPTIONS INFO LINE (GATE-A3 HONESTY) ── */}
+      <div className="mt-2 text-center text-[10px] text-[var(--sr-text-muted)] opacity-85 leading-tight">
+        <span>Formula assumptions: ~5.8h/unit base (unverified) × 2.15 multiplier (1.45×v + 0.35×cycles, v=1.0, cycles=2)</span>
       </div>
 
       {/* ── PROJECTED SYLLABUS COMPLETION STATUS ── */}

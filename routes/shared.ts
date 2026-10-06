@@ -1241,8 +1241,8 @@ Never skip the daily newspaper. Focus on editorial arguments, constitutional pro
 ### 3. Answer Writing Routine
 Start writing 2 answers daily after covering 50% of the syllabus. Pay attention to flowcharts, maps, and bullet points.`,
     category: 'Strategy',
-    authorTeacherId: 'ed_1',
-    authorName: 'Dr. Siddharth Arora',
+    authorTeacherId: 'editorial_desk',
+    authorName: 'StudyRide Editorial Desk',
     status: 'published',
     coverImageUrl: 'https://studyride.in/logo.png',
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
@@ -1261,8 +1261,8 @@ Start writing 2 answers daily after covering 50% of the syllabus. Pay attention 
 ### Agricultural Reforms & Digital Public Infrastructure
 Enhancing Agri-Stack and crop diversification funds for climate-resilient farming practices.`,
     category: 'Economy',
-    authorTeacherId: 'ed_2',
-    authorName: 'Mrunal Patel',
+    authorTeacherId: 'editorial_desk',
+    authorName: 'StudyRide Editorial Desk',
     status: 'published',
     coverImageUrl: 'https://studyride.in/logo.png',
     createdAt: new Date(Date.now() - 86400000).toISOString(),
@@ -1383,162 +1383,16 @@ export let adminTeamStore: any[] = [
       canManageWatchdog: true,
       canManageCustomizer: true,
     }
-  },
-  {
-    id: 'tm-2',
-    name: 'Priya Sharma',
-    email: 'priya.content@studyride.in',
-    avatar: 'https://studyride.in/logo.png',
-    title: 'Academic Director & Chief Content Officer',
-    role: 'ACADEMIC_LEAD',
-    department: 'Academics & Question Bank',
-    status: 'ACTIVE',
-    joinedAt: '2026-01-15',
-    permissions: {
-      canManageFinance: false,
-      canManageAdsense: false,
-      canManageFlags: false,
-      canManageUsers: true,
-      canManageTeam: false,
-      canManageWatchdog: false,
-      canManageCustomizer: false,
-    }
-  },
-  {
-    id: 'tm-3',
-    name: 'Vikram Malhotra',
-    email: 'vikram.finance@studyride.in',
-    avatar: 'https://studyride.in/logo.png',
-    title: 'Head of Billing & Payment Operations',
-    role: 'FINANCE_MANAGER',
-    department: 'Finance & Monetization',
-    status: 'ACTIVE',
-    joinedAt: '2026-02-01',
-    permissions: {
-      canManageFinance: true,
-      canManageAdsense: true,
-      canManageFlags: false,
-      canManageUsers: true,
-      canManageTeam: false,
-      canManageWatchdog: false,
-      canManageCustomizer: false,
-    }
-  },
-  {
-    id: 'tm-4',
-    name: 'Sneha Verma',
-    email: 'sneha.community@studyride.in',
-    avatar: 'https://studyride.in/logo.png',
-    title: 'Community Lead & Student Support Specialist',
-    role: 'COMMUNITY_LEAD',
-    department: 'Community & Moderation',
-    status: 'ACTIVE',
-    joinedAt: '2026-02-05',
-    permissions: {
-      canManageFinance: false,
-      canManageAdsense: false,
-      canManageFlags: false,
-      canManageUsers: true,
-      canManageTeam: false,
-      canManageWatchdog: false,
-      canManageCustomizer: false,
-    }
-  },
-  {
-    id: 'tm-5',
-    name: 'Rohan Mehta',
-    email: 'rohan.tech@studyride.in',
-    avatar: 'https://studyride.in/logo.png',
-    title: 'Lead Systems Architect & DevOps',
-    role: 'TECH_LEAD',
-    department: 'Engineering & Infrastructure',
-    status: 'ACTIVE',
-    joinedAt: '2026-01-20',
-    permissions: {
-      canManageFinance: false,
-      canManageAdsense: true,
-      canManageFlags: true,
-      canManageUsers: false,
-      canManageTeam: false,
-      canManageWatchdog: true,
-      canManageCustomizer: true,
-    }
   }
 ];
 
-export let adminTasksStore: any[] = [
-  {
-    id: 'task-1',
-    title: 'Review 12 Pending UTR Bank Transfers',
-    description: 'Verify screenshot attachments and approve manual PRO Pass upgrades for pending UPI transactions.',
-    assignedTo: 'vikram.finance@studyride.in',
-    assignedToName: 'Vikram Malhotra',
-    module: 'FINANCE',
-    priority: 'HIGH',
-    status: 'IN_PROGRESS',
-    assignedAt: new Date(Date.now() - 7200000).toISOString(),
-    dueDate: 'Today'
-  },
-  {
-    id: 'task-2',
-    title: 'Moderate Reported Answer Key Discussion #101',
-    description: 'Check flagged polity comment regarding Article 226 vs Article 32 writ jurisdiction in Community Forum.',
-    assignedTo: 'sneha.community@studyride.in',
-    assignedToName: 'Sneha Verma',
-    module: 'COMMUNITY',
-    priority: 'MEDIUM',
-    status: 'PENDING',
-    assignedAt: new Date(Date.now() - 14400000).toISOString(),
-    dueDate: 'Today'
-  },
-  {
-    id: 'task-3',
-    title: 'Upload UPSC Prelims 2026 Mock Test #5 Question Paper',
-    description: 'Format and review 100 GS-1 questions with detailed explanations and syllabus mappings.',
-    assignedTo: 'priya.content@studyride.in',
-    assignedToName: 'Priya Sharma',
-    module: 'CONTENT',
-    priority: 'HIGH',
-    status: 'IN_PROGRESS',
-    assignedAt: new Date(Date.now() - 28800000).toISOString(),
-    dueDate: 'Tomorrow'
-  },
-  {
-    id: 'task-4',
-    title: 'Audit System Health Logs & Rate Limiting Thresholds',
-    description: 'Run full Watchdog vulnerability scan and check Razorpay webhook SSL certificate validation.',
-    assignedTo: 'rohan.tech@studyride.in',
-    assignedToName: 'Rohan Mehta',
-    module: 'TECH',
-    priority: 'LOW',
-    status: 'COMPLETED',
-    assignedAt: new Date(Date.now() - 86400000).toISOString(),
-    dueDate: 'Completed'
-  }
-];
+export let adminTasksStore: any[] = [];
 
-export const DEFAULT_SPONSORS_LIST: any[] = [
-  { id: 'sp-1', name: 'Unacademy', logo: 'https://studyride.in/logo.png', website: 'https://unacademy.com', tier: 'gold', description: 'India\'s largest learning platform - Official Education Partner' },
-  { id: 'sp-2', name: 'Vajiram & Ravi', logo: 'https://studyride.in/logo.png', website: 'https://vajiramandravi.com', tier: 'gold', description: 'Premier Institute for IAS Preparation - General Studies Partner' },
-  { id: 'sp-3', name: 'Physics Wallah', logo: 'https://studyride.in/logo.png', website: 'https://pw.live', tier: 'gold', description: 'Empowering students with affordable learning - Tech Sponsor' },
-  { id: 'sp-4', name: 'Testbook', logo: 'https://studyride.in/logo.png', website: 'https://testbook.com', tier: 'silver', description: 'Comprehensive Mock Tests & Live Test Series Partner' },
-  { id: 'sp-5', name: 'Oliveboard', logo: 'https://studyride.in/logo.png', website: 'https://oliveboard.in', tier: 'silver', description: 'Banking & Government Exam preparation portal' },
-  { id: 'sp-6', name: 'Chahal Academy', logo: 'https://studyride.in/logo.png', website: 'https://chahalacademy.com', tier: 'silver', description: 'Specialized Civil Services & State PCS classroom training' }
-];
+export const DEFAULT_SPONSORS_LIST: any[] = [];
 
-export const DEFAULT_COLLABORATORS_LIST: any[] = [
-  { id: 'col-1', name: 'Vision IAS', logo: 'https://studyride.in/logo.png', type: 'Academic Partner', contribution: 'Syllabus Mappings & Free Notes' },
-  { id: 'col-2', name: 'Drishti IAS', logo: 'https://studyride.in/logo.png', type: 'Hindi Medium Partner', contribution: 'Bilingual Question Translation' },
-  { id: 'col-3', name: 'IAS Baba', logo: 'https://studyride.in/logo.png', type: 'Daily Quiz Contributor', contribution: 'Daily Practice Quizzes & Current Affairs' },
-  { id: 'col-4', name: 'insightsIAS', logo: 'https://studyride.in/logo.png', type: 'Answer Writing Contributor', contribution: 'Mains Practice Questions & Guidelines' }
-];
+export const DEFAULT_COLLABORATORS_LIST: any[] = [];
 
-export const DEFAULT_OFFICE_ACTIVITIES: any[] = [
-  { id: 'act-1', timestamp: new Date(Date.now() - 600000).toISOString(), memberName: 'Priya Sharma', action: 'UPLOAD', details: 'Uploaded 45 questions for Indian Economy (Budget 2026)' },
-  { id: 'act-2', timestamp: new Date(Date.now() - 1800000).toISOString(), memberName: 'Rohan Mehta', action: 'SYSTEM', details: 'Optimized PostgreSQL queries for Question Bank' },
-  { id: 'act-3', timestamp: new Date(Date.now() - 3600000).toISOString(), memberName: 'Sneha Verma', action: 'COMMUNITY', details: 'Resolved 3 flags in UPSC Group Study Room' },
-  { id: 'act-4', timestamp: new Date(Date.now() - 7200000).toISOString(), memberName: 'Vikram Malhotra', action: 'FINANCE', details: 'Processed 5 manual bank transfer upgrades' }
-];
+export const DEFAULT_OFFICE_ACTIVITIES: any[] = [];
 
 export let sponsorsDb: any[] = [...DEFAULT_SPONSORS_LIST];
 
@@ -1550,10 +1404,7 @@ export let teamApplicationsDb: any[] = [];
 
 export let officeActivityFeed: any[] = [...DEFAULT_OFFICE_ACTIVITIES];
 
-export let pendingContentUploadsDb: any[] = [
-  { id: 'up-1', uploader: 'Priya Sharma', exam: 'UPSC_CSE', subject: 'Polity', topic: 'Preamble', questionCount: 15, title: 'UPSC CSE 2025 Mock Polity Prep', uploadedAt: new Date(Date.now() - 3600000 * 2).toISOString(), status: 'PENDING' },
-  { id: 'up-2', uploader: 'Amit Patel (Contributor)', exam: 'SSC_CGL', subject: 'Quantitative Aptitude', topic: 'Geometry', questionCount: 25, title: 'SSC CGL 2024 Geometry PYQs', uploadedAt: new Date(Date.now() - 3600000 * 5).toISOString(), status: 'PENDING' }
-];
+export let pendingContentUploadsDb: any[] = [];
 
 export async function saveAdminStoreToDisk() {
   try {
@@ -2190,23 +2041,7 @@ export function seedDefaultSponsorshipTiers() {
     }
   }
 
-  if (activeSponsorsStore.size === 0) {
-    const defaultSponsors = [
-      {
-        id: 'sp_1',
-        name: 'EduTech India Foundation',
-        logoUrl: 'https://studyride.in/logo.png',
-        websiteUrl: 'https://example.com/edutech',
-        tierName: 'Education Champion',
-        testimonial: 'Partnering with StudyRide empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.',
-        createdAt: new Date().toISOString()
-      }
-    ];
-    for (const s of defaultSponsors) {
-      activeSponsorsStore.set(s.id, s);
-    }
   }
-}
 
 seedDefaultSponsorshipTiers();
 

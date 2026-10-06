@@ -109,6 +109,26 @@ export async function apiFetch<T = any>(
     delete mergedHeaders['Content-Type'];
   }
 
+  // Immediate offline guard: prevent retry storm and serve cache when offline
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    if (method === 'GET') {
+      const staleMem = memoryCache.get(cacheKey);
+      if (staleMem) {
+        console.warn(`[Network Offline] Returning memory cached data for ${url}`);
+        return staleMem.data as T;
+      }
+      try {
+        const stored = localStorage.getItem(cacheKey);
+        if (stored) {
+          const item: CacheItem<T> = JSON.parse(stored);
+          console.warn(`[Network Offline] Returning disk cached data for ${url}`);
+          return item.data;
+        }
+      } catch (e) {}
+    }
+    throw new Error('Network offline: request aborted without retry storm');
+  }
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -182,6 +202,8 @@ export async function apiFetch<T = any>(
 
   throw lastError || new Error(`Network request failed for ${url}`);
 }
+
+export const fetchWithRetry = apiFetch;
 
 /**
  * Clears cache entry or entire client cache

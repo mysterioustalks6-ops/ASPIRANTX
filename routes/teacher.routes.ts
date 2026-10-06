@@ -1618,6 +1618,21 @@ router.post('/api/teacher/submissions/:submissionId/grade', verifyTeacherOrAdmin
   }
 });
 
+router.get('/api/sponsorship/stats', async (_req, res) => {
+  try {
+    res.json({
+      success: true,
+      stats: {
+        totalRaised: 0,
+        activeSponsorsCount: activeSponsorsStore.size,
+        scholarshipsAwarded: 0
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch sponsorship stats' });
+  }
+});
+
 router.get('/api/sponsorship/public-stats', async (_req, res) => {
   try {
     let totalStudents = adminUsersDb.length || 12500;

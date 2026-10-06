@@ -109,7 +109,7 @@ export function computeStudyTelemetry(user: any): StudyTelemetryData {
     cbtMocksCount: cbtCount,
     cbtAvgAccuracy,
     completedSubtopicsCount: completedSubtopics,
-    streakDays: Math.max(1, Number(user?.streakDays || 1)),
+    streakDays: Number(user?.streakDays || 0),
     xp: Number(user?.xp || 0),
     coins: Number(user?.coins || 0),
     level: Math.max(1, Number(user?.level || 1)),

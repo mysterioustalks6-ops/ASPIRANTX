@@ -35,9 +35,7 @@ export const SponsorshipCollaboration: React.FC<SponsorshipProps> = ({ user }) =
   const [sponsors, setSponsors] = useState<ActiveSponsor[]>([]);
   const [applications, setApplications] = useState<SponsorshipApplication[]>([]);
   const [stats, setStats] = useState<{ totalRaised: number; activeSponsorsCount: number; scholarshipsAwarded: number }>({
-    totalRaised: 2500000,
-    activeSponsorsCount: 12,
-    scholarshipsAwarded: 450
+    totalRaised: 0, activeSponsorsCount: 0, scholarshipsAwarded: 0
   });
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -376,9 +374,33 @@ export const SponsorshipCollaboration: React.FC<SponsorshipProps> = ({ user }) =
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sponsors.map((s) => (
-                <div key={s.id} className="p-6 bg-slate-900/60 border border-slate-800 rounded-3xl space-y-3 hover:border-slate-700 transition-all">
+            {sponsors.length === 0 ? (
+              <div className="p-8 sm:p-12 text-center bg-slate-900/60 border border-slate-800 rounded-3xl space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+                  <Building2 className="w-7 h-7" />
+                </div>
+                <div className="space-y-1.5 max-w-md mx-auto">
+                  <h3 className="text-base font-bold text-white">No Official Corporate Partners Yet</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    StudyRide does not display unverified institutional partnerships. Are you an education institute, publication house, or CSR foundation? Partner with us to sponsor merit scholarships.
+                  </p>
+                </div>
+                <div>
+                  <button
+                    onClick={() => {
+                      setSelectedTier(tiers[0] || null);
+                      setShowApplyModal(true);
+                    }}
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-amber-500/20 cursor-pointer inline-flex items-center gap-2"
+                  >
+                    <span>Become a Partner →</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {sponsors.map((s) => (
+                  <div key={s.id} className="p-6 bg-slate-900/60 border border-slate-800 rounded-3xl space-y-3 hover:border-slate-700 transition-all">
                   <div className="flex items-center gap-3">
                     <img
                       src={s.logoUrl || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='16' fill='%231e293b'/><text x='50%' y='55%' font-size='36' font-family='sans-serif' font-weight='bold' fill='%236366f1' dominant-baseline='middle' text-anchor='middle'>SP</text></svg>"}
@@ -406,9 +428,10 @@ export const SponsorshipCollaboration: React.FC<SponsorshipProps> = ({ user }) =
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
+    )}
 
       {/* SPONSORSHIP APPLICATION MODAL */}
       {showApplyModal && (

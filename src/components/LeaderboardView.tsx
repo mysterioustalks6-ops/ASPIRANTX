@@ -261,7 +261,13 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {filtered.map((item, idx) => {
+                  {filtered.length === 0 ? (
+                    <div className="p-8 text-center bg-[var(--sr-surface-2)] border border-[var(--sr-line)] rounded-2xl space-y-2">
+                      <p className="text-xs font-bold text-[var(--sr-text)]">No aspirants ranked in this view yet</p>
+                      <p className="text-[11px] text-[var(--sr-text-muted)]">Complete a practice drill or CBT test to record the first score!</p>
+                    </div>
+                  ) : (
+                    filtered.map((item, idx) => {
                     const isPromotionZone = idx < 10;
                     return (
                       <div
@@ -319,12 +325,12 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({ userProfile })
 
                           <div className="px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] text-xs font-black text-[var(--sr-warning-text)] flex items-center gap-1">
                             <span>🔥</span>
-                            <span>{item.xp || (100 - idx * 5)} XP</span>
+                            <span>{item.xp || 0} XP</span>
                           </div>
                         </div>
                       </div>
                     );
-                  })}
+                  }))}
                 </div>
               )}
             </div>
