@@ -3,16 +3,16 @@
  * Ensures custom photos, uploaded avatars, and curated presets never reset on refresh or reload.
  */
 
-export const DEFAULT_AVATAR_FALLBACK = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
+export const DEFAULT_AVATAR_FALLBACK = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>";
 
 /**
- * Checks whether an avatar URL is the unconfigured default unsplash link or empty
+ * Checks whether an avatar URL is the unconfigured default unsplash link, data fallback, or empty
  */
 export function isDefaultPlaceholderAvatar(url?: string | null): boolean {
   if (!url || typeof url !== 'string') return true;
   const trimmed = url.trim();
   if (trimmed === '') return true;
-  return trimmed.includes('photo-1534528741775-53994a69daeb');
+  return trimmed.includes('unsplash.com') || trimmed.startsWith('data:image/svg+xml');
 }
 
 /**

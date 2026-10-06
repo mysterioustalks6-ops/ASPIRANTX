@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { signInWithGoogle, signInWithEmail, signUpWithEmail } from '../lib/supabase';
 import { UserProfile } from '../types';
 import { resolveUserAvatar } from '../lib/avatarStorage';
+import { getKnownExamDateString } from '../lib/dailyStudyTracker';
 import { startDemoSession } from '../lib/demoSession';
 import { logAuthDiagnostic } from '../lib/authDiagnostics';
 import { 
@@ -115,13 +116,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         } else if (data?.user) {
           const email = data.user.email || emailInput.trim();
           const isAdminUser = email.toLowerCase() === 'ambujyadav0010@gmail.com';
+          const userExam = isAdminUser ? 'UPSC_CSE' : 'NEET_UG';
+          const examDateStr = getKnownExamDateString(userExam);
+          const computedTargetYear = examDateStr ? new Date(examDateStr).getFullYear() : (new Date().getFullYear() + 1);
           const authUser: UserProfile = {
             id: data.user.id,
             name: data.user.user_metadata?.full_name || (isAdminUser ? 'Ambuj Yadav (Admin)' : email.split('@')[0]) || 'Aspirant',
             email,
             avatar_url: resolveUserAvatar(data.user.user_metadata?.avatar_url, data.user.id, email),
-            exam: isAdminUser ? 'UPSC_CSE' : 'NEET_UG',
-            targetYear: 2026,
+            exam: userExam,
+            targetYear: computedTargetYear,
             streakDays: isAdminUser ? 45 : 1,
             isPremium: isAdminUser ? true : false,
             studyHoursToday: isAdminUser ? 6.0 : 0,
@@ -146,13 +150,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
 
   const handleGuestLogin = () => {
     startDemoSession();
+    const guestExam = 'NEET_UG';
+    const guestExamDateStr = getKnownExamDateString(guestExam);
+    const guestTargetYear = guestExamDateStr ? new Date(guestExamDateStr).getFullYear() : (new Date().getFullYear() + 1);
     const demoUser: UserProfile = {
       id: 'demo-guest-123',
       name: 'Aspirant',
       email: 'guest@studyride.in',
       avatar_url: resolveUserAvatar(null, 'demo-guest-123', 'guest@studyride.in'),
-      exam: 'NEET_UG',
-      targetYear: 2026,
+      exam: guestExam,
+      targetYear: guestTargetYear,
       streakDays: 1,
       isPremium: false,
       isGuest: true,

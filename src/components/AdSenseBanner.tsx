@@ -101,9 +101,10 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
     };
   }, [propConfig, isPremium, isDismissed]);
 
-  // Hook 3: Inject Google AdSense master script into document head if enabled & not mock mode
+  // Hook 3: Inject Google AdSense master script into document head if enabled & not mock mode & not localhost
   useEffect(() => {
-    if (isPremium || isDismissed || !config.enabled || !config.publisherId || config.mockMode) return;
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isPremium || isDismissed || !config.enabled || !config.publisherId || config.mockMode || isLocalhost) return;
 
     let pubId = config.publisherId.trim();
     if (pubId && !pubId.startsWith('ca-pub-') && !pubId.startsWith('pub-')) {
@@ -125,7 +126,8 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
 
   // Hook 4: Trigger adsbygoogle push when script is active and element is ready
   useEffect(() => {
-    if (isPremium || isDismissed) return;
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+    if (isPremium || isDismissed || isLocalhost) return;
     if (config.enabled && config.publisherId && !config.mockMode && insRef.current) {
       const el = insRef.current;
       const isAlreadyPushed = Boolean(

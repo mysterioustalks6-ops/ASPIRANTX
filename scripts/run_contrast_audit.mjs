@@ -9,6 +9,11 @@ const previewServer = await preview({
 });
 const serverUrl = 'http://127.0.0.1:4188/?no_splash=1';
 console.log(`Preview server listening at ${serverUrl}`);
+const timeout = setTimeout(() => {
+  console.error('Contrast audit reached 60s hard timeout');
+  try { previewServer.httpServer.close(); } catch(e){}
+  process.exit(1);
+}, 58000);
 
 const browser = await puppeteer.launch({
   headless: 'new',

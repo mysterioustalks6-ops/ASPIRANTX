@@ -23,7 +23,15 @@ const previewServer = await preview({
 const serverUrl = previewServer.resolvedUrls.local[0] + '?no_splash=1';
 console.log(`Vite preview server listening on ${serverUrl}`);
 
-const browser = await puppeteer.launch({
+const timeout = setTimeout(() => {
+  console.error('Reachability script reached 60s hard timeout');
+  try { previewServer.httpServer.close(); } catch(e){}
+  process.exit(1);
+}, 58000);
+
+let browser;
+try {
+browser = await puppeteer.launch({
   headless: 'new',
   executablePath: 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -208,6 +216,9 @@ console.log(`\nTotal Tabs Tested: ${results.length}`);
 console.log(`Total Unique Evidences: ${seenEvidence.size}`);
 console.log(`Duplicate Evidences: ${results.length - seenEvidence.size}`);
 
-await browser.close();
-try { previewServer.httpServer.close(); } catch(e){}
+} finally {
+  clearTimeout(timeout);
+  if (browser) await browser.close();
+  try { previewServer.httpServer.close(); } catch(e){}
+}
 process.exit(0);
