@@ -99,7 +99,7 @@ export const DESIGNATED_ADMIN_EMAIL = 'ambujyadav0010@gmail.com';
 function AppContent() {
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
-      const saved = typeof window !== 'undefined' ? (localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('aspirantx_user_profile')) : null;
+      const saved = typeof window !== 'undefined' ? (localStorage.getItem('studyride_user') || localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('aspirantx_user_profile')) : null;
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.id) {
@@ -278,7 +278,7 @@ function AppContent() {
     };
   }, []);
   const [initializing, setInitializing] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && (localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('studyride_skip_splash') === 'true')) {
+    if (typeof window !== 'undefined' && (localStorage.getItem('studyride_user') || localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('studyride_skip_splash') === 'true')) {
       return false;
     }
     return true;
@@ -429,7 +429,8 @@ function AppContent() {
   useEffect(() => {
     if (!user) return;
     
-    const examLabel = user.exam || 'Competitive Exams';
+    const activeExam = selectedExamId || user.exam || 'NEET_UG';
+    const examLabel = activeExam.replace(/_/g, ' ');
     let title = `StudyRide - Prep Suite for ${examLabel}`;
     let description = `Prepare for ${examLabel} on StudyRide. Practice custom CBT test series, mock exams, previous year question papers (PYQs), track syllabus, and study with an interactive AI Mentor.`;
     
@@ -476,7 +477,7 @@ function AppContent() {
     
     const ogDescEl = document.querySelector('meta[property="og:description"]');
     if (ogDescEl) ogDescEl.setAttribute('content', description);
-  }, [activeTab, user?.exam]);
+  }, [activeTab, user?.exam, selectedExamId]);
 
   // Demo Session Live Countdown State
   const [demoSecondsRemaining, setDemoSecondsRemaining] = useState<number>(() => getRemainingDemoSeconds());
@@ -1204,7 +1205,7 @@ function AppContent() {
           onLoginSuccess={(u) => {
             logAuthDiagnostic('AUTH', 'onLoginSuccess triggered', { userId: u.id, email: u.email });
             
-            const storedExam = localStorage.getItem('aspirantx_global_selected_exam') || u.exam || 'NEET_UG';
+            const storedExam = u.exam || localStorage.getItem('aspirantx_global_selected_exam') || 'NEET_UG';
             setSelectedExamId(storedExam, { persist: true, syncUser: false, userId: u.id });
             localStorage.setItem('aspirantx_global_selected_exam', storedExam);
 
@@ -1217,6 +1218,7 @@ function AppContent() {
             };
 
             // INSTANT SYNCHRONOUS TRANSITION TO APP SHELL
+            localStorage.setItem('studyride_user', JSON.stringify(immediateUser));
             localStorage.setItem('aspirantx_auth_user', JSON.stringify(immediateUser));
             setUser(immediateUser);
             if (u.email?.toLowerCase() === DESIGNATED_ADMIN_EMAIL.toLowerCase()) {
@@ -1442,11 +1444,13 @@ function AppContent() {
                 <div className="hidden md:block relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl group bg-slate-950">
                   {/* Background Photo Image with Overlay */}
                   <div className="absolute inset-0 z-0">
-                    <img
-                      src={customizer.heroBannerImageUrl || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&auto=format&fit=crop&q=80'}
-                      alt="Custom Hero Banner"
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                    />
+                    {customizer.heroBannerImageUrl && (
+                      <img
+                        src={customizer.heroBannerImageUrl}
+                        alt="Custom Hero Banner"
+                        className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/85 to-slate-950/60" />
                   </div>
 

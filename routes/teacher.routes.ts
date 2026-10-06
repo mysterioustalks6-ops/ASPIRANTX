@@ -383,7 +383,7 @@ router.post('/api/collaboration/update-status', async (req, res) => {
         id: `tm-guest-${Date.now()}`,
         name: email.split('@')[0],
         email: email,
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80',
+        avatar: 'https://studyride.in/logo.png',
         title: 'Content contributor',
         role: 'ACADEMIC_LEAD',
         department: 'Academics & Question Bank',
@@ -608,7 +608,7 @@ router.post('/api/teachers/register', async (req, res) => {
       subject,
       experience: experience || '1+ Years',
       qualification: qualification || 'Educator',
-      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+      avatar: avatar || 'https://studyride.in/logo.png',
       isVerified: false,
       status: 'APPROVED',
       email: cleanEmail,
@@ -1948,7 +1948,7 @@ router.post('/api/sponsorship/applications/:id/action', verifyAdminAuth, async (
       const newSponsor = {
         id: `sp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         name: app.companyName,
-        logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80',
+        logoUrl: 'https://studyride.in/logo.png',
         websiteUrl: '',
         tierName: app.tierInterest,
         testimonial: `Proud partner of ProTrack.`,
@@ -2137,7 +2137,7 @@ router.post('/api/blog/submit/:token', async (req, res) => {
       authorTeacherId: request.teacherId,
       authorName: request.teacherName || 'Faculty',
       status: 'pending',
-      coverImageUrl: coverImageUrl || 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80',
+      coverImageUrl: coverImageUrl || 'https://studyride.in/logo.png',
       createdAt: new Date().toISOString()
     };
 

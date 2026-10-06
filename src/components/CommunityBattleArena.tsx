@@ -17,12 +17,12 @@ interface CommunityBattleArenaProps {
 }
 
 const PRESET_ARENA_AVATARS = [
-  { id: 'lion', label: 'Roaring Lion', url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80' },
-  { id: 'eagle', label: 'Focus Eagle', url: 'https://images.unsplash.com/photo-1507499739999-097706ad8914?w=200&auto=format&fit=crop&q=80' },
-  { id: 'medic', label: 'Doctor Cadet', url: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=200&auto=format&fit=crop&q=80' },
-  { id: 'atom', label: 'Physics Atom', url: 'https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=200&auto=format&fit=crop&q=80' },
-  { id: 'library', label: 'Grand Library', url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=200&auto=format&fit=crop&q=80' },
-  { id: 'night', label: 'Midnight Moon', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=200&auto=format&fit=crop&q=80' },
+  { id: 'lion', label: 'Roaring Lion', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%23ea580c'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>L</text></svg>" },
+  { id: 'eagle', label: 'Focus Eagle', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>E</text></svg>" },
+  { id: 'medic', label: 'Doctor Cadet', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%2310b981'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>M</text></svg>" },
+  { id: 'atom', label: 'Physics Atom', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%236366f1'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>" },
+  { id: 'library', label: 'Grand Library', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%23f59e0b'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>B</text></svg>" },
+  { id: 'night', label: 'Midnight Moon', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%238b5cf6'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>N</text></svg>" },
 ];
 
 const STUDY_ACTIVITIES = [
@@ -805,7 +805,7 @@ export const CommunityBattleArena: React.FC<CommunityBattleArenaProps> = ({
                     <div className="flex flex-col items-center justify-center my-auto z-10">
                       <div className="relative">
                         <img
-                          src={member.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                          src={member.avatar_url || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>"}
                           alt={member.name}
                           className="w-16 h-16 rounded-2xl object-cover border border-slate-700 shadow-md"
                         />
@@ -902,7 +902,7 @@ export const CommunityBattleArena: React.FC<CommunityBattleArenaProps> = ({
                         </div>
 
                         <img
-                          src={member.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                          src={member.avatar_url || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>"}
                           alt={member.name}
                           className="w-10 h-10 rounded-xl object-cover border border-slate-700 shrink-0"
                         />

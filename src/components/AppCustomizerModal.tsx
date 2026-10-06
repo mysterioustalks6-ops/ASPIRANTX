@@ -310,7 +310,7 @@ export const AppCustomizerModal: React.FC<AppCustomizerModalProps> = ({
                     value={settings.heroBannerImageUrl}
                     onChange={(e) => handleFieldChange('heroBannerImageUrl', e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    placeholder="https://images.unsplash.com/photo-1522202176988..."
+                    placeholder="https://example.com/banner.jpg"
                   />
                 </div>
 

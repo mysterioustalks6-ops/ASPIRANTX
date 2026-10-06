@@ -66,7 +66,6 @@ import {
 import { generateExamForecast } from '../lib/forecast/forecastingEngine';
 import {
   DEFAULT_JEE_EXAM,
-  DEFAULT_STUDY_LOGS,
   DEFAULT_TEST_RECORDS,
   DEFAULT_CALENDAR_AVAILABILITY
 } from '../data/forecastDefaultData';
@@ -265,13 +264,13 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   // Target Date Calculator state
   const [targetDateInput, setTargetDateInput] = useState<string>('');
 
-  // Study Session Logs
+  // Study Session Logs: brand new user starts with no seeded logs, utilizing documented neutral default (velocity 1.0)
   const [studyLogs, setStudyLogs] = useState<StudySessionLog[]>(() => {
     try {
       const saved = localStorage.getItem(`studyride_study_logs_${userId || 'guest'}`);
-      return saved ? JSON.parse(saved) : DEFAULT_STUDY_LOGS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_STUDY_LOGS;
+      return [];
     }
   });
 
@@ -379,63 +378,47 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
   // Load syllabus nodes and time summary
   const loadData = useCallback(async () => {
-    const openkoshNodes = convertOpenKoshToSyllabusNodes(selectedExam);
-    let offNodes: any[] = openkoshNodes && openkoshNodes.length > 0 ? openkoshNodes : [];
+    const normalizeKey = (e: string) => {
+      const s = (e || '').toLowerCase().replace(/[\s\-_]/g, '');
+      if (s.includes('nda') || s.includes('defence')) return 'nda';
+      if (s.includes('neet') || s.includes('medical')) return 'neet';
+      if (s.includes('upsc') || s.includes('cse')) return 'upsc';
+      if (s.includes('ssc') || s.includes('cgl')) return 'ssc';
+      if (s.includes('jeemain') || s.includes('jee_main')) return 'jeemain';
+      if (s.includes('jeeadv') || s.includes('jee_adv')) return 'jeeadvanced';
+      return s;
+    };
 
+    // 1. Canonical verified built-in syllabus (e.g. NEET UG 50 NTA units, JEE, UPSC)
+    const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+      n => normalizeKey(n.exam || '') === normalizeKey(selectedExam)
+    );
+
+    let offNodes: any[] = canonicalMatch.length > 0 ? canonicalMatch : [];
+
+    // 2. OpenKosh verified detailed syllabus
+    if (offNodes.length === 0) {
+      const openkoshNodes = convertOpenKoshToSyllabusNodes(selectedExam);
+      if (openkoshNodes && openkoshNodes.length > 0) {
+        offNodes = openkoshNodes;
+      }
+    }
+
+    // 3. Cloud official syllabus endpoint (if online)
     if (offNodes.length === 0) {
       offNodes = await fetchOfficialSyllabus(selectedExam);
     }
 
+    // 4. Custom user/admin uploaded exams from storage
     if (offNodes.length === 0) {
       const customExams = getCustomExamsFromStorage();
       const customMatch = customExams.find(c => c.id === selectedExam || c.id.toLowerCase() === (selectedExam || '').toLowerCase());
       if (customMatch && Array.isArray(customMatch.syllabus) && customMatch.syllabus.length > 0) {
         offNodes = customMatch.syllabus;
-      } else {
-        const normalizeKey = (e: string) => {
-          const s = (e || '').toLowerCase().replace(/[\s\-_]/g, '');
-          if (s.includes('nda') || s.includes('defence')) return 'nda';
-          if (s.includes('neet') || s.includes('medical')) return 'neet';
-          if (s.includes('upsc') || s.includes('cse')) return 'upsc';
-          if (s.includes('ssc') || s.includes('cgl')) return 'ssc';
-          return s;
-        };
-        offNodes = INITIAL_SYLLABUS_HIERARCHY.filter(
-          n => normalizeKey(n.exam || '') === normalizeKey(selectedExam)
-        );
       }
     }
 
-    if (offNodes.length === 0) {
-      const config = getExamConfig(selectedExam);
-      if (config && config.syllabusTree) {
-        const synthesized: any[] = [];
-        Object.entries(config.syllabusTree).forEach(([subj, data], sIdx) => {
-          (data.topics || []).forEach((top, tIdx) => {
-            const subtopicsList = data.subtopics && data.subtopics[top] ? data.subtopics[top] : [top];
-            subtopicsList.forEach((sub, subIdx) => {
-              synthesized.push({
-                id: `${config.examId}_${sIdx}_${tIdx}_${subIdx}`,
-                exam: config.examId,
-                paper: config.papers?.[0] || 'Paper 1',
-                subject: subj,
-                chapter: top,
-                topic: top,
-                subtopic: sub,
-                title: sub,
-                stage: config.stages?.[0] || 'Prelims',
-                weightage: 'High',
-                estimatedHours: 2.5,
-                completed: false,
-                description: `${subj} - ${top}`,
-                difficulty: 'Medium'
-              });
-            });
-          });
-        });
-        offNodes = synthesized;
-      }
-    }
+    // Do not synthesize placeholder subtopics; maintain honest verified curriculum or empty state
 
     setOfficialRawNodes(offNodes);
 
@@ -1103,11 +1086,17 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
           {/* 3. CLEAN & CLEAR CHAPTER TOPIC CARDS ── */}
           <div className="space-y-3">
-            {filteredTopics.length === 0 ? (
-              <div className="p-10 text-center rounded-3xl bg-[#15181F] border border-[#2A2F3A]">
-                <BookOpen className="w-10 h-10 text-[#6B7280] mx-auto mb-2" />
-                <p className="text-[#F3F4F6] font-bold text-sm">No chapters match your filter</p>
-                <p className="text-[#9CA3AF] text-xs mt-1">Try resetting the search query or status filter.</p>
+            {currentTopics.length === 0 ? (
+              <div className="p-10 text-center rounded-3xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
+                <BookOpen className="w-10 h-10 text-[var(--sr-text-muted)] mx-auto mb-2" />
+                <p className="text-[var(--sr-text)] font-bold text-sm">Syllabus not available yet</p>
+                <p className="text-[var(--sr-text-muted)] text-xs mt-1">Official verified syllabus for this examination has not been integrated yet.</p>
+              </div>
+            ) : filteredTopics.length === 0 ? (
+              <div className="p-10 text-center rounded-3xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
+                <BookOpen className="w-10 h-10 text-[var(--sr-text-muted)] mx-auto mb-2" />
+                <p className="text-[var(--sr-text)] font-bold text-sm">No chapters match your filter</p>
+                <p className="text-[var(--sr-text-muted)] text-xs mt-1">Try resetting the search query or status filter.</p>
               </div>
             ) : (() => {
                 const firstIncompleteId = filteredTopics.find(t => {

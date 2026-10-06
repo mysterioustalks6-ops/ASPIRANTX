@@ -3150,7 +3150,7 @@ router.post('/api/auth/google', async (req, res) => {
         id: userId,
         name: knownUser.name || name,
         email,
-        avatar_url: picture || (knownUser as any).avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        avatar_url: picture || (knownUser as any).avatar_url || 'https://studyride.in/logo.png',
         exam: knownUser.exam || (isSuper ? 'UPSC_CSE' : 'NEET_UG'),
         role: assignedRole,
         isPremium: isSuper || knownUser.isPremium,
@@ -3237,7 +3237,7 @@ router.post('/api/auth/register', async (req, res) => {
         id: userId,
         name: cleanName,
         email: cleanEmail,
-        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        avatar_url: 'https://studyride.in/logo.png',
         exam: isSuper ? 'UPSC_CSE' : 'NEET_UG',
         role: assignedRole,
         isPremium: isSuper,
@@ -3320,7 +3320,7 @@ router.post('/api/auth/login', async (req, res) => {
     const xp = Number(existingData.xp ?? 100);
     const coins = Number(existingData.coins ?? 50);
     const level = Number(existingData.level ?? 1);
-    const avatar_url = existingData.avatar_url || metadata.avatar_url || metadata.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80';
+    const avatar_url = existingData.avatar_url || metadata.avatar_url || metadata.picture || 'https://studyride.in/logo.png';
 
     await upsertUserToNeon({
       id: userId,

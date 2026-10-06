@@ -102,7 +102,7 @@ async function main() {
           id: 'demo-guest-123',
           name: 'Aspirant',
           email: 'guest@studyride.in',
-          avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+          avatar_url: 'data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>',
           exam: 'NEET_UG',
           targetYear: 2026,
           streakDays: 1,

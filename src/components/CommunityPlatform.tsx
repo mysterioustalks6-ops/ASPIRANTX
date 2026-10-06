@@ -806,7 +806,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                       <div className="flex justify-between items-start">
                         <div className="flex items-center space-x-3">
                           <img
-                            src={post.authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                            src={post.authorAvatar || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>"}
                             alt={post.authorName}
                             className="w-10 h-10 rounded-full object-cover border border-slate-200 shadow-xs"
                           />
@@ -1053,7 +1053,7 @@ export const CommunityPlatform: React.FC<CommunityPlatformProps> = ({ userProfil
                                     <div className="flex justify-between items-center">
                                       <div className="flex items-center space-x-2">
                                         <img
-                                          src={cmt.authorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150'}
+                                          src={cmt.authorAvatar || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>"}
                                           alt={cmt.authorName}
                                           className="w-6 h-6 rounded-full object-cover border border-slate-200"
                                         />

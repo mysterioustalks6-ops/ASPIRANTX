@@ -23,7 +23,7 @@ export const TeacherBlogSubmit: React.FC<TeacherBlogSubmitProps> = ({
   const [title, setTitle] = useState<string>('');
   const [body, setBody] = useState<string>('');
   const [category, setCategory] = useState<string>('Current Affairs');
-  const [coverImageUrl, setCoverImageUrl] = useState<string>('https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80');
+  const [coverImageUrl, setCoverImageUrl] = useState<string>("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'><rect width='100%' height='100%' fill='%230f172a'/><text x='50%' y='50%' font-size='32' font-family='sans-serif' font-weight='bold' fill='%2338bdf8' dominant-baseline='middle' text-anchor='middle'>StudyRide Editorial</text></svg>");
   
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [submittedPost, setSubmittedPost] = useState<BlogPost | null>(null);
@@ -39,11 +39,11 @@ export const TeacherBlogSubmit: React.FC<TeacherBlogSubmitProps> = ({
   ];
 
   const presetImages = [
-    { label: 'Standard Editorial', url: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80' },
-    { label: 'Economy & Finance', url: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&auto=format&fit=crop&q=80' },
-    { label: 'Polity & Constitution', url: 'https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=800&auto=format&fit=crop&q=80' },
-    { label: 'Tech & Science', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&auto=format&fit=crop&q=80' },
-    { label: 'Environment & Earth', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop&q=80' }
+    { label: 'Standard Editorial', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'><rect width='100%' height='100%' fill='%230f172a'/><text x='50%' y='50%' font-size='32' font-family='sans-serif' font-weight='bold' fill='%2338bdf8' dominant-baseline='middle' text-anchor='middle'>Standard Editorial</text></svg>" },
+    { label: 'Economy & Finance', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'><rect width='100%' height='100%' fill='%23064e3b'/><text x='50%' y='50%' font-size='32' font-family='sans-serif' font-weight='bold' fill='%2334d399' dominant-baseline='middle' text-anchor='middle'>Economy & Finance</text></svg>" },
+    { label: 'Polity & Constitution', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'><rect width='100%' height='100%' fill='%23312e81'/><text x='50%' y='50%' font-size='32' font-family='sans-serif' font-weight='bold' fill='%23818cf8' dominant-baseline='middle' text-anchor='middle'>Polity & Constitution</text></svg>" },
+    { label: 'Tech & Science', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'><rect width='100%' height='100%' fill='%231e1b4b'/><text x='50%' y='50%' font-size='32' font-family='sans-serif' font-weight='bold' fill='%23c084fc' dominant-baseline='middle' text-anchor='middle'>Tech & Science</text></svg>" },
+    { label: 'Environment & Earth', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'><rect width='100%' height='100%' fill='%2314532d'/><text x='50%' y='50%' font-size='32' font-family='sans-serif' font-weight='bold' fill='%234ade80' dominant-baseline='middle' text-anchor='middle'>Environment & Earth</text></svg>" }
   ];
 
   // Load request from URL or token
@@ -271,7 +271,7 @@ export const TeacherBlogSubmit: React.FC<TeacherBlogSubmitProps> = ({
               type="url"
               value={coverImageUrl}
               onChange={(e) => setCoverImageUrl(e.target.value)}
-              placeholder="https://images.unsplash.com/..."
+              placeholder="https://example.com/cover.jpg"
               className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition-all font-medium"
             />
           </div>

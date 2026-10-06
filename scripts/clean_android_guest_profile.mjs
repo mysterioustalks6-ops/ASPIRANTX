@@ -57,7 +57,7 @@ async function main() {
       }
       keysToRemove.forEach(k => localStorage.removeItem(k));
 
-      // Clean offline-first guest profile with zero external Unsplash URLs and targetYear derived from exam date
+      // Clean offline-first guest profile with zero external placeholder URLs and targetYear derived from exam date
       const cleanGuest = {
         id: 'demo-guest-123',
         name: 'Aspirant',

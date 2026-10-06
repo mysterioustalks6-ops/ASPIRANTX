@@ -3037,13 +3037,1180 @@ var init_aeJeSyllabusData = __esm({
   }
 });
 
+// src/data/neetSyllabusData.ts
+var NEET_UG_OFFICIAL_SYLLABUS;
+var init_neetSyllabusData = __esm({
+  "src/data/neetSyllabusData.ts"() {
+    NEET_UG_OFFICIAL_SYLLABUS = [
+      // =========================================================================
+      // PHYSICS (20 UNITS)
+      // =========================================================================
+      {
+        id: "neet_phy_01",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 1: Physics and Measurement",
+        topic: "Units and Dimensions",
+        subtopic: "SI Units, Dimensional Analysis & Errors",
+        title: "Unit 1: Physics and Measurement",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 4,
+        completed: false,
+        description: "Units of measurements, System of Units, SI Units, fundamental and derived units. Least count, significant figures, errors in measurements, dimensions of physics quantities, dimensional analysis and applications.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 11 Physics Part 1", "Concepts of Physics by H.C. Verma Vol 1"],
+        pyqCount: 24,
+        subtopics: [
+          { id: "neet_phy_01_1", title: "SI Units & Fundamental Dimensions", estimatedHours: 1, weightage: "Medium" },
+          { id: "neet_phy_01_2", title: "Dimensional Analysis & Applications", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_01_3", title: "Least Count, Errors & Significant Figures", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_02",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 2: Kinematics",
+        topic: "Motion in 1D and 2D",
+        subtopic: "Straight Line & Projectile Motion",
+        title: "Unit 2: Kinematics",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Frame of reference, motion in a straight line, position-time graph, speed and velocity. Uniform and non-uniform motion, average speed and instantaneous velocity, uniformly accelerated motion, projectile motion, uniform circular motion.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Physics Part 1", "H.C. Verma Vol 1"],
+        pyqCount: 38,
+        subtopics: [
+          { id: "neet_phy_02_1", title: "Motion in a Straight Line & Graphs", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_02_2", title: "Uniformly Accelerated Motion & Free Fall", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_02_3", title: "Vectors & Projectile Motion", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_03",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 3: Laws of Motion",
+        topic: "Newton Laws and Friction",
+        subtopic: "Inertia, Momentum & Friction",
+        title: "Unit 3: Laws of Motion",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Intuitive concept of force, inertia, Newton first, second, and third laws of motion, momentum and impulse. Conservation of linear momentum. Static and kinetic friction, laws of friction, rolling friction, circular dynamics.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Physics Part 1", "H.C. Verma Vol 1"],
+        pyqCount: 35,
+        subtopics: [
+          { id: "neet_phy_03_1", title: "Newton Three Laws & Impulse", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_03_2", title: "Friction: Static, Kinetic & Rolling", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_03_3", title: "Banking of Roads & Circular Dynamics", estimatedHours: 2, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_phy_04",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 4: Work, Energy and Power",
+        topic: "Work Energy Theorem & Collisions",
+        subtopic: "Kinetic & Potential Energy, Collisions",
+        title: "Unit 4: Work, Energy and Power",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Work done by constant force and variable force; kinetic and potential energies, work-energy theorem, power. Conservative and non-conservative forces, potential energy of a spring, conservation of mechanical energy, elastic and inelastic collisions in 1D and 2D.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Physics Part 1", "H.C. Verma Vol 1"],
+        pyqCount: 32,
+        subtopics: [
+          { id: "neet_phy_04_1", title: "Work Done by Constant & Variable Forces", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_phy_04_2", title: "Work-Energy Theorem & Potential Energy of Spring", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_04_3", title: "Elastic & Inelastic Collisions", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_05",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 5: Rotational Motion",
+        topic: "Rigid Body Dynamics",
+        subtopic: "Moment of Inertia & Torque",
+        title: "Unit 5: Rotational Motion",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Centre of mass of a two-particle system, momentum conservation. Centre of mass of rigid body; basic concepts of rotational motion; moment of a force, torque, angular momentum, conservation of angular momentum. Moment of inertia, radius of gyration, values for simple geometric objects.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Physics Part 1", "H.C. Verma Vol 1"],
+        pyqCount: 36,
+        subtopics: [
+          { id: "neet_phy_05_1", title: "Center of Mass & Motion of Center of Mass", estimatedHours: 2, weightage: "Medium" },
+          { id: "neet_phy_05_2", title: "Torque & Angular Momentum Conservation", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_05_3", title: "Moment of Inertia & Rolling Motion", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_06",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 6: Gravitation",
+        topic: "Gravitational Laws & Satellites",
+        subtopic: "Kepler Laws, Orbital Velocity, Escape Speed",
+        title: "Unit 6: Gravitation",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 4,
+        completed: false,
+        description: "The universal law of gravitation. Acceleration due to gravity and its variation with altitude and depth. Kepler laws of planetary motion. Gravitational potential energy; gravitational potential. Escape velocity, orbital velocity of a satellite.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 11 Physics Part 1"],
+        pyqCount: 26,
+        subtopics: [
+          { id: "neet_phy_06_1", title: "Universal Law of Gravitation & g Variation", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_06_2", title: "Gravitational Potential Energy & Escape Velocity", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_06_3", title: "Kepler Laws & Satellite Motion", estimatedHours: 1, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_phy_07",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 7: Properties of Solids and Liquids",
+        topic: "Elasticity, Fluids and Surface Tension",
+        subtopic: "Hooke Law, Viscosity, Bernoulli, Surface Tension",
+        title: "Unit 7: Properties of Solids and Liquids",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Elastic behaviour, Stress-strain relationship, Hooke law, Young modulus, bulk modulus, modulus of rigidity. Pressure due to fluid column; Pascal law; effect of gravity on fluid pressure. Viscosity, Stokes law, terminal velocity, streamline and turbulent flow, critical velocity, Bernoulli principle. Surface energy and surface tension, excess pressure, capillary rise.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Physics Part 2"],
+        pyqCount: 30,
+        subtopics: [
+          { id: "neet_phy_07_1", title: "Elasticity, Stress-Strain Curve & Moduli", estimatedHours: 2, weightage: "Medium" },
+          { id: "neet_phy_07_2", title: "Hydrostatics, Stokes Law & Bernoulli Theorem", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_07_3", title: "Surface Tension, Excess Pressure & Capillarity", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_08",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 8: Thermodynamics",
+        topic: "Laws of Thermodynamics",
+        subtopic: "Heat, Work, First & Second Laws, Carnot Engine",
+        title: "Unit 8: Thermodynamics",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Thermal equilibrium, zeroth law of thermodynamics, concept of temperature. Heat, work, and internal energy. First law of thermodynamics, isothermal and adiabatic processes. Second law of thermodynamics: reversible and irreversible processes.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Physics Part 2"],
+        pyqCount: 28,
+        subtopics: [
+          { id: "neet_phy_08_1", title: "Zeroth & First Law: Isothermal & Adiabatic", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_08_2", title: "Work Done in Thermodynamic Cycles & P-V Graphs", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_08_3", title: "Second Law of Thermodynamics & Heat Engines", estimatedHours: 1.5, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_phy_09",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 9: Kinetic Theory of Gases",
+        topic: "Gas Laws and Molecular Velocities",
+        subtopic: "Ideal Gas Equation, Degrees of Freedom, Specific Heats",
+        title: "Unit 9: Kinetic Theory of Gases",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 4,
+        completed: false,
+        description: "Equation of state of a perfect gas, work done on compressing a gas. Kinetic theory of gases: Assumptions, concept of pressure. Kinetic interpretation of temperature; RMS speed of gas molecules; degrees of freedom, law of equipartition of energy, specific heats of gases, mean free path.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 11 Physics Part 2"],
+        pyqCount: 22,
+        subtopics: [
+          { id: "neet_phy_09_1", title: "Pressure of an Ideal Gas & RMS Velocity", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_09_2", title: "Law of Equipartition of Energy & Degrees of Freedom", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_09_3", title: "Mean Free Path & Molar Heat Capacities", estimatedHours: 1, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_phy_10",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 10: Oscillations and Waves",
+        topic: "SHM and Wave Motion",
+        subtopic: "Simple Pendulum, Spring Oscillations, Sound Waves",
+        title: "Unit 10: Oscillations and Waves",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Periodic and oscillatory motion, period, frequency, displacement as a function of time. Periodic functions. Simple harmonic motion (S.H.M.) and its equation; phase; oscillations of a spring, restoring force and force constant; energy in S.H.M. Simple pendulum. Wave motion, longitudinal and transverse waves, speed of wave motion. Displacement relation for a progressive wave. Principle of superposition of waves, reflection of waves, standing waves in strings and organ pipes, beats.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Physics Part 2", "H.C. Verma Vol 1"],
+        pyqCount: 34,
+        subtopics: [
+          { id: "neet_phy_10_1", title: "Simple Harmonic Motion & Energy Relations", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_10_2", title: "Simple Pendulum & Loaded Spring Systems", estimatedHours: 2, weightage: "Medium" },
+          { id: "neet_phy_10_3", title: "Wave Motion, Organ Pipes & Beats", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_11",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 11: Electrostatics",
+        topic: "Electric Charges, Field and Capacitance",
+        subtopic: "Coulomb Law, Gauss Law, Potential & Capacitors",
+        title: "Unit 11: Electrostatics",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Electric charges: Conservation of charge, Coulomb law. Electric field, electric field lines, electric dipole, electric field due to a dipole, torque on a dipole. Electric flux, Gauss law and its applications. Electric potential, potential difference, electric potential due to a point charge and dipole. Equipotential surfaces. Conductors and insulators, dielectrics and electric polarization, capacitors and capacitance, combination of capacitors, energy stored in a capacitor.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 12 Physics Part 1", "H.C. Verma Vol 2"],
+        pyqCount: 40,
+        subtopics: [
+          { id: "neet_phy_11_1", title: "Coulomb Law, Electric Field & Dipole", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_11_2", title: "Gauss Law Flux & Applications", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_11_3", title: "Electric Potential & Capacitors with Dielectrics", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_12",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 12: Current Electricity",
+        topic: "Electric Current and DC Circuits",
+        subtopic: "Ohm Law, Kirchhoff Rules, Wheatstone Bridge",
+        title: "Unit 12: Current Electricity",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Electric current, drift velocity, mobility and their relation with electric current; Ohm law, electrical resistance, V-I characteristics, electrical energy and power, electrical resistivity and conductivity. Temperature dependence of resistance. Internal resistance of a cell, potential difference and emf of a cell, combination of cells. Kirchhoff laws and simple applications. Wheatstone bridge, metre bridge.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Physics Part 1"],
+        pyqCount: 36,
+        subtopics: [
+          { id: "neet_phy_12_1", title: "Drift Velocity, Current Density & Ohm Law", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_12_2", title: "Kirchhoff Rules & DC Circuit Networks", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_12_3", title: "Combination of Cells & Wheatstone Bridge", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_13",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 13: Magnetic Effects of Current and Magnetism",
+        topic: "Biot-Savart Law and Magnetic Forces",
+        subtopic: "Ampere Law, Solenoid, Galvanometer, Earth Magnetism",
+        title: "Unit 13: Magnetic Effects of Current and Magnetism",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Biot-Savart law and its application. Ampere law and applications to infinitely long straight wire and solenoid. Force on a moving charge in uniform magnetic and electric fields. Force on a current-carrying conductor in a uniform magnetic field. Force between two parallel current-carrying conductors. Torque on a current loop. Moving coil galvanometer, its current sensitivity and conversion to ammeter and voltmeter. Current loop as a magnetic dipole. Magnetic field lines; Earth magnetic field and magnetic elements; Para-, dia- and ferromagnetic substances.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Physics Part 1"],
+        pyqCount: 32,
+        subtopics: [
+          { id: "neet_phy_13_1", title: "Biot-Savart & Ampere Circuital Law", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_13_2", title: "Lorentz Force, Torque on Loop & Galvanometer", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_13_3", title: "Bar Magnet, Earth Magnetism & Magnetic Materials", estimatedHours: 1, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_phy_14",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 14: Electromagnetic Induction and Alternating Currents",
+        topic: "Faraday Law and AC Circuits",
+        subtopic: "Lenz Law, Self/Mutual Inductance, LCR Circuits, Resonance",
+        title: "Unit 14: Electromagnetic Induction and Alternating Currents",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Electromagnetic induction: Faraday law, induced emf and current; Lenz Law, Eddy currents. Self and mutual inductance. Alternating currents, peak and RMS value of alternating current/voltage; reactance and impedance; LCR series circuit, resonance; power in AC circuits, wattless current. AC generator and transformer.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Physics Part 1"],
+        pyqCount: 30,
+        subtopics: [
+          { id: "neet_phy_14_1", title: "Faraday Law, Lenz Law & Inductance", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_14_2", title: "AC Voltage across R, L, C & Series LCR Resonance", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_14_3", title: "Power Factor, AC Generator & Transformers", estimatedHours: 1.5, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_phy_15",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 15: Electromagnetic Waves",
+        topic: "EM Wave Characteristics and Spectrum",
+        subtopic: "Displacement Current & EM Spectrum",
+        title: "Unit 15: Electromagnetic Waves",
+        stage: "Prelims",
+        weightage: "Low",
+        estimatedHours: 3,
+        completed: false,
+        description: "Displacement current. Electromagnetic waves and their characteristics, transverse nature of electromagnetic waves. Electromagnetic spectrum (radio waves, microwaves, infrared, visible, ultraviolet, X-rays, gamma rays) including elementary facts about their uses.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 12 Physics Part 1"],
+        pyqCount: 16,
+        subtopics: [
+          { id: "neet_phy_15_1", title: "Displacement Current & Maxwell Equations", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_phy_15_2", title: "Electromagnetic Spectrum & Applications", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_16",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 16: Optics",
+        topic: "Ray and Wave Optics",
+        subtopic: "Lenses, Mirrors, Microscopes, Interference, Diffraction",
+        title: "Unit 16: Optics",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 8,
+        completed: false,
+        description: "Reflection of light, spherical mirrors, mirror formula. Refraction of light, total internal reflection and applications, optical fibres, refraction at spherical surfaces, lenses, thin lens formula, lensmaker formula. Magnification, power of a lens, combination of thin lenses. Refraction of light through a prism. Optical instruments: Microscopes and astronomical telescopes. Wave optics: Wavefront and Huygens principle, reflection and refraction of plane wave at a plane surface. Interference, Young double slit experiment and expression for fringe width. Diffraction due to a single slit, width of central maximum.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 12 Physics Part 2", "H.C. Verma Vol 2"],
+        pyqCount: 45,
+        subtopics: [
+          { id: "neet_phy_16_1", title: "Reflection, Refraction & Total Internal Reflection", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_phy_16_2", title: "Lenses, Prisms & Optical Instruments", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_phy_16_3", title: "Wave Optics: Huygens Principle, YDSE & Diffraction", estimatedHours: 3, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_17",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 17: Dual Nature of Matter and Radiation",
+        topic: "Photoelectric Effect and Matter Waves",
+        subtopic: "Einstein Photoelectric Equation & de Broglie Wavelength",
+        title: "Unit 17: Dual Nature of Matter and Radiation",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 4,
+        completed: false,
+        description: "Dual nature of radiation. Photoelectric effect, Hertz and Lenard observations; Einstein photoelectric equation; particle nature of light. Matter waves-wave nature of particles, de Broglie relation.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 12 Physics Part 2"],
+        pyqCount: 28,
+        subtopics: [
+          { id: "neet_phy_17_1", title: "Photoelectric Effect & Einstein Equation", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_17_2", title: "de Broglie Wavelength & Matter Waves", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_18",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 18: Atoms and Nuclei",
+        topic: "Atomic Models and Nuclear Physics",
+        subtopic: "Bohr Model, Hydrogen Spectrum, Radioactivity, Mass Defect",
+        title: "Unit 18: Atoms and Nuclei",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Alpha-particle scattering experiment; Rutherford model of atom; Bohr model of hydrogen atom, energy levels, hydrogen spectrum. Composition and size of nucleus, atomic masses, mass-energy relation, mass defect; binding energy per nucleon and its variation with mass number, nuclear fission and fusion.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Physics Part 2"],
+        pyqCount: 34,
+        subtopics: [
+          { id: "neet_phy_18_1", title: "Rutherford & Bohr Models of Hydrogen Atom", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_phy_18_2", title: "Nuclear Composition, Binding Energy Curve & Fission/Fusion", estimatedHours: 2.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_19",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 19: Electronic Devices",
+        topic: "Semiconductors and Diodes",
+        subtopic: "p-n Junction Diode, Rectifiers, Logic Gates",
+        title: "Unit 19: Electronic Devices",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Energy bands in solids, conductors, insulators, and semiconductors; semiconductor diode: I-V characteristics in forward and reverse bias; diode as a rectifier; Special purpose diodes (LED, photodiode, solar cell). Logic gates (OR, AND, NOT, NAND, NOR).",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Physics Part 2"],
+        pyqCount: 30,
+        subtopics: [
+          { id: "neet_phy_19_1", title: "Intrinsic & Extrinsic Semiconductors", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_phy_19_2", title: "p-n Junction Diode & Rectifier Circuits", estimatedHours: 2, weightage: "High" },
+          { id: "neet_phy_19_3", title: "Special Diodes & Fundamental Logic Gates", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_phy_20",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Physics",
+        chapter: "Unit 20: Experimental Skills",
+        topic: "Laboratory Measurements and Practical Skills",
+        subtopic: "Vernier Calipers, Screw Gauge, Spherometer, Resonance Tube",
+        title: "Unit 20: Experimental Skills",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 4,
+        completed: false,
+        description: "Familiarity with laboratory experiments: Vernier calipers, screw gauge, simple pendulum, meter scale for moment of inertia, Young modulus by Searle method, surface tension by capillary rise, coefficient of viscosity by Poiseuille/terminal velocity, speed of sound using resonance tube, resistance and figure of merit of galvanometer.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Laboratory Manual Physics Class 11 & 12"],
+        pyqCount: 20,
+        subtopics: [
+          { id: "neet_phy_20_1", title: "Vernier Calipers, Screw Gauge & Spherometer", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_phy_20_2", title: "Mechanical & Fluid Apparatus: Searle, Capillary, Resonance Tube", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_phy_20_3", title: "Electrical Circuit Experiments: Meter Bridge & Galvanometer", estimatedHours: 1, weightage: "Medium" }
+        ]
+      },
+      // =========================================================================
+      // CHEMISTRY (20 UNITS)
+      // =========================================================================
+      {
+        id: "neet_chem_01",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 1: Some Basic Concepts in Chemistry",
+        topic: "Mole Concept and Stoichiometry",
+        subtopic: "Molar Mass, Empirical Formula, Concentration Terms",
+        title: "Unit 1: Some Basic Concepts in Chemistry",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 4,
+        completed: false,
+        description: "Matter and its nature, Dalton atomic theory: concept of atom, molecule, element, and compound. Physical quantities and their measurements in Chemistry. Laws of chemical combination. Atomic and molecular masses, mole concept, molar mass, percentage composition, empirical and molecular formulae. Chemical equations and stoichiometry.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 1"],
+        pyqCount: 28,
+        subtopics: [
+          { id: "neet_chem_01_1", title: "Mole Concept & Molar Mass Calculations", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_01_2", title: "Empirical & Molecular Formula Determination", estimatedHours: 1, weightage: "High" },
+          { id: "neet_chem_01_3", title: "Stoichiometry & Limiting Reagent", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_02",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 2: Atomic Structure",
+        topic: "Quantum Mechanical Model of Atom",
+        subtopic: "Bohr Model, Quantum Numbers, Electronic Configuration",
+        title: "Unit 2: Atomic Structure",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Discovery of sub-atomic particles; Thomson and Rutherford atomic models and limitations; Nature of electromagnetic radiation, photoelectric effect; Spectrum of hydrogen atom. Bohr model for hydrogen atom. Dual nature of matter, de Broglie relation, Heisenberg uncertainty principle. Quantum mechanical model of atom, quantum numbers, shapes of s, p, and d orbitals, rules for filling electrons in orbitals (Aufbau, Pauli exclusion, Hund rule).",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 1"],
+        pyqCount: 34,
+        subtopics: [
+          { id: "neet_chem_02_1", title: "Bohr Model & Hydrogen Emission Spectrum", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_02_2", title: "de Broglie Wavelength & Heisenberg Uncertainty Principle", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_02_3", title: "Quantum Numbers, Orbitals & Electronic Configurations", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_03",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 3: Chemical Bonding and Molecular Structure",
+        topic: "Bonding Theories and Shapes",
+        subtopic: "VSEPR Theory, Hybridisation, Molecular Orbital Theory",
+        title: "Unit 3: Chemical Bonding and Molecular Structure",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Kossel-Lewis approach to chemical bonding, ionic bonds, lattice energy, Born-Haber cycle. Covalent bond, Lewis structures. VSEPR model and shapes of simple molecules. Valence bond theory, concept of hybridization involving s, p, and d orbitals. Molecular orbital theory (homonuclear diatomic molecules), bond order, bond length, and bond energy. Elementary idea of metallic bonding. Hydrogen bonding.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 1"],
+        pyqCount: 42,
+        subtopics: [
+          { id: "neet_chem_03_1", title: "Ionic Bonding, Lattice Enthalpy & Dipole Moment", estimatedHours: 2, weightage: "Medium" },
+          { id: "neet_chem_03_2", title: "VSEPR Theory & Hybridisation of Molecules", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_03_3", title: "Molecular Orbital Theory & Hydrogen Bonding", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_04",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 4: Chemical Thermodynamics",
+        topic: "First and Second Laws of Thermodynamics",
+        subtopic: "Enthalpy, Hess Law, Entropy, Gibbs Free Energy",
+        title: "Unit 4: Chemical Thermodynamics",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Fundamentals of thermodynamics: System and surroundings, extensive and intensive properties, state functions, types of processes. First law of thermodynamics: Work, heat, internal energy, enthalpy; heat capacity, molar heat capacity; Hess law of constant heat summation; Enthalpies of bond dissociation, combustion, formation, atomization, sublimation, phase transition, ionization, solution. Second law of thermodynamics: Spontaneity of processes; entropy and Gibbs energy change (Delta G) for spontaneous and non-spontaneous processes.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 1"],
+        pyqCount: 32,
+        subtopics: [
+          { id: "neet_chem_04_1", title: "Internal Energy, Work, Enthalpy & Hess Law", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_04_2", title: "Types of Reaction Enthalpies & Bond Dissociation", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_04_3", title: "Entropy, Gibbs Free Energy & Spontaneity Criteria", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_05",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 5: Solutions",
+        topic: "Liquid Solutions and Colligative Properties",
+        subtopic: "Raoult Law, Elevation in Boiling Point, Osmotic Pressure, Van t Hoff",
+        title: "Unit 5: Solutions",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Types of solutions, expression of concentration of solutions of solids in liquids, solubility of gases in liquids, solid solutions. Raoult law, ideal and non-ideal solutions, colligative properties: relative lowering of vapour pressure, elevation of boiling point, depression of freezing point, osmotic pressure, determination of molecular masses using colligative properties; abnormal molecular mass, van t Hoff factor.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 1"],
+        pyqCount: 30,
+        subtopics: [
+          { id: "neet_chem_05_1", title: "Concentration Units & Henry Law", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_chem_05_2", title: "Raoult Law, Ideal & Non-Ideal Solutions", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_05_3", title: "Colligative Properties & Van t Hoff Factor", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_06",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 6: Equilibrium",
+        topic: "Chemical and Ionic Equilibrium",
+        subtopic: "Le Chatelier Principle, pH, Buffer, Solubility Product",
+        title: "Unit 6: Equilibrium",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Meaning of equilibrium, dynamic nature of equilibrium. Law of chemical equilibrium, equilibrium constants (Kp and Kc) and their applications, factors affecting equilibrium: Le Chatelier principle. Ionic equilibrium: Ionization of acids and bases, strong and weak electrolytes, degree of ionization, ionization of polybasic acids, acid strength, concept of pH, hydrolysis of salts, buffer solutions, solubility product, common ion effect.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 1"],
+        pyqCount: 38,
+        subtopics: [
+          { id: "neet_chem_06_1", title: "Chemical Equilibrium, Kp, Kc & Le Chatelier Principle", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_06_2", title: "Ionic Equilibrium: pH, Weak Acids & Bases", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_06_3", title: "Buffer Solutions, Salt Hydrolysis & Ksp", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_07",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 7: Redox Reactions and Electrochemistry",
+        topic: "Electrochemical Cells and Nernst Equation",
+        subtopic: "Oxidation Number, Kohlrausch Law, Nernst Equation, Batteries",
+        title: "Unit 7: Redox Reactions and Electrochemistry",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Electronic concepts of oxidation and reduction, redox reactions, oxidation number, balancing redox reactions. Electrolytic and galvanic cells, standard electrode potentials, Nernst equation and its application to chemical cells, relation between Gibbs energy change and emf of a cell, dry cell-electrolytic cells and galvanic cells, lead accumulator, fuel cells, corrosion.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 & 12 Chemistry"],
+        pyqCount: 35,
+        subtopics: [
+          { id: "neet_chem_07_1", title: "Balancing Redox Reactions & Oxidation States", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_chem_07_2", title: "Conductance, Kohlrausch Law & Faraday Laws", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_07_3", title: "Galvanic Cells, Nernst Equation & Batteries", estimatedHours: 2.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_08",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 8: Chemical Kinetics",
+        topic: "Rate of Reaction and Activation Energy",
+        subtopic: "Order, Molecularity, Integrated Rate Equations, Arrhenius",
+        title: "Unit 8: Chemical Kinetics",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Rate of a chemical reaction, factors influencing the rate of reaction: concentration, temperature, pressure, and catalyst; elementary and complex reactions, order and molecularity of reactions, rate law, rate constant, integrated rate equations and half-life of reactions (only zero and first order reactions); collision theory, activation energy, Arrhenius equation.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 1"],
+        pyqCount: 30,
+        subtopics: [
+          { id: "neet_chem_08_1", title: "Rate of Reaction, Order & Molecularity", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_08_2", title: "Zero & First Order Integrated Rate Equations", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_08_3", title: "Temperature Dependence, Arrhenius & Activation Energy", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_09",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 9: Classification of Elements and Periodicity in Properties",
+        topic: "Periodic Table Trends",
+        subtopic: "Ionization Enthalpy, Electron Gain Enthalpy, Electronegativity",
+        title: "Unit 9: Classification of Elements and Periodicity in Properties",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 4,
+        completed: false,
+        description: "Modern periodic law and present form of periodic table, s, p, d, and f block elements, periodic trends in properties of elements: atomic and ionic radii, ionization enthalpy, electron gain enthalpy, valence, oxidation states, and chemical reactivity.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 1"],
+        pyqCount: 25,
+        subtopics: [
+          { id: "neet_chem_09_1", title: "Modern Periodic Law & Electronic Classification", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_chem_09_2", title: "Periodic Trends: Radii, IE, EA & Electronegativity", estimatedHours: 2.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_10",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 10: p-Block Elements",
+        topic: "Groups 13 to 18 Elements",
+        subtopic: "Trends in Chemical Reactivity, Anomalous Properties",
+        title: "Unit 10: p-Block Elements",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "General Introduction: Electronic configuration and general trends in physical and chemical properties of elements across the periods and down the groups; unique behaviour of the first element in each group.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 & 12 Chemistry"],
+        pyqCount: 36,
+        subtopics: [
+          { id: "neet_chem_10_1", title: "Group 13 & 14 Elements: General Trends", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_10_2", title: "Group 15 & 16 Elements: General Trends", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_10_3", title: "Group 17 & 18 Elements: Halogens & Noble Gases", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_11",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 11: d- and f-Block Elements",
+        topic: "Transition and Inner Transition Elements",
+        subtopic: "Electronic Configuration, Lanthanoid Contraction, KMnO4, K2Cr2O7",
+        title: "Unit 11: d- and f-Block Elements",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Transition Elements: General introduction, electronic configuration, occurrence and characteristics, general trends in properties of the first-row transition elements: physical properties, ionization enthalpy, oxidation states, atomic radii, color, catalytic behaviour, magnetic properties, complex formation, interstitial compounds, alloy formation. Lanthanoids: Electronic configuration, oxidation states, chemical reactivity and lanthanoid contraction.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 1"],
+        pyqCount: 32,
+        subtopics: [
+          { id: "neet_chem_11_1", title: "3d Series Transition Metals: Trends & Properties", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_11_2", title: "Compounds of Transition Metals: KMnO4 & K2Cr2O7", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_11_3", title: "Lanthanoids & Actinoids: Contraction & States", estimatedHours: 1.5, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_chem_12",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 12: Coordination Compounds",
+        topic: "Complexes, Werner Theory and Isomerism",
+        subtopic: "IUPAC Nomenclature, CFT, VBT, Isomerism",
+        title: "Unit 12: Coordination Compounds",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Introduction to coordination compounds, Werner theory; ligands, coordination number, denticity, chelation; IUPAC nomenclature of mononuclear coordination compounds, isomerism; Bonding-Valence bond approach and basic ideas of Crystal field theory, color and magnetic properties; importance of coordination compounds (in qualitative analysis, extraction of metals, and in biological systems).",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 1"],
+        pyqCount: 36,
+        subtopics: [
+          { id: "neet_chem_12_1", title: "Werner Theory, Ligands & IUPAC Nomenclature", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_12_2", title: "Structural & Stereoisomerism in Complexes", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_12_3", title: "Valence Bond Theory & Crystal Field Theory (CFT)", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_13",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 13: Purification and Characterisation of Organic Compounds",
+        topic: "Purification and Qualitative/Quantitative Analysis",
+        subtopic: "Crystallisation, Chromatography, Dumas, Kjeldahl Method",
+        title: "Unit 13: Purification and Characterisation of Organic Compounds",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 4,
+        completed: false,
+        description: "Purification: Crystallization, sublimation, distillation, differential extraction, and chromatography: principles and applications. Qualitative analysis: Detection of nitrogen, sulfur, phosphorus, and halogens. Quantitative analysis: Basic principles involved in the estimation of carbon, hydrogen, nitrogen, halogens, sulfur, and phosphorus; calculations of empirical and molecular formulae.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 2"],
+        pyqCount: 22,
+        subtopics: [
+          { id: "neet_chem_13_1", title: "Purification Methods & Chromatography", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_chem_13_2", title: "Detection of Elements: Lassaigne Test", estimatedHours: 1, weightage: "High" },
+          { id: "neet_chem_13_3", title: "Quantitative Estimation: Dumas & Kjeldahl Methods", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_14",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 14: Some Basic Principles of Organic Chemistry",
+        topic: "Nomenclature and Electronic Effects",
+        subtopic: "IUPAC, Inductive, Resonance, Hyperconjugation, Intermediates",
+        title: "Unit 14: Some Basic Principles of Organic Chemistry",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Classification and IUPAC nomenclature of organic compounds. Electronic displacements in a covalent bond: inductive effect, electromeric effect, resonance, and hyperconjugation. Homolytic and heterolytic fission of a covalent bond: free radicals, carbocations, carbanions, electrophiles, and nucleophiles; types of organic reactions.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 2"],
+        pyqCount: 40,
+        subtopics: [
+          { id: "neet_chem_14_1", title: "IUPAC Nomenclature of Functional Groups", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_14_2", title: "Electronic Effects: Inductive, Mesomeric, Hyperconjugation", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_14_3", title: "Reaction Intermediates & Carbocation Stability", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_15",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 15: Hydrocarbons",
+        topic: "Alkanes, Alkenes, Alkynes and Arenes",
+        subtopic: "Electrophilic Addition, Markovnikov Rule, Aromaticity",
+        title: "Unit 15: Hydrocarbons",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Classification, isomerism, IUPAC nomenclature, general methods of preparation, properties, and reactions. Alkanes: Conformations of ethane, halogenation. Alkenes: Geometrical isomerism, mechanism of electrophilic addition: addition of hydrogen, halogens, water, hydrogen halides (Markovnikov and peroxide effect); ozonolysis and polymerization. Alkynes: Acidic character, addition of hydrogen, halogens, water, and hydrogen halides. Aromatic hydrocarbons: Nomenclature, benzene: resonance, aromaticity; Huckel rule, mechanism of electrophilic substitution.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Chemistry Part 2"],
+        pyqCount: 38,
+        subtopics: [
+          { id: "neet_chem_15_1", title: "Alkanes: Conformations & Free Radical Halogenation", estimatedHours: 2, weightage: "Medium" },
+          { id: "neet_chem_15_2", title: "Alkenes & Alkynes: Markovnikov, Anti-Markovnikov & Ozonolysis", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_15_3", title: "Aromaticity, Huckel Rule & Electrophilic Substitution", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_16",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 16: Organic Compounds Containing Halogens",
+        topic: "Haloalkanes and Haloarenes",
+        subtopic: "SN1, SN2 Mechanisms, Elimination Reactions",
+        title: "Unit 16: Organic Compounds Containing Halogens",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "General methods of preparation, properties, and reactions; Nature of C-X bond; Mechanisms of substitution reactions (SN1 and SN2). Uses and environmental effects of chloroform, iodoform, freons, and DDT.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 2"],
+        pyqCount: 32,
+        subtopics: [
+          { id: "neet_chem_16_1", title: "Haloalkanes: Preparation & Physical Properties", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_chem_16_2", title: "Nucleophilic Substitution: SN1 vs SN2 Mechanisms", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_16_3", title: "Haloarenes & Electrophilic Substitution", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_17",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 17: Organic Compounds Containing Oxygen",
+        topic: "Alcohols, Phenols, Ethers, Aldehydes, Ketones, Carboxylic Acids",
+        subtopic: "Reimer-Tiemann, Aldol Condensation, Cannizzaro, Acidic Strength",
+        title: "Unit 17: Organic Compounds Containing Oxygen",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 8,
+        completed: false,
+        description: "Alcohols, Phenols, and Ethers: Preparation, properties, and reactions. Identification of primary, secondary, and tertiary alcohols; mechanism of dehydration. Acidic nature of phenol, electrophilic substitution reactions: Reimer-Tiemann and Kolbe reactions. Aldehydes and Ketones: Nature of carbonyl group; Nucleophilic addition reactions, relative reactivities of aldehydes and ketones; important reactions: Aldol, Cannizzaro, Clemmensen, Wolff-Kishner, haloform. Carboxylic Acids: Acidic strength and factors affecting it.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 2"],
+        pyqCount: 48,
+        subtopics: [
+          { id: "neet_chem_17_1", title: "Alcohols, Phenols & Ethers: Reactions & Acidity", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_chem_17_2", title: "Aldehydes & Ketones: Nucleophilic Addition & Named Reactions", estimatedHours: 3, weightage: "High" },
+          { id: "neet_chem_17_3", title: "Carboxylic Acids & Derivatives: Acidity & Decarboxylation", estimatedHours: 2.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_18",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 18: Organic Compounds Containing Nitrogen",
+        topic: "Amines and Diazonium Salts",
+        subtopic: "Basicity of Amines, Gabriel Phthalimide, Carbylamine, Diazonium",
+        title: "Unit 18: Organic Compounds Containing Nitrogen",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Amines: Nomenclature, classification, structure, basic character, and identification of primary, secondary, and tertiary amines and their basic character. Diazonium salts: Importance in synthetic organic chemistry.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 2"],
+        pyqCount: 28,
+        subtopics: [
+          { id: "neet_chem_18_1", title: "Classification & Basicity Trends of Amines", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_18_2", title: "Preparation of Amines: Gabriel Phthalimide & Hoffmann Bromamide", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_18_3", title: "Diazonium Salts & Synthetic Applications", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_19",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 19: Biomolecules",
+        topic: "Carbohydrates, Proteins, Nucleic Acids and Vitamins",
+        subtopic: "Monosaccharides, Peptide Bond, DNA/RNA Structure, Vitamins",
+        title: "Unit 19: Biomolecules",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 5,
+        completed: false,
+        description: "Carbohydrates: Classification; aldoses and ketoses; monosaccharides (glucose and fructose) and constituent of oligosaccharides and polysaccharides (starch, cellulose, glycogen). Proteins: Elementary Idea of amino acids, peptide bond, polypeptides; proteins: primary, secondary, tertiary, and quaternary structure, denaturation of proteins, enzymes. Vitamins: Classification and functions. Nucleic Acids: Chemical constitution of DNA and RNA, biological functions of nucleic acids. Hormones: General introduction.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 12 Chemistry Part 2"],
+        pyqCount: 30,
+        subtopics: [
+          { id: "neet_chem_19_1", title: "Carbohydrates: Glucose, Fructose & Glycosidic Linkages", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_19_2", title: "Amino Acids, Peptide Bonds & Protein Structures", estimatedHours: 2, weightage: "High" },
+          { id: "neet_chem_19_3", title: "Nucleic Acids: DNA, RNA & Vitamins Classification", estimatedHours: 1.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_chem_20",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Chemistry",
+        chapter: "Unit 20: Principles Related to Practical Chemistry",
+        topic: "Qualitative and Quantitative Salt Analysis",
+        subtopic: "Cation/Anion Analysis, Titrations, Functional Group Tests",
+        title: "Unit 20: Principles Related to Practical Chemistry",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 4,
+        completed: false,
+        description: "Detection of functional groups: hydroxyl (alcoholic and phenolic), carbonyl (aldehyde and ketones), carboxyl, and amino groups in organic compounds. Chemistry involved in the titration of oxalic acid vs KMnO4, Mohr salt vs KMnO4. Chemical principles involved in qualitative salt analysis: Cations (Pb2+, Cu2+, Fe3+, Al3+, Zn2+, Ni2+, Ca2+, Ba2+, Mg2+, NH4+); Anions (CO3 2-, S 2-, SO4 2-, NO3 -, Cl-, Br-, I-).",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Laboratory Manual Chemistry Class 11 & 12"],
+        pyqCount: 22,
+        subtopics: [
+          { id: "neet_chem_20_1", title: "Titration Principles: Acid-Base & Redox Titrations", estimatedHours: 1.5, weightage: "Medium" },
+          { id: "neet_chem_20_2", title: "Qualitative Salt Analysis: Cation & Anion Tests", estimatedHours: 1.5, weightage: "High" },
+          { id: "neet_chem_20_3", title: "Organic Functional Group Chemical Tests", estimatedHours: 1, weightage: "High" }
+        ]
+      },
+      // =========================================================================
+      // BIOLOGY (10 UNITS)
+      // =========================================================================
+      {
+        id: "neet_bio_01",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 1: Diversity in Living World",
+        topic: "Biological Classification and Kingdoms",
+        subtopic: "Five Kingdom Classification, Plant & Animal Kingdoms",
+        title: "Unit 1: Diversity in Living World",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 7,
+        completed: false,
+        description: "What is living? Biodiversity; Need for classification; Three domains of life; taxonomy and systematics; Concept of species and taxonomical hierarchy; Binomial nomenclature. Five kingdom classification: Monera, Protista, Fungi, Lichens, Viruses and Viroids. Plant kingdom: Salient features and classification of plants into major groups (Algae, Bryophytes, Pteridophytes, Gymnosperms, Angiosperms). Animal kingdom: Salient features and classification of non-chordates up to phyla level and chordates up to class level.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Biology"],
+        pyqCount: 45,
+        subtopics: [
+          { id: "neet_bio_01_1", title: "Taxonomy, Systematics & Binomial Nomenclature", estimatedHours: 2, weightage: "Medium" },
+          { id: "neet_bio_01_2", title: "Five Kingdom Classification & Microorganisms", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_bio_01_3", title: "Plant Kingdom & Animal Kingdom Non-Chordates/Chordates", estimatedHours: 2.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_02",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 2: Structural Organisation in Animals and Plants",
+        topic: "Morphology and Anatomy of Plants & Animals",
+        subtopic: "Flowering Plant Morphology/Anatomy, Animal Tissues, Frog",
+        title: "Unit 2: Structural Organisation in Animals and Plants",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Morphology and modifications: Tissues, anatomy and functions of different parts of flowering plants: Root, stem, leaf, inflorescence, flower, fruit and seed. Description of families (Malvaceae, Cruciferae, Leguminosae, Compositae, Gramineae). Animal tissues: Morphology, anatomy and functions of different systems (digestive, circulatory, respiratory, nervous and reproductive) of an insect (Frog).",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 11 Biology"],
+        pyqCount: 38,
+        subtopics: [
+          { id: "neet_bio_02_1", title: "Morphology of Flowering Plants & Botanical Families", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_02_2", title: "Anatomy of Dicot & Monocot Plants", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_02_3", title: "Animal Tissues & Anatomy of Frog", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_03",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 3: Cell Structure and Function",
+        topic: "Cell Biology, Biomolecules and Cell Division",
+        subtopic: "Cell Theory, Organelles, Enzymes, Mitosis & Meiosis",
+        title: "Unit 3: Cell Structure and Function",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 7,
+        completed: false,
+        description: "Cell theory and cell as the basic unit of life: Structure of prokaryotic and eukaryotic cells; Plant cell and animal cell; cell envelope; cell membrane, cell wall; cell organelles: structure and function; endomembrane system, endoplasmic reticulum, Golgi bodies, lysosomes, vacuoles; mitochondria, ribosomes, plastids, microbodies; cytoskeleton, cilia, flagella, centrioles; nucleus, nuclear membrane, chromatin, nucleolus. Chemical constituents of living cells: Biomolecules, structure and function of proteins, carbohydrates, lipids, nucleic acids; Enzymes-types, properties, enzyme action. Cell cycle: Mitosis, meiosis and their significance.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Biology"],
+        pyqCount: 52,
+        subtopics: [
+          { id: "neet_bio_03_1", title: "Prokaryotic vs Eukaryotic Cell & Endomembrane System", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_bio_03_2", title: "Biomolecules, Proteins, Nucleic Acids & Enzyme Kinetics", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_bio_03_3", title: "Cell Cycle Phases: Mitosis, Meiosis & Checkpoints", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_04",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 4: Plant Physiology",
+        topic: "Photosynthesis, Respiration and Plant Growth",
+        subtopic: "Light Reactions, Calvin Cycle, Krebs Cycle, Plant Hormones",
+        title: "Unit 4: Plant Physiology",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 7,
+        completed: false,
+        description: "Photosynthesis in higher plants: Photosynthesis as a means of autotrophic nutrition; site of photosynthesis, pigments involved; photochemical and biosynthetic phases of photosynthesis; cyclic and non-cyclic photophosphorylation; chemiosmotic hypothesis; photorespiration; C3 and C4 pathways; factors affecting photosynthesis. Respiration in plants: Exchange of gases; cellular respiration-glycolysis, fermentation (anaerobic), TCA cycle and electron transport system (aerobic); energy relations-number of ATP molecules generated; amphibolic pathways; respiratory quotient. Plant growth and development: Seed germination; phases of plant growth and plant growth rate; conditions of growth; differentiation, dedifferentiation and redifferentiation; sequence of development process in a plant cell; growth regulators: auxin, gibberellin, cytokinin, ethylene, ABA.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Biology"],
+        pyqCount: 46,
+        subtopics: [
+          { id: "neet_bio_04_1", title: "Photosynthesis: Pigments, Light Reaction & C3/C4 Cycles", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_bio_04_2", title: "Cellular Respiration: Glycolysis, Krebs Cycle & ETS", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_bio_04_3", title: "Plant Growth Regulators & Phytohormones", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_05",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 5: Human Physiology",
+        topic: "Circulation, Excretion, Locomotion and Neural/Endocrine Control",
+        subtopic: "ECG, Counter Current, Sarcomere, Action Potential, Hormones",
+        title: "Unit 5: Human Physiology",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 9,
+        completed: false,
+        description: "Breathing and Respiration: Respiratory organs in animals, respiratory system in humans; mechanism of breathing and its regulation, exchange of gases, transport of gases and regulation of respiration, respiratory volume, disorders related to respiration. Body fluids and circulation: Composition of blood, blood groups, coagulation of blood; composition of lymph and its function; human circulatory system: structure of human heart and blood vessels; cardiac cycle, cardiac output, ECG; double circulation; regulation of cardiac activity; disorders of circulatory system. Excretory products and their elimination: Modes of excretion, human excretory system, structure and function of nephron; urine formation, osmoregulation; regulation of kidney function, renin-angiotensin, atrial natriuretic factor, ADH and diabetes insipidus; disorders. Locomotion and Movement: Types of movement, skeletal muscle, contractile proteins and muscle contraction; skeletal system and its functions; joints; disorders. Neural control and coordination: Neuron and nerves; nervous system in humans, generation and conduction of nerve impulse. Chemical coordination and regulation: Endocrine glands and hormones; human endocrine system, mechanism of hormone action; disorders.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 11 Biology"],
+        pyqCount: 65,
+        subtopics: [
+          { id: "neet_bio_05_1", title: "Breathing & Body Fluids Circulation (Heart, ECG)", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_bio_05_2", title: "Excretory System: Nephron & Counter-Current Mechanism", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_05_3", title: "Locomotion, Sliding Filament Theory & Skeletal Joints", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_05_4", title: "Neural Impulses & Endocrine System Hormones", estimatedHours: 2.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_06",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 6: Reproduction",
+        topic: "Sexual Reproduction in Flowering Plants and Humans",
+        subtopic: "Pollination, Gametogenesis, Menstrual Cycle, Embryo Development",
+        title: "Unit 6: Reproduction",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 8,
+        completed: false,
+        description: "Sexual reproduction in flowering plants: Flower structure; development of male and female gametophytes; pollination-types, agencies and examples; outbreeding devices; pollen-pistil interaction; double fertilization; post-fertilization events: development of endosperm and embryo, development of seed and formation of fruit; special modes: apomixis, parthenocarpy, polyembryony. Human Reproduction: Male and female reproductive systems; microscopic anatomy of testis and ovary; gametogenesis: spermatogenesis and oogenesis; menstrual cycle; fertilization, embryo development up to blastocyst formation, implantation; pregnancy and placenta formation; parturition; lactation. Reproductive health: Need for reproductive health and prevention of STDs; birth control-methods and contraception, medical termination of pregnancy (MTP); amniocentesis; infertility and assisted reproductive technologies: IVF, ZIFT, GIFT.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Biology"],
+        pyqCount: 55,
+        subtopics: [
+          { id: "neet_bio_06_1", title: "Sexual Reproduction in Flowering Plants & Double Fertilization", estimatedHours: 3, weightage: "High" },
+          { id: "neet_bio_06_2", title: "Human Male & Female Reproductive Systems & Gametogenesis", estimatedHours: 3, weightage: "High" },
+          { id: "neet_bio_06_3", title: "Menstrual Cycle, Embryogenesis & Reproductive Health (ART)", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_07",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 7: Genetics and Evolution",
+        topic: "Mendelian Genetics, Molecular Basis and Evolution",
+        subtopic: "Dihybrid Cross, DNA Replication, Transcription, Translation, Hardy-Weinberg",
+        title: "Unit 7: Genetics and Evolution",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 9,
+        completed: false,
+        description: "Heredity and variation: Mendelian inheritance; deviations from Mendelism: incomplete dominance, co-dominance, multiple alleles and inheritance of blood groups, pleiotropy; elementary idea of polygenic inheritance; chromosome theory of inheritance; chromosomes and genes; Sex determination: in humans, birds and honey bee; linkage and crossing over; Sex linked inheritance: haemophilia, colour blindness; Mendelian disorders in humans: thalassaemia; chromosomal disorders: Down syndrome, Turner and Klinefelter syndromes. Molecular basis of inheritance: Search for genetic material and DNA as genetic material; Structure of DNA and RNA; DNA packaging; DNA replication; Central dogma; transcription, genetic code, translation; gene expression and regulation: lac operon; Genome and Human Genome Project; DNA fingerprinting. Evolution: Origin of life; biological evolution and evidences for biological evolution (paleontological, comparative anatomical, embryological and molecular evidences); Darwin contribution, modern synthetic theory of evolution; mechanism of evolution: variation and mutation and natural selection with examples, types of natural selection; Gene flow and genetic drift; Hardy-Weinberg principle; adaptive radiation; human evolution.",
+        difficulty: "Hard",
+        recommendedBooks: ["NCERT Class 12 Biology"],
+        pyqCount: 68,
+        subtopics: [
+          { id: "neet_bio_07_1", title: "Mendelian Genetics, Linkage & Chromosomal Disorders", estimatedHours: 3, weightage: "High" },
+          { id: "neet_bio_07_2", title: "Molecular Basis: DNA Replication, Transcription & Lac Operon", estimatedHours: 3.5, weightage: "High" },
+          { id: "neet_bio_07_3", title: "Origin of Life, Natural Selection & Hardy-Weinberg Principle", estimatedHours: 2.5, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_08",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 8: Biology and Human Welfare",
+        topic: "Human Health, Immunity and Microbes",
+        subtopic: "Pathogens, Immunity, AIDS, Cancer, Microbes in Sewage/Biogas",
+        title: "Unit 8: Biology and Human Welfare",
+        stage: "Prelims",
+        weightage: "Medium",
+        estimatedHours: 6,
+        completed: false,
+        description: "Health and disease: Pathogens; parasites causing human diseases (malaria, dengue, chikungunya, filariasis, ascariasis, typhoid, pneumonia, common cold, amoebiasis, ringworm) and their control; Basic concepts of immunology: vaccines; cancer, HIV and AIDS; Adolescence, drug and alcohol abuse. Microbes in human welfare: In household food processing, industrial production, sewage treatment, energy generation and as biocontrol agents and biofertilizers.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 12 Biology"],
+        pyqCount: 35,
+        subtopics: [
+          { id: "neet_bio_08_1", title: "Human Infectious Diseases & Pathogen Life Cycles", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_08_2", title: "Innate & Acquired Immunity, Vaccines, AIDS & Cancer", estimatedHours: 2.5, weightage: "High" },
+          { id: "neet_bio_08_3", title: "Microbes in Household, Sewage Treatment & Biogas", estimatedHours: 1.5, weightage: "Medium" }
+        ]
+      },
+      {
+        id: "neet_bio_09",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 9: Biotechnology and Its Applications",
+        topic: "Recombinant DNA and Genetic Engineering",
+        subtopic: "Restriction Enzymes, Cloning Vectors, PCR, Bt Cotton, Gene Therapy",
+        title: "Unit 9: Biotechnology and Its Applications",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Principles and process of Biotechnology: Genetic engineering (Recombinant DNA technology). Application of Biotechnology in health and agriculture: Human insulin and vaccine production, stem cell technology, gene therapy; genetically modified organisms: Bt crops; transgenic animals; biosafety issues, biopiracy and patents.",
+        difficulty: "Medium",
+        recommendedBooks: ["NCERT Class 12 Biology"],
+        pyqCount: 40,
+        subtopics: [
+          { id: "neet_bio_09_1", title: "rDNA Technology Tools: Restriction Enzymes & Vectors", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_09_2", title: "Processes of Recombinant DNA: PCR & Bioreactors", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_09_3", title: "Biotechnology Applications: Bt Crops, Insulin & Gene Therapy", estimatedHours: 2, weightage: "High" }
+        ]
+      },
+      {
+        id: "neet_bio_10",
+        exam: "NEET_UG",
+        paper: "Paper 1 (PCB)",
+        subject: "Biology",
+        chapter: "Unit 10: Ecology and Environment",
+        topic: "Organisms, Ecosystems and Biodiversity Conservation",
+        subtopic: "Population Interactions, Ecological Pyramids, Biodiversity Threats",
+        title: "Unit 10: Ecology and Environment",
+        stage: "Prelims",
+        weightage: "High",
+        estimatedHours: 6,
+        completed: false,
+        description: "Organisms and environment: Population interactions: mutualism, competition, predation, parasitism; population attributes: growth, birth rate and death rate, age distribution. Ecosystem: Patterns, components; productivity and decomposition; energy flow; pyramids of number, biomass, energy. Biodiversity and its conservation: Concept of biodiversity; patterns of biodiversity; importance of biodiversity; loss of biodiversity; biodiversity conservation: hotspots, endangered organisms, extinction, Red Data Book, sacred groves, biosphere reserves, national parks, wildlife sanctuaries.",
+        difficulty: "Easy",
+        recommendedBooks: ["NCERT Class 12 Biology"],
+        pyqCount: 42,
+        subtopics: [
+          { id: "neet_bio_10_1", title: "Organisms & Populations: Adaptations & Interactions", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_10_2", title: "Ecosystem Productivity, Decomposition & Energy Flow Pyramids", estimatedHours: 2, weightage: "High" },
+          { id: "neet_bio_10_3", title: "Biodiversity Patterns, Loss & In-Situ/Ex-Situ Conservation", estimatedHours: 2, weightage: "High" }
+        ]
+      }
+    ];
+  }
+});
+
 // src/data/academicData.ts
 var INITIAL_SYLLABUS_HIERARCHY, INITIAL_PYQS_DATABASE, INITIAL_QUESTION_BANK;
 var init_academicData = __esm({
   "src/data/academicData.ts"() {
     init_jeeSyllabusData();
     init_aeJeSyllabusData();
+    init_neetSyllabusData();
     INITIAL_SYLLABUS_HIERARCHY = [
+      ...NEET_UG_OFFICIAL_SYLLABUS,
       ...JEE_MAIN_SYLLABUS,
       ...JEE_ADVANCED_SYLLABUS,
       ...ALL_AE_JE_SYLLABUS,
@@ -4605,7 +5772,7 @@ function seedDefaultSponsorshipTiers() {
       {
         id: "sp_1",
         name: "EduTech India Foundation",
-        logoUrl: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80",
+        logoUrl: "https://studyride.in/logo.png",
         websiteUrl: "https://example.com/edutech",
         tierName: "Education Champion",
         testimonial: "Partnering with StudyRide empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.",
@@ -4886,172 +6053,6 @@ function buildSimilarityIndexes() {
     });
   });
   console.log(`[INDEXER] Fast repeat index built for ${pyqStore.size} items in ${Date.now() - startTime}ms.`);
-}
-function generateRealisticSyllabus(examId) {
-  const normId = examId.toUpperCase();
-  let subjects = [];
-  if (normId.includes("NEET") || normId.includes("NURSING") || normId.includes("ANM") || normId.includes("GNM") || normId.includes("JENPAS") || normId.includes("JEPBN") || normId.includes("PNST")) {
-    subjects = [
-      {
-        name: "Biology (Botany & Zoology)",
-        chapters: [
-          { name: "Diversity in Living World", topics: ["Taxonomy & Systematics", "Five Kingdom Classification", "Plant Kingdom", "Animal Kingdom"] },
-          { name: "Structural Organisation", topics: ["Morphology of Flowering Plants", "Anatomy of Flowering Plants", "Animal Tissues"] },
-          { name: "Cell Structure & Function", topics: ["Cell Theory & Structure", "Biomolecules", "Cell Cycle & Cell Division"] },
-          { name: "Human Physiology", topics: ["Breathing & Respiration", "Body Fluids & Circulation", "Excretory Products", "Neural Control & Coordination"] }
-        ]
-      },
-      {
-        name: "Physics",
-        chapters: [
-          { name: "Mechanics", topics: ["Units & Measurements", "Motion in a Straight Line", "Laws of Motion", "Work, Energy & Power"] },
-          { name: "Thermodynamics & Waves", topics: ["Kinetic Theory of Gases", "Laws of Thermodynamics", "Oscillations", "Wave Optics"] },
-          { name: "Electricity & Magnetism", topics: ["Electrostatics", "Current Electricity", "Magnetic Effects of Current", "Electromagnetic Induction"] }
-        ]
-      },
-      {
-        name: "Chemistry",
-        chapters: [
-          { name: "Physical Chemistry", topics: ["Some Basic Concepts", "Structure of Atom", "Chemical Thermodynamics", "Chemical Kinetics"] },
-          { name: "Organic Chemistry", topics: ["Basic Principles & Techniques", "Hydrocarbons", "Alcohols, Phenols & Ethers", "Organic Compounds containing Nitrogen"] },
-          { name: "Inorganic Chemistry", topics: ["Classification of Elements", "Chemical Bonding", "Coordination Compounds", "p-Block Elements"] }
-        ]
-      }
-    ];
-  } else if (normId.includes("JEE") || normId.includes("GATE") || normId.includes("JEECUP") || normId.includes("JELET") || normId.includes("JEXPO") || normId.includes("BITSAT") || normId.includes("IMU_CET") || normId.includes("JET")) {
-    subjects = [
-      {
-        name: "Mathematics",
-        chapters: [
-          { name: "Calculus", topics: ["Limits, Continuity & Differentiability", "Application of Derivatives", "Definite & Indefinite Integrals", "Differential Equations"] },
-          { name: "Algebra & Matrices", topics: ["Complex Numbers", "Quadratic Equations", "Matrices & Determinants", "Probability & Statistics"] },
-          { name: "Coordinate Geometry", topics: ["Straight Lines", "Circles", "Conic Sections (Parabola, Ellipse, Hyperbola)"] }
-        ]
-      },
-      {
-        name: "Physics",
-        chapters: [
-          { name: "Classical Mechanics", topics: ["Kinematics & Rotational Dynamics", "Gravitation", "Properties of Solids & Liquids", "Fluid Mechanics"] },
-          { name: "Electromagnetism", topics: ["Electrostatic Potential & Capacitance", "Magnetic Fields & Forces", "Alternating Currents", "Electromagnetic Waves"] },
-          { name: "Modern Physics", topics: ["Dual Nature of Matter", "Atoms & Nuclei", "Semiconductor Electronics"] }
-        ]
-      },
-      {
-        name: "Chemistry",
-        chapters: [
-          { name: "Physical & General Chemistry", topics: ["States of Matter", "Atomic Structure", "Chemical Equilibrium", "Electrochemistry"] },
-          { name: "Organic & Polymers", topics: ["Purification of Organic Compounds", "Hydrocarbons", "Polymers & Biomolecules", "Chemistry in Everyday Life"] },
-          { name: "Inorganic & Metals", topics: ["Periodic Table & Periodic Properties", "Metallurgy Processes", "d and f Block Elements"] }
-        ]
-      }
-    ];
-  } else if (normId.includes("CLAT") || normId.includes("CAT") || normId.includes("CUET") || normId.includes("NET") || normId.includes("BED") || normId.includes("PO") || normId.includes("CLERK") || normId.includes("CTET")) {
-    subjects = [
-      {
-        name: "English Language & Comprehension",
-        chapters: [
-          { name: "Reading Comprehension", topics: ["Fact-based passages", "Inference-based questions", "Vocabulary in context"] },
-          { name: "Grammar & Usage", topics: ["Sentence Correction", "Error Spotting", "Active & Passive Voice", "Direct & Indirect Speech"] }
-        ]
-      },
-      {
-        name: "Quantitative Aptitude",
-        chapters: [
-          { name: "Arithmetic & Data Interpretation", topics: ["Percentage & Profit/Loss", "Ratio & Proportion", "Time, Speed & Distance", "Bar Graphs & Pie Charts"] },
-          { name: "Algebra & Numbers", topics: ["Number Systems", "Linear & Quadratic Equations", "Permutations & Combinations"] }
-        ]
-      },
-      {
-        name: "Logical & Analytical Reasoning",
-        chapters: [
-          { name: "Analytical Reasoning", topics: ["Linear & Circular Arrangements", "Syllogisms", "Blood Relations", "Coding-Decoding"] },
-          { name: "Critical Reasoning", topics: ["Strengthen & Weaken Arguments", "Assumptions & Conclusions", "Course of Action"] }
-        ]
-      },
-      {
-        name: "General Awareness & Law",
-        chapters: [
-          { name: "Current & Static GK", topics: ["National & International Events", "Indian Constitution & Polity", "Legal Aptitude & Maxims", "History & Geography basics"] }
-        ]
-      }
-    ];
-  } else if (normId.includes("POLICE") || normId.includes("CONSTABLE") || normId.includes("SI")) {
-    subjects = [
-      {
-        name: "General Studies & GK",
-        chapters: [
-          { name: "General Knowledge", topics: ["Indian History & Freedom Struggle", "Indian Geography & Resources", "General Science & Life science"] },
-          { name: "Current Affairs", topics: ["Sports & Awards", "Important Days & Summits", "Government Schemes & Policies"] }
-        ]
-      },
-      {
-        name: "Numerical & Mental Ability",
-        chapters: [
-          { name: "Numerical Ability", topics: ["Simplification & Number Series", "LCM & HCF", "Percentage, Profit & Loss", "Simple & Compound Interest"] },
-          { name: "Mental Ability", topics: ["Logical Diagrams", "Codified Relationships", "Perception Test", "Word Formation Test"] }
-        ]
-      },
-      {
-        name: "Reasoning Ability",
-        chapters: [
-          { name: "Logical Reasoning", topics: ["Analogies & Similarities", "Space Visualization", "Decision Making", "Visual Memory", "Arithmetical Reasoning"] }
-        ]
-      }
-    ];
-  } else {
-    subjects = [
-      {
-        name: "General Studies & GK",
-        chapters: [
-          { name: "Indian History & Culture", topics: ["Ancient & Medieval India", "Modern Indian History", "National Movement & Art Forms"] },
-          { name: "Polity, Constitution & Geography", topics: ["Salient Features of Constitution", "Fundamental Rights & Duties", "Physical Geography of India"] }
-        ]
-      },
-      {
-        name: "Quantitative Aptitude",
-        chapters: [
-          { name: "Arithmetic Operations", topics: ["Number Systems & Decimals", "Percentage & Profit/Loss", "Ratio & Proportion", "Time and Work", "Average & Age problems"] },
-          { name: "Data Interpretation", topics: ["Tabulation & Line Charts", "Bar Graphs & Histograms"] }
-        ]
-      },
-      {
-        name: "General Intelligence & Reasoning",
-        chapters: [
-          { name: "Verbal & Non-Verbal Reasoning", topics: ["Analogies & Classification", "Series Completion & Coding", "Blood Relations & Direction Sense", "Paper Folding & Mirror Images"] }
-        ]
-      },
-      {
-        name: "General English",
-        chapters: [
-          { name: "Vocabulary & Grammar", topics: ["Synonyms & Antonyms", "Idioms & Phrases", "Sentence Correction", "Cloze Test & Fillers"] }
-        ]
-      }
-    ];
-  }
-  const nodes = [];
-  let nodeIndex = 1;
-  for (const sub of subjects) {
-    for (const chap of sub.chapters) {
-      for (const top of chap.topics) {
-        const nodeId = `gen_node_${examId.toLowerCase()}_${nodeIndex++}`;
-        nodes.push({
-          id: nodeId,
-          exam: examId,
-          paper: "Paper 1",
-          subject: sub.name,
-          chapter: chap.name,
-          topic: top,
-          subtopic: "Core concepts, fundamental formulas, and standard application problems.",
-          title: `${top} Core Syllabus Module`,
-          stage: "Prelims",
-          weightage: "High",
-          estimatedHours: 2.5,
-          createdAt: (/* @__PURE__ */ new Date()).toISOString()
-        });
-      }
-    }
-  }
-  return nodes;
 }
 function parseFreeformSyllabus(rawText, examHint = "UPSC_CSE") {
   const lines = rawText.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
@@ -5502,7 +6503,7 @@ var init_shared = __esm({
         showHeroBanner: true,
         heroBannerTitle: "[STUDENT] Complete Prep Suite for All Exams (Class 1 to Ph.D.)",
         heroBannerSubtitle: "Track Syllabus, AI Study Buddy, Live Mock Predictor & Community Chat in One Place.",
-        heroBannerImageUrl: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&auto=format&fit=crop&q=80",
+        heroBannerImageUrl: "https://studyride.in/logo.png",
         heroBannerCtaText: "Explore Syllabus Tracker",
         showAnnouncementTicker: true,
         announcementText: "[HOT] New Syllabus Templates added for UPPSC, Bihar Board, Class 10/12 PCM & Ph.D. Entrance! Customize your goal in Profile."
@@ -5642,7 +6643,7 @@ Start writing 2 answers daily after covering 50% of the syllabus. Pay attention 
         authorTeacherId: "ed_1",
         authorName: "Dr. Siddharth Arora",
         status: "published",
-        coverImageUrl: "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80",
+        coverImageUrl: "https://studyride.in/logo.png",
         createdAt: new Date(Date.now() - 864e5 * 3).toISOString(),
         publishedAt: new Date(Date.now() - 864e5 * 3).toISOString()
       },
@@ -5662,7 +6663,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         authorTeacherId: "ed_2",
         authorName: "Mrunal Patel",
         status: "published",
-        coverImageUrl: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&auto=format&fit=crop&q=80",
+        coverImageUrl: "https://studyride.in/logo.png",
         createdAt: new Date(Date.now() - 864e5).toISOString(),
         publishedAt: new Date(Date.now() - 864e5).toISOString()
       }
@@ -5675,7 +6676,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         id: "usr-admin-01",
         name: "Ambuj Yadav (Super Admin)",
         email: "ambujyadav0010@gmail.com",
-        avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "UPSC CSE 2026",
         stateName: "Uttar Pradesh",
         role: "ADMIN",
@@ -5748,7 +6749,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         id: "tm-1",
         name: "Ambuj Yadav",
         email: "ambujyadav0010@gmail.com",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        avatar: "https://studyride.in/logo.png",
         title: "Founder & Chief Executive Officer",
         role: "SUPER_ADMIN",
         department: "Executive Leadership",
@@ -5768,7 +6769,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         id: "tm-2",
         name: "Priya Sharma",
         email: "priya.content@studyride.in",
-        avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80",
+        avatar: "https://studyride.in/logo.png",
         title: "Academic Director & Chief Content Officer",
         role: "ACADEMIC_LEAD",
         department: "Academics & Question Bank",
@@ -5788,7 +6789,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         id: "tm-3",
         name: "Vikram Malhotra",
         email: "vikram.finance@studyride.in",
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
+        avatar: "https://studyride.in/logo.png",
         title: "Head of Billing & Payment Operations",
         role: "FINANCE_MANAGER",
         department: "Finance & Monetization",
@@ -5808,7 +6809,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         id: "tm-4",
         name: "Sneha Verma",
         email: "sneha.community@studyride.in",
-        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80",
+        avatar: "https://studyride.in/logo.png",
         title: "Community Lead & Student Support Specialist",
         role: "COMMUNITY_LEAD",
         department: "Community & Moderation",
@@ -5828,7 +6829,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
         id: "tm-5",
         name: "Rohan Mehta",
         email: "rohan.tech@studyride.in",
-        avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80",
+        avatar: "https://studyride.in/logo.png",
         title: "Lead Systems Architect & DevOps",
         role: "TECH_LEAD",
         department: "Engineering & Infrastructure",
@@ -5896,18 +6897,18 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
       }
     ];
     DEFAULT_SPONSORS_LIST = [
-      { id: "sp-1", name: "Unacademy", logo: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=80", website: "https://unacademy.com", tier: "gold", description: "India's largest learning platform - Official Education Partner" },
-      { id: "sp-2", name: "Vajiram & Ravi", logo: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=120&auto=format&fit=crop&q=80", website: "https://vajiramandravi.com", tier: "gold", description: "Premier Institute for IAS Preparation - General Studies Partner" },
-      { id: "sp-3", name: "Physics Wallah", logo: "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=120&auto=format&fit=crop&q=80", website: "https://pw.live", tier: "gold", description: "Empowering students with affordable learning - Tech Sponsor" },
-      { id: "sp-4", name: "Testbook", logo: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=120&auto=format&fit=crop&q=80", website: "https://testbook.com", tier: "silver", description: "Comprehensive Mock Tests & Live Test Series Partner" },
-      { id: "sp-5", name: "Oliveboard", logo: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=120&auto=format&fit=crop&q=80", website: "https://oliveboard.in", tier: "silver", description: "Banking & Government Exam preparation portal" },
-      { id: "sp-6", name: "Chahal Academy", logo: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=120&auto=format&fit=crop&q=80", website: "https://chahalacademy.com", tier: "silver", description: "Specialized Civil Services & State PCS classroom training" }
+      { id: "sp-1", name: "Unacademy", logo: "https://studyride.in/logo.png", website: "https://unacademy.com", tier: "gold", description: "India's largest learning platform - Official Education Partner" },
+      { id: "sp-2", name: "Vajiram & Ravi", logo: "https://studyride.in/logo.png", website: "https://vajiramandravi.com", tier: "gold", description: "Premier Institute for IAS Preparation - General Studies Partner" },
+      { id: "sp-3", name: "Physics Wallah", logo: "https://studyride.in/logo.png", website: "https://pw.live", tier: "gold", description: "Empowering students with affordable learning - Tech Sponsor" },
+      { id: "sp-4", name: "Testbook", logo: "https://studyride.in/logo.png", website: "https://testbook.com", tier: "silver", description: "Comprehensive Mock Tests & Live Test Series Partner" },
+      { id: "sp-5", name: "Oliveboard", logo: "https://studyride.in/logo.png", website: "https://oliveboard.in", tier: "silver", description: "Banking & Government Exam preparation portal" },
+      { id: "sp-6", name: "Chahal Academy", logo: "https://studyride.in/logo.png", website: "https://chahalacademy.com", tier: "silver", description: "Specialized Civil Services & State PCS classroom training" }
     ];
     DEFAULT_COLLABORATORS_LIST = [
-      { id: "col-1", name: "Vision IAS", logo: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=120&auto=format&fit=crop&q=80", type: "Academic Partner", contribution: "Syllabus Mappings & Free Notes" },
-      { id: "col-2", name: "Drishti IAS", logo: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=120&auto=format&fit=crop&q=80", type: "Hindi Medium Partner", contribution: "Bilingual Question Translation" },
-      { id: "col-3", name: "IAS Baba", logo: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=120&auto=format&fit=crop&q=80", type: "Daily Quiz Contributor", contribution: "Daily Practice Quizzes & Current Affairs" },
-      { id: "col-4", name: "insightsIAS", logo: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=120&auto=format&fit=crop&q=80", type: "Answer Writing Contributor", contribution: "Mains Practice Questions & Guidelines" }
+      { id: "col-1", name: "Vision IAS", logo: "https://studyride.in/logo.png", type: "Academic Partner", contribution: "Syllabus Mappings & Free Notes" },
+      { id: "col-2", name: "Drishti IAS", logo: "https://studyride.in/logo.png", type: "Hindi Medium Partner", contribution: "Bilingual Question Translation" },
+      { id: "col-3", name: "IAS Baba", logo: "https://studyride.in/logo.png", type: "Daily Quiz Contributor", contribution: "Daily Practice Quizzes & Current Affairs" },
+      { id: "col-4", name: "insightsIAS", logo: "https://studyride.in/logo.png", type: "Answer Writing Contributor", contribution: "Mains Practice Questions & Guidelines" }
     ];
     DEFAULT_OFFICE_ACTIVITIES = [
       { id: "act-1", timestamp: new Date(Date.now() - 6e5).toISOString(), memberName: "Priya Sharma", action: "UPLOAD", details: "Uploaded 45 questions for Indian Economy (Budget 2026)" },
@@ -10577,11 +11578,17 @@ router.get("/api/academic/syllabus", async (req, res) => {
         }
       }
       if (items.length === 0) {
-        const generated = generateRealisticSyllabus(exam);
-        generated.forEach((node) => {
-          syllabusNodesStore.set(node.id, node);
-        });
-        items = generated;
+        const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+          (n) => normalizeExam(n.exam || "") === normalizeExam(exam)
+        );
+        if (canonicalMatch.length > 0) {
+          canonicalMatch.forEach((node) => {
+            syllabusNodesStore.set(node.id, node);
+          });
+          items = canonicalMatch;
+        } else {
+          items = [];
+        }
       }
     }
     if (paper) {
@@ -10621,11 +11628,17 @@ router.get("/api/academic/syllabus/stats", async (req, res) => {
         }
       }
       if (items.length === 0) {
-        const generated = generateRealisticSyllabus(exam);
-        generated.forEach((node) => {
-          syllabusNodesStore.set(node.id, node);
-        });
-        items = generated;
+        const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+          (n) => normalizeExam(n.exam || "") === normalizeExam(exam)
+        );
+        if (canonicalMatch.length > 0) {
+          canonicalMatch.forEach((node) => {
+            syllabusNodesStore.set(node.id, node);
+          });
+          items = canonicalMatch;
+        } else {
+          items = [];
+        }
       }
     }
     const total = items.length;
@@ -12887,9 +13900,15 @@ router.get("/api/academic/syllabus/subjects", (req, res) => {
     const items = Array.from(syllabusNodesStore.values());
     let filtered = exam ? items.filter((i) => normalizeExam(i.exam || i.data?.exam || "") === normalizeExam(exam)) : items;
     if (filtered.length === 0 && exam) {
-      const generated = generateRealisticSyllabus(exam);
-      generated.forEach((n) => syllabusNodesStore.set(n.id, n));
-      filtered = generated;
+      const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+        (n) => normalizeExam(n.exam || "") === normalizeExam(exam)
+      );
+      if (canonicalMatch.length > 0) {
+        canonicalMatch.forEach((n) => syllabusNodesStore.set(n.id, n));
+        filtered = canonicalMatch;
+      } else {
+        filtered = [];
+      }
     }
     const subjectSet = /* @__PURE__ */ new Set();
     filtered.forEach((i) => {
@@ -12910,9 +13929,15 @@ router.get("/api/academic/syllabus/topics", (req, res) => {
     if (exam) {
       items = items.filter((i) => normalizeExam(i.exam || i.data?.exam || "") === normalizeExam(exam));
       if (items.length === 0) {
-        const generated = generateRealisticSyllabus(exam);
-        generated.forEach((n) => syllabusNodesStore.set(n.id, n));
-        items = generated;
+        const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+          (n) => normalizeExam(n.exam || "") === normalizeExam(exam)
+        );
+        if (canonicalMatch.length > 0) {
+          canonicalMatch.forEach((n) => syllabusNodesStore.set(n.id, n));
+          items = canonicalMatch;
+        } else {
+          items = [];
+        }
       }
     }
     if (subject) {
@@ -14723,7 +15748,7 @@ router2.post("/api/community/posts", async (req, res) => {
       groupName: group.name,
       authorId,
       authorName: authorName || (verifiedUser ? verifiedUser.email.split("@")[0] : "Aspirant"),
-      authorAvatar: authorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150",
+      authorAvatar: authorAvatar || "https://studyride.in/logo.png",
       authorRole: verifiedUser?.role || "Aspirant",
       title,
       content,
@@ -15021,13 +16046,13 @@ var DEFAULT_BATTLE_GROUPS = [
     id: "battle_upsc_warriors",
     name: "UPSC 12-Hour Warriors (Civil Services League)",
     description: "Strict silent study arena for UPSC aspirants. Target: GS Mains + Optional. Camera on or live timer study mandatory. Minimum 6 hours daily goal.",
-    avatar_url: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80",
-    banner_url: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80",
+    avatar_url: "https://studyride.in/logo.png",
+    banner_url: "https://studyride.in/logo.png",
     targetExam: "UPSC_CSE",
     dailyGoalHours: 12,
     hostId: "host_upsc_1",
     hostName: "Rohit Sharma (IAS 2026 Focus)",
-    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+    hostAvatar: "https://studyride.in/logo.png",
     videoCallAllowed: true,
     createdAt: "2026-01-01T00:00:00.000Z",
     memberCount: 8,
@@ -15037,7 +16062,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "host_upsc_1",
         name: "Rohit Sharma (IAS 2026 Focus)",
-        avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "UPSC_CSE",
         todayStudyMinutes: 495,
         isLiveStudying: true,
@@ -15049,7 +16074,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "u_priya_ias",
         name: "Priya Patel (IPS Mission)",
-        avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "UPSC_CSE",
         todayStudyMinutes: 440,
         isLiveStudying: true,
@@ -15061,7 +16086,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "u_vikram_irs",
         name: "Vikram Rajput",
-        avatar_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "UPSC_CSE",
         todayStudyMinutes: 380,
         isLiveStudying: true,
@@ -15073,7 +16098,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "u_neha_ifs",
         name: "Neha Roy",
-        avatar_url: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "UPSC_CSE",
         todayStudyMinutes: 320,
         isLiveStudying: false,
@@ -15088,13 +16113,13 @@ var DEFAULT_BATTLE_GROUPS = [
     id: "battle_neet_top100",
     name: "NEET 720 All-India Rankers Room",
     description: "Intense NCERT Biology line-by-line revision + Physics HCV Numerical solving sprints. Daily leaderboard decides today's Top Medic!",
-    avatar_url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=200&auto=format&fit=crop&q=80",
-    banner_url: "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?w=800&auto=format&fit=crop&q=80",
+    avatar_url: "https://studyride.in/logo.png",
+    banner_url: "https://studyride.in/logo.png",
     targetExam: "NEET_UG",
     dailyGoalHours: 14,
     hostId: "host_neet_1",
     hostName: "Dr. Ananya Deshmukh",
-    hostAvatar: "https://images.unsplash.com/photo-1594824813633-82559b9a6b63?w=100&auto=format&fit=crop&q=80",
+    hostAvatar: "https://studyride.in/logo.png",
     videoCallAllowed: true,
     createdAt: "2026-01-01T00:00:00.000Z",
     memberCount: 12,
@@ -15104,7 +16129,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "host_neet_1",
         name: "Dr. Ananya Deshmukh",
-        avatar_url: "https://images.unsplash.com/photo-1594824813633-82559b9a6b63?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "NEET_UG",
         todayStudyMinutes: 520,
         isLiveStudying: true,
@@ -15116,7 +16141,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "u_tanmay_neet",
         name: "Tanmay Saxena",
-        avatar_url: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "NEET_UG",
         todayStudyMinutes: 475,
         isLiveStudying: true,
@@ -15128,7 +16153,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "u_simran_neet",
         name: "Simran Kaur",
-        avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "NEET_UG",
         todayStudyMinutes: 390,
         isLiveStudying: true,
@@ -15143,13 +16168,13 @@ var DEFAULT_BATTLE_GROUPS = [
     id: "battle_jee_advanced",
     name: "JEE Advanced Physics & Math Crucible",
     description: "For hardcore engineering aspirants aiming for Top 500 AIR. Solving Irodov, Pathfinder, and Advanced PYQs.",
-    avatar_url: "https://images.unsplash.com/photo-1636466497217-26a8cbeaf0aa?w=200&auto=format&fit=crop&q=80",
-    banner_url: "https://images.unsplash.com/photo-1509228468518-180dd4864904?w=800&auto=format&fit=crop&q=80",
+    avatar_url: "https://studyride.in/logo.png",
+    banner_url: "https://studyride.in/logo.png",
     targetExam: "JEE_ADV",
     dailyGoalHours: 10,
     hostId: "host_jee_1",
     hostName: "Aryan Singhal (IIT-B Aim)",
-    hostAvatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80",
+    hostAvatar: "https://studyride.in/logo.png",
     videoCallAllowed: true,
     createdAt: "2026-01-01T00:00:00.000Z",
     memberCount: 9,
@@ -15159,7 +16184,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "host_jee_1",
         name: "Aryan Singhal (IIT-B Aim)",
-        avatar_url: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "JEE_ADV",
         todayStudyMinutes: 460,
         isLiveStudying: true,
@@ -15171,7 +16196,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "u_kavya_jee",
         name: "Kavya Sen",
-        avatar_url: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "JEE_ADV",
         todayStudyMinutes: 415,
         isLiveStudying: true,
@@ -15186,13 +16211,13 @@ var DEFAULT_BATTLE_GROUPS = [
     id: "battle_night_owls",
     name: "Night Owls 4AM Grind Club (All Exams)",
     description: "Midnight study warriors who thrive when the rest of the world is asleep. 10 PM to 4 AM silent deep work chamber.",
-    avatar_url: "https://images.unsplash.com/photo-1507499739999-097706ad8914?w=200&auto=format&fit=crop&q=80",
-    banner_url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop&q=80",
+    avatar_url: "https://studyride.in/logo.png",
+    banner_url: "https://studyride.in/logo.png",
     targetExam: "ALL_INDIA",
     dailyGoalHours: 8,
     hostId: "host_night_1",
     hostName: "Midnight Monk",
-    hostAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+    hostAvatar: "https://studyride.in/logo.png",
     videoCallAllowed: true,
     createdAt: "2026-01-01T00:00:00.000Z",
     memberCount: 15,
@@ -15202,7 +16227,7 @@ var DEFAULT_BATTLE_GROUPS = [
       {
         id: "host_night_1",
         name: "Midnight Monk",
-        avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: "ALL_INDIA",
         todayStudyMinutes: 430,
         isLiveStudying: true,
@@ -15290,14 +16315,14 @@ router2.post("/api/community/battle-groups", async (req, res) => {
     }
     const hostId = verifiedUser?.sub || req.body.hostId || "usr_" + Date.now();
     const hostName = verifiedUser?.name || req.body.hostName || "Aspirant Host";
-    const hostAvatar = verifiedUser?.avatar_url || req.body.hostAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80";
+    const hostAvatar = verifiedUser?.avatar_url || req.body.hostAvatar || "https://studyride.in/logo.png";
     const newGroupId = "battle_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
     const newGroup = {
       id: newGroupId,
       name: name.trim(),
       description: (description || "Daily high-intensity study battle arena. Compete live and stay disciplined.").trim(),
-      avatar_url: avatar_url || "https://images.unsplash.com/photo-1544717305-2782549b5136?w=200&auto=format&fit=crop&q=80",
-      banner_url: banner_url || "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&auto=format&fit=crop&q=80",
+      avatar_url: avatar_url || "https://studyride.in/logo.png",
+      banner_url: banner_url || "https://studyride.in/logo.png",
       targetExam,
       dailyGoalHours: Number(dailyGoalHours) || 8,
       hostId,
@@ -16456,7 +17481,7 @@ router3.post("/api/admin/team", adminMutationLimiter, verifyAdminAuth, async (re
       title: title || "Startup Team Member",
       role: role || "ACADEMIC_LEAD",
       department: department || "Operations",
-      avatar: avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+      avatar: avatar || "https://studyride.in/logo.png",
       status: "ACTIVE",
       joinedAt: existingIndex >= 0 ? adminTeamStore[existingIndex].joinedAt : (/* @__PURE__ */ new Date()).toISOString(),
       permissions: permissions || {
@@ -19700,7 +20725,7 @@ router4.post("/api/auth/google", async (req, res) => {
         id: userId,
         name: knownUser.name || name,
         email,
-        avatar_url: picture || knownUser.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        avatar_url: picture || knownUser.avatar_url || "https://studyride.in/logo.png",
         exam: knownUser.exam || (isSuper ? "UPSC_CSE" : "NEET_UG"),
         role: assignedRole,
         isPremium: isSuper || knownUser.isPremium,
@@ -19780,7 +20805,7 @@ router4.post("/api/auth/register", async (req, res) => {
         id: userId,
         name: cleanName,
         email: cleanEmail,
-        avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        avatar_url: "https://studyride.in/logo.png",
         exam: isSuper ? "UPSC_CSE" : "NEET_UG",
         role: assignedRole,
         isPremium: isSuper,
@@ -19855,7 +20880,7 @@ router4.post("/api/auth/login", async (req, res) => {
     const xp = Number(existingData.xp ?? 100);
     const coins = Number(existingData.coins ?? 50);
     const level = Number(existingData.level ?? 1);
-    const avatar_url = existingData.avatar_url || metadata.avatar_url || metadata.picture || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80";
+    const avatar_url = existingData.avatar_url || metadata.avatar_url || metadata.picture || "https://studyride.in/logo.png";
     await upsertUserToNeon({
       id: userId,
       email: cleanEmail,
@@ -21130,7 +22155,7 @@ router5.post("/api/collaboration/update-status", async (req, res) => {
         id: `tm-guest-${Date.now()}`,
         name: email.split("@")[0],
         email,
-        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80",
+        avatar: "https://studyride.in/logo.png",
         title: "Content contributor",
         role: "ACADEMIC_LEAD",
         department: "Academics & Question Bank",
@@ -21331,7 +22356,7 @@ router5.post("/api/teachers/register", async (req, res) => {
       subject,
       experience: experience || "1+ Years",
       qualification: qualification || "Educator",
-      avatar: avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
+      avatar: avatar || "https://studyride.in/logo.png",
       isVerified: false,
       status: "APPROVED",
       email: cleanEmail,
@@ -22479,7 +23504,7 @@ router5.post("/api/sponsorship/applications/:id/action", verifyAdminAuth, async 
       const newSponsor = {
         id: `sp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         name: app2.companyName,
-        logoUrl: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80",
+        logoUrl: "https://studyride.in/logo.png",
         websiteUrl: "",
         tierName: app2.tierInterest,
         testimonial: `Proud partner of ProTrack.`,
@@ -22649,7 +23674,7 @@ router5.post("/api/blog/submit/:token", async (req, res) => {
       authorTeacherId: request.teacherId,
       authorName: request.teacherName || "Faculty",
       status: "pending",
-      coverImageUrl: coverImageUrl || "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80",
+      coverImageUrl: coverImageUrl || "https://studyride.in/logo.png",
       createdAt: (/* @__PURE__ */ new Date()).toISOString()
     };
     blogPostsStore.set(postId, newPost);

@@ -126,9 +126,9 @@ export const ExamForecastTracker: React.FC<ExamForecastTrackerProps> = ({
   const [sessionLogs, setSessionLogs] = useState<StudySessionLog[]>(() => {
     try {
       const saved = localStorage.getItem(`${storagePrefix}_logs`);
-      return saved ? JSON.parse(saved) : DEFAULT_STUDY_LOGS;
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return DEFAULT_STUDY_LOGS;
+      return [];
     }
   });
 

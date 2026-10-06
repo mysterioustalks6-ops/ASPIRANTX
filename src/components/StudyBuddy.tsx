@@ -289,7 +289,7 @@ export const StudyBuddy: React.FC<StudyBuddyProps> = ({ user, onNavigate }) => {
         room: roomId,
         senderId: user?.id || 'guest',
         senderName: user?.name || 'Aspirant',
-        senderAvatar: user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        senderAvatar: user?.avatar_url || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>",
         text: textToSend,
         attachment: currentAttachment || undefined,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -434,7 +434,7 @@ export const StudyBuddy: React.FC<StudyBuddyProps> = ({ user, onNavigate }) => {
               return (
                 <div key={msg.id} className={`flex items-end gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                   {!msg.isBot && (
-                    <img src={msg.senderAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'} alt="" className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0" />
+                    <img src={msg.senderAvatar || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>"} alt="" className="w-8 h-8 rounded-full object-cover border border-white/10 shrink-0" />
                   )}
                   {msg.isBot && (
                     <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-300 text-xs font-bold shrink-0">🤖</div>

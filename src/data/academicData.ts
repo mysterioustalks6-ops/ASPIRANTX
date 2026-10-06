@@ -1,10 +1,12 @@
 import { SyllabusHierarchyNode } from '../types';
 import { JEE_MAIN_SYLLABUS, JEE_ADVANCED_SYLLABUS } from './jeeSyllabusData.js';
 import { ALL_AE_JE_SYLLABUS } from './aeJeSyllabusData.js';
+import { NEET_UG_OFFICIAL_SYLLABUS } from './neetSyllabusData.js';
 
-export { JEE_MAIN_SYLLABUS, JEE_ADVANCED_SYLLABUS, ALL_AE_JE_SYLLABUS };
+export { JEE_MAIN_SYLLABUS, JEE_ADVANCED_SYLLABUS, ALL_AE_JE_SYLLABUS, NEET_UG_OFFICIAL_SYLLABUS };
 
 export const INITIAL_SYLLABUS_HIERARCHY: SyllabusHierarchyNode[] = [
+  ...NEET_UG_OFFICIAL_SYLLABUS,
   ...JEE_MAIN_SYLLABUS,
   ...JEE_ADVANCED_SYLLABUS,
   ...ALL_AE_JE_SYLLABUS,

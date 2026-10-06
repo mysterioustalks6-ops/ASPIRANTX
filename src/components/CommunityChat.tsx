@@ -60,7 +60,7 @@ const INITIAL_MESSAGES: Record<RoomName, RoomMessage[]> = {
       room: 'UPSC Room',
       senderId: 'user_priya',
       senderName: 'Priya Sharma (AIR Hopeful)',
-      senderAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80',
+      senderAvatar: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%23ec4899'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>P</text></svg>",
       text: 'Has anyone finished reading Polity Chapter 15 on Emergency Provisions? Facing doubt in Article 356 vs 365.',
       timestamp: new Date(Date.now() - 1800000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       likes: 2,
@@ -70,7 +70,7 @@ const INITIAL_MESSAGES: Record<RoomName, RoomMessage[]> = {
       room: 'UPSC Room',
       senderId: 'user_rahul',
       senderName: 'Rahul Verma',
-      senderAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80',
+      senderAvatar: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>R</text></svg>",
       text: 'Check out this quick comparative flowchart I drafted for Article 352 vs 356!',
       attachment: {
         name: 'Polity_Emergency_Flowchart.pdf',
@@ -98,7 +98,7 @@ const INITIAL_MESSAGES: Record<RoomName, RoomMessage[]> = {
       room: 'SSC Room',
       senderId: 'user_vikram',
       senderName: 'Vikram Singh',
-      senderAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
+      senderAvatar: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%2310b981'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>V</text></svg>",
       text: 'What is the fastest formula for compound interest for 3 years at non-integer rates?',
       timestamp: new Date(Date.now() - 1200000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       likes: 1,
@@ -272,7 +272,8 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
       const isVent = activeRoom === 'Vent Room';
       const realUserId = user?.id || 'guest_user';
       const senderName = isVent ? getAnonymousName(realUserId) : (user?.name || 'Aspirant Student');
-      const senderAvatar = isVent ? 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80' : (user?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80');
+      const defaultAvatar = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>";
+      const senderAvatar = isVent ? "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%2364748b'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>?</text></svg>" : (user?.avatar_url || defaultAvatar);
 
       const userMsg: RoomMessage = {
         id: `msg_${Date.now()}`,
@@ -570,7 +571,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
                       </div>
                     ) : (
                       <img
-                        src={msg.senderAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80'}
+                        src={msg.senderAvatar || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='24' fill='%230284c7'/><text x='50%' y='55%' font-size='44' font-family='sans-serif' font-weight='bold' fill='%23ffffff' dominant-baseline='middle' text-anchor='middle'>A</text></svg>"}
                         alt={msg.senderName}
                         className="w-9 h-9 rounded-full object-cover border border-slate-700"
                       />

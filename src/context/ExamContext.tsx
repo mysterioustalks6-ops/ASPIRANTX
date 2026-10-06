@@ -54,19 +54,25 @@ interface ExamProviderProps {
 export const ExamProvider: React.FC<ExamProviderProps> = ({ children, initialExamId, userId }) => {
   // Resolve initial exam with strict priority:
   // 1. Explicit initialExamId passed from authenticated profile
-  // 2. localStorage 'aspirantx_global_selected_exam'
-  // 3. Fallback to 'UPSC_CSE'
+  // 2. Saved user profile in localStorage ('studyride_user' / 'aspirantx_auth_user')
+  // 3. localStorage 'aspirantx_global_selected_exam'
+  // 4. Canonical Default 'NEET_UG'
   const [selectedExamId, setSelectedExamIdState] = useState<string>(() => {
     if (initialExamId) {
       return normalizeExamId(initialExamId);
     }
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const userRaw = typeof window !== 'undefined' ? (localStorage.getItem('studyride_user') || localStorage.getItem('aspirantx_auth_user')) : null;
+      if (userRaw) {
+        const u = JSON.parse(userRaw);
+        if (u && u.exam) return normalizeExamId(u.exam);
+      }
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
       if (stored) {
         return normalizeExamId(stored);
       }
     } catch (e) {}
-    return 'UPSC_CSE';
+    return 'NEET_UG';
   });
 
   const [isLoadingExam, setIsLoadingExam] = useState<boolean>(false);

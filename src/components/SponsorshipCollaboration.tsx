@@ -381,7 +381,7 @@ export const SponsorshipCollaboration: React.FC<SponsorshipProps> = ({ user }) =
                 <div key={s.id} className="p-6 bg-slate-900/60 border border-slate-800 rounded-3xl space-y-3 hover:border-slate-700 transition-all">
                   <div className="flex items-center gap-3">
                     <img
-                      src={s.logoUrl || 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=100&h=100&fit=crop&q=80'}
+                      src={s.logoUrl || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' rx='16' fill='%231e293b'/><text x='50%' y='55%' font-size='36' font-family='sans-serif' font-weight='bold' fill='%236366f1' dominant-baseline='middle' text-anchor='middle'>SP</text></svg>"}
                       alt={s.name}
                       className="w-12 h-12 rounded-xl object-cover bg-slate-950 border border-slate-800 shrink-0"
                     />

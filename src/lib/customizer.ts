@@ -41,7 +41,7 @@ export const DEFAULT_CUSTOMIZER_SETTINGS: AppCustomizerSettings = {
   showHeroBanner: true,
   heroBannerTitle: '🎓 Complete Prep Suite for All Exams (Class 1 to Ph.D.)',
   heroBannerSubtitle: 'Track Syllabus, AI Study Buddy, Live Mock Predictor & Community Chat in One Place.',
-  heroBannerImageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&auto=format&fit=crop&q=80',
+  heroBannerImageUrl: '',
   heroBannerCtaText: 'Explore Syllabus Tracker',
   
   showAnnouncementTicker: true,
@@ -125,9 +125,9 @@ export function saveCustomizerSettings(settings: AppCustomizerSettings): void {
 }
 
 export const PRESET_BANNER_IMAGES = [
-  { label: 'Academic Library', url: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?w=1200&auto=format&fit=crop&q=80' },
-  { label: 'Modern Study Setup', url: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&auto=format&fit=crop&q=80' },
-  { label: 'Cyberpunk Neon Workspace', url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80' },
-  { label: 'Nebula Space Galaxy', url: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=1200&auto=format&fit=crop&q=80' },
-  { label: 'Minimalist Modern Gradient', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=1200&auto=format&fit=crop&q=80' },
+  { label: 'Academic Blue', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'><defs><linearGradient id='g1' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%230f172a'/><stop offset='100%25' stop-color='%230284c7'/></linearGradient></defs><rect width='100%25' height='100%25' fill='url(%23g1)'/></svg>" },
+  { label: 'Modern Indigo', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'><defs><linearGradient id='g2' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%231e1b4b'/><stop offset='100%25' stop-color='%234f46e5'/></linearGradient></defs><rect width='100%25' height='100%25' fill='url(%23g2)'/></svg>" },
+  { label: 'Cyberpunk Neon', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'><defs><linearGradient id='g3' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23022c22'/><stop offset='100%25' stop-color='%23059669'/></linearGradient></defs><rect width='100%25' height='100%25' fill='url(%23g3)'/></svg>" },
+  { label: 'Nebula Purple', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'><defs><linearGradient id='g4' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%233b0764'/><stop offset='100%25' stop-color='%239333ea'/></linearGradient></defs><rect width='100%25' height='100%25' fill='url(%23g4)'/></svg>" },
+  { label: 'Minimalist Slate', url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='400' viewBox='0 0 1200 400'><defs><linearGradient id='g5' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' stop-color='%23090d16'/><stop offset='100%25' stop-color='%231e293b'/></linearGradient></defs><rect width='100%25' height='100%25' fill='url(%23g5)'/></svg>" },
 ];

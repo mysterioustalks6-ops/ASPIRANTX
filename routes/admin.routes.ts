@@ -1303,7 +1303,7 @@ router.post('/api/admin/team', adminMutationLimiter, verifyAdminAuth, async (req
       title: title || 'Startup Team Member',
       role: role || 'ACADEMIC_LEAD',
       department: department || 'Operations',
-      avatar: avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+      avatar: avatar || 'https://studyride.in/logo.png',
       status: 'ACTIVE',
       joinedAt: existingIndex >= 0 ? adminTeamStore[existingIndex].joinedAt : new Date().toISOString(),
       permissions: permissions || {

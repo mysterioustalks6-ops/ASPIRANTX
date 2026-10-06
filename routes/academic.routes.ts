@@ -504,13 +504,19 @@ router.get('/api/academic/syllabus', async (req, res) => {
         }
       }
 
-      // If still no syllabus nodes exist for this exam, generate them on the fly
+      // If no syllabus nodes exist in store, check canonical hierarchy or return honest empty state
       if (items.length === 0) {
-        const generated = generateRealisticSyllabus(exam);
-        generated.forEach((node) => {
-          syllabusNodesStore.set(node.id, node);
-        });
-        items = generated;
+        const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+          n => normalizeExam(n.exam || '') === normalizeExam(exam)
+        );
+        if (canonicalMatch.length > 0) {
+          canonicalMatch.forEach((node) => {
+            syllabusNodesStore.set(node.id, node);
+          });
+          items = canonicalMatch;
+        } else {
+          items = [];
+        }
       }
     }
     if (paper) {
@@ -564,11 +570,17 @@ router.get('/api/academic/syllabus/stats', async (req, res) => {
       }
 
       if (items.length === 0) {
-        const generated = generateRealisticSyllabus(exam);
-        generated.forEach((node) => {
-          syllabusNodesStore.set(node.id, node);
-        });
-        items = generated;
+        const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+          n => normalizeExam(n.exam || '') === normalizeExam(exam)
+        );
+        if (canonicalMatch.length > 0) {
+          canonicalMatch.forEach((node) => {
+            syllabusNodesStore.set(node.id, node);
+          });
+          items = canonicalMatch;
+        } else {
+          items = [];
+        }
       }
     }
 
@@ -3179,9 +3191,15 @@ router.get('/api/academic/syllabus/subjects', (req, res) => {
       : items;
 
     if (filtered.length === 0 && exam) {
-      const generated = generateRealisticSyllabus(exam);
-      generated.forEach((n) => syllabusNodesStore.set(n.id, n));
-      filtered = generated;
+      const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+        n => normalizeExam(n.exam || '') === normalizeExam(exam)
+      );
+      if (canonicalMatch.length > 0) {
+        canonicalMatch.forEach((n) => syllabusNodesStore.set(n.id, n));
+        filtered = canonicalMatch;
+      } else {
+        filtered = [];
+      }
     }
 
     const subjectSet = new Set<string>();
@@ -3205,9 +3223,15 @@ router.get('/api/academic/syllabus/topics', (req, res) => {
     if (exam) {
       items = items.filter((i) => normalizeExam(i.exam || i.data?.exam || '') === normalizeExam(exam));
       if (items.length === 0) {
-        const generated = generateRealisticSyllabus(exam);
-        generated.forEach((n) => syllabusNodesStore.set(n.id, n));
-        items = generated;
+        const canonicalMatch = INITIAL_SYLLABUS_HIERARCHY.filter(
+          n => normalizeExam(n.exam || '') === normalizeExam(exam)
+        );
+        if (canonicalMatch.length > 0) {
+          canonicalMatch.forEach((n) => syllabusNodesStore.set(n.id, n));
+          items = canonicalMatch;
+        } else {
+          items = [];
+        }
       }
     }
     if (subject) {

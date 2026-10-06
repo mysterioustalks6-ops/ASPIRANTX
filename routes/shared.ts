@@ -530,7 +530,7 @@ export let globalAdminSettings = {
     showHeroBanner: true,
     heroBannerTitle: '[STUDENT] Complete Prep Suite for All Exams (Class 1 to Ph.D.)',
     heroBannerSubtitle: 'Track Syllabus, AI Study Buddy, Live Mock Predictor & Community Chat in One Place.',
-    heroBannerImageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&auto=format&fit=crop&q=80',
+    heroBannerImageUrl: 'https://studyride.in/logo.png',
     heroBannerCtaText: 'Explore Syllabus Tracker',
     showAnnouncementTicker: true,
     announcementText: '[HOT] New Syllabus Templates added for UPPSC, Bihar Board, Class 10/12 PCM & Ph.D. Entrance! Customize your goal in Profile.',
@@ -1244,7 +1244,7 @@ Start writing 2 answers daily after covering 50% of the syllabus. Pay attention 
     authorTeacherId: 'ed_1',
     authorName: 'Dr. Siddharth Arora',
     status: 'published',
-    coverImageUrl: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&auto=format&fit=crop&q=80',
+    coverImageUrl: 'https://studyride.in/logo.png',
     createdAt: new Date(Date.now() - 86400000 * 3).toISOString(),
     publishedAt: new Date(Date.now() - 86400000 * 3).toISOString()
   },
@@ -1264,7 +1264,7 @@ Enhancing Agri-Stack and crop diversification funds for climate-resilient farmin
     authorTeacherId: 'ed_2',
     authorName: 'Mrunal Patel',
     status: 'published',
-    coverImageUrl: 'https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=800&auto=format&fit=crop&q=80',
+    coverImageUrl: 'https://studyride.in/logo.png',
     createdAt: new Date(Date.now() - 86400000).toISOString(),
     publishedAt: new Date(Date.now() - 86400000).toISOString()
   }
@@ -1281,7 +1281,7 @@ export let adminUsersDb: any[] = [
     id: 'usr-admin-01',
     name: 'Ambuj Yadav (Super Admin)',
     email: 'ambujyadav0010@gmail.com',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    avatar_url: 'https://studyride.in/logo.png',
     exam: 'UPSC CSE 2026',
     stateName: 'Uttar Pradesh',
     role: 'ADMIN',
@@ -1368,7 +1368,7 @@ export let adminTeamStore: any[] = [
     id: 'tm-1',
     name: 'Ambuj Yadav',
     email: 'ambujyadav0010@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+    avatar: 'https://studyride.in/logo.png',
     title: 'Founder & Chief Executive Officer',
     role: 'SUPER_ADMIN',
     department: 'Executive Leadership',
@@ -1388,7 +1388,7 @@ export let adminTeamStore: any[] = [
     id: 'tm-2',
     name: 'Priya Sharma',
     email: 'priya.content@studyride.in',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80',
+    avatar: 'https://studyride.in/logo.png',
     title: 'Academic Director & Chief Content Officer',
     role: 'ACADEMIC_LEAD',
     department: 'Academics & Question Bank',
@@ -1408,7 +1408,7 @@ export let adminTeamStore: any[] = [
     id: 'tm-3',
     name: 'Vikram Malhotra',
     email: 'vikram.finance@studyride.in',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80',
+    avatar: 'https://studyride.in/logo.png',
     title: 'Head of Billing & Payment Operations',
     role: 'FINANCE_MANAGER',
     department: 'Finance & Monetization',
@@ -1428,7 +1428,7 @@ export let adminTeamStore: any[] = [
     id: 'tm-4',
     name: 'Sneha Verma',
     email: 'sneha.community@studyride.in',
-    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80',
+    avatar: 'https://studyride.in/logo.png',
     title: 'Community Lead & Student Support Specialist',
     role: 'COMMUNITY_LEAD',
     department: 'Community & Moderation',
@@ -1448,7 +1448,7 @@ export let adminTeamStore: any[] = [
     id: 'tm-5',
     name: 'Rohan Mehta',
     email: 'rohan.tech@studyride.in',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop&q=80',
+    avatar: 'https://studyride.in/logo.png',
     title: 'Lead Systems Architect & DevOps',
     role: 'TECH_LEAD',
     department: 'Engineering & Infrastructure',
@@ -1518,19 +1518,19 @@ export let adminTasksStore: any[] = [
 ];
 
 export const DEFAULT_SPONSORS_LIST: any[] = [
-  { id: 'sp-1', name: 'Unacademy', logo: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&auto=format&fit=crop&q=80', website: 'https://unacademy.com', tier: 'gold', description: 'India\'s largest learning platform - Official Education Partner' },
-  { id: 'sp-2', name: 'Vajiram & Ravi', logo: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=120&auto=format&fit=crop&q=80', website: 'https://vajiramandravi.com', tier: 'gold', description: 'Premier Institute for IAS Preparation - General Studies Partner' },
-  { id: 'sp-3', name: 'Physics Wallah', logo: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=120&auto=format&fit=crop&q=80', website: 'https://pw.live', tier: 'gold', description: 'Empowering students with affordable learning - Tech Sponsor' },
-  { id: 'sp-4', name: 'Testbook', logo: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=120&auto=format&fit=crop&q=80', website: 'https://testbook.com', tier: 'silver', description: 'Comprehensive Mock Tests & Live Test Series Partner' },
-  { id: 'sp-5', name: 'Oliveboard', logo: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=120&auto=format&fit=crop&q=80', website: 'https://oliveboard.in', tier: 'silver', description: 'Banking & Government Exam preparation portal' },
-  { id: 'sp-6', name: 'Chahal Academy', logo: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=120&auto=format&fit=crop&q=80', website: 'https://chahalacademy.com', tier: 'silver', description: 'Specialized Civil Services & State PCS classroom training' }
+  { id: 'sp-1', name: 'Unacademy', logo: 'https://studyride.in/logo.png', website: 'https://unacademy.com', tier: 'gold', description: 'India\'s largest learning platform - Official Education Partner' },
+  { id: 'sp-2', name: 'Vajiram & Ravi', logo: 'https://studyride.in/logo.png', website: 'https://vajiramandravi.com', tier: 'gold', description: 'Premier Institute for IAS Preparation - General Studies Partner' },
+  { id: 'sp-3', name: 'Physics Wallah', logo: 'https://studyride.in/logo.png', website: 'https://pw.live', tier: 'gold', description: 'Empowering students with affordable learning - Tech Sponsor' },
+  { id: 'sp-4', name: 'Testbook', logo: 'https://studyride.in/logo.png', website: 'https://testbook.com', tier: 'silver', description: 'Comprehensive Mock Tests & Live Test Series Partner' },
+  { id: 'sp-5', name: 'Oliveboard', logo: 'https://studyride.in/logo.png', website: 'https://oliveboard.in', tier: 'silver', description: 'Banking & Government Exam preparation portal' },
+  { id: 'sp-6', name: 'Chahal Academy', logo: 'https://studyride.in/logo.png', website: 'https://chahalacademy.com', tier: 'silver', description: 'Specialized Civil Services & State PCS classroom training' }
 ];
 
 export const DEFAULT_COLLABORATORS_LIST: any[] = [
-  { id: 'col-1', name: 'Vision IAS', logo: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=120&auto=format&fit=crop&q=80', type: 'Academic Partner', contribution: 'Syllabus Mappings & Free Notes' },
-  { id: 'col-2', name: 'Drishti IAS', logo: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=120&auto=format&fit=crop&q=80', type: 'Hindi Medium Partner', contribution: 'Bilingual Question Translation' },
-  { id: 'col-3', name: 'IAS Baba', logo: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=120&auto=format&fit=crop&q=80', type: 'Daily Quiz Contributor', contribution: 'Daily Practice Quizzes & Current Affairs' },
-  { id: 'col-4', name: 'insightsIAS', logo: 'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=120&auto=format&fit=crop&q=80', type: 'Answer Writing Contributor', contribution: 'Mains Practice Questions & Guidelines' }
+  { id: 'col-1', name: 'Vision IAS', logo: 'https://studyride.in/logo.png', type: 'Academic Partner', contribution: 'Syllabus Mappings & Free Notes' },
+  { id: 'col-2', name: 'Drishti IAS', logo: 'https://studyride.in/logo.png', type: 'Hindi Medium Partner', contribution: 'Bilingual Question Translation' },
+  { id: 'col-3', name: 'IAS Baba', logo: 'https://studyride.in/logo.png', type: 'Daily Quiz Contributor', contribution: 'Daily Practice Quizzes & Current Affairs' },
+  { id: 'col-4', name: 'insightsIAS', logo: 'https://studyride.in/logo.png', type: 'Answer Writing Contributor', contribution: 'Mains Practice Questions & Guidelines' }
 ];
 
 export const DEFAULT_OFFICE_ACTIVITIES: any[] = [
@@ -2195,7 +2195,7 @@ export function seedDefaultSponsorshipTiers() {
       {
         id: 'sp_1',
         name: 'EduTech India Foundation',
-        logoUrl: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=120&auto=format&fit=crop&q=80',
+        logoUrl: 'https://studyride.in/logo.png',
         websiteUrl: 'https://example.com/edutech',
         tierName: 'Education Champion',
         testimonial: 'Partnering with StudyRide empowered us to sponsor over 1,000 underprivileged UPSC & NEET aspirants with high quality mock tests.',
@@ -2949,174 +2949,19 @@ export function buildSimilarityIndexes() {
 setTimeout(() => buildSimilarityIndexes(), 100);
 
 export function generateRealisticSyllabus(examId: string): any[] {
-  const normId = examId.toUpperCase();
-  let subjects: { name: string; chapters: { name: string; topics: string[] }[] }[] = [];
-
-  if (normId.includes('NEET') || normId.includes('NURSING') || normId.includes('ANM') || normId.includes('GNM') || normId.includes('JENPAS') || normId.includes('JEPBN') || normId.includes('PNST')) {
-    subjects = [
-      {
-        name: 'Biology (Botany & Zoology)',
-        chapters: [
-          { name: 'Diversity in Living World', topics: ['Taxonomy & Systematics', 'Five Kingdom Classification', 'Plant Kingdom', 'Animal Kingdom'] },
-          { name: 'Structural Organisation', topics: ['Morphology of Flowering Plants', 'Anatomy of Flowering Plants', 'Animal Tissues'] },
-          { name: 'Cell Structure & Function', topics: ['Cell Theory & Structure', 'Biomolecules', 'Cell Cycle & Cell Division'] },
-          { name: 'Human Physiology', topics: ['Breathing & Respiration', 'Body Fluids & Circulation', 'Excretory Products', 'Neural Control & Coordination'] }
-        ]
-      },
-      {
-        name: 'Physics',
-        chapters: [
-          { name: 'Mechanics', topics: ['Units & Measurements', 'Motion in a Straight Line', 'Laws of Motion', 'Work, Energy & Power'] },
-          { name: 'Thermodynamics & Waves', topics: ['Kinetic Theory of Gases', 'Laws of Thermodynamics', 'Oscillations', 'Wave Optics'] },
-          { name: 'Electricity & Magnetism', topics: ['Electrostatics', 'Current Electricity', 'Magnetic Effects of Current', 'Electromagnetic Induction'] }
-        ]
-      },
-      {
-        name: 'Chemistry',
-        chapters: [
-          { name: 'Physical Chemistry', topics: ['Some Basic Concepts', 'Structure of Atom', 'Chemical Thermodynamics', 'Chemical Kinetics'] },
-          { name: 'Organic Chemistry', topics: ['Basic Principles & Techniques', 'Hydrocarbons', 'Alcohols, Phenols & Ethers', 'Organic Compounds containing Nitrogen'] },
-          { name: 'Inorganic Chemistry', topics: ['Classification of Elements', 'Chemical Bonding', 'Coordination Compounds', 'p-Block Elements'] }
-        ]
-      }
-    ];
-  } else if (normId.includes('JEE') || normId.includes('GATE') || normId.includes('JEECUP') || normId.includes('JELET') || normId.includes('JEXPO') || normId.includes('BITSAT') || normId.includes('IMU_CET') || normId.includes('JET')) {
-    subjects = [
-      {
-        name: 'Mathematics',
-        chapters: [
-          { name: 'Calculus', topics: ['Limits, Continuity & Differentiability', 'Application of Derivatives', 'Definite & Indefinite Integrals', 'Differential Equations'] },
-          { name: 'Algebra & Matrices', topics: ['Complex Numbers', 'Quadratic Equations', 'Matrices & Determinants', 'Probability & Statistics'] },
-          { name: 'Coordinate Geometry', topics: ['Straight Lines', 'Circles', 'Conic Sections (Parabola, Ellipse, Hyperbola)'] }
-        ]
-      },
-      {
-        name: 'Physics',
-        chapters: [
-          { name: 'Classical Mechanics', topics: ['Kinematics & Rotational Dynamics', 'Gravitation', 'Properties of Solids & Liquids', 'Fluid Mechanics'] },
-          { name: 'Electromagnetism', topics: ['Electrostatic Potential & Capacitance', 'Magnetic Fields & Forces', 'Alternating Currents', 'Electromagnetic Waves'] },
-          { name: 'Modern Physics', topics: ['Dual Nature of Matter', 'Atoms & Nuclei', 'Semiconductor Electronics'] }
-        ]
-      },
-      {
-        name: 'Chemistry',
-        chapters: [
-          { name: 'Physical & General Chemistry', topics: ['States of Matter', 'Atomic Structure', 'Chemical Equilibrium', 'Electrochemistry'] },
-          { name: 'Organic & Polymers', topics: ['Purification of Organic Compounds', 'Hydrocarbons', 'Polymers & Biomolecules', 'Chemistry in Everyday Life'] },
-          { name: 'Inorganic & Metals', topics: ['Periodic Table & Periodic Properties', 'Metallurgy Processes', 'd and f Block Elements'] }
-        ]
-      }
-    ];
-  } else if (normId.includes('CLAT') || normId.includes('CAT') || normId.includes('CUET') || normId.includes('NET') || normId.includes('BED') || normId.includes('PO') || normId.includes('CLERK') || normId.includes('CTET')) {
-    subjects = [
-      {
-        name: 'English Language & Comprehension',
-        chapters: [
-          { name: 'Reading Comprehension', topics: ['Fact-based passages', 'Inference-based questions', 'Vocabulary in context'] },
-          { name: 'Grammar & Usage', topics: ['Sentence Correction', 'Error Spotting', 'Active & Passive Voice', 'Direct & Indirect Speech'] }
-        ]
-      },
-      {
-        name: 'Quantitative Aptitude',
-        chapters: [
-          { name: 'Arithmetic & Data Interpretation', topics: ['Percentage & Profit/Loss', 'Ratio & Proportion', 'Time, Speed & Distance', 'Bar Graphs & Pie Charts'] },
-          { name: 'Algebra & Numbers', topics: ['Number Systems', 'Linear & Quadratic Equations', 'Permutations & Combinations'] }
-        ]
-      },
-      {
-        name: 'Logical & Analytical Reasoning',
-        chapters: [
-          { name: 'Analytical Reasoning', topics: ['Linear & Circular Arrangements', 'Syllogisms', 'Blood Relations', 'Coding-Decoding'] },
-          { name: 'Critical Reasoning', topics: ['Strengthen & Weaken Arguments', 'Assumptions & Conclusions', 'Course of Action'] }
-        ]
-      },
-      {
-        name: 'General Awareness & Law',
-        chapters: [
-          { name: 'Current & Static GK', topics: ['National & International Events', 'Indian Constitution & Polity', 'Legal Aptitude & Maxims', 'History & Geography basics'] }
-        ]
-      }
-    ];
-  } else if (normId.includes('POLICE') || normId.includes('CONSTABLE') || normId.includes('SI')) {
-    subjects = [
-      {
-        name: 'General Studies & GK',
-        chapters: [
-          { name: 'General Knowledge', topics: ['Indian History & Freedom Struggle', 'Indian Geography & Resources', 'General Science & Life science'] },
-          { name: 'Current Affairs', topics: ['Sports & Awards', 'Important Days & Summits', 'Government Schemes & Policies'] }
-        ]
-      },
-      {
-        name: 'Numerical & Mental Ability',
-        chapters: [
-          { name: 'Numerical Ability', topics: ['Simplification & Number Series', 'LCM & HCF', 'Percentage, Profit & Loss', 'Simple & Compound Interest'] },
-          { name: 'Mental Ability', topics: ['Logical Diagrams', 'Codified Relationships', 'Perception Test', 'Word Formation Test'] }
-        ]
-      },
-      {
-        name: 'Reasoning Ability',
-        chapters: [
-          { name: 'Logical Reasoning', topics: ['Analogies & Similarities', 'Space Visualization', 'Decision Making', 'Visual Memory', 'Arithmetical Reasoning'] }
-        ]
-      }
-    ];
-  } else {
-    subjects = [
-      {
-        name: 'General Studies & GK',
-        chapters: [
-          { name: 'Indian History & Culture', topics: ['Ancient & Medieval India', 'Modern Indian History', 'National Movement & Art Forms'] },
-          { name: 'Polity, Constitution & Geography', topics: ['Salient Features of Constitution', 'Fundamental Rights & Duties', 'Physical Geography of India'] }
-        ]
-      },
-      {
-        name: 'Quantitative Aptitude',
-        chapters: [
-          { name: 'Arithmetic Operations', topics: ['Number Systems & Decimals', 'Percentage & Profit/Loss', 'Ratio & Proportion', 'Time and Work', 'Average & Age problems'] },
-          { name: 'Data Interpretation', topics: ['Tabulation & Line Charts', 'Bar Graphs & Histograms'] }
-        ]
-      },
-      {
-        name: 'General Intelligence & Reasoning',
-        chapters: [
-          { name: 'Verbal & Non-Verbal Reasoning', topics: ['Analogies & Classification', 'Series Completion & Coding', 'Blood Relations & Direction Sense', 'Paper Folding & Mirror Images'] }
-        ]
-      },
-      {
-        name: 'General English',
-        chapters: [
-          { name: 'Vocabulary & Grammar', topics: ['Synonyms & Antonyms', 'Idioms & Phrases', 'Sentence Correction', 'Cloze Test & Fillers'] }
-        ]
-      }
-    ];
-  }
-
-  const nodes: any[] = [];
-  let nodeIndex = 1;
+  const normId = (examId || '').toUpperCase().trim();
+  const normalizeKey = (k: string) => k.replace(/[\s\-_]/g, '');
   
-  for (const sub of subjects) {
-    for (const chap of sub.chapters) {
-      for (const top of chap.topics) {
-        const nodeId = `gen_node_${examId.toLowerCase()}_${nodeIndex++}`;
-        nodes.push({
-          id: nodeId,
-          exam: examId,
-          paper: 'Paper 1',
-          subject: sub.name,
-          chapter: chap.name,
-          topic: top,
-          subtopic: 'Core concepts, fundamental formulas, and standard application problems.',
-          title: `${top} Core Syllabus Module`,
-          stage: 'Prelims',
-          weightage: 'High',
-          estimatedHours: 2.5,
-          createdAt: new Date().toISOString()
-        });
-      }
-    }
+  // Return verified curriculum from canonical academic hierarchy if available
+  const matched = INITIAL_SYLLABUS_HIERARCHY.filter(
+    n => normalizeKey((n.exam || '').toUpperCase()) === normalizeKey(normId)
+  );
+  if (matched.length > 0) {
+    return matched;
   }
-
-  return nodes;
+  
+  // Honest empty state: Never generate synthetic placeholders as official syllabus
+  return [];
 }
 
 export const pyqReviewQueueStore = new Map<string, any>();
