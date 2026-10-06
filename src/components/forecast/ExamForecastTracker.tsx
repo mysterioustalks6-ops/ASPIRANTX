@@ -77,21 +77,36 @@ export const ExamForecastTracker: React.FC<ExamForecastTrackerProps> = ({
   // ── Persistent State Initialization ──────────────────────────────────────────
   const storagePrefix = `forecast_tracker_${userId}_${initialExamId}`;
 
+  const isJeeExam = (initialExamId || '').toUpperCase().includes('JEE');
+
+  const defaultExamDef: ExamDefinition = isJeeExam ? DEFAULT_JEE_EXAM : {
+    id: initialExamId,
+    name: initialExamId.replace(/_/g, ' '),
+    category: 'Other',
+    examDate: '2026-05-15',
+    targetSyllabusCompletionDate: '2026-04-15',
+    defaultDailyProductiveHours: 5.5,
+    minRevisionBufferDays: 14,
+    subjects: []
+  };
+
+  const defaultTasks: ExamTask[] = isJeeExam ? DEFAULT_JEE_TASKS : [];
+
   const [exam, setExam] = useState<ExamDefinition>(() => {
     try {
       const saved = localStorage.getItem(`${storagePrefix}_exam`);
-      return saved ? JSON.parse(saved) : DEFAULT_JEE_EXAM;
+      return saved ? JSON.parse(saved) : defaultExamDef;
     } catch {
-      return DEFAULT_JEE_EXAM;
+      return defaultExamDef;
     }
   });
 
   const [tasks, setTasks] = useState<ExamTask[]>(() => {
     try {
       const saved = localStorage.getItem(`${storagePrefix}_tasks`);
-      return saved ? JSON.parse(saved) : DEFAULT_JEE_TASKS;
+      return saved ? JSON.parse(saved) : defaultTasks;
     } catch {
-      return DEFAULT_JEE_TASKS;
+      return defaultTasks;
     }
   });
 
@@ -102,9 +117,9 @@ export const ExamForecastTracker: React.FC<ExamForecastTrackerProps> = ({
         const obj = JSON.parse(saved);
         return new Map(Object.entries(obj));
       }
-      return new Map(Object.entries(DEFAULT_STUDENT_PROGRESS));
+      return isJeeExam ? new Map(Object.entries(DEFAULT_STUDENT_PROGRESS)) : new Map();
     } catch {
-      return new Map(Object.entries(DEFAULT_STUDENT_PROGRESS));
+      return isJeeExam ? new Map(Object.entries(DEFAULT_STUDENT_PROGRESS)) : new Map();
     }
   });
 
@@ -350,8 +365,8 @@ export const ExamForecastTracker: React.FC<ExamForecastTrackerProps> = ({
   // ── Reset to Demo Data Handler ─────────────────────────────────────────────
   const handleResetDemoData = () => {
     if (confirm('Reset tracker to demo fresher state for JEE Main? All mock history will be restored.')) {
-      setExam(DEFAULT_JEE_EXAM);
-      setTasks(DEFAULT_JEE_TASKS);
+      setExam(defaultExamDef);
+      setTasks(defaultTasks);
       setProgressMap(new Map(Object.entries(DEFAULT_STUDENT_PROGRESS)));
       setSessionLogs(DEFAULT_STUDY_LOGS);
       setTests(DEFAULT_TEST_RECORDS);

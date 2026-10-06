@@ -708,7 +708,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               id: 'chat',
               label: 'AI Study Mentor',
               icon: Sparkles,
-              badge: 'Gemini',
+              badge: 'AI',
             })}
             {renderNavItem({
               id: 'community',

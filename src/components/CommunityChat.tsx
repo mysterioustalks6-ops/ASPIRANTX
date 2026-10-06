@@ -406,7 +406,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
               </div>
 
               <span className="px-2.5 py-0.5 text-[10px] font-bold tracking-widest uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-full">
-                Gemini AI Security Guard
+                AI Security Guard
               </span>
 
               <h2 className="text-xl font-black text-white mt-2">
@@ -449,7 +449,7 @@ export const CommunityChat: React.FC<CommunityChatProps> = ({ user, onOpenPremiu
               Community Study Rooms
             </h1>
             <p className="text-xs text-slate-300 mt-1 max-w-xl">
-              Connect with fellow aspirants, share handwritten notes or PDFs, and query our Gemini AI Room Moderator for instant doubt resolution.
+              Connect with fellow aspirants, share handwritten notes or PDFs, and query our AI Room Moderator for instant doubt resolution.
             </p>
           </div>
 

@@ -115,7 +115,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
     {
       title: 'Connect & Mentorship',
       items: [
-        { id: 'chat' as ActiveTab, label: 'AI Study Mentor', icon: MessageSquare, badge: 'Gemini' },
+        { id: 'chat' as ActiveTab, label: 'AI Study Mentor', icon: MessageSquare, badge: 'AI' },
         { id: 'community' as ActiveTab, label: 'Peer Study Community', icon: Users },
       ]
     },

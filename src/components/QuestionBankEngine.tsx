@@ -444,30 +444,30 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
       <div className="flex items-center gap-2.5 border-b border-slate-800 pb-3">
         <button
           onClick={() => { setActiveEngineTab('browse'); setQuizActive(false); }}
-          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all border ${
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
             activeEngineTab === 'browse'
-              ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
-              : 'bg-transparent text-slate-400 border-transparent hover:text-white'
+              ? 'bg-sky-500/10 text-sky-800 dark:text-sky-300 border-sky-500/30'
+              : 'bg-transparent text-slate-700 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           Browse Questions ({questions.length})
         </button>
         <button
           onClick={() => { setActiveEngineTab('quiz'); }}
-          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all border ${
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
             activeEngineTab === 'quiz'
-              ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
-              : 'bg-transparent text-slate-400 border-transparent hover:text-white'
+              ? 'bg-sky-500/10 text-sky-800 dark:text-sky-300 border-sky-500/30'
+              : 'bg-transparent text-slate-700 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           Interactive PYQ Quiz Mode 📝
         </button>
         <button
           onClick={() => { setActiveEngineTab('patterns'); setQuizActive(false); }}
-          className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all border ${
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all border ${
             activeEngineTab === 'patterns'
-              ? 'bg-sky-500/10 text-sky-400 border-sky-500/30'
-              : 'bg-transparent text-slate-400 border-transparent hover:text-white'
+              ? 'bg-sky-500/10 text-sky-800 dark:text-sky-300 border-sky-500/30'
+              : 'bg-transparent text-slate-700 dark:text-slate-400 border-transparent hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           PYQ Repeat & Trend Analyzer 📈
@@ -570,9 +570,9 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
           </div>
 
           {/* Questions Stats & Pagination Bar Header */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-black/40 border border-emerald-500/20 shadow-lg">
-            <div className="text-xs font-bold text-emerald-400 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] shadow-lg">
+            <div className="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+              <span className="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300">
                 📚 <strong>{total}</strong> Questions Available for {selectedExam.replace(/_/g, ' ')}
               </span>
               {total > 0 && (
@@ -587,17 +587,17 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
               <button
                 disabled={page <= 1 || loading}
                 onClick={() => setPage(prev => Math.max(1, prev - 1))}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
               >
                 <span>← Previous</span>
               </button>
-              <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-extrabold text-white font-mono">
+              <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-extrabold text-slate-100 font-mono">
                 Page {page} of {totalPages}
               </span>
               <button
                 disabled={page >= totalPages || loading}
                 onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
-                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1"
               >
                 <span>Next →</span>
               </button>
@@ -733,8 +733,8 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                   ))}
 
                   {/* Bottom Pagination Controls Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-black/40 border border-emerald-500/20 shadow-lg mt-6">
-                    <div className="text-xs text-slate-300 font-extrabold">
+                  <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900 border border-emerald-500/30 shadow-lg mt-6">
+                    <div className="text-xs text-slate-100 font-extrabold">
                       Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} Questions Total)
                     </div>
                     <div className="flex items-center gap-2">
@@ -742,7 +742,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                         <button
                           disabled={page <= 1 || loading}
                           onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                          className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
                         >
                           ← Previous Page
                         </button>
@@ -751,7 +751,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
                         <button
                           disabled={page >= totalPages || loading}
                           onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                          className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
                         >
                           Next Page →
                         </button>

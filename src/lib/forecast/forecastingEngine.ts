@@ -279,7 +279,7 @@ export function calculateObservedProductivity(
 /**
  * Projects date when a given workload will be cleared based on calendar availability and daily capacity
  */
-function projectCompletionDate(
+export function projectCompletionDate(
   startDateStr: string,
   workloadHours: number,
   dailyPaceHours: number,

@@ -121,9 +121,9 @@ export const APP_FEATURES: AppFeatureItem[] = [
     id: 'chat',
     label: 'AI Mentor & Doubt Solver',
     tab: 'chat',
-    keywords: ['chat', 'ai chat', 'gemini', 'mentor', 'doubt solver', 'ask ai', 'ai tutor', 'explanation'],
+    keywords: ['chat', 'ai chat', 'mentor', 'doubt solver', 'ask ai', 'ai tutor', 'explanation'],
     description: 'Ask any study doubt to get instant step-by-step AI explanations',
-    badge: 'Gemini AI',
+    badge: 'AI Mentor',
     iconName: 'MessageSquare',
   },
   {

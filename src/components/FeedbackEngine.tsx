@@ -224,7 +224,7 @@ export const FeedbackEngine: React.FC<FeedbackEngineProps> = ({ userEmail = 'gue
                   <option value="teachers">Teacher Live Portal</option>
                   <option value="podcasts">Topper Podcast Series</option>
                   <option value="eligibility">Eligibility Check Calc</option>
-                  <option value="ai_chat">Gemini Study Buddy Chat</option>
+                  <option value="ai_chat">AI Study Buddy Chat</option>
                 </select>
               </div>
 

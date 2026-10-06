@@ -160,7 +160,7 @@ export const GamificationBar: React.FC<GamificationBarProps> = ({
                 setRedeemStatus(null);
                 setShowRedeemModal(true);
               }}
-              className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-[11px] flex items-center gap-1 shadow-md shadow-amber-500/20 transition-all shrink-0"
+              className="px-3 py-1 rounded-xl bg-amber-500 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-400 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-[11px] flex items-center gap-1 shadow-md shadow-amber-500/20 transition-all shrink-0"
             >
               <Zap className="w-3 h-3 fill-slate-950" /> Redeem PRO
             </button>

@@ -64,8 +64,8 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
 }) => {
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
 
-  // Baseline effective pace & current simulated pace
-  const basePace = defaultDailyHours || 5.5;
+  // Baseline effective pace & current simulated pace (single source of truth with projection engine)
+  const basePace = forecast.currentDailyProductiveAverage || defaultDailyHours || 5.5;
   const simulatedPace = Math.max(1.0, Math.round((basePace + whatIfConfig.dailyHourDelta) * 10) / 10);
 
   // Days remaining calculation
@@ -185,18 +185,10 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
         </select>
       </div>
 
-      {/* ── ROW 2: EXAM DATE & PROJECTED SYLLABUS COMPLETION (SEPARATE ROWS) ── */}
-      <div className="space-y-1 mb-4 text-xs">
+      {/* ── ROW 2: SINGLE EXAM DATE IN LIST HEADER ── */}
+      <div className="mb-3 text-xs">
         <p className="text-[var(--sr-text-muted)] font-medium">
           Exam Date: <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(examDate)}</strong>
-        </p>
-        <p className="text-[var(--sr-text-muted)] font-medium">
-          Projected syllabus completion: <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(forecast.realisticDate)}</strong>
-          {forecast.revisionBufferDays > 0 && (
-            <span className="text-[var(--sr-primary)] font-bold ml-1.5">
-              ({forecast.revisionBufferDays}d buffer)
-            </span>
-          )}
         </p>
       </div>
 
@@ -235,6 +227,16 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             {forecast.revisionBufferDays} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">days</span>
           </span>
         </div>
+      </div>
+
+      {/* ── PROJECTED SYLLABUS COMPLETION STATUS ── */}
+      <div className="mt-3 text-center text-xs text-[var(--sr-text-muted)] font-medium">
+        Projected syllabus completion: <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(forecast.realisticDate)}</strong>
+        {forecast.revisionBufferDays > 0 && (
+          <span className="text-[var(--sr-primary)] font-bold ml-1.5">
+            ({forecast.revisionBufferDays}d buffer)
+          </span>
+        )}
       </div>
 
       {/* ── COLLAPSIBLE WHAT-IF PACE SLIDER & SIMULATOR (OPENS ON DEMAND) ── */}

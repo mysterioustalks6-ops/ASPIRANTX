@@ -9,6 +9,7 @@ import { useExam } from '../context/ExamContext';
 import { AdSenseBanner } from './AdSenseBanner';
 import { contentPackageManager } from '../lib/contentPackageManager';
 import { getApiUrl } from '../lib/apiConfig';
+import { getOfflineSeedPyqs } from '../data/seedPyqs';
 import { 
   BookOpen, 
   Search, 
@@ -312,11 +313,18 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
       }
     }
 
-    // If not loaded, ensure clean empty state without mock PYQ contamination
+    // If not loaded, use bundled offline seed PYQs so fresh installs work 100% offline
     if (!loadedFromApi && (!signal || !signal.aborted)) {
-      setPyqs([]);
-      setTotal(0);
-      setTotalPages(1);
+      const offlineSeeds = getOfflineSeedPyqs(selectedExam);
+      if (offlineSeeds && offlineSeeds.length > 0) {
+        setPyqs(offlineSeeds);
+        setTotal(offlineSeeds.length);
+        setTotalPages(1);
+      } else {
+        setPyqs([]);
+        setTotal(0);
+        setTotalPages(1);
+      }
     }
 
     if (!signal || !signal.aborted) {
@@ -418,19 +426,19 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400">
+          <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-600 dark:text-sky-400">
             <BookMarked className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+            <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
               Enterprise PYQ Engine (1991 – 2026)
-              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
+              <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/30">
                 35+ Years Archive
               </span>
             </h1>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Verified Past Year Question Papers with Subject Mapping & Explanations
             </p>
           </div>
@@ -440,7 +448,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           {onOpenBulkImport && (
             <button
               onClick={onOpenBulkImport}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-xs font-bold text-sky-300 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-xs font-bold text-sky-700 dark:text-sky-300 transition-all"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>Bulk PYQ Import</span>
@@ -465,37 +473,37 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
       {/* Playful Veer Mascot Study Motivation Banner */}
       <div 
         onClick={() => { soundFx.playChestOpen(); triggerConfetti({ particleCount: 40, spread: 60 }); }}
-        className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-900/60 to-cyan-950/30 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-lg cursor-pointer hover:border-emerald-400/60 transition-all select-none active:scale-[0.99]"
+        className="p-3.5 sm:p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 shadow-lg cursor-pointer hover:border-emerald-400/60 transition-all select-none active:scale-[0.99]"
       >
         <div className="flex items-center gap-3">
           <AspirantMascot size="sm" state="happy" />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
                 Veer PYQ Companion
               </span>
-              <span className="text-xs text-amber-300 font-extrabold flex items-center gap-1">
+              <span className="text-xs text-amber-600 dark:text-amber-300 font-extrabold flex items-center gap-1">
                 ⭐ +15 XP per correct answer
               </span>
             </div>
-            <p className="text-xs sm:text-sm font-bold text-white mt-0.5">
+            <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white mt-0.5">
               "70% questions follow past patterns. Solve these with full focus! Tap me for good luck! 🪶"
             </p>
           </div>
         </div>
-        <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 text-xs font-black transition-all">
+        <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-slate-950 text-xs font-black transition-all">
           Cheer Me Up 🎉
         </span>
       </div>
 
       {/* Tab Switcher */}
-      <div className="flex flex-wrap gap-2 p-1.5 rounded-xl bg-white/5 border border-white/10 w-fit">
+      <div className="flex flex-wrap gap-2 p-1.5 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] w-fit">
         <button
           onClick={() => { soundFx.playTap(); setSubTab('practice'); }}
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
             subTab === 'practice'
-              ? 'bg-sky-600 text-white shadow-lg'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-sky-700 text-white shadow-lg'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           Interactive Quiz Mode
@@ -504,8 +512,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           onClick={() => { soundFx.playTap(); setSubTab('pdfs'); }}
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             subTab === 'pdfs'
-              ? 'bg-sky-600 text-white shadow-lg'
-              : 'text-slate-400 hover:text-white'
+              ? 'bg-sky-700 text-white shadow-lg'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           Official PDF Papers
@@ -520,7 +528,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             subTab === 'trends'
               ? 'bg-amber-500 text-black font-black shadow-lg'
-              : 'text-amber-400/80 hover:text-amber-300'
+              : 'text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300'
           }`}
         >
           <span>🔥 PYQ Repeat Trends</span>
@@ -530,7 +538,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer ${
             subTab === 'ocr'
               ? 'bg-sky-600 text-white shadow-lg'
-              : 'text-slate-400 hover:text-white'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           📄 PDF to Word Beautifier
@@ -652,9 +660,9 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
         </div>
 
         {subTab === 'practice' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-black/40 border border-sky-500/20 shadow-lg">
-            <div className="text-xs font-bold text-sky-300 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-xl bg-sky-500/10 border border-sky-500/30">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] shadow-lg">
+            <div className="text-xs font-bold text-sky-800 dark:text-sky-300 flex items-center gap-2">
+              <span className="px-3 py-1 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-800 dark:text-sky-300">
                 📚 <strong>{total}</strong> Questions Available for {selectedExam.replace(/_/g, ' ')}
               </span>
               {total > 0 && (
@@ -669,17 +677,17 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               <button
                 disabled={page <= 1 || loading}
                 onClick={() => { soundFx.playTap(); setPage(prev => Math.max(1, prev - 1)); }}
-                className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1 active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-600 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1 active:scale-95"
               >
                 <span>← Previous</span>
               </button>
-              <span className="px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-extrabold text-white font-mono">
+              <span className="px-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-xs font-extrabold text-slate-100 font-mono">
                 Page {page} of {totalPages}
               </span>
               <button
                 disabled={page >= totalPages || loading}
                 onClick={() => { soundFx.playTap(); setPage(prev => Math.min(totalPages, prev + 1)); }}
-                className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1 active:scale-95"
+                className="px-3.5 py-1.5 rounded-xl bg-sky-700 hover:bg-sky-600 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white transition-all shadow cursor-pointer flex items-center gap-1 active:scale-95"
               >
                 <span>Next →</span>
               </button>
@@ -887,8 +895,24 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
             (() => {
               if (pyqs.length === 0) {
                 return (
-                  <div className="p-8 text-center rounded-2xl bg-black/40 border border-white/10 text-slate-400 text-xs">
-                    No questions found matching the selected filters. Try selecting "All Subjects" or clearing search.
+                  <div className="p-8 text-center rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] text-slate-300 text-xs space-y-3">
+                    <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                      <RotateCcw className="w-5 h-5" />
+                    </div>
+                    <div className="font-bold text-sm text-[var(--sr-text)]">
+                      {typeof navigator !== 'undefined' && navigator.onLine === false ? 'Offline Mode Active' : 'No questions matching current filters'}
+                    </div>
+                    <p className="text-xs text-[var(--sr-text-muted)] max-w-sm mx-auto">
+                      {typeof navigator !== 'undefined' && navigator.onLine === false
+                        ? 'Connect to the internet to load and sync the complete 35-year archive of 15,000+ past exam questions.'
+                        : 'Try selecting "All Subjects" or resetting your search filters.'}
+                    </p>
+                    <button
+                      onClick={() => fetchPyqs()}
+                      className="px-4 py-2 bg-[var(--sr-primary)] hover:opacity-90 text-[var(--sr-primary-content)] font-bold text-xs rounded-xl transition cursor-pointer"
+                    >
+                      Retry Connection
+                    </button>
                   </div>
                 );
               }
@@ -1029,8 +1053,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
 
           {/* Bottom Pagination Bar (Available for both Flat and Year-Grouped view modes) */}
           {pyqs.length > 0 && (
-            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-black/40 border border-sky-500/20 shadow-lg mt-6">
-              <div className="text-xs text-slate-300 font-extrabold">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900 border border-sky-500/30 shadow-lg mt-6">
+              <div className="text-xs text-slate-100 font-extrabold">
                 Showing Page <strong>{page}</strong> of <strong>{totalPages}</strong> ({total} Questions Total)
               </div>
               <div className="flex items-center gap-2">
@@ -1038,7 +1062,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                   <button
                     disabled={page <= 1 || loading}
                     onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                    className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-600 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
                   >
                     ← Previous Page
                   </button>
@@ -1047,7 +1071,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                   <button
                     disabled={page >= totalPages || loading}
                     onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-                    className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-600 disabled:opacity-30 text-xs font-bold text-white transition-all shadow cursor-pointer"
                   >
                     Next Page →
                   </button>

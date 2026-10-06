@@ -173,7 +173,7 @@ export const ALL_WORKSPACE_FEATURES: WorkspaceFeatureMeta[] = [
     category: 'ai_community',
     categoryLabel: 'AI & Community',
     iconName: 'MessageSquare',
-    badge: 'Gemini AI',
+    badge: 'AI Mentor',
     suggestedReason: 'Get immediate, simple explanations whenever you get stuck.',
     defaultActive: true,
     defaultOrder: 10,

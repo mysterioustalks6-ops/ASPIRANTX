@@ -498,8 +498,8 @@ body {
   -ms-user-select: none !important;
   user-select: none !important;
   -webkit-touch-callout: none !important;
-  background-color: #020617; /* slate-950 */
-  color: #f8fafc;
+  background-color: var(--sr-bg, #12161F);
+  color: var(--sr-text, #f8fafc);
   min-height: 100%;
   overflow-y: visible;
   overflow-x: hidden;

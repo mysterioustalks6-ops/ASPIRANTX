@@ -5,7 +5,9 @@
 
 :root,
 .dark,
-.theme-dark {
+.theme-dark,
+[data-theme="dark"],
+html.dark {
   /* Surface & Base (Soft Charcoal, Never Blue-Black) — Default Calm Highway */
   --sr-bg: #12161F;
   --sr-surface: #1A202C;
@@ -79,7 +81,9 @@
 }
 
 .light,
-.theme-light {
+.theme-light,
+[data-theme="light"],
+html.light {
   /* Surface & Base (Opt-in Light Calm Highway) */
   --sr-bg: #F8FAFC;
   --sr-surface: #FFFFFF;

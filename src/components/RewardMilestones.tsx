@@ -117,10 +117,13 @@ export const RewardMilestones: React.FC<RewardMilestonesProps> = ({ user, featur
     >
       <div className="space-y-8 pb-16">
         {/* Header Hero Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 p-8 sm:p-10 text-white shadow-xl">
+        <div 
+          className="relative overflow-hidden rounded-3xl bg-orange-700 bg-gradient-to-r from-amber-700 via-orange-700 to-rose-700 p-8 sm:p-10 text-white shadow-xl"
+          style={{ backgroundColor: '#7c2d12' }}
+        >
           <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none"></div>
           <div className="relative z-10 max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/30 backdrop-blur-md border border-white/20 text-xs font-black tracking-wider uppercase">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-xs font-black tracking-wider uppercase">
               <Trophy className="w-4 h-4 text-amber-300" /> PRO Progressive Study Ladders
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
@@ -155,31 +158,31 @@ export const RewardMilestones: React.FC<RewardMilestonesProps> = ({ user, featur
         <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-2">
-                <Gift className="w-5 h-5 text-amber-400" /> Progressive Reward Tracks & Tiers
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                <Gift className="w-5 h-5 text-amber-500 dark:text-amber-400" /> Progressive Reward Tracks & Tiers
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                 Completed tier claims automatically unlock the next challenging reward level in each track.
               </p>
             </div>
             <button
               onClick={fetchMilestonesAndProgress}
-              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all"
+              className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-all"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Refresh Progress
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" /> Refresh Progress
             </button>
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-slate-400 space-y-3">
+            <div className="p-12 text-center text-slate-600 dark:text-slate-400 space-y-3">
               <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-amber-400">Loading Rewards...</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-amber-500 dark:text-amber-400">Loading Rewards...</div>
             </div>
           ) : milestones.length === 0 ? (
-            <div className="p-12 rounded-3xl bg-slate-900/60 border border-slate-800 text-center space-y-3">
-              <Package className="w-10 h-10 text-slate-600 mx-auto" />
-              <div className="text-sm font-bold text-slate-300">No active milestones available right now.</div>
-              <p className="text-xs text-slate-500">Check back soon as admins add new progressive prize tracks.</p>
+            <div className="p-12 rounded-3xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-center space-y-3">
+              <Package className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto" />
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-300">No active milestones available right now.</div>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Check back soon as admins add new progressive prize tracks.</p>
             </div>
           ) : (
             <div className="space-y-12">

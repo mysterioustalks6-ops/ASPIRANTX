@@ -1459,13 +1459,13 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
     return (
       <div className="w-full space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-sm">
-          <div className="flex items-center space-x-2 text-sky-600 font-semibold mb-1 text-xs sm:text-sm">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-sm">
+          <div className="flex items-center space-x-2 text-sky-800 dark:text-sky-300 font-bold mb-1 text-xs sm:text-sm">
             <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>National Standard Exam Portal</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Computer Based Test (CBT) Engine</h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">Practice, build custom tests by subject & topic, or join live All-India admin exams.</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">Computer Based Test (CBT) Engine</h1>
+          <p className="text-slate-700 dark:text-slate-300 text-xs sm:text-sm mt-1">Practice, build custom tests by subject & topic, or join live All-India admin exams.</p>
 
           {/* Tabs */}
           <div className="flex items-center gap-1.5 sm:gap-2 mt-4 sm:mt-5 flex-wrap">
@@ -1476,7 +1476,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               { key: 'results', label: 'My Results', icon: BarChart2 },
             ] as const).map(({ key, label, icon: Icon }) => (
               <button key={key} onClick={() => { setActiveTab(key); if (key === 'custom' && subjects.length === 0) fetchSubjects(builder.exam); }}
-                className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all min-h-[40px] ${activeTab === key ? 'bg-sky-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+                className={`flex items-center space-x-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all min-h-[40px] ${activeTab === key ? 'bg-sky-700 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200'}`}>
                 <Icon className="w-4 h-4" /><span>{label}</span>
                 {key === 'live' && liveExams.length > 0 && <span className="w-4 h-4 bg-rose-500 text-white text-[10px] rounded-full flex items-center justify-center">{liveExams.length}</span>}
               </button>
@@ -1495,23 +1495,23 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
             <div className="space-y-6">
               {/* Question Inventory Transparency Banner */}
               {questionInventory && (
-                <div className="bg-gradient-to-r from-sky-50 via-indigo-50 to-sky-50 border border-sky-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                  <div className="flex items-center space-x-2 text-sky-900 font-semibold">
-                    <Shield className="w-5 h-5 text-sky-600 shrink-0" />
+                <div className="bg-gradient-to-r from-sky-50 via-indigo-50 to-sky-50 dark:from-slate-900/90 dark:via-slate-800/90 dark:to-slate-900/90 border border-sky-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center space-x-2 text-sky-900 dark:text-sky-300 font-semibold">
+                    <Shield className="w-5 h-5 text-sky-600 dark:text-sky-400 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900 text-sm">Neon PostgreSQL Authoritative Question Bank</div>
-                      <div className="text-slate-500 text-[11px] mt-0.5">Strict anti-leak projection, verified syllabi & atomic evaluation</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">Neon PostgreSQL Authoritative Question Bank</div>
+                      <div className="text-slate-600 dark:text-slate-300 text-[11px] mt-0.5">Strict anti-leak projection, verified syllabi & atomic evaluation</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-slate-700 bg-white/80 border border-sky-100 rounded-xl px-3 py-2">
+                  <div className="flex items-center gap-3 text-slate-800 dark:text-slate-200 bg-white/90 dark:bg-slate-800/90 border border-sky-200 dark:border-slate-700 rounded-xl px-3 py-2">
                     <div>
-                      <span className="text-slate-500">Ready Inventory: </span>
-                      <strong className="text-sky-700 font-extrabold text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Ready Inventory: </span>
+                      <strong className="text-sky-700 dark:text-sky-300 font-extrabold text-sm">
                         {(questionInventory.verified_count || 0) + (questionInventory.pending_review_count || 0)} Questions
                       </strong>
                     </div>
-                    <span className="text-slate-300">|</span>
-                    <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <span className="text-slate-400 dark:text-slate-600">|</span>
+                    <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
                       <CheckCircle className="w-3.5 h-3.5" /> Cheat-Proof
                     </span>
                   </div>
@@ -1526,7 +1526,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                       <Award className="w-5 h-5 text-amber-500" />
                       <span>Official Exam Blueprints (National Pattern)</span>
                     </h3>
-                    <span className="text-xs text-sky-600 font-bold bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-md">
+                    <span className="text-xs text-sky-800 dark:text-sky-300 font-bold bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 px-2.5 py-1 rounded-md">
                       Verified Architecture
                     </span>
                   </div>
@@ -1552,10 +1552,10 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                             <div className="space-y-1.5 text-xs text-slate-600 mb-6">
                               <div className="flex justify-between"><span>Total Marks:</span><span className="font-semibold text-slate-900">{bp.total_marks} Marks</span></div>
                               <div className="flex justify-between"><span>Blueprint Pattern:</span><span className="font-semibold text-slate-900">{bp.total_questions} Questions</span></div>
-                              <div className="flex justify-between"><span>Marking Scheme:</span><span className="font-semibold text-emerald-600">+{markingScheme.correct} / -{markingScheme.incorrect}</span></div>
+                              <div className="flex justify-between"><span>Marking Scheme:</span><span className="font-semibold text-emerald-800 dark:text-emerald-400">+{markingScheme.correct} / -{markingScheme.incorrect}</span></div>
                               <div className="flex justify-between pt-1 border-t border-slate-100">
                                 <span>Bank Inventory:</span>
-                                <span className={`font-bold ${canRunFull ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                <span className={`font-bold ${canRunFull ? 'text-emerald-800 dark:text-emerald-400' : 'text-amber-800 dark:text-amber-400'}`}>
                                   {availCount} available
                                 </span>
                               </div>
@@ -1674,7 +1674,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 </div>
                 <div>
                   <div className="font-bold text-slate-900 text-sm">🤖 AI Generated</div>
-                  <div className="text-xs text-slate-500 mt-0.5">Gemini AI se fresh questions generate hote hain</div>
+                  <div className="text-xs text-slate-500 mt-0.5">Fresh high-yield questions generated via AI engine</div>
                 </div>
               </button>
               <button

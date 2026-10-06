@@ -1187,7 +1187,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
       return;
     }
     setBulkParsingStatus('extracting');
-    setBulkProgressMsg('Sending text to AI OCR & Academic Parser (Gemini Flash)...');
+    setBulkProgressMsg('Sending text to AI OCR & Academic Parser (AI Engine)...');
     try {
       const token = localStorage.getItem('aspirantx_auth_token');
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -5395,7 +5395,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800">
-              <div className="text-[10px] font-bold text-slate-400 uppercase">Gemini 3.6 Flash API</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase">AI Study Engine API</div>
               <div className="text-base font-black text-cyan-400 mt-1 flex items-center gap-1.5">
                 <Zap className="w-4 h-4" /> Operational
               </div>
@@ -5520,7 +5520,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
             {/* Pipeline description cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
               {[
-                { label: 'PDF / Scanned PDF', desc: 'Native text + OCR fallback via Gemini Vision', icon: '📄', color: 'from-red-500/20 to-red-600/10 border-red-500/20' },
+                { label: 'PDF / Scanned PDF', desc: 'Native text + OCR fallback via Vision AI', icon: '📄', color: 'from-red-500/20 to-red-600/10 border-red-500/20' },
                 { label: 'Image / Screenshot', desc: 'AI Vision OCR — requires GEMINI_API_KEY', icon: '🖼️', color: 'from-blue-500/20 to-blue-600/10 border-blue-500/20' },
                 { label: 'DOCX / TXT', desc: 'Native text extraction via mammoth', icon: '📝', color: 'from-emerald-500/20 to-emerald-600/10 border-emerald-500/20' },
                 { label: 'Paste / JSON', desc: 'Direct text or structured question records', icon: '📋', color: 'from-violet-500/20 to-violet-600/10 border-violet-500/20' },
@@ -5564,7 +5564,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onUpdateRole, onFl
             <div className="p-4 rounded-xl bg-violet-950/30 border border-violet-500/20 mb-6">
               <p className="text-xs font-black text-violet-300 mb-1">🔑 For OCR on Scanned PDFs & Images</p>
               <p className="text-[11px] text-slate-400">
-                Add <code className="px-1.5 py-0.5 rounded bg-slate-800 text-violet-300 font-mono">GEMINI_API_KEY</code> to your <code className="px-1.5 py-0.5 rounded bg-slate-800 text-violet-300 font-mono">.env</code> file to enable Gemini Vision OCR for scanned documents and images. Native PDF and text extraction work without any key.
+                Add <code className="px-1.5 py-0.5 rounded bg-slate-800 text-violet-300 font-mono">GEMINI_API_KEY</code> to your <code className="px-1.5 py-0.5 rounded bg-slate-800 text-violet-300 font-mono">.env</code> file to enable AI Vision OCR for scanned documents and images. Native PDF and text extraction work without any key.
               </p>
             </div>
 
