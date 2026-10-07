@@ -27,6 +27,7 @@ import { scheduleFocusNotifications, clearFocusNotifications } from './notificat
 import { soundFx } from '../../../lib/soundEffects';
 import { triggerConfetti } from '../../../lib/animations';
 import { TactileButton } from '../../../design-system/TactileButton';
+import { EndlessHighwayLandscape } from './EndlessHighwayLandscape';
 
 export interface HighwayFocusTimerProps {
   userId?: string;
@@ -397,20 +398,78 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
 
   return (
     <div className="relative min-h-screen w-full flex flex-col justify-between overflow-hidden select-none">
-      {/* ── RELAX SCENERY LAYER (OPTIONAL BACKDROP) ── */}
-      {isRelaxViewActive && (
-        <div 
-          className="absolute inset-0 z-0 pointer-events-none transition-all duration-700"
-          style={{ background: currentScene.gradientBackground }}
-        >
-          <div 
-            className="w-full h-full"
-            dangerouslySetInnerHTML={{ __html: currentScene.svgArtwork }}
-          />
-          {/* Contrast Scrim (Guarantees WCAG 4.5:1 text contrast) */}
-          <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px]" />
+      {/* ── ZEN RELAX VIEW (ZERO DIGITS, ENDLESS HIGHWAY TOWARDS MOUNTAINS & VALLEYS) ── */}
+      {isRelaxViewActive ? (
+        <div className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden">
+          {/* Endless highway background towards distant mountains & valleys */}
+          <div className="absolute inset-0 z-0">
+            <EndlessHighwayLandscape isDriving={isRunning && !isPaused} />
+          </div>
+
+          {/* Minimalist Top Control Bar */}
+          <div className="relative z-20 w-full max-w-4xl mx-auto px-4 pt-3 flex items-center justify-between">
+            <button
+              onClick={() => {
+                soundFx.playTap();
+                setIsRelaxViewActive(false);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 backdrop-blur-md text-xs font-bold text-white border border-slate-700/80 flex items-center gap-2 cursor-pointer shadow-lg transition-all"
+            >
+              <ArrowLeft className="w-4 h-4 text-emerald-400" />
+              <span>Exit Relax View</span>
+            </button>
+
+            <div className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5 shadow-md">
+              <span className={`w-2 h-2 rounded-full ${isRunning && !isPaused ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span>{isRunning ? (isPaused ? 'Session Paused' : 'Focus Ride Active') : 'Zen Highway Meditation'}</span>
+            </div>
+          </div>
+
+          {/* Minimalist Floating Action Controls (Zero Stress, No Large Numbers) */}
+          <div className="relative z-20 w-full max-w-md mx-auto pb-44 sm:pb-40 px-4 flex items-center justify-center gap-3">
+            {!isRunning ? (
+              <TactileButton
+                variant="primary"
+                size="md"
+                onClick={handleStartTimer}
+                icon={<Play className="w-4 h-4 fill-current" />}
+              >
+                Start Ride
+              </TactileButton>
+            ) : (
+              <>
+                {isPaused ? (
+                  <TactileButton
+                    variant="primary"
+                    size="sm"
+                    onClick={handleResumeTimer}
+                    icon={<Play className="w-4 h-4 fill-current" />}
+                  >
+                    Resume Ride
+                  </TactileButton>
+                ) : (
+                  <TactileButton
+                    variant="secondary"
+                    size="sm"
+                    onClick={handlePauseTimer}
+                    icon={<Pause className="w-4 h-4" />}
+                  >
+                    Pause Ride
+                  </TactileButton>
+                )}
+                <TactileButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowExitConfirmModal(true)}
+                >
+                  End Ride
+                </TactileButton>
+              </>
+            )}
+          </div>
         </div>
-      )}
+      ) : (
+        <>
 
       {/* ── TOP CONTROL BAR ── */}
       <div className="relative z-10 w-full max-w-4xl mx-auto px-4 pt-3 flex items-center justify-between gap-3">
@@ -682,6 +741,8 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
           </button>
         </div>
       </div>
+    </>
+  )}
 
       {/* ── MODAL: EXIT / ABANDON CONFIRMATION ── */}
       {showExitConfirmModal && (

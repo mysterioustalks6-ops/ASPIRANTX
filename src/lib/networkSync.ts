@@ -16,6 +16,7 @@ import { App as CapApp } from '@capacitor/app';
 
 let isInitialized = false;
 let isFlaggedOffline = false;
+let currentOnlineState = true;
 let failureTimestamps: number[] = [];
 let recoveryIntervalId: any = null;
 
@@ -23,15 +24,7 @@ const listeners: Set<(isOnline: boolean) => void> = new Set();
 
 function applyOnlineState(connected: boolean) {
   isFlaggedOffline = !connected;
-  try {
-    Object.defineProperty(navigator, 'onLine', {
-      value: connected,
-      configurable: true,
-      writable: true
-    });
-  } catch (e) {
-    // Non-fatal if browser blocks property redefine
-  }
+  currentOnlineState = connected;
   
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event(connected ? 'online' : 'offline'));
@@ -182,9 +175,11 @@ export function reportFetchFailure(_url?: string, _error?: any): void {
   // Intentionally NO-OP. Failed API requests do NOT trigger global offline banner.
 }
 
-export function isDeviceOnline(): boolean {
-  return !isFlaggedOffline && (typeof navigator === 'undefined' || navigator.onLine !== false);
+export function isOnline(): boolean {
+  return currentOnlineState;
 }
+
+export const isDeviceOnline = isOnline;
 
 export function subscribeNetworkChanges(fn: (isOnline: boolean) => void): () => void {
   listeners.add(fn);

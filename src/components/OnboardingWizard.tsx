@@ -110,7 +110,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ user, onComp
         exam: finalExam,
         targetYear: 2026,
         isProfileComplete: true,
-        streakDays: Math.max(1, user.streakDays || 1),
+        streakDays: Math.max(0, user.streakDays || 0),
         studyHoursToday: 0,
         xp: user.xp || 0,
         coins: user.coins || 0,

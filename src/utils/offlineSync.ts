@@ -2,6 +2,8 @@
  * Offline Sync and Local Cache Storage Utility for AspirantX
  */
 
+import { isOnline } from '../lib/networkSync';
+
 export interface SyncQueueItem {
   id: string;
   endpoint: string;
@@ -40,7 +42,7 @@ export const offlineSyncUtil = {
   },
 
   async processSyncQueue() {
-    if (!navigator.onLine) return;
+    if (!isOnline()) return;
     const queue = this.getSyncQueue();
     if (queue.length === 0) return;
 

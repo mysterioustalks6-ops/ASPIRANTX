@@ -6,6 +6,7 @@
  */
 
 import { syncWorker } from './syncWorker';
+import { isOnline } from './networkSync';
 
 export interface StudyTelemetryPacket {
   id: string;
@@ -185,7 +186,7 @@ export function queueBackgroundPacketSync(store: LocalDeviceStudyStore): void {
   if (syncTimeout) clearTimeout(syncTimeout);
 
   syncTimeout = setTimeout(async () => {
-    if (!navigator.onLine || store.pendingSyncPackets.length === 0) return;
+    if (!isOnline() || store.pendingSyncPackets.length === 0) return;
 
     const packetsToSync = [...store.pendingSyncPackets];
     try {

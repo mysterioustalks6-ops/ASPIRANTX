@@ -8,6 +8,7 @@
 
 import { dedupFetch, getPerfMetrics, recordPerfMarker, type PerfMetrics } from './apiDeduplicator';
 import { getApiUrl } from './apiConfig';
+import { isOnline } from './networkSync';
 export { getPerfMetrics, recordPerfMarker, type PerfMetrics, getApiUrl };
 
 export interface FetchOptions extends RequestInit {
@@ -110,7 +111,7 @@ export async function apiFetch<T = any>(
   }
 
   // Immediate offline guard: prevent retry storm and serve cache when offline
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+  if (!isOnline()) {
     if (method === 'GET') {
       const staleMem = memoryCache.get(cacheKey);
       if (staleMem) {
@@ -173,7 +174,7 @@ export async function apiFetch<T = any>(
       lastError = err.name === 'AbortError' ? new Error(`Request timeout after ${timeoutMs}ms`) : err;
 
       // If user is offline or it's an abort/network error, try returning stale cache
-      if (method === 'GET' && (!navigator.onLine || attempt === maxRetries)) {
+      if (method === 'GET' && (!isOnline() || attempt === maxRetries)) {
         const staleMem = memoryCache.get(cacheKey);
         if (staleMem) {
           console.warn(`[Network Offline/Degraded] Returning stale cached data for ${url}`);

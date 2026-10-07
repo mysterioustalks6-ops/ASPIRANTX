@@ -668,10 +668,44 @@ textarea:focus-visible,
 
 @media (prefers-reduced-motion: reduce) {
   .animate-bounce-subtle,
-  .animate-slot-unlock {
+  .animate-slot-unlock,
+  .animate-road-perspective,
+  .animate-bike-hover {
     animation: none !important;
     transform: none !important;
   }
+}
+
+/* ── ENDLESS HIGHWAY SCENERY ANIMATIONS ── */
+@keyframes roadPerspectiveScroll {
+  0% {
+    transform: translateY(-8px);
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(16px);
+    opacity: 0.9;
+  }
+}
+
+@keyframes bikeHoverSubtle {
+  0%, 100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -3px);
+  }
+}
+
+.animate-road-perspective {
+  animation: roadPerspectiveScroll 1.2s linear infinite;
+}
+
+.animate-bike-hover {
+  animation: bikeHoverSubtle 2.4s ease-in-out infinite;
 }
 
 

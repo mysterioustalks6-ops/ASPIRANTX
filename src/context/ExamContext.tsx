@@ -62,7 +62,7 @@ export const ExamProvider: React.FC<ExamProviderProps> = ({ children, initialExa
       return normalizeExamId(initialExamId);
     }
     try {
-      const userRaw = typeof window !== 'undefined' ? (localStorage.getItem('studyride_user') || localStorage.getItem('aspirantx_auth_user')) : null;
+      const userRaw = typeof window !== 'undefined' ? (localStorage.getItem('studyride_user') || localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('aspirantx_user_profile')) : null;
       if (userRaw) {
         const u = JSON.parse(userRaw);
         if (u && u.exam) return normalizeExamId(u.exam);

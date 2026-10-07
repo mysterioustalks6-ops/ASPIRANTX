@@ -11,6 +11,7 @@ import { normalizeExamId } from '../lib/examRegistry';
 import { useExam } from '../context/ExamContext';
 import { AdSenseBanner } from './AdSenseBanner';
 import { contentPackageManager } from '../lib/contentPackageManager';
+import { isOnline } from '../lib/networkSync';
 import { 
   HelpCircle, 
   Plus, 
@@ -206,8 +207,7 @@ export const QuestionBankEngine: React.FC<QuestionBankEngineProps> = ({
     let loaded = false;
 
     // 1. When online, query canonical Backend API first for complete question database
-    const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
-    if (isOnline) {
+    if (isOnline()) {
       let url = '';
       try {
         const typeParam = typeFilter !== 'All' ? `&type=${typeFilter}` : '';

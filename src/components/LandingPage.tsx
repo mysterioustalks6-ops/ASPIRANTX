@@ -116,7 +116,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         } else if (data?.user) {
           const email = data.user.email || emailInput.trim();
           const isAdminUser = email.toLowerCase() === 'ambujyadav0010@gmail.com';
-          const userExam = isAdminUser ? 'UPSC_CSE' : 'NEET_UG';
+          // Check saved preference or default to NEET_UG
+          const savedExam = typeof window !== 'undefined' ? localStorage.getItem('aspirantx_global_selected_exam') : null;
+          const userExam = data.user.user_metadata?.exam || savedExam || 'NEET_UG';
           const examDateStr = getKnownExamDateString(userExam);
           const computedTargetYear = examDateStr ? new Date(examDateStr).getFullYear() : (new Date().getFullYear() + 1);
           const authUser: UserProfile = {
@@ -126,12 +128,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             avatar_url: resolveUserAvatar(data.user.user_metadata?.avatar_url, data.user.id, email),
             exam: userExam,
             targetYear: computedTargetYear,
-            streakDays: isAdminUser ? 45 : 1,
+            streakDays: 0,
             isPremium: isAdminUser ? true : false,
-            studyHoursToday: isAdminUser ? 6.0 : 0,
-            xp: isAdminUser ? 2500 : 0,
-            coins: isAdminUser ? 999 : 100,
-            level: isAdminUser ? 10 : 1,
+            studyHoursToday: 0,
+            xp: 0,
+            coins: 100,
+            level: 1,
             role: isAdminUser ? 'ADMIN' : 'USER',
             isProfileComplete: true,
           };
@@ -160,7 +162,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
       avatar_url: resolveUserAvatar(null, 'demo-guest-123', 'guest@studyride.in'),
       exam: guestExam,
       targetYear: guestTargetYear,
-      streakDays: 1,
+      streakDays: 0,
       isPremium: false,
       isGuest: true,
       studyHoursToday: 0,

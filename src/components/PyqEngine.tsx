@@ -10,6 +10,7 @@ import { AdSenseBanner } from './AdSenseBanner';
 import { contentPackageManager } from '../lib/contentPackageManager';
 import { getApiUrl } from '../lib/apiConfig';
 import { getOfflineSeedPyqs } from '../data/seedPyqs';
+import { isOnline } from '../lib/networkSync';
 import { 
   BookOpen, 
   Search, 
@@ -197,8 +198,8 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
     let loadedFromApi = false;
 
     // 1. When online, query canonical Backend API first for complete question database
-    const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false;
-    if (isOnline) {
+    const onlineState = isOnline();
+    if (onlineState) {
       let url = '';
       try {
         const langParam = languageFilter !== 'All' ? `&language=${languageFilter}` : '';
@@ -900,10 +901,10 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                       <RotateCcw className="w-5 h-5" />
                     </div>
                     <div className="font-bold text-sm text-[var(--sr-text)]">
-                      {typeof navigator !== 'undefined' && navigator.onLine === false ? 'Offline Mode Active' : 'No questions matching current filters'}
+                      {!isOnline() ? 'Offline Mode Active' : 'No questions matching current filters'}
                     </div>
                     <p className="text-xs text-[var(--sr-text-muted)] max-w-sm mx-auto">
-                      {typeof navigator !== 'undefined' && navigator.onLine === false
+                      {!isOnline()
                         ? 'Connect to the internet to load and sync the complete 35-year archive of 15,000+ past exam questions.'
                         : 'Try selecting "All Subjects" or resetting your search filters.'}
                     </p>

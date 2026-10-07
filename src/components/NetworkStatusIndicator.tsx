@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { WifiOff, RefreshCw, CheckCircle2, Activity } from 'lucide-react';
-import { subscribeNetworkChanges, isDeviceOnline } from '../lib/networkSync';
+import { subscribeNetworkChanges, isOnline } from '../lib/networkSync';
 
 const PING_INTERVAL_GOOD_MS = 30000;      // 30s when connection is good
 const PING_INTERVAL_DEGRADED_MS = 8000;   // 8s when connection is slow/lagging
@@ -10,7 +10,7 @@ const MAX_PING_HISTORY = 5;
 type QualityStatus = 'good' | 'slow' | 'lagging' | 'offline' | 'checking';
 
 export const NetworkStatusIndicator: React.FC = () => {
-  const [isOnline, setIsOnline] = useState<boolean>(() => isDeviceOnline());
+  const [isOnlineState, setIsOnlineState] = useState<boolean>(() => isOnline());
   const [showRestoredBanner, setShowRestoredBanner] = useState<boolean>(false);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
 
@@ -22,8 +22,8 @@ export const NetworkStatusIndicator: React.FC = () => {
 
   // Perform a single latency measurement ping
   const performPing = useCallback(async () => {
-    if (!navigator.onLine) {
-      setIsOnline(false);
+    if (!isOnline()) {
+      setIsOnlineState(false);
       return;
     }
 
@@ -46,7 +46,7 @@ export const NetworkStatusIndicator: React.FC = () => {
         const rtt = Math.max(1, endTime - startTime);
         setLastPingError(false);
         setCurrentLatency(rtt);
-        setIsOnline(true);
+        setIsOnlineState(true);
         setPingHistory((prev) => {
           const updated = [...prev, rtt];
           return updated.slice(-MAX_PING_HISTORY);
@@ -64,7 +64,7 @@ export const NetworkStatusIndicator: React.FC = () => {
 
   const handleManualRetry = async () => {
     setIsRetrying(true);
-    setIsOnline(navigator.onLine);
+    setIsOnlineState(isOnline());
     await performPing();
     setIsRetrying(false);
   };
@@ -79,12 +79,12 @@ export const NetworkStatusIndicator: React.FC = () => {
   // Determine overall quality status based on exact boundaries
   // Note: 'checking' is used on initial load before first ping resolves (averageLatency === null && !lastPingError)
   const qualityStatus: QualityStatus = useMemo(() => {
-    if (!isOnline) return 'offline';
+    if (!isOnlineState) return 'offline';
     if (averageLatency === null && !lastPingError) return 'checking';
     if (lastPingError || (averageLatency !== null && averageLatency > 800)) return 'lagging';
     if (averageLatency !== null && averageLatency >= 300 && averageLatency <= 800) return 'slow';
     return 'good';
-  }, [isOnline, lastPingError, averageLatency]);
+  }, [isOnlineState, lastPingError, averageLatency]);
 
   // Detect status transition from a real degraded state ('slow', 'lagging', 'offline') to 'good'
   // to trigger brief 3.5s "Connection restored" confirmation banner. (Ignores initial 'checking' -> 'good')
@@ -107,7 +107,7 @@ export const NetworkStatusIndicator: React.FC = () => {
   // Global browser online/offline, networkSync & visibility change listeners
   useEffect(() => {
     const unsubscribeSync = subscribeNetworkChanges((connected) => {
-      setIsOnline(connected);
+      setIsOnlineState(connected);
       if (!connected) {
         setShowRestoredBanner(false);
       } else {
@@ -116,17 +116,17 @@ export const NetworkStatusIndicator: React.FC = () => {
     });
 
     const handleOnline = () => {
-      setIsOnline(true);
+      setIsOnlineState(true);
       performPing();
     };
 
     const handleOffline = () => {
-      setIsOnline(false);
+      setIsOnlineState(false);
       setShowRestoredBanner(false);
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isDeviceOnline()) {
+      if (document.visibilityState === 'visible' && isOnline()) {
         performPing();
       }
     };
@@ -148,7 +148,7 @@ export const NetworkStatusIndicator: React.FC = () => {
 
   // Adaptive polling interval: 30s for 'good'/'checking', 8s for 'slow'/'lagging'
   useEffect(() => {
-    if (!navigator.onLine) return;
+    if (!isOnline()) return;
 
     const intervalTime =
       qualityStatus === 'slow' || qualityStatus === 'lagging'
@@ -156,7 +156,7 @@ export const NetworkStatusIndicator: React.FC = () => {
         : PING_INTERVAL_GOOD_MS;
 
     const intervalId = setInterval(() => {
-      if (navigator.onLine) {
+      if (isOnline()) {
         performPing();
       }
     }, intervalTime);
@@ -203,8 +203,8 @@ export const NetworkStatusIndicator: React.FC = () => {
     }
   }, [qualityStatus]);
 
-  // Only show banner when truly offline (navigator.onLine === false) or brief restored confirmation
-  const shouldShowWidget = !isOnline || (showRestoredBanner && isOnline);
+  // Only show banner when truly offline or brief restored confirmation
+  const shouldShowWidget = !isOnlineState || (showRestoredBanner && isOnlineState);
 
   if (!shouldShowWidget) {
     return null;
@@ -216,7 +216,7 @@ export const NetworkStatusIndicator: React.FC = () => {
       id="network-status-toast"
     >
       {/* 1. Offline Banner */}
-      {!isOnline && (
+      {!isOnlineState && (
         <div className="flex items-center gap-3 bg-amber-950/95 text-amber-200 border border-amber-500/40 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md text-sm animate-in fade-in slide-in-from-bottom-2">
           <div className="p-2 bg-amber-500/20 rounded-lg text-amber-400 shrink-0">
             <WifiOff className="w-5 h-5 animate-pulse" />

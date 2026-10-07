@@ -128,9 +128,9 @@ function AppContent() {
     });
   };
 
-  // Authoritative selectedExam from central ExamContext
+  // Authoritative selectedExam from central ExamContext (user.exam always takes priority when user is present)
   const { selectedExamId, setSelectedExamId } = useExam();
-  const selectedExam = selectedExamId;
+  const selectedExam = (user?.exam ? normalizeExamId(user.exam) : null) || selectedExamId;
 
   // Sync profile exam with ExamContext whenever user profile loads
   useEffect(() => {
@@ -435,7 +435,7 @@ function AppContent() {
   useEffect(() => {
     if (!user) return;
     
-    const activeExam = selectedExamId || user.exam || 'NEET_UG';
+    const activeExam = (user.exam ? normalizeExamId(user.exam) : null) || selectedExamId || 'NEET_UG';
     const examLabel = activeExam.replace(/_/g, ' ');
     let title = `StudyRide - Prep Suite for ${examLabel}`;
     let description = `Prepare for ${examLabel} on StudyRide. Practice custom CBT test series, mock exams, previous year question papers (PYQs), track syllabus, and study with an interactive AI Mentor.`;

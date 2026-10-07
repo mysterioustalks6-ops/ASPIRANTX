@@ -14,6 +14,7 @@
 
 import { localDb, SyncQueueItem, LocalUserProgressRecord } from './localDatabase';
 import { normalizeExamId } from './examRegistry';
+import { isOnline } from './networkSync';
 
 export type SyncActionType = 'SYLLABUS_PROGRESS' | 'TELEMETRY' | 'CBT_RESULT';
 
@@ -210,7 +211,7 @@ export class SyncWorker {
    */
   public async triggerBatchSync(): Promise<{ success: boolean; syncedCount: number }> {
     if (this.isSyncing) return { success: false, syncedCount: 0 };
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    if (!isOnline()) {
       return { success: false, syncedCount: 0 };
     }
 

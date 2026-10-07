@@ -22,7 +22,7 @@ if (typeof window !== 'undefined') {
 
 import { API_BASE_URL } from './lib/apiConfig';
 
-// Initialize network monitoring to synchronize native offline status with window.navigator.onLine
+// Initialize native and web network monitoring
 initNetworkMonitoring();
 
 // ── Native App Network Interceptor ───────────────────────────────────────────

@@ -12,6 +12,7 @@
 import { localDb, ContentPackageMeta, LocalSyllabusRecord, LocalQuestionRecord, LocalPyqRecord, LocalCbtRecord } from './localDatabase';
 import { normalizeExamId, getExamConfig } from './examRegistry';
 import { getApiUrl } from './apiConfig';
+import { isOnline } from './networkSync';
 
 export interface PackageManifest {
   examId: string;
@@ -168,7 +169,7 @@ export class ContentPackageManager {
    * Checks for remote package updates and installs if newer version is available
    */
   private async checkRemotePackageUpdate(examId: string, currentVersion: number): Promise<void> {
-    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+    if (!isOnline()) return;
 
     try {
       const res = await fetch(getApiUrl(`/api/content/manifests?exam=${encodeURIComponent(examId)}`));

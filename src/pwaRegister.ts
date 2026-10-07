@@ -63,10 +63,12 @@ export function registerServiceWorker() {
   }
 }
 
-export function setupOnlineListener(onStatusChange?: (isOnline: boolean) => void) {
+import { isOnline } from './lib/networkSync';
+
+export function setupOnlineListener(onStatusChange?: (online: boolean) => void) {
   const updateStatus = () => {
-    const isOnline = navigator.onLine;
-    if (onStatusChange) onStatusChange(isOnline);
+    const current = isOnline();
+    if (onStatusChange) onStatusChange(current);
   };
 
   window.addEventListener('online', updateStatus);

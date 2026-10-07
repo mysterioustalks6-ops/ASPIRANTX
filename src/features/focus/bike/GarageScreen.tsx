@@ -236,48 +236,6 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
             <span>Completed: {bikeState.weeklyCountedHours}h</span>
           </div>
         </div>
-
-        {/* Parts Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
-          {bikeState.currentTier.parts.map((part) => {
-            const isUnlocked = bikeState.unlockedParts.some(p => p.id === part.id);
-            return (
-              <div
-                key={part.id}
-                onClick={() => setActiveSlotDetail(part.id)}
-                className={`p-3 rounded-2xl border transition-all text-left flex flex-col justify-between cursor-pointer ${
-                  isUnlocked
-                    ? 'bg-slate-800/80 border-emerald-500/50 shadow-sm hover:border-emerald-400'
-                    : 'bg-slate-900/40 border-slate-800 opacity-60 hover:opacity-80'
-                }`}
-              >
-                <div className="flex items-center justify-between text-[9px] font-black">
-                  <span className={isUnlocked ? 'text-emerald-400' : 'text-slate-400'}>
-                    {part.unlockPercent}% Target
-                  </span>
-                  {isUnlocked ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <Lock className="w-3 h-3 text-slate-400" />
-                  )}
-                </div>
-                <div className="my-2">
-                  <p className="text-xs font-bold text-slate-200 leading-tight">
-                    {part.name}
-                  </p>
-                  <p className="text-[9px] text-slate-400 line-clamp-1 mt-0.5">
-                    {part.description}
-                  </p>
-                </div>
-                <span className={`text-[8px] font-mono uppercase font-bold ${
-                  isUnlocked ? 'text-emerald-400' : 'text-slate-400'
-                }`}>
-                  {isUnlocked ? 'INSTALLED' : 'LOCKED'}
-                </span>
-              </div>
-            );
-          })}
-        </div>
       </div>
 
       {/* ── GARAGE COMPLETED COLLECTION (OR HONEST EMPTY STATE) ── */}

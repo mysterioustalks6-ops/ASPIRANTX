@@ -104,10 +104,10 @@ export const Header: React.FC<HeaderProps> = ({
       {/* ── 2. CENTER: STREAK FLAME (NEVER TRUNCATED OR OVERLAPPED) ── */}
       <div 
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[var(--sr-amber-subtle)] border-2 border-[var(--sr-amber)]/30 text-xs font-black text-[var(--sr-amber)] shrink-0 min-h-[40px] whitespace-nowrap"
-        title={`${user?.streakDays ?? 1} Days Active Study Streak`}
+        title={`${user?.streakDays ?? 0} Days Active Study Streak`}
       >
         <Flame className="w-4 h-4 fill-current animate-pulse text-[var(--sr-amber)]" />
-        <span>{user?.streakDays ?? 1}d</span>
+        <span>{user?.streakDays ?? 0}d</span>
       </div>
 
       {/* ── 3. RIGHT: CANDIDATE AVATAR / PROFILE LAUNCHER ── */}
