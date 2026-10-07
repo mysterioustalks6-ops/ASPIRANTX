@@ -7,6 +7,7 @@ export interface VeerMascotProps {
   state?: VeerState;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   speechBubble?: string;
+  showSpeechBubble?: boolean;
   className?: string;
   onClick?: () => void;
   showClickTip?: boolean;
@@ -43,6 +44,7 @@ export const VeerMascot: React.FC<VeerMascotProps> = ({
   state = 'idle',
   size = 'md',
   speechBubble,
+  showSpeechBubble = true,
   className = '',
   onClick,
   showClickTip = true,
@@ -74,7 +76,9 @@ export const VeerMascot: React.FC<VeerMascotProps> = ({
     onClick?.();
   };
 
-  const activeSpeech = speechBubble || VEER_DIALOGUES[state][dialogueIndex % VEER_DIALOGUES[state].length];
+  const activeSpeech = showSpeechBubble
+    ? (speechBubble || VEER_DIALOGUES[state][dialogueIndex % VEER_DIALOGUES[state].length])
+    : null;
 
   return (
     <div className={`relative inline-flex flex-col items-center select-none ${className}`}>

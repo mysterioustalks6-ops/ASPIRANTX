@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "1.0.0",
+  "description": "Master Asset Manifest for AspirantX Calm Highway & Garage Assets",
+  "verifiedAssets": [
+    {
+      "id": "veer_mascot_svg",
+      "relativePath": "src/design-system/VeerMascot.tsx",
+      "author": "AspirantX Core Team",
+      "sourceUrl": "internal://aspirantx/design-system/veer",
+      "licenseName": "Proprietary / CC0-equivalent internal",
+      "licenseUrl": "internal://license",
+      "downloadDate": "2026-10-07",
+      "verified": true,
+      "style": "Friendly Gamified Vector (Duolingo-aligned Calm Highway)"
+    },
+    {
+      "id": "tier1_full_bike_svg",
+      "relativePath": "public/assets/bike/tier1/full_bike.svg",
+      "author": "AspirantX Visual Design Team",
+      "sourceUrl": "internal://aspirantx/assets/bike/tier1/cruiser150",
+      "licenseName": "CC0 1.0 Universal",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "downloadDate": "2026-10-07",
+      "verified": true,
+      "style": "Retro Cruiser Highway Vector Silhouette"
+    },
+    {
+      "id": "bike_part_template_svg",
+      "relativePath": "public/assets/templates/bike_part_template.svg",
+      "author": "AspirantX Core Team",
+      "sourceUrl": "internal://aspirantx/templates/bike_part_template",
+      "licenseName": "MIT",
+      "licenseUrl": "https://opensource.org/licenses/MIT",
+      "downloadDate": "2026-10-07",
+      "verified": true,
+      "style": "Scalable Vector Part Blueprint"
+    }
+  ],
+  "audioAssets": {
+    "status": "pending_user_supply",
+    "requiredFiles": [
+      {
+        "filename": "public/sounds/rain.mp3",
+        "intendedSource": "BigSoundBank (CC0) or Mixkit",
+        "license": "CC0 / Mixkit Sound License",
+        "verified": false
+      },
+      {
+        "filename": "public/sounds/wind.mp3",
+        "intendedSource": "BigSoundBank (CC0) or Mixkit",
+        "license": "CC0 / Mixkit Sound License",
+        "verified": false
+      },
+      {
+        "filename": "public/sounds/engine_hum.mp3",
+        "intendedSource": "BigSoundBank (CC0) or Mixkit",
+        "license": "CC0 / Mixkit Sound License",
+        "verified": false
+      }
+    ]
+  }
+}

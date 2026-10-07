@@ -242,6 +242,7 @@ function AppContent() {
     return (validTabs.includes(hash) ? hash : 'dashboard') as ActiveTab;
   });
   const [trophyQueue, setTrophyQueue] = useState<TrophyUnlock[]>([]);
+  const [isFocusTimerRunning, setIsFocusTimerRunning] = useState<boolean>(false);
 
   useEffect(() => {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=') || window.location.hash.includes('refresh_token=')) {
@@ -1579,6 +1580,7 @@ function AppContent() {
                     onOpenGarage={() => setActiveTab('garage')}
                     onNavigateToMyRides={() => setActiveTab('my_rides')}
                     onBack={() => setActiveTab('dashboard')}
+                    onTimerRunningChange={(running) => setIsFocusTimerRunning(running)}
                   />
                 </PremiumGate>
               </div>
@@ -2104,12 +2106,14 @@ function AppContent() {
         onExamChange={handleExamChange}
       />
 
-      {/* Mobile Sticky Bottom Navigation */}
-      <MobileBottomNav
-        activeTab={activeTab}
-        setActiveTab={handleSelectTab}
-        onOpenMore={() => setIsMobileDrawerOpen(true)}
-      />
+      {/* Mobile Sticky Bottom Navigation (Hidden during active focus ride) */}
+      {!(activeTab === 'timer' && isFocusTimerRunning) && (
+        <MobileBottomNav
+          activeTab={activeTab}
+          setActiveTab={handleSelectTab}
+          onOpenMore={() => setIsMobileDrawerOpen(true)}
+        />
+      )}
 
       {/* Universal Android Live Wallpaper Setup Modal */}
       {user && (

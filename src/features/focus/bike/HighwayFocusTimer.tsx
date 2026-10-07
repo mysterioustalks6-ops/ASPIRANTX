@@ -36,6 +36,7 @@ export interface HighwayFocusTimerProps {
   onOpenGarage?: () => void;
   onNavigateToMyRides?: () => void;
   onBack?: () => void;
+  onTimerRunningChange?: (isRunning: boolean) => void;
 }
 
 export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
@@ -44,7 +45,8 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
   onNavigateToGarage,
   onOpenGarage,
   onNavigateToMyRides,
-  onBack
+  onBack,
+  onTimerRunningChange
 }) => {
   const handleOpenGarage = onOpenGarage || onNavigateToGarage;
   // ── 1. TIMER STATE & CONFIG ──
@@ -62,16 +64,38 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
   // Active Timer Reference
   const timerStateRef = useRef<ActiveTimerState | null>(null);
 
-  // ── 2. AWAY / BACKGROUND RECOVERY MODAL ──
+  // ── 2. AWAY / BACKGROUND RECOVERY MODAL & CELEBRATION MODAL ──
   const [pendingAwaySession, setPendingAwaySession] = useState<FocusSession | null>(null);
+  const [completedSessionModal, setCompletedSessionModal] = useState<FocusSession | null>(null);
 
   // ── 3. HARDWARE BACK / ABANDON CONFIRMATION ──
   const [showExitConfirmModal, setShowExitConfirmModal] = useState<boolean>(false);
 
-  // ── 4. RELAX SCENERY VIEW ──
+  // ── 4. RELAX SCENERY VIEW & CLOCK CHIP (PERSISTED) ──
   const [isRelaxViewActive, setIsRelaxViewActive] = useState<boolean>(false);
   const [selectedSceneIndex, setSelectedSceneIndex] = useState<number>(0);
   const [showSceneCredits, setShowSceneCredits] = useState<boolean>(false);
+  const [showClockChip, setShowClockChip] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('studyride_show_clock_chip') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleClockChip = () => {
+    setShowClockChip(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('studyride_show_clock_chip', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    onTimerRunningChange?.(isRunning);
+  }, [isRunning, onTimerRunningChange]);
 
   // ── 5. BIKE ENGINE & USER PREFERENCES ──
   const [userPrefs, setUserPrefs] = useState<UserBikePreferences>(() => {
@@ -342,6 +366,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
     if (completed) {
       soundFx.playSuccess();
       triggerConfetti({ particleCount: 60, spread: 80 });
+      setCompletedSessionModal(session);
 
       // Advance block index
       if (active.type === 'focus') {
@@ -396,18 +421,33 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  // Derive ride progress percentage for 4-layer parallax transitions (0/25/50/75%)
+  const rideProgressPercent = useMemo(() => {
+    if (mode === 'pomodoro') {
+      const totalMs = (timerType === 'focus' ? plannedMinutes : breakMinutes) * 60 * 1000;
+      if (totalMs <= 0) return 0;
+      return Math.min(100, Math.max(0, Math.round(((totalMs - timeRemainingMs) / totalMs) * 100)));
+    } else {
+      // Stopwatch: progress up to 60m
+      return Math.min(100, Math.max(0, Math.round((stopwatchElapsedMs / (60 * 60 * 1000)) * 100)));
+    }
+  }, [mode, timerType, plannedMinutes, breakMinutes, timeRemainingMs, stopwatchElapsedMs]);
+
   return (
     <div className="relative min-h-screen w-full flex flex-col justify-between overflow-hidden select-none">
-      {/* ── ZEN RELAX VIEW (ZERO DIGITS, ENDLESS HIGHWAY TOWARDS MOUNTAINS & VALLEYS) ── */}
+      {/* ── ZEN RELAX VIEW (ZERO DIGITS BY DEFAULT, 4-STAGE PARALLAX, DUO-STYLE CLOCK CHIP) ── */}
       {isRelaxViewActive ? (
         <div className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden">
-          {/* Endless highway background towards distant mountains & valleys */}
+          {/* Endless highway background towards distant mountains & valleys (4 stages with 2s cross-fade) */}
           <div className="absolute inset-0 z-0">
-            <EndlessHighwayLandscape isDriving={isRunning && !isPaused} />
+            <EndlessHighwayLandscape 
+              isDriving={isRunning && !isPaused} 
+              progressPercent={rideProgressPercent}
+            />
           </div>
 
           {/* Minimalist Top Control Bar */}
-          <div className="relative z-20 w-full max-w-4xl mx-auto px-4 pt-3 flex items-center justify-between">
+          <div className="relative z-20 w-full max-w-4xl mx-auto px-4 pt-3 flex items-center justify-between gap-2">
             <button
               onClick={() => {
                 soundFx.playTap();
@@ -419,9 +459,33 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
               <span>Exit Relax View</span>
             </button>
 
-            <div className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] font-mono text-emerald-400 flex items-center gap-1.5 shadow-md">
-              <span className={`w-2 h-2 rounded-full ${isRunning && !isPaused ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-              <span>{isRunning ? (isPaused ? 'Session Paused' : 'Focus Ride Active') : 'Zen Highway Meditation'}</span>
+            <div className="flex items-center gap-2">
+              {/* Duolingo-styled Clock Chip Toggle (Persisted in localStorage: studyride_show_clock_chip) */}
+              {showClockChip ? (
+                <button
+                  onClick={handleToggleClockChip}
+                  aria-label="Hide Clock Chip"
+                  className="px-3 py-1.5 rounded-full bg-slate-950/85 hover:bg-slate-900 backdrop-blur-md text-xs font-mono font-bold text-white border border-indigo-500/40 flex items-center gap-1.5 cursor-pointer shadow-lg transition-all"
+                >
+                  <Clock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{mode === 'pomodoro' ? formatTime(timeRemainingMs) : formatStopwatch(stopwatchElapsedMs)}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleToggleClockChip}
+                  aria-label="Show Clock Chip"
+                  className="px-3 py-1.5 rounded-xl bg-slate-950/80 hover:bg-slate-900 backdrop-blur-md text-xs font-bold text-slate-300 border border-slate-700/80 flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
+                >
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Show Clock</span>
+                </button>
+              )}
+
+              {/* Status Indicator without 'Zen Highway Meditation' */}
+              <div className="px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-slate-800 text-[11px] font-bold text-emerald-400 flex items-center gap-1.5 shadow-md">
+                <span className={`w-2 h-2 rounded-full ${isRunning && !isPaused ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                <span>{isRunning ? (isPaused ? 'Session Paused' : 'Focus Ride Active') : 'Focus Ride Ready'}</span>
+              </div>
             </div>
           </div>
 
@@ -813,6 +877,39 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                 }}
               >
                 Count It!
+              </TactileButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL: NORMAL SESSION COMPLETE WITH RIDER CELEBRATION (RULE F) ── */}
+      {completedSessionModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-3xl bg-slate-900 border-2 border-indigo-500/40 p-6 space-y-4 shadow-2xl text-center flex flex-col items-center">
+            {/* Rider Character Card (Initial 'R') */}
+            <RiderAssetSlot pose="rider_celebrate" size="sm" />
+
+            <div className="space-y-1">
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">
+                Focus Milestone Achieved
+              </span>
+              <h3 className="text-lg font-black text-white">
+                Ride Completed!
+              </h3>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Great highway pace! {Math.round((completedSessionModal.actualSeconds || 0) / 60)} minutes recorded towards your weekly bike build progression.
+              </p>
+            </div>
+
+            <div className="w-full pt-2">
+              <TactileButton
+                variant="primary"
+                size="md"
+                onClick={() => setCompletedSessionModal(null)}
+                className="w-full"
+              >
+                Keep Riding
               </TactileButton>
             </div>
           </div>
