@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../../lib/soundEffects';
 import { AspirantMascot, MascotState } from './AspirantMascot';
-import { getCandidateHearts, deductHeart } from '../../lib/duolingoHearts';
+import { getCandidateHearts, deductHeart } from '../../lib/candidateHearts';
 import { awardXPAndCoins } from '../../lib/gamification';
 import { triggerConfetti } from '../../lib/animations';
 
@@ -25,7 +25,7 @@ export interface DrillQuestion {
   topic?: string;
 }
 
-interface DuolingoDrillModalProps {
+interface HighwayDrillModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -35,7 +35,7 @@ interface DuolingoDrillModalProps {
   onCompleteLesson?: (score: number, total: number) => void;
 }
 
-export const DuolingoDrillModal: React.FC<DuolingoDrillModalProps> = ({
+export const HighwayDrillModal: React.FC<HighwayDrillModalProps> = ({
   isOpen,
   onClose,
   title,
@@ -148,7 +148,7 @@ export const DuolingoDrillModal: React.FC<DuolingoDrillModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-[#0F1115] flex flex-col font-sans select-none overflow-hidden">
-      {/* ── TOP DUOLINGO HUD ────────────────────────────────────────── */}
+      {/* ── TOP DRILL HUD ────────────────────────────────────────── */}
       <header className="h-16 px-4 border-b border-[#2A2F3A] bg-[#15181F] flex items-center justify-between gap-4 max-w-2xl w-full mx-auto">
         {/* Close Button */}
         <button
@@ -159,7 +159,7 @@ export const DuolingoDrillModal: React.FC<DuolingoDrillModalProps> = ({
           <X className="w-5 h-5 stroke-[2.5]" />
         </button>
 
-        {/* Tactile Duolingo Progress Bar */}
+        {/* Tactile Progress Bar */}
         <div className="flex-1 h-4 bg-[#1A1D24] rounded-full overflow-hidden p-0.5 border border-[#2A2F3A] relative">
           <motion.div
             className="h-full bg-gradient-to-r from-[#58CC02] to-[#6FE505] rounded-full shadow-[0_0_12px_rgba(88,204,2,0.5)]"

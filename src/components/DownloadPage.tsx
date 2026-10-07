@@ -116,13 +116,13 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                 </div>
 
                 <p className="text-sm text-slate-300 mb-6 leading-relaxed">
-                  Full-featured native Android app with Duolingo-grade gamified path, Veer champion mascot, local Focus Shield, cheat-proof CBT exam engine, active recall flashcards, and live question banks.
+                  Full-featured native Android app with gamified highway path, Veer champion mascot, local Focus Shield, cheat-proof CBT exam engine, active recall flashcards, and live question banks.
                 </p>
 
                 {/* Feature Checklist */}
                 <div className="space-y-2.5 mb-8">
                   {[
-                    'Gamified Duolingo-Grade Exam Path & 5-Heart Energy System',
+                    'Gamified Highway Exam Path & 5-Heart Energy System',
                     '33 New SSC & State AE/JE Exams with 10,000+ Questions',
                     'Computer Based Test (CBT) with Zero-Leakage',
                     'Focus Shield: On-Device YouTube & Instagram Distraction Filter',

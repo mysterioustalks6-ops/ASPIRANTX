@@ -188,7 +188,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
         </p>
       </div>
 
-      {/* ── CENTRAL PROGRESS BAR (DUOLINGO TACTILE STYLE) ── */}
+      {/* ── CENTRAL PROGRESS BAR (TACTILE HIGHWAY STYLE) ── */}
       <div className="mt-4 pt-3.5 border-t border-[var(--sr-line)]">
         <div className="flex items-center justify-between text-xs font-bold mb-1.5">
           <span className="text-[var(--sr-text)] flex items-center gap-1.5">

@@ -6,7 +6,7 @@ import App from './App.tsx';
 import './index.css';
 import { registerServiceWorker } from './pwaRegister.ts';
 import { initTactileTouchListener } from './lib/haptics.ts';
-import { initNetworkMonitoring, reportFetchFailure } from './lib/networkSync.ts';
+import { initNetworkMonitoring } from './lib/networkSync.ts';
 import { fetchWithRetry } from './lib/apiClient.ts';
 import { syncWorker } from './lib/syncWorker.ts';
 import { queueBackgroundPacketSync, getLocalDeviceStore } from './lib/packetSyncService.ts';
@@ -34,12 +34,8 @@ const BACKEND_API_ROOT = API_BASE_URL || 'https://studyride.in';
 if (Capacitor.isNativePlatform() && BACKEND_API_ROOT) {
   const originalFetch = window.fetch;
   const safeFetch = async (target: RequestInfo | URL, reqInit?: RequestInit) => {
-    try {
-      return await originalFetch(target, reqInit);
-    } catch (err) {
-      reportFetchFailure();
-      throw err;
-    }
+    // Per-request network error: throws to caller without modifying global offline state
+    return await originalFetch(target, reqInit);
   };
   window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('aspirantx_auth_token') : null;

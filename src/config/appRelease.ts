@@ -22,5 +22,5 @@ export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
   releaseDate: 'October 4, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v3.2.1: Complete Duolingo-Grade Interface Transformation across Syllabus Quests, Practice Hub Arena, National Duolingo Leagues, and Tactile 3D Tools.',
+  releaseNotes: 'v3.2.1: Complete Calm Highway Interface Transformation across Syllabus Quests, Practice Hub Arena, National Leagues, and Tactile 3D Tools.',
 };

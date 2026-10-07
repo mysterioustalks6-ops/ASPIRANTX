@@ -64,6 +64,10 @@ const PyqEngine = lazy(() => import('./components/PyqEngine').then(m => ({ defau
 const QuestionBankEngine = lazy(() => import('./components/QuestionBankEngine').then(m => ({ default: m.QuestionBankEngine })));
 const HighwayFocusTimer = lazy(() => import('./features/focus/bike/HighwayFocusTimer').then(m => ({ default: m.HighwayFocusTimer })));
 const GarageScreen = lazy(() => import('./features/focus/bike/GarageScreen').then(m => ({ default: m.GarageScreen })));
+const MyRidesScreen = lazy(() => import('./features/focus/bike/MyRidesScreen').then(m => ({ default: m.MyRidesScreen })));
+const AssetCheckScreen = import.meta.env.DEV
+  ? lazy(() => import('./features/focus/bike/AssetCheckScreen').then(m => ({ default: m.AssetCheckScreen })))
+  : (() => null) as unknown as React.ComponentType<{ onBack?: () => void }>;
 const FocusGalaxyScreen = lazy(() => import('./features/focus/galaxy/FocusGalaxyScreen').then(m => ({ default: m.FocusGalaxyScreen })));
 const TaskManager = lazy(() => import('./components/TaskManager').then(m => ({ default: m.TaskManager })));
 const AiStudyChat = lazy(() => import('./components/AiStudyChat').then(m => ({ default: m.AiStudyChat })));
@@ -1573,6 +1577,7 @@ function AppContent() {
                     userId={user.id} 
                     selectedExam={selectedExam} 
                     onOpenGarage={() => setActiveTab('garage')}
+                    onNavigateToMyRides={() => setActiveTab('my_rides')}
                     onBack={() => setActiveTab('dashboard')}
                   />
                 </PremiumGate>
@@ -1585,10 +1590,40 @@ function AppContent() {
                   <GarageScreen 
                     userId={user.id} 
                     onBack={() => setActiveTab('timer')}
+                    onNavigateToMyRides={() => setActiveTab('my_rides')}
+                    onNavigateToAssetCheck={() => setActiveTab('asset_check')}
                     onStartRide={() => setActiveTab('timer')}
                   />
                 </Suspense>
               </div>
+            )}
+
+            {activeTab === 'my_rides' && (
+              <div data-screen="my_rides" className="w-full">
+                <Suspense fallback={<SuspenseFallback />}>
+                  <MyRidesScreen
+                    userId={user.id}
+                    onBack={() => setActiveTab('timer')}
+                    onStartRide={() => setActiveTab('timer')}
+                  />
+                </Suspense>
+              </div>
+            )}
+
+            {activeTab === 'asset_check' && (
+              import.meta.env.DEV ? (
+                <div data-screen="asset_check" className="w-full">
+                  <Suspense fallback={<SuspenseFallback />}>
+                    <AssetCheckScreen
+                      onBack={() => setActiveTab('garage')}
+                    />
+                  </Suspense>
+                </div>
+              ) : (
+                <div data-screen="asset_check" className="p-8 text-center text-slate-400 font-bold">
+                  Developer Asset Check Module (Unavailable in Production)
+                </div>
+              )
             )}
 
             {activeTab === 'debug_galaxy' && (

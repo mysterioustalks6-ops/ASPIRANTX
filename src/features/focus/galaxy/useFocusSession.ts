@@ -78,61 +78,86 @@ export function useFocusSession({
     }
   }, [userId, mode, selectedDuration, pomoMinutes, pomoSeconds, stopwatchSeconds, subject, topic, isActive, isPaused]);
 
-  // Pomodoro Countdown Interval
-  useEffect(() => {
-    let interval: any = null;
-    if (isActive && !isPaused && mode === 'pomodoro') {
-      interval = setInterval(() => {
-        setPomoSeconds(sec => {
-          if (sec > 0) return sec - 1;
-          setPomoMinutes(min => {
-            if (min > 0) {
-              return min - 1;
-            } else {
-              // Timer Reached 00:00
-              setIsActive(false);
-              completeSession();
-              return 0;
-            }
-          });
-          return 59;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive, isPaused, mode]);
+  const startedAtMsRef = useRef<number>(0);
+  const pausedAtMsRef = useRef<number | null>(null);
+  const totalPausedMsRef = useRef<number>(0);
 
-  // Stopwatch Interval
+  // Pure Timestamp Sync Interval
   useEffect(() => {
     let interval: any = null;
-    if (isActive && !isPaused && mode === 'stopwatch') {
+    if (isActive && !isPaused) {
       interval = setInterval(() => {
-        setStopwatchSeconds(s => s + 1);
-      }, 1000);
+        const nowMs = Date.now();
+        if (mode === 'pomodoro') {
+          const totalDurationSecs = selectedDuration * 60;
+          const elapsedSecs = Math.floor(Math.max(0, (nowMs - startedAtMsRef.current) - totalPausedMsRef.current) / 1000);
+          const remainingSecs = Math.max(0, totalDurationSecs - elapsedSecs);
+          setPomoMinutes(Math.floor(remainingSecs / 60));
+          setPomoSeconds(remainingSecs % 60);
+          if (remainingSecs <= 0) {
+            setIsActive(false);
+            completeSession();
+          }
+        } else if (mode === 'stopwatch') {
+          const elapsedSecs = Math.floor(Math.max(0, (nowMs - startedAtMsRef.current) - totalPausedMsRef.current) / 1000);
+          setStopwatchSeconds(prev => Math.max(prev, elapsedSecs));
+        }
+      }, 250);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, isPaused, mode]);
+  }, [isActive, isPaused, mode, selectedDuration]);
+
+  // Foreground sync without waiting for interval
+  useEffect(() => {
+    const handleVis = () => {
+      if (document.visibilityState === 'visible' && isActive && !isPaused) {
+        const nowMs = Date.now();
+        if (mode === 'pomodoro') {
+          const totalDurationSecs = selectedDuration * 60;
+          const elapsedSecs = Math.floor(Math.max(0, (nowMs - startedAtMsRef.current) - totalPausedMsRef.current) / 1000);
+          const remainingSecs = Math.max(0, totalDurationSecs - elapsedSecs);
+          setPomoMinutes(Math.floor(remainingSecs / 60));
+          setPomoSeconds(remainingSecs % 60);
+          if (remainingSecs <= 0) {
+            setIsActive(false);
+            completeSession();
+          }
+        } else if (mode === 'stopwatch') {
+          const elapsedSecs = Math.floor(Math.max(0, (nowMs - startedAtMsRef.current) - totalPausedMsRef.current) / 1000);
+          setStopwatchSeconds(prev => Math.max(prev, elapsedSecs));
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVis);
+    return () => document.removeEventListener('visibilitychange', handleVis);
+  }, [isActive, isPaused, mode, selectedDuration]);
 
   // Start Session
   const startTimer = useCallback(() => {
     sessionIdRef.current = 'session_' + Date.now();
+    startedAtMsRef.current = Date.now();
+    pausedAtMsRef.current = null;
+    totalPausedMsRef.current = 0;
     setIsActive(true);
     setIsPaused(false);
   }, []);
 
   // Pause Session
   const pauseTimer = useCallback(() => {
+    if (isPaused) return;
+    pausedAtMsRef.current = Date.now();
     setIsPaused(true);
-  }, []);
+  }, [isPaused]);
 
   // Resume Session
   const resumeTimer = useCallback(() => {
+    if (!isPaused || !pausedAtMsRef.current) return;
+    totalPausedMsRef.current += Math.max(0, Date.now() - pausedAtMsRef.current);
+    pausedAtMsRef.current = null;
     setIsPaused(false);
-  }, []);
+  }, [isPaused]);
 
   // Complete / Finish Session
   const completeSession = useCallback(async (): Promise<CompletedSessionData> => {

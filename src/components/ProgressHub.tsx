@@ -27,7 +27,7 @@ import { useExam } from '../context/ExamContext';
 import { loadCompletedSubtopicIds } from '../lib/syllabusStorage';
 import { loadStudySessions } from '../lib/gamification';
 import { soundFx } from '../lib/soundEffects';
-import { AspirantMascot } from './duolingo/AspirantMascot';
+import { AspirantMascot } from './highway/AspirantMascot';
 
 const LeaderboardView = React.lazy(() => import('./LeaderboardView').then(m => ({ default: m.LeaderboardView })));
 const WeaknessDetector = React.lazy(() => import('./WeaknessDetector').then(m => ({ default: m.WeaknessDetector })));

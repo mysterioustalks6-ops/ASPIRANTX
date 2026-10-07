@@ -23,8 +23,8 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../../lib/soundEffects';
 import { AspirantMascot, MascotState } from './AspirantMascot';
-import { DuolingoDrillModal, DrillQuestion } from './DuolingoDrillModal';
-import { getCandidateHearts, HeartState } from '../../lib/duolingoHearts';
+import { HighwayDrillModal, DrillQuestion } from './HighwayDrillModal';
+import { getCandidateHearts, HeartState } from '../../lib/candidateHearts';
 import { UserProfile } from '../../types';
 import { getExamConfig, normalizeExamId } from '../../lib/examRegistry';
 import { getDefaultExamDate, getExamDaysLeft } from '../../lib/packetSyncService';
@@ -43,7 +43,7 @@ export interface PathNode {
   questions?: DrillQuestion[];
 }
 
-interface DuolingoPathEngineProps {
+interface HighwayPathEngineProps {
   userProfile: UserProfile;
   selectedExam: string;
   onExamChange?: (exam: string) => void;
@@ -51,7 +51,7 @@ interface DuolingoPathEngineProps {
   className?: string;
 }
 
-export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
+export const HighwayPathEngine: React.FC<HighwayPathEngineProps> = ({
   userProfile,
   selectedExam,
   onExamChange,
@@ -226,7 +226,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
     return () => window.removeEventListener('aspirantx_personal_syllabus_updated', handleSync);
   }, [selectedExam, userProfile.id]);
 
-  // S-Curve horizontal offset generator (Duolingo snake path)
+  // S-Curve horizontal offset generator (Highway snake path)
   // [0, 48, 72, 48, 0, -48, -72, -48]
   const getNodeHorizontalOffset = (index: number): number => {
     const pattern = [0, 48, 70, 48, 0, -48, -70, -48];
@@ -247,7 +247,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
       return;
     }
 
-    // Toggle Duolingo Popover for Active Node
+    // Toggle Milestone Popover for Active Node
     if (node.status === 'active') {
       if (selectedActiveNode?.id === node.id) {
         // Double tap or launch
@@ -317,7 +317,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
 
   return (
     <div className={`w-full max-w-md mx-auto flex flex-col items-center select-none font-sans relative pb-28 ${className}`}>
-      {/* ── 1. DUOLINGO UNIT BANNER ───────────────────────────────────── */}
+      {/* ── 1. HIGHWAY UNIT BANNER ───────────────────────────────────── */}
       <div className="w-full px-4 mt-4 mb-2">
         <div className="rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] p-4 shadow-sm relative overflow-hidden">
           {/* Unit Switcher Tabs with edge fade */}
@@ -548,7 +548,7 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
                 </div>
               )}
 
-              {/* ── 2. PITSTOP SERVICE BAY (REPLACING DUOLINGO CHEST) ── */}
+              {/* ── 2. PITSTOP SERVICE BAY CHEST ── */}
               {node.type === 'chest' && (
                 <button
                   onClick={() => handleNodeClick(node)}
@@ -608,9 +608,9 @@ export const DuolingoPathEngine: React.FC<DuolingoPathEngineProps> = ({
         })}
       </div>
 
-      {/* ── 4. DUOLINGO INTERACTIVE DRILL MODAL ───────────────────────── */}
+      {/* ── 4. HIGHWAY INTERACTIVE DRILL MODAL ───────────────────────── */}
       {activeDrillNode && (
-        <DuolingoDrillModal
+        <HighwayDrillModal
           isOpen={!!activeDrillNode}
           onClose={() => setActiveDrillNode(null)}
           title={activeDrillNode.title}

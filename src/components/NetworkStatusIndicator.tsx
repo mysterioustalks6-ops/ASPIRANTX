@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { WifiOff, RefreshCw, CheckCircle2, Activity } from 'lucide-react';
+import { subscribeNetworkChanges, isDeviceOnline } from '../lib/networkSync';
 
 const PING_INTERVAL_GOOD_MS = 30000;      // 30s when connection is good
 const PING_INTERVAL_DEGRADED_MS = 8000;   // 8s when connection is slow/lagging
@@ -9,7 +10,7 @@ const MAX_PING_HISTORY = 5;
 type QualityStatus = 'good' | 'slow' | 'lagging' | 'offline' | 'checking';
 
 export const NetworkStatusIndicator: React.FC = () => {
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [isOnline, setIsOnline] = useState<boolean>(() => isDeviceOnline());
   const [showRestoredBanner, setShowRestoredBanner] = useState<boolean>(false);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
 
@@ -103,8 +104,17 @@ export const NetworkStatusIndicator: React.FC = () => {
     prevStatusRef.current = qualityStatus;
   }, [qualityStatus]);
 
-  // Global browser online/offline & visibility change listeners
+  // Global browser online/offline, networkSync & visibility change listeners
   useEffect(() => {
+    const unsubscribeSync = subscribeNetworkChanges((connected) => {
+      setIsOnline(connected);
+      if (!connected) {
+        setShowRestoredBanner(false);
+      } else {
+        performPing();
+      }
+    });
+
     const handleOnline = () => {
       setIsOnline(true);
       performPing();
@@ -116,7 +126,7 @@ export const NetworkStatusIndicator: React.FC = () => {
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && navigator.onLine) {
+      if (document.visibilityState === 'visible' && isDeviceOnline()) {
         performPing();
       }
     };
@@ -129,6 +139,7 @@ export const NetworkStatusIndicator: React.FC = () => {
     performPing();
 
     return () => {
+      unsubscribeSync();
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', handleVisibilityChange);

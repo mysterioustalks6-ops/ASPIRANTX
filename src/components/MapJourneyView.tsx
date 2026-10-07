@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
+import { HighwayPathEngine } from './highway/HighwayPathEngine';
 import { UserProfile, ActiveTab } from '../types';
 import { awardXPAndCoins } from '../lib/gamification';
 
@@ -391,9 +391,9 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
         />
       )}
 
-      {/* ── 3. PATH VIEW (Themed Duolingo S-Curve) ───────────────────────── */}
+      {/* ── 3. PATH VIEW (Themed Highway S-Curve) ───────────────────────── */}
       {viewMode === 'path' && (
-        <DuolingoPathEngine
+        <HighwayPathEngine
           userProfile={user}
           selectedExam={selectedExam}
           onExamChange={onExamChange}

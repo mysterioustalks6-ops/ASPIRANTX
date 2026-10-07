@@ -24,7 +24,7 @@ import {
   FadeIn, SlideUp, ScaleIn, PressFeedback, CountUp, triggerConfetti, ModalTransition 
 } from '../lib/animations';
 import { soundFx } from '../lib/soundEffects';
-import { AspirantMascot } from './duolingo/AspirantMascot';
+import { AspirantMascot } from './highway/AspirantMascot';
 
 
 interface CbtExamEngineProps {

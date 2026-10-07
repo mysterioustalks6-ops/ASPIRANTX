@@ -22,11 +22,10 @@ import { loadWorkspaceConfig, getActiveFeaturesInOrder, WorkspaceConfig, recordF
 import { TactileButton } from './TactileButton';
 import { TactileCard } from './TactileCard';
 import { TactileProgressBar } from './TactileProgressBar';
-import { AspirantMascot } from './duolingo/AspirantMascot';
-import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
+import { AspirantMascot } from './highway/AspirantMascot';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { soundFx } from '../lib/soundEffects';
-import { getCandidateHearts } from '../lib/duolingoHearts';
+import { getCandidateHearts } from '../lib/candidateHearts';
 import { loadSessions, computeWeeklyStudyMetrics, computeStreakDays } from '../lib/focus/sessionStore';
 
 interface StudentDashboardProps {

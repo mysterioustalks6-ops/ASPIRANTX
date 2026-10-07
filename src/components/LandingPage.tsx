@@ -362,7 +362,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               </div>
 
               {activeAuthMethod === 'options' ? (
-                /* Primary Duolingo-Style 3D Button Actions */
+                /* Primary Tactile 3D Button Actions */
                 <div className="space-y-3">
                   <button
                     id="hero-signin-btn"

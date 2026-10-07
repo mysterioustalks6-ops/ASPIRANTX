@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Calm Highway Style Guide Swatches -->
+    <!-- Asphalt: #0F172A | Lane-Dash: #FBBF24 | Road-Sign: #10B981 | Twilight: #6366F1 | Dawn: #F43F5E | Horizon: #38BDF8 -->
+    <style>
+      .guide-line { stroke: #6366F1; stroke-width: 1; stroke-dasharray: 4 4; fill: none; }
+      .guide-center { stroke: #FBBF24; stroke-width: 1; stroke-dasharray: 2 2; fill: none; }
+      .guide-text { fill: #94A3B8; font-family: monospace; font-size: 10px; font-weight: bold; }
+      .anchor-point { fill: #F43F5E; stroke: #FFFFFF; stroke-width: 1.5; }
+      .anchor-label { fill: #F43F5E; font-family: monospace; font-size: 9px; font-weight: bold; }
+      .reg-mark { stroke: #94A3B8; stroke-width: 1; fill: none; }
+    </style>
+  </defs>
+
+  <!-- ── 1. BACKGROUND & ARTBOARD BOUNDS ── -->
+  <rect width="512" height="512" fill="#0F172A" />
+
+  <!-- ── 2. REGISTRATION MARKS (CORNER & CENTER CROSSHAIRS) ── -->
+  <g id="registration-marks" opacity="0.6">
+    <!-- Top-Left -->
+    <path class="reg-mark" d="M16 24 H32 M24 16 V32" />
+    <circle cx="24" cy="24" r="5" class="reg-mark" />
+    <!-- Top-Right -->
+    <path class="reg-mark" d="M480 24 H496 M488 16 V32" />
+    <circle cx="488" cy="24" r="5" class="reg-mark" />
+    <!-- Bottom-Left -->
+    <path class="reg-mark" d="M16 488 H32 M24 480 V496" />
+    <circle cx="24" cy="488" r="5" class="reg-mark" />
+    <!-- Bottom-Right -->
+    <path class="reg-mark" d="M480 488 H496 M488 480 V496" />
+    <circle cx="488" cy="488" r="5" class="reg-mark" />
+    <!-- Center Axes -->
+    <path class="guide-center" d="M0 256 H512 M256 0 V512" />
+  </g>
+
+  <!-- ── 3. ROAD GROUND BASELINE (GUIDE) ── -->
+  <g id="ground-baseline" opacity="0.4">
+    <line x1="24" y1="440" x2="488" y2="440" stroke="#38BDF8" stroke-width="2" />
+    <text x="32" y="455" class="guide-text">GROUND CONTACT PLANE (y = 440)</text>
+  </g>
+
+  <!-- ── 4. CHASSIS ANCHOR POINTS FOR ADJACENT INTERLOCKING PARTS ── -->
+  <!-- Designers: align your part's connection nodes exactly to these coordinate pins -->
+  <g id="assembly-anchor-pins">
+    <!-- Wheel Front Axle -->
+    <circle cx="400" cy="380" r="4" class="anchor-point" />
+    <text x="360" y="405" class="anchor-label">PIN: wheel_front (400, 380)</text>
+
+    <!-- Wheel Rear Axle -->
+    <circle cx="110" cy="380" r="4" class="anchor-point" />
+    <text x="50" y="405" class="anchor-label">PIN: wheel_rear (110, 380)</text>
+
+    <!-- Engine Mount Center -->
+    <circle cx="256" cy="330" r="4" class="anchor-point" />
+    <text x="210" y="355" class="anchor-label">PIN: engine_mount (256, 330)</text>
+
+    <!-- Fuel Tank Saddle Crest -->
+    <circle cx="270" cy="210" r="4" class="anchor-point" />
+    <text x="220" y="195" class="anchor-label">PIN: fuel_tank (270, 210)</text>
+
+    <!-- Seat Platform -->
+    <circle cx="180" cy="235" r="4" class="anchor-point" />
+    <text x="120" y="225" class="anchor-label">PIN: seat (180, 235)</text>
+
+    <!-- Helmet & Gear Rack Bracket -->
+    <circle cx="130" cy="195" r="4" class="anchor-point" />
+    <text x="60" y="185" class="anchor-label">PIN: helmet_rack (130, 195)</text>
+
+    <!-- Crest / Trophy Ornament -->
+    <circle cx="256" cy="150" r="4" class="anchor-point" />
+    <text x="200" y="140" class="anchor-label">PIN: trophy_crest (256, 150)</text>
+  </g>
+
+  <!-- ── 5. ARTWORK LAYER (DRAW VECTORS HERE) ── -->
+  <!-- Note: Primary strokes: 3px. Detail strokes: 1.5px. Palette: Calm Highway tokens -->
+  <g id="artwork-layer">
+    <!-- PLACE PENPOT VECTOR EXPORTS INSIDE THIS GROUP -->
+  </g>
+</svg>

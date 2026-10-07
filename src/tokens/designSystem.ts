@@ -109,7 +109,7 @@ export const textColors = {
 
 // Semantic Actions (Tactile 3D Buttons: Fill + 4px Edge + Text)
 export const actions = {
-  // Primary (Action Green - Vibrant Duolingo inspired)
+  // Primary (Action Green - Vibrant Highway inspired)
   primary: {
     fill: '#58CC02',
     edge: '#46A302',

@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import { soundFx } from '../lib/soundEffects';
 import { triggerConfetti } from '../lib/animations';
-import { AspirantMascot } from './duolingo/AspirantMascot';
+import { AspirantMascot } from './highway/AspirantMascot';
 
 interface PyqEngineProps {
   onOpenBulkImport?: () => void;

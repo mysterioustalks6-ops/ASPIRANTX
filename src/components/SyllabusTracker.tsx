@@ -45,7 +45,7 @@ import { getExamConfig } from '../lib/examRegistry';
 import { getDefaultExamDate } from '../lib/packetSyncService';
 import { SyllabusVelocityHud } from './SyllabusVelocityHud';
 import { soundFx } from '../lib/soundEffects';
-import { AspirantMascot } from './duolingo/AspirantMascot';
+import { AspirantMascot } from './highway/AspirantMascot';
 import { AddCustomTopicModal } from './AddCustomTopicModal';
 import { useExam } from '../context/ExamContext';
 
@@ -1179,7 +1179,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                           : 'bg-[#15181F] border-[#2A2F3A] border-b-[5px] border-b-[#1A1D24] hover:border-[#3A404F]'
                       }`}
                     >
-                      {/* ── CARD HEADER (CLEAN DUOLINGO QUEST UNIT) ── */}
+                      {/* ── CARD HEADER (CLEAN QUEST UNIT) ── */}
                       <div
                         onClick={() => toggleAccordion(topic.id)}
                         className="p-4 sm:p-5 cursor-pointer select-none space-y-3"
@@ -1262,7 +1262,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                           </div>
                         </div>
 
-                        {/* Duolingo Progress Bar */}
+                        {/* Tactile Progress Bar */}
                         <div className="w-full bg-[#0F1115] h-2 rounded-full overflow-hidden border border-[#2A2F3A]">
                           <div 
                             className={`h-full rounded-full transition-all duration-500 ${
@@ -1358,7 +1358,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                           </div>
                         </div>
 
-                        {/* Duolingo Gamified Subtopics Checklist */}
+                        {/* Gamified Subtopics Checklist */}
                         <div className="space-y-2">
                           <div className="flex items-center justify-between px-1">
                             <span className="text-[11px] font-black uppercase tracking-wider text-[#9CA3AF]">

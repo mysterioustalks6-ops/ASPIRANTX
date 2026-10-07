@@ -74,7 +74,7 @@ class SoundFxEngine {
   }
 
   /**
-   * Duolingo signature "DING / SUCCESS" chord
+   * Calm Highway signature "DING / SUCCESS" chord
    * Ascending sweet marimba harmonic chime (C5 -> E5 -> G5 -> C6)
    */
   public playCorrect() {
@@ -116,7 +116,7 @@ class SoundFxEngine {
   }
 
   /**
-   * Duolingo gentle "WRONG / ERROR" soft thud chord
+   * Gentle "WRONG / ERROR" soft thud chord
    * Two descending notes (F#3 -> D3) that encourage learning without being jarring
    */
   public playWrong() {

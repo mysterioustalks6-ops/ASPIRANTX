@@ -13,9 +13,9 @@ import {
   BookOpen
 } from 'lucide-react';
 import { UserProfile, ExamType, ActiveTab } from '../types';
-import { DuolingoPathEngine } from './duolingo/DuolingoPathEngine';
+import { HighwayPathEngine } from './highway/HighwayPathEngine';
 import { soundFx } from '../lib/soundEffects';
-import { AspirantMascot } from './duolingo/AspirantMascot';
+import { AspirantMascot } from './highway/AspirantMascot';
 
 const PyqEngine = React.lazy(() => import('./PyqEngine').then(m => ({ default: m.PyqEngine })));
 const QuestionBankEngine = React.lazy(() => import('./QuestionBankEngine').then(m => ({ default: m.QuestionBankEngine })));
@@ -87,7 +87,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
       {/* OVERVIEW / HUB SELECTION */}
       {subTab === 'overview' && (
         <div className="space-y-6">
-          {/* Duolingo Gamified Veer Mascot Practice Arena Banner */}
+          {/* Gamified Veer Mascot Practice Arena Banner */}
           <div 
             onClick={() => { soundFx.playChestOpen(); }}
             className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 shadow-xl cursor-pointer hover:border-[var(--sr-primary)] transition-all select-none active:translate-y-1"
@@ -126,7 +126,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             </button>
           </div>
 
-          {/* DUOLINGO DAILY PRACTICE QUESTS WIDGET */}
+          {/* DAILY PRACTICE QUESTS WIDGET */}
           <div className="p-5 sm:p-6 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -343,7 +343,7 @@ export const PracticeHub: React.FC<PracticeHubProps> = ({
             >
               ← Back to Practice Hub
             </button>
-            <DuolingoPathEngine userProfile={userProfile} selectedExam={selectedExam} onNavigate={onNavigate} />
+            <HighwayPathEngine userProfile={userProfile} selectedExam={selectedExam} onNavigate={onNavigate} />
           </div>
         )}
 

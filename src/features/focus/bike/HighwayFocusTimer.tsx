@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, 
   ShieldAlert, CheckCircle2, ChevronRight, Sliders, Wrench, 
-  ArrowLeft, Eye, EyeOff, Info, Clock, AlertTriangle, Coffee, Compass
+  ArrowLeft, Eye, EyeOff, Info, Clock, AlertTriangle, Coffee, Compass, BarChart2
 } from 'lucide-react';
 import { 
   FocusSession, 
@@ -33,6 +33,7 @@ export interface HighwayFocusTimerProps {
   selectedExam?: string;
   onNavigateToGarage?: () => void;
   onOpenGarage?: () => void;
+  onNavigateToMyRides?: () => void;
   onBack?: () => void;
 }
 
@@ -41,6 +42,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
   selectedExam = 'NEET_UG',
   onNavigateToGarage,
   onOpenGarage,
+  onNavigateToMyRides,
   onBack
 }) => {
   const handleOpenGarage = onOpenGarage || onNavigateToGarage;
@@ -145,10 +147,9 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
       } else if (savedActive.mode === 'stopwatch') {
         setIsRunning(true);
         setIsPaused(savedActive.isPaused);
-        const elapsed = savedActive.isPaused
-          ? (savedActive.pausedAt || nowMs) - savedActive.startedAt - savedActive.totalPausedMs
-          : nowMs - savedActive.startedAt - savedActive.totalPausedMs;
-        setStopwatchElapsedMs(Math.max(0, elapsed));
+        const currentEffectiveTime = savedActive.isPaused ? (savedActive.pausedAt || nowMs) : nowMs;
+        const elapsed = Math.max(0, (currentEffectiveTime - savedActive.startedAt) - (savedActive.totalPausedMs || 0));
+        setStopwatchElapsedMs(elapsed);
       }
     }
   }, []);
@@ -163,21 +164,47 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
       const nowMs = Date.now();
 
       if (active.mode === 'pomodoro' && active.endsAt) {
-        const remaining = active.endsAt - nowMs;
+        const remaining = Math.max(0, active.endsAt - nowMs);
+        setTimeRemainingMs(remaining);
         if (remaining <= 0) {
           setTimeRemainingMs(0);
           handleFinishSession(true);
-        } else {
-          setTimeRemainingMs(remaining);
         }
       } else if (active.mode === 'stopwatch') {
-        const elapsed = nowMs - active.startedAt - active.totalPausedMs;
-        setStopwatchElapsedMs(elapsed);
+        const elapsed = Math.max(0, (nowMs - active.startedAt) - (active.totalPausedMs || 0));
+        setStopwatchElapsedMs(prev => Math.max(prev, elapsed));
       }
     }, 200);
 
     return () => clearInterval(interval);
   }, [isRunning, isPaused]);
+
+  // Recalculate accurately upon foregrounding without waiting for interval tick
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const active = timerStateRef.current;
+        if (!active) return;
+        const nowMs = Date.now();
+        if (active.mode === 'stopwatch') {
+          if (!active.isPaused) {
+            const elapsed = Math.max(0, (nowMs - active.startedAt) - (active.totalPausedMs || 0));
+            setStopwatchElapsedMs(prev => Math.max(prev, elapsed));
+          }
+        } else if (active.mode === 'pomodoro' && active.endsAt) {
+          if (!active.isPaused) {
+            const remaining = Math.max(0, active.endsAt - nowMs);
+            setTimeRemainingMs(remaining);
+            if (remaining <= 0) {
+              handleFinishSession(true);
+            }
+          }
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, []);
 
   // ── 8. TIMER ACTIONS ──
   const handleStartTimer = async () => {
@@ -239,7 +266,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
     soundFx.triggerHaptic(12);
 
     const active = timerStateRef.current;
-    if (!active) return;
+    if (!active || active.isPaused) return; // Prevent double pause overwrite
 
     const nowMs = Date.now();
     active.isPaused = true;
@@ -255,10 +282,10 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
     soundFx.triggerHaptic(15);
 
     const active = timerStateRef.current;
-    if (!active || !active.pausedAt) return;
+    if (!active || !active.isPaused || !active.pausedAt) return; // Only resume if active and paused
 
     const nowMs = Date.now();
-    const pausedDuration = nowMs - active.pausedAt;
+    const pausedDuration = Math.max(0, nowMs - active.pausedAt);
     active.totalPausedMs += pausedDuration;
     active.isPaused = false;
     active.pausedAt = undefined;
@@ -427,6 +454,18 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             {isRelaxViewActive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             <span>Relax View</span>
           </button>
+
+          {/* My Rides Navigation */}
+          {onNavigateToMyRides && (
+            <button
+              onClick={onNavigateToMyRides}
+              aria-label="Open My Rides"
+              className="px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-200 flex items-center gap-1.5 cursor-pointer"
+            >
+              <BarChart2 className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Rides</span>
+            </button>
+          )}
 
           {/* Garage Navigation */}
           {handleOpenGarage && (

@@ -74,7 +74,7 @@ export const AspirantMascot: React.FC<AspirantMascotProps> = ({
       className={`inline-flex select-none ${bubblePlacement === 'top' ? 'flex-col items-center gap-1.5' : 'items-center gap-3'} ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
-      {/* DUOLINGO-STYLE SPEECH BUBBLE (TOP PLACEMENT) */}
+      {/* SPEECH BUBBLE (TOP PLACEMENT) */}
       {speechBubble && bubblePlacement === 'top' && (
         <motion.div
           initial={{ opacity: 0, scale: 0.85, y: 4 }}
@@ -274,7 +274,7 @@ export const AspirantMascot: React.FC<AspirantMascotProps> = ({
         </svg>
       </motion.div>
 
-      {/* DUOLINGO-STYLE SPEECH BUBBLE (DEFAULT RIGHT PLACEMENT) */}
+      {/* SPEECH BUBBLE (DEFAULT RIGHT PLACEMENT) */}
       {speechBubble && bubblePlacement === 'right' && (
         <motion.div
           initial={{ opacity: 0, scale: 0.85, x: -8 }}
