@@ -2,7 +2,8 @@ import http from 'http';
 import { execSync } from 'child_process';
 import path from 'path';
 
-const ADB = '"C:\\Users\\AMBUJ YADAV\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe" -s 10BD570GL500057';
+const TARGET_SERIAL = process.env.ADB_DEVICE || process.argv[2] || '192.168.1.194:39219';
+const ADB = `"C:\\Users\\AMBUJ YADAV\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe" -s ${TARGET_SERIAL}`;
 
 function adbExec(cmd) {
   return execSync(`${ADB} ${cmd}`, { encoding: 'utf-8' });
