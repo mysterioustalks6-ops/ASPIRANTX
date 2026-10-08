@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, 
   ShieldAlert, CheckCircle2, ChevronRight, Sliders, Wrench, 
-  ArrowLeft, Info, Clock, AlertTriangle, Coffee, BarChart2
+  ArrowLeft, Info, Clock, AlertTriangle, Coffee, BarChart2, Share2
 } from 'lucide-react';
 import { 
   FocusSession, 
@@ -766,12 +766,24 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
               </p>
             </div>
 
-            <div className="w-full pt-2">
+            <div className="w-full pt-2 flex flex-col gap-2.5">
+              <a
+                href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                  `🎯 Just crushed a ${Math.round((completedSessionModal.actualSeconds || 0) / 60)}-min deep focus session on StudyRide! 🏍️💨\n\nTrack your syllabus, build daily study streaks & beat exam distractions with me 👉 https://studyride.in`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 px-3 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <Share2 className="w-4 h-4 text-slate-950" />
+                <span>Share on WhatsApp Status</span>
+              </a>
+
               <TactileButton
                 variant="primary"
                 size="md"
                 onClick={() => setCompletedSessionModal(null)}
-                className="w-full"
+                className="w-full text-xs font-bold"
               >
                 Keep riding
               </TactileButton>

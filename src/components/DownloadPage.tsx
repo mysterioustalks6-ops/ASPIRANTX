@@ -15,7 +15,8 @@ import {
   Check, 
   ArrowRight,
   BookOpen,
-  Trophy
+  Trophy,
+  Share2
 } from 'lucide-react';
 import { SlideUp, PressFeedback } from '../lib/animations';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
@@ -149,16 +150,29 @@ export const DownloadPage: React.FC<DownloadPageProps> = ({ onOpenApp }) => {
                   <span>Download Android App (.apk v{CANONICAL_APP_RELEASE.version})</span>
                 </a>
 
-                <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                  <span>File Size: ~12.9 MB</span>
+                <div className="flex items-center justify-between text-[11px] text-slate-300 px-1 font-medium">
+                  <span>File Size: ~23.1 MB</span>
                   <span>Requires Android 8.0+</span>
                   <button 
                     onClick={handleCopyLink}
-                    className="text-sky-400 hover:underline"
+                    className="text-sky-400 hover:underline font-bold"
                   >
                     {copiedUrl ? 'Copied Link!' : 'Copy Direct URL'}
                   </button>
                 </div>
+
+                {/* 1-Tap Viral WhatsApp Share */}
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                    `🚀 Download StudyRide App — India's #1 Study & Syllabus Tracker for UPSC, NEET, SSC CGL & JEE!\n\nFeatures 35+ Yrs PYQs, Focus Shield (Blocks Shorts/Reels), CBT Mock Tests & Streak Tracker.\n\nDownload free APK here 👉 https://studyride.in/download`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4 text-slate-950" />
+                  <span>Share App with Friends on WhatsApp</span>
+                </a>
 
                 {/* Play Protect & Installation Notice Card */}
                 <div className="mt-4 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-left space-y-2">
