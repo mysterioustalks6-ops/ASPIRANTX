@@ -4,7 +4,7 @@ import {
   Sparkles, Gift, Share2, Crown, Palette, Bell, HelpCircle, ShieldCheck, 
   FileText, ChevronRight, GraduationCap, Briefcase, Calendar, Shield, 
   Trophy, Download, RotateCcw, Volume2, VolumeX, Vibrate, CheckCircle2,
-  BookOpen, BookMarked, BarChart3, Mic, Settings
+  BookOpen, BookMarked, BarChart3, Mic, Settings, LogOut
 } from 'lucide-react';
 import { UserProfile, ExamType, ActiveTab } from '../types';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
@@ -17,10 +17,11 @@ interface MoreHubProps {
   user: UserProfile;
   selectedExam: ExamType;
   onNavigate: (tab: ActiveTab) => void;
-  onOpenProfileModal: () => void;
+  onOpenProfileModal: (tab?: 'overview' | 'badges' | 'awards' | 'edit') => void;
   onOpenReferralModal: () => void;
   onOpenWorkspaceCustomizer: () => void;
   onOpenReminderSettings: () => void;
+  onLogout?: () => void;
   isAdminUnlocked?: boolean;
 }
 
@@ -32,6 +33,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
   onOpenReferralModal,
   onOpenWorkspaceCustomizer,
   onOpenReminderSettings,
+  onLogout,
   isAdminUnlocked = false
 }) => {
   const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'done'>('idle');
@@ -118,7 +120,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
             <TactileButton
               variant="secondary"
               size="sm"
-              onClick={onOpenProfileModal}
+              onClick={() => onOpenProfileModal('edit')}
               icon={<User className="w-3.5 h-3.5" />}
             >
               Edit Profile
@@ -554,6 +556,38 @@ export const MoreHub: React.FC<MoreHubProps> = ({
             <span>Currently using Guest Session. Create a free account to sync progress permanently across devices.</span>
           </div>
         )}
+      </div>
+
+      {/* ── 8. ACCOUNT SESSION & LOGOUT ── */}
+      <div className="p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-rose-500/30 shadow-sm space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <h4 className="text-sm font-black text-[var(--sr-text)]">Account & Session</h4>
+              <p className="text-xs text-[var(--sr-text-muted)] truncate max-w-[220px] sm:max-w-sm">
+                Signed in as <span className="font-bold text-[var(--sr-text)]">{user.email || user.name || 'Aspirant'}</span>
+              </p>
+            </div>
+          </div>
+
+          {onLogout && (
+            <TactileButton
+              variant="danger"
+              size="md"
+              onClick={() => {
+                if (window.confirm('Kya aap sure hain ki aapko StudyRide se Log Out karna hai?')) {
+                  onLogout();
+                }
+              }}
+              icon={<LogOut className="w-4 h-4" />}
+            >
+              Log Out
+            </TactileButton>
+          )}
+        </div>
       </div>
     </div>
   );

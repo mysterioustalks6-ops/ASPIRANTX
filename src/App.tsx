@@ -300,6 +300,7 @@ function AppContent() {
   });
   const [bannedMessage, setBannedMessage] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [profileModalInitialTab, setProfileModalInitialTab] = useState<'overview' | 'badges' | 'awards' | 'edit'>('overview');
   const [showReferralModal, setShowReferralModal] = useState<boolean>(false);
   const [showCustomizerModal, setShowCustomizerModal] = useState<boolean>(false);
   const [showWorkspaceCustomizer, setShowWorkspaceCustomizer] = useState<boolean>(false);
@@ -1972,10 +1973,14 @@ function AppContent() {
                   user={{...user, exam: selectedExam}}
                   selectedExam={selectedExam}
                   onNavigate={(t) => setActiveTab(t)}
-                  onOpenProfileModal={() => setShowProfileModal(true)}
+                  onOpenProfileModal={(tab) => {
+                    setProfileModalInitialTab(tab || 'overview');
+                    setShowProfileModal(true);
+                  }}
                   onOpenReferralModal={() => setShowReferralModal(true)}
                   onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
                   onOpenReminderSettings={() => setShowReminderSettingsModal(true)}
+                  onLogout={handleLogout}
                   isAdminUnlocked={isAdminUnlocked}
                 />
               </div>
@@ -2011,7 +2016,12 @@ function AppContent() {
           <UserProfileModal
             user={user}
             isOpen={showProfileModal}
-            onClose={() => setShowProfileModal(false)}
+            initialTab={profileModalInitialTab}
+            onLogout={handleLogout}
+            onClose={() => {
+              setShowProfileModal(false);
+              setProfileModalInitialTab('overview');
+            }}
             onProfileUpdated={(updated) => {
               setUser(updated);
               if (updated.exam) {

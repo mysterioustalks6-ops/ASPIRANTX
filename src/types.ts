@@ -35,6 +35,8 @@ export interface UserProfile {
   isProfileComplete?: boolean;
   pinnedBadges?: string[];
   themeAccent?: string;
+  phoneNumber?: string;
+  dailyStudyTargetHours?: number;
 }
 
 export type ActiveTab = 'syllabus' | 'pyq' | 'question_bank' | 'cbt' | 'dashboard' | 'leaderboard' | 'cbt_exam' | 'student_dashboard' | 'timer' | 'garage' | 'my_rides' | 'asset_check' | 'mountain_ride' | 'tasks' | 'chat' | 'community' | 'study_buddy' | 'premium' | 'earn_premium' | 'reward_milestones' | 'rewards' | 'focus_shield' | 'download' | 'admin' | 'collaboration' | 'library' | 'flashcards' | 'weakness' | 'teachers' | 'podcasts' | 'eligibility' | 'feedback' | 'blog' | 'blog_submit' | 'wallpaper' | 'practice_hub' | 'progress_hub' | 'more_hub' | 'figma_preview' | 'debug_galaxy' | 'design_system';

@@ -56,7 +56,11 @@ import {
   Palette,
   ChevronRight,
   Sliders,
-  Share2
+  Share2,
+  LogOut,
+  Phone,
+  Mail,
+  UserCog
 } from 'lucide-react';
 import { 
   loadStudyReminderSettings, 
@@ -69,6 +73,8 @@ interface UserProfileModalProps {
   user: UserProfile;
   isOpen: boolean;
   onClose: () => void;
+  initialTab?: 'overview' | 'badges' | 'awards' | 'edit';
+  onLogout?: () => void;
   onProfileUpdated?: (updated: UserProfile) => void;
   onOpenReferralModal?: () => void;
   onNavigateToRewards?: () => void;
@@ -95,16 +101,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   user,
   isOpen,
   onClose,
+  initialTab = 'overview',
+  onLogout,
   onProfileUpdated,
   onOpenReferralModal,
   onNavigateToRewards,
   onOpenCustomizerModal,
 }) => {
   // Navigation Tabs: 'overview' | 'badges' | 'awards' | 'edit'
-  const [activeTab, setActiveTab] = useState<'overview' | 'badges' | 'awards' | 'edit'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'badges' | 'awards' | 'edit'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab && isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
   
   // Profile Form States
   const [name, setName] = useState<string>(user.name || '');
+  const [phoneNumber, setPhoneNumber] = useState<string>(user.phoneNumber || '');
+  const [dailyStudyTargetHours, setDailyStudyTargetHours] = useState<number>(user.dailyStudyTargetHours || 6);
   const [avatarUrl, setAvatarUrl] = useState<string>(() => {
     return resolveUserAvatar(user.avatar_url, user.id, user.email);
   });
@@ -281,6 +297,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       const updatedProfile: UserProfile = {
         ...user,
         name: name.trim() || user.name,
+        phoneNumber: phoneNumber.trim(),
+        dailyStudyTargetHours,
         avatar_url: resolvedAvatar,
         bio: bio.trim(),
         studyGoal: studyGoal.trim(),
@@ -319,6 +337,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         const payload = {
           email: user.email,
           name: updatedProfile.name,
+          phoneNumber: updatedProfile.phoneNumber,
+          dailyStudyTargetHours: updatedProfile.dailyStudyTargetHours,
           exam: updatedProfile.exam,
           targetExam: updatedProfile.exam,
           educationCategory: updatedProfile.educationCategory,
@@ -404,22 +424,40 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           style={{ background: activeAura.glow }}
         />
 
-        {/* Top Floating Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-30 p-2.5 rounded-full bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 transition-all shadow-lg backdrop-blur-md"
-          title="Close Profile"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Top Floating Action Bar */}
+        <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+          {onLogout && (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('Kya aap sure hain ki aapko StudyRide se Log Out karna hai?')) {
+                  onClose();
+                  onLogout();
+                }
+              }}
+              className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-black flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              title="Log Out of StudyRide"
+            >
+              <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline">Log Out</span>
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 transition-all shadow-lg backdrop-blur-md"
+            title="Close Profile"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* ============================================================== */}
         {/* DRIBBBLE HERO BANNER WITH AVATAR & PINNED BADGES */}
         {/* ============================================================== */}
-        <div className="relative pt-6 px-6 sm:px-8 pb-5 border-b border-slate-800/80 bg-gradient-to-b from-slate-950/90 via-slate-900/80 to-slate-900/40">
+        <div className="relative pt-6 pr-24 pl-5 sm:px-8 pb-5 border-b border-slate-800/80 bg-gradient-to-b from-slate-950/90 via-slate-900/80 to-slate-900/40">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
             {/* Avatar & Core Identity */}
-            <div className="flex items-center gap-4 sm:gap-5">
+            <div className="flex items-center gap-4 sm:gap-5 min-w-0">
               {/* Concentric Level Ring Avatar */}
               <div className="relative group shrink-0">
                 <div 
@@ -449,9 +487,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
 
               {/* Name, Handle, Exam & Target Year */}
-              <div className="space-y-1.5 min-w-0">
+              <div className="space-y-1.5 min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight truncate">
+                  <h1 className="text-base sm:text-2xl font-black text-white tracking-tight truncate max-w-[170px] sm:max-w-md" title={name}>
                     {name || 'Aspirant'}
                   </h1>
                   {user.isPremium ? (
@@ -592,11 +630,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             onClick={() => setActiveTab('edit')}
             className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'edit'
-                ? 'border-cyan-400 text-cyan-400'
+                ? 'border-emerald-400 text-emerald-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Palette className="w-4 h-4" /> Dynamic Customizer
+            <UserCog className="w-4 h-4" /> Edit Profile & Setup
           </button>
         </div>
 
@@ -1004,59 +1042,48 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         )}
 
         {/* ============================================================== */}
-        {/* TAB 4: DYNAMIC CUSTOMIZER & SETTINGS */}
+        {/* TAB 4: EDIT PROFILE & SETUP (STUDYRIDE TEAM STANDARD) */}
         {/* ============================================================== */}
         {activeTab === 'edit' && (
-          <form onSubmit={handleSaveProfile} className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-            {/* Section 1: Dynamic Aura Theme Accent */}
-            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
-              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <Palette className="w-4 h-4 text-cyan-400" /> Profile Aura Theme Accent
-              </label>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                {THEME_AURA_PRESETS.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setThemeAccent(t.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 border ${
-                      themeAccent === t.id
-                        ? `${t.bg} ${t.text} ${t.border} shadow-lg shadow-cyan-500/20 scale-105`
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <span className="w-3 h-3 rounded-full" style={{ background: t.glow }} />
-                    {t.name}
-                  </button>
-                ))}
+          <form onSubmit={handleSaveProfile} className="p-5 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            {/* Header Banner */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-indigo-500/10 border border-emerald-500/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                  <UserCog className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white">Edit Student Profile & Target Plan</h3>
+                  <p className="text-xs text-slate-400">Team StudyRide • Custom Roadmap & Daily Consistency Target</p>
+                </div>
               </div>
             </div>
 
-            {/* Section 2: Personal Identity */}
-            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
+            {/* Section 1: Candidate Identity & Contact */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
               <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <User className="w-4 h-4 text-purple-400" /> Personal Identity & Bio
+                <User className="w-4 h-4 text-emerald-400" /> Candidate Identity & Contact Details
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Full Name</label>
+                  <label className="text-xs font-bold text-slate-300">Full Name *</label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
                     placeholder="e.g. Ambuj Yadav"
                   />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Target Year</label>
+                  <label className="text-xs font-bold text-slate-300">Target Exam Year</label>
                   <select
                     value={targetYear}
                     onChange={(e) => setTargetYear(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none cursor-pointer"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none cursor-pointer"
                   >
                     {[2025, 2026, 2027, 2028, 2029].map((yr) => (
                       <option key={yr} value={yr} className="bg-slate-900 text-white">
@@ -1064,6 +1091,36 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              {/* Email & Phone Contact */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                    <span>Registered Email</span>
+                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Verified</span>
+                  </label>
+                  <div className="w-full px-4 py-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span className="truncate">{user.email || 'guest@studyride.internal'}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Mobile / WhatsApp Number</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                      <Phone className="w-3.5 h-3.5" />
+                    </div>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
+                      placeholder="e.g. +91 98765 43210"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1075,8 +1132,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    placeholder="e.g. UPSC CSE 2026 Aspirant • Sociology Optional"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
+                    placeholder="e.g. UPSC CSE Aspirant • Sociology Optional"
                   />
                 </div>
 
@@ -1086,8 +1143,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     type="text"
                     value={studyGoal}
                     onChange={(e) => setStudyGoal(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    placeholder="e.g. AIR 1 Mission • Consistency Over Intensity"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
+                    placeholder="e.g. Tu banega Officer! LBSNAA is calling 🇮🇳"
                   />
                 </div>
               </div>
@@ -1095,8 +1152,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               {/* Avatar Studio */}
               <div className="space-y-3 pt-2">
                 <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                  <span>Avatar & Profile Photo (Permanent Neon Storage)</span>
-                  {uploadingPhoto && <span className="text-cyan-400 text-[10px] flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Compressing & Saving...</span>}
+                  <span>Profile Photo & Avatar Studio</span>
+                  {uploadingPhoto && <span className="text-emerald-400 text-[10px] flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Saving photo...</span>}
                 </label>
 
                 {uploadError && (
@@ -1107,8 +1164,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 )}
 
                 <div className="flex items-center gap-4 flex-wrap">
-                  <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/40 text-xs font-black text-cyan-300 cursor-pointer transition-all shadow-md active:scale-95">
-                    <Upload className="w-4 h-4 text-cyan-400" /> Upload Photo from Device
+                  <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-xs font-black text-emerald-300 cursor-pointer transition-all shadow-md active:scale-95">
+                    <Upload className="w-4 h-4 text-emerald-400" /> Upload from Device
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -1120,11 +1177,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
                   {avatarUrl && avatarUrl.startsWith('data:') && (
                     <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Custom Photo Active & Saved
+                      <CheckCircle2 className="w-3 h-3" /> Custom Photo Active
                     </span>
                   )}
 
-                  <span className="text-[11px] text-slate-400">Ya select karein curated presets me se:</span>
+                  <span className="text-[11px] text-slate-400">Ya select karein curated presets:</span>
                 </div>
 
                 {/* Preset Avatar Gallery */}
@@ -1143,12 +1200,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       }}
                       title={av.label}
                       className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${
-                        avatarUrl === av.url ? 'border-cyan-400 scale-110 shadow-lg shadow-cyan-500/30 ring-2 ring-cyan-400/40' : 'border-slate-800 hover:border-slate-600 opacity-80 hover:opacity-100'
+                        avatarUrl === av.url ? 'border-emerald-400 scale-110 shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400/40' : 'border-slate-800 hover:border-slate-600 opacity-80 hover:opacity-100'
                       }`}
                     >
                       <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
                       {avatarUrl === av.url && (
-                        <div className="absolute inset-0 bg-cyan-500/20 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
                           <Check className="w-3.5 h-3.5 text-white drop-shadow" />
                         </div>
                       )}
@@ -1158,15 +1215,45 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Section 3: Academic Preferences & Target Exam */}
-            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
+            {/* Section 2: Target Exam & Academic Roadmap */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
               <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <Target className="w-4 h-4 text-emerald-400" /> Academic Exam & Board Details
+                <Target className="w-4 h-4 text-cyan-400" /> Target Exam & Academic Roadmap
               </label>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Quick Exam Chips */}
+              <div className="space-y-2">
+                <span className="text-xs text-slate-400">Popular Exam Presets:</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {[
+                    'UPSC CSE (IAS/IPS)',
+                    'SSC CGL',
+                    'NEET UG',
+                    'JEE Main',
+                    'NDA / CDS',
+                    'UPPSC / BPSC',
+                    'Banking (IBPS/SBI)',
+                    'CUET UG'
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setExamName(preset)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                        examName === preset
+                          ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400 shadow-md'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Target Exam Name</label>
+                  <label className="text-xs font-bold text-slate-300">Target Exam Name *</label>
                   <input
                     type="text"
                     required
@@ -1225,7 +1312,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Stream / Optional</label>
+                  <label className="text-xs font-bold text-slate-300">Stream / Optional Subject</label>
                   <input
                     type="text"
                     value={streamOrSubject}
@@ -1237,8 +1324,90 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             </div>
 
+            {/* Section 3: Daily Goals & Focus Targets */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-400" /> Daily Study Target (Team Consistency Standard)
+              </label>
+
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {[3, 4, 6, 8, 10, 12].map((hours) => (
+                  <button
+                    key={hours}
+                    type="button"
+                    onClick={() => setDailyStudyTargetHours(hours)}
+                    className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all border ${
+                      dailyStudyTargetHours === hours
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md scale-105'
+                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    {hours} Hours / Day
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Highway Focus Timer aur Progress Hub is daily goal ke according aapki live pace calculate karte hain.
+              </p>
+            </div>
+
+            {/* Section 4: Dynamic Aura Theme Accent */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Palette className="w-4 h-4 text-purple-400" /> Profile Aura Theme Accent
+              </label>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {THEME_AURA_PRESETS.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setThemeAccent(t.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 border ${
+                      themeAccent === t.id
+                        ? `${t.bg} ${t.text} ${t.border} shadow-lg shadow-cyan-500/20 scale-105`
+                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <span className="w-3 h-3 rounded-full" style={{ background: t.glow }} />
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Section 5: Account Session & Log Out */}
+            <div className="p-5 rounded-2xl bg-rose-950/20 border border-rose-900/40 flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0">
+                  <LogOut className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-black text-rose-300">Account Session & Devices</h4>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    Signed in as <span className="text-white font-bold">{user.email || 'Guest User'}</span>
+                  </p>
+                </div>
+              </div>
+
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('Kya aap sure hain ki aapko StudyRide se Log Out karna hai?')) {
+                      onClose();
+                      onLogout();
+                    }
+                  }}
+                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Log Out of StudyRide
+                </button>
+              )}
+            </div>
+
             {/* Bottom Save Trigger Button */}
-            <div className="pt-2 flex items-center justify-end gap-3">
+            <div className="pt-2 flex items-center justify-end gap-3 sticky bottom-0 bg-slate-950/90 backdrop-blur-md p-3 -mx-5 -mb-5 sm:-mx-8 sm:-mb-8 border-t border-slate-800/80">
               <button
                 type="button"
                 onClick={onClose}
@@ -1249,7 +1418,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/25 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 {isSaving ? 'Saving Changes...' : 'Save & Sync Profile'}
