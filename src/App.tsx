@@ -300,7 +300,7 @@ function AppContent() {
   });
   const [bannedMessage, setBannedMessage] = useState<string | null>(null);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
-  const [profileModalInitialTab, setProfileModalInitialTab] = useState<'overview' | 'badges' | 'awards' | 'edit'>('overview');
+  const [profileModalInitialTab, setProfileModalInitialTab] = useState<'overview' | 'avatar' | 'edit'>('overview');
   const [showReferralModal, setShowReferralModal] = useState<boolean>(false);
   const [showCustomizerModal, setShowCustomizerModal] = useState<boolean>(false);
   const [showWorkspaceCustomizer, setShowWorkspaceCustomizer] = useState<boolean>(false);
@@ -2017,7 +2017,6 @@ function AppContent() {
             user={user}
             isOpen={showProfileModal}
             initialTab={profileModalInitialTab}
-            onLogout={handleLogout}
             onClose={() => {
               setShowProfileModal(false);
               setProfileModalInitialTab('overview');
@@ -2034,7 +2033,7 @@ function AppContent() {
             }}
             onNavigateToRewards={() => {
               setShowProfileModal(false);
-              setActiveTab('reward_milestones');
+              setActiveTab('rewards');
             }}
             onOpenCustomizerModal={isAdmin ? () => {
               setShowProfileModal(false);

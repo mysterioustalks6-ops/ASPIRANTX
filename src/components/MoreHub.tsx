@@ -17,7 +17,7 @@ interface MoreHubProps {
   user: UserProfile;
   selectedExam: ExamType;
   onNavigate: (tab: ActiveTab) => void;
-  onOpenProfileModal: (tab?: 'overview' | 'badges' | 'awards' | 'edit') => void;
+  onOpenProfileModal: (tab?: 'overview' | 'avatar' | 'edit') => void;
   onOpenReferralModal: () => void;
   onOpenWorkspaceCustomizer: () => void;
   onOpenReminderSettings: () => void;
@@ -90,8 +90,16 @@ export const MoreHub: React.FC<MoreHubProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] flex items-center justify-center font-black text-[var(--sr-primary)] text-xl sm:text-2xl shrink-0">
-                {user.name ? user.name[0].toUpperCase() : 'A'}
+              <div 
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] overflow-hidden flex items-center justify-center font-black text-[var(--sr-primary)] text-xl sm:text-2xl shrink-0 cursor-pointer"
+                onClick={() => onOpenProfileModal('avatar')}
+                title="Open Avatar Studio"
+              >
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt={user.name || 'Aspirant'} className="w-full h-full object-cover" />
+                ) : (
+                  user.name ? user.name[0].toUpperCase() : 'A'
+                )}
               </div>
               <span className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[var(--sr-primary)] text-[var(--sr-on-primary)] border-2 border-[var(--sr-surface)] flex items-center justify-center text-[10px] sm:text-xs font-black">
                 ✓
@@ -116,7 +124,15 @@ export const MoreHub: React.FC<MoreHubProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+            <TactileButton
+              variant="secondary"
+              size="sm"
+              onClick={() => onOpenProfileModal('avatar')}
+              icon={<Palette className="w-3.5 h-3.5 text-[var(--sr-primary)]" />}
+            >
+              Avatar Studio
+            </TactileButton>
             <TactileButton
               variant="secondary"
               size="sm"

@@ -15,12 +15,12 @@ export interface AppReleaseConfig {
 }
 
 export const CANONICAL_APP_RELEASE: AppReleaseConfig = {
-  version: '3.2.1',
-  versionCode: 27,
+  version: '3.2.2',
+  versionCode: 28,
   apkDownloadUrl: '/studyride.apk',
   apkFileName: 'StudyRide.apk',
-  releaseDate: 'October 4, 2026',
+  releaseDate: 'October 8, 2026',
   minSupportedVersion: '2.0.0',
   playStoreUrl: null,
-  releaseNotes: 'v3.2.1: Complete Calm Highway Interface Transformation across Syllabus Quests, Practice Hub Arena, National Leagues, and Tactile 3D Tools.',
+  releaseNotes: 'v3.2.2: Profile section isolation, dedicated Avatar Studio with custom vector characters, Dark Emerald theme preferences, and awards consolidated in Rewards Hub.',
 };

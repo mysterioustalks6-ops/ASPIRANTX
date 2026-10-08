@@ -11,15 +11,15 @@ import {
   SYLLABUS_PRESETS 
 } from '../data/syllabusTemplates';
 import { 
-  PROFILE_BADGES, 
-  PROFILE_AWARDS, 
   CURATED_AVATARS, 
   THEME_AURA_PRESETS,
-  ProfileBadge,
   computeStudyTelemetry,
   StudyTelemetryData
 } from '../data/profileBadgesData';
 import { resolveUserAvatar, storeUserAvatar, syncAvatarToServer } from '../lib/avatarStorage';
+import { AvatarConfig, DEFAULT_AVATAR_CONFIG } from './AvatarStudioModal';
+import { avatarConfigToDataUrl, generateMonogramDataUrl } from '../lib/avatarSvgGenerator';
+import { AspirantAvatar } from './AspirantAvatar';
 import { 
   User, 
   Target, 
@@ -57,10 +57,12 @@ import {
   ChevronRight,
   Sliders,
   Share2,
-  LogOut,
   Phone,
   Mail,
-  UserCog
+  UserCog,
+  Edit2,
+  Shirt,
+  Glasses
 } from 'lucide-react';
 import { 
   loadStudyReminderSettings, 
@@ -69,47 +71,80 @@ import {
   requestNotificationPermission 
 } from '../lib/studyReminderService';
 
+import { soundFx } from '../lib/soundEffects';
+
 interface UserProfileModalProps {
   user: UserProfile;
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'overview' | 'badges' | 'awards' | 'edit';
-  onLogout?: () => void;
+  initialTab?: 'overview' | 'avatar' | 'edit';
   onProfileUpdated?: (updated: UserProfile) => void;
   onOpenReferralModal?: () => void;
   onNavigateToRewards?: () => void;
   onOpenCustomizerModal?: () => void;
 }
 
-const ICON_MAP: Record<string, any> = {
-  Flame,
-  Zap,
-  ShieldCheck,
-  Crown,
-  Compass,
-  BookOpen,
-  Target,
-  Trophy,
-  Clock,
-  Sparkles,
-  User,
-  Award,
-  Coins
-};
+const VECTOR_BG_COLORS = [
+  { label: 'Sun Gold', color: '#FACC15' },
+  { label: 'Emerald Forest', color: '#10B981' },
+  { label: 'Deep Cyan', color: '#06B6D4' },
+  { label: 'Royal Violet', color: '#8B5CF6' },
+  { label: 'Rose Pink', color: '#F43F5E' },
+  { label: 'OLED Charcoal', color: '#1E2520' }
+];
+
+const VECTOR_SKIN_TONES = [
+  { label: 'Fair', color: '#FBD8B5' },
+  { label: 'Warm', color: '#F3C5A5' },
+  { label: 'Olive', color: '#E0A37A' },
+  { label: 'Rich Brown', color: '#A0633C' },
+  { label: 'Deep Ebony', color: '#5C3822' }
+];
+
+const VECTOR_FACIAL_HAIR_OPTIONS = [
+  { id: 'none', label: 'Clean Shaven', desc: 'Fresh & sharp' },
+  { id: 'stubble', label: 'Light Stubble', desc: 'Subtle shadow' },
+  { id: 'beard', label: 'Full Beard', desc: 'Dense beard' },
+  { id: 'goatee', label: 'Goatee', desc: 'French cut' },
+  { id: 'mustache', label: 'Handlebar', desc: 'Imperial mustache' },
+  { id: 'salt_pepper', label: 'Salt & Pepper', desc: 'Experienced scholar' }
+];
+
+const VECTOR_HAIR_STYLES = [
+  { id: 'bald', label: 'Bald / Shaved' },
+  { id: 'short', label: 'Classic Crew' },
+  { id: 'wavy', label: 'Wavy Volume' },
+  { id: 'curly', label: 'Curly Top' },
+  { id: 'parted', label: 'Side Part' }
+];
+
+const VECTOR_BODY_STYLES = [
+  { id: 'shirt', label: 'White Collared Shirt', emoji: '👔' },
+  { id: 'hoodie', label: 'Study Hoodie', emoji: '🧥' },
+  { id: 'tshirt', label: 'Casual Crewneck', emoji: '👕' },
+  { id: 'blazer', label: 'Officer Blazer', emoji: '🤵' },
+  { id: 'kurta', label: 'Minimalist Kurta', emoji: '🥻' }
+];
+
+const VECTOR_ACCESSORIES = [
+  { id: 'none', label: 'None', emoji: '🚫' },
+  { id: 'reading_glasses', label: 'Study Specs', emoji: '👓' },
+  { id: 'round_glasses', label: 'Professor Glasses', emoji: '🕶️' },
+  { id: 'headphones', label: 'Noise-Cancel Headphones', emoji: '🎧' }
+];
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   user,
   isOpen,
   onClose,
   initialTab = 'overview',
-  onLogout,
   onProfileUpdated,
   onOpenReferralModal,
   onNavigateToRewards,
   onOpenCustomizerModal,
 }) => {
-  // Navigation Tabs: 'overview' | 'badges' | 'awards' | 'edit'
-  const [activeTab, setActiveTab] = useState<'overview' | 'badges' | 'awards' | 'edit'>(initialTab);
+  // Navigation Tabs: 'overview' | 'avatar' | 'edit'
+  const [activeTab, setActiveTab] = useState<'overview' | 'avatar' | 'edit'>(initialTab);
 
   useEffect(() => {
     if (initialTab && isOpen) {
@@ -134,15 +169,20 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   );
   const [streamOrSubject, setStreamOrSubject] = useState<string>(user.streamOrSubject || 'General Studies');
   const [targetYear, setTargetYear] = useState<number>(user.targetYear || 2026);
-  const [themeAccent, setThemeAccent] = useState<string>(user.themeAccent || 'cyan');
-  const [pinnedBadges, setPinnedBadges] = useState<string[]>(
-    user.pinnedBadges && user.pinnedBadges.length > 0
-      ? user.pinnedBadges
-      : ['badge_first_spark', 'badge_syllabus_starter', 'badge_focus_monk']
-  );
+  const [themeAccent, setThemeAccent] = useState<string>(user.themeAccent || 'emerald');
 
-  // Badge Filter State
-  const [badgeFilter, setBadgeFilter] = useState<'ALL' | 'MASTERY' | 'STREAK' | 'FOCUS' | 'COMMUNITY' | 'UNLOCKED'>('ALL');
+  // Avatar Studio State
+  const [avatarStudioMode, setAvatarStudioMode] = useState<'vector' | 'presets' | 'monogram' | 'upload'>('vector');
+  const [vectorConfig, setVectorConfig] = useState<AvatarConfig>(() => {
+    try {
+      const saved = localStorage.getItem('studyride_user_avatar');
+      if (saved) return JSON.parse(saved);
+    } catch (_) {}
+    return DEFAULT_AVATAR_CONFIG;
+  });
+  const [vectorCategory, setVectorCategory] = useState<'Face' | 'Hair' | 'Facial Hair' | 'Outfit' | 'Accessories' | 'Background'>('Facial Hair');
+  const [monogramInitials, setMonogramInitials] = useState<string>(() => (user.name ? user.name.slice(0, 2).toUpperCase() : 'AY'));
+  const [monogramGrad, setMonogramGrad] = useState<string>('emerald');
 
   // Photo Upload & Statuses
   const [uploadingPhoto, setUploadingPhoto] = useState<boolean>(false);
@@ -150,85 +190,58 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [copiedReferral, setCopiedReferral] = useState<boolean>(false);
-
-  // Rewards Claims
-  const [myClaims, setMyClaims] = useState<any[]>([]);
-  const [loadingClaims, setLoadingClaims] = useState<boolean>(false);
-
-  // Custom Exam Modal
   const [isCustomModalOpen, setIsCustomModalOpen] = useState<boolean>(false);
 
-  // Reminders Settings
-  const [reminderSettings, setReminderSettings] = useState<StudyReminderSettings>(() => loadStudyReminderSettings());
+  // Reminder Preferences
+  const [reminderSettings, setReminderSettings] = useState<StudyReminderSettings>(() => {
+    return loadStudyReminderSettings();
+  });
 
-  // Active Aura Theme Info
-  const activeAura = THEME_AURA_PRESETS.find(p => p.id === themeAccent) || THEME_AURA_PRESETS[0];
+  // Sound Effects Preference
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => soundFx.isEnabled());
 
-  // Deterministic Live Study Telemetry (Pomodoro, CBT Mocks, Real Streaks, Topics)
-  const telemetry = useMemo<StudyTelemetryData>(() => {
+  // Calculate Real Telemetry
+  const telemetry: StudyTelemetryData = useMemo(() => {
     return computeStudyTelemetry(user);
-  }, [user, isOpen, activeTab]);
+  }, [user, isOpen]);
 
-  useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-      setAvatarUrl(resolveUserAvatar(user.avatar_url, user.id, user.email));
-      setBio(user.bio || 'Future Civil Servant / High-Performance Aspirant');
-      setStudyGoal(user.studyGoal || 'Daily Consistency • Master Syllabus • Crack Target Exam');
-      setExamName(user.exam || 'UPSC CSE (IAS/IPS)');
-      setTargetYear(user.targetYear || 2026);
-      setThemeAccent(user.themeAccent || 'cyan');
-      if (user.pinnedBadges && user.pinnedBadges.length > 0) {
-        setPinnedBadges(user.pinnedBadges);
-      }
-    }
-  }, [user]);
+  // Active Aura Theme Preset
+  const activeAura = useMemo(() => {
+    return THEME_AURA_PRESETS.find(p => p.id === themeAccent) || THEME_AURA_PRESETS[0];
+  }, [themeAccent]);
 
-  useEffect(() => {
-    if (activeTab === 'awards' && user) {
-      fetchMyClaims();
-    }
-  }, [activeTab, user?.id]);
+  // Dynamic Levels and XP calculation (safe non-negative modulo)
+  const currentXP = Math.max(0, user.xp || 0);
+  const currentLevel = Math.max(1, user.level || 1);
+  const levelBracketXP = 200;
+  const currentLevelXP = currentXP % levelBracketXP;
+  const xpProgress = Math.min(100, Math.max(0, Math.round((currentLevelXP / levelBracketXP) * 100)));
 
-  const fetchMyClaims = async () => {
-    setLoadingClaims(true);
-    try {
-      const res = await fetch(`/api/rewards/my-claims?userId=${encodeURIComponent(user.id)}&userEmail=${encodeURIComponent(user.email)}`);
-      const data = await res.json();
-      if (data.success && data.claims) {
-        setMyClaims(data.claims);
-      }
-    } catch (e) {
-      console.error('Failed to load my claims', e);
-    } finally {
-      setLoadingClaims(false);
-    }
-  };
-
+  // Device Photo Upload Handler
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setUploadError('Kripya sirf image file (JPG, PNG, WebP) upload karein.');
+      setUploadError('Kripya valid image file (JPG, PNG, WebP) select karein.');
       return;
     }
 
-    if (file.size > 8 * 1024 * 1024) {
-      setUploadError('Photo ka size 8MB se zyada nahi hona chahiye.');
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Image size 5MB se kam honi chahiye.');
       return;
     }
 
-    setUploadError(null);
     setUploadingPhoto(true);
+    setUploadError(null);
 
     const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
+    reader.onload = (event) => {
+      const rawDataUrl = event.target?.result as string;
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const MAX_DIM = 240;
+        const MAX_DIM = 400;
         let width = img.width;
         let height = img.height;
 
@@ -250,155 +263,122 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         if (ctx) {
           ctx.drawImage(img, 0, 0, width, height);
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
           setAvatarUrl(compressedDataUrl);
           storeUserAvatar(compressedDataUrl, user.id, user.email);
           syncAvatarToServer(compressedDataUrl, user.email, user.id);
+
           if (onProfileUpdated) {
             onProfileUpdated({ ...user, avatar_url: compressedDataUrl });
           }
+
+          setUploadingPhoto(false);
+          triggerConfetti();
+          setSaveSuccessMessage('Profile photo successfully update ho gayi! ✓');
+          setTimeout(() => setSaveSuccessMessage(null), 3000);
+        } else {
+          setAvatarUrl(rawDataUrl);
+          storeUserAvatar(rawDataUrl, user.id, user.email);
+          setUploadingPhoto(false);
         }
-        setUploadingPhoto(false);
       };
       img.onerror = () => {
-        setUploadError('Photo read karne me problem aayi.');
+        setUploadError('Image process nahi ho saki.');
         setUploadingPhoto(false);
       };
-      img.src = uploadEvent.target?.result as string;
+      img.src = rawDataUrl;
     };
     reader.onerror = () => {
-      setUploadError('File read fail ho gayi.');
+      setUploadError('File read karne me error aayi.');
       setUploadingPhoto(false);
     };
     reader.readAsDataURL(file);
   };
 
-  const togglePinBadge = (badgeId: string) => {
-    if (pinnedBadges.includes(badgeId)) {
-      setPinnedBadges(pinnedBadges.filter(id => id !== badgeId));
-    } else {
-      if (pinnedBadges.length >= 3) {
-        setPinnedBadges([...pinnedBadges.slice(1), badgeId]);
-      } else {
-        setPinnedBadges([...pinnedBadges, badgeId]);
-      }
-      triggerConfetti();
+  // Apply Vector Avatar
+  const handleApplyVectorAvatar = () => {
+    const dataUri = avatarConfigToDataUrl(vectorConfig);
+    setAvatarUrl(dataUri);
+    localStorage.setItem('studyride_user_avatar', JSON.stringify(vectorConfig));
+    storeUserAvatar(dataUri, user.id, user.email);
+    syncAvatarToServer(dataUri, user.email, user.id);
+    if (onProfileUpdated) {
+      onProfileUpdated({ ...user, avatar_url: dataUri });
     }
+    triggerConfetti();
+    setSaveSuccessMessage('Vector Aspirant Avatar set ho gaya! ✓');
+    setTimeout(() => setSaveSuccessMessage(null), 3000);
   };
 
-  const handleSaveProfile = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+  // Apply Monogram Avatar
+  const handleApplyMonogram = () => {
+    const dataUri = generateMonogramDataUrl(monogramInitials, monogramGrad);
+    setAvatarUrl(dataUri);
+    storeUserAvatar(dataUri, user.id, user.email);
+    syncAvatarToServer(dataUri, user.email, user.id);
+    if (onProfileUpdated) {
+      onProfileUpdated({ ...user, avatar_url: dataUri });
+    }
+    triggerConfetti();
+    setSaveSuccessMessage('Monogram Avatar set ho gaya! ✓');
+    setTimeout(() => setSaveSuccessMessage(null), 3000);
+  };
+
+  // Profile Save Submission
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsSaving(true);
-    setSaveError(null);
     setSaveSuccessMessage(null);
+    setSaveError(null);
 
     try {
-      const resolvedAvatar = resolveUserAvatar(avatarUrl, user.id, user.email);
-
       const updatedProfile: UserProfile = {
         ...user,
         name: name.trim() || user.name,
+        fullName: name.trim() || user.name,
         phoneNumber: phoneNumber.trim(),
-        dailyStudyTargetHours,
-        avatar_url: resolvedAvatar,
+        dailyStudyTargetHours: Number(dailyStudyTargetHours) || 6,
         bio: bio.trim(),
         studyGoal: studyGoal.trim(),
+        exam: examName,
         educationCategory: category,
-        exam: examName.trim() || user.exam,
         stateName,
         boardOrUniversity,
-        streamOrSubject: streamOrSubject.trim(),
+        streamOrSubject,
         targetYear,
         themeAccent,
-        pinnedBadges,
-        isProfileComplete: true,
+        avatar_url: avatarUrl,
       };
 
-      // 1. Instant local storage update across all keys
-      storeUserAvatar(resolvedAvatar, user.id, user.email);
-      syncAvatarToServer(resolvedAvatar, user.email, user.id);
-      localStorage.setItem(`aspirantx_user_profile_${user.id}`, JSON.stringify(updatedProfile));
-      localStorage.setItem(`aspirantx_user_profile_v3_${user.id}`, JSON.stringify(updatedProfile));
+      saveUserProfile(updatedProfile);
+      storeUserAvatar(avatarUrl, user.id, user.email);
       saveStudyReminderSettings(reminderSettings);
 
-      // 2. Set syllabus preset if available
-      if (SYLLABUS_PRESETS[category]) {
-        localStorage.setItem(`aspirantx_custom_syllabus_${user.id}`, JSON.stringify(SYLLABUS_PRESETS[category]));
+      if (onProfileUpdated) {
+        onProfileUpdated(updatedProfile);
       }
 
-      // 3. Save via gamification layer
-      await saveUserProfile(updatedProfile);
-
-      // 4. Sync to backend API (Neon PostgreSQL authoritative sync)
-      if (user.email) {
-        const token = localStorage.getItem('aspirantx_auth_token');
-        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const payload = {
-          email: user.email,
-          name: updatedProfile.name,
-          phoneNumber: updatedProfile.phoneNumber,
-          dailyStudyTargetHours: updatedProfile.dailyStudyTargetHours,
-          exam: updatedProfile.exam,
-          targetExam: updatedProfile.exam,
-          educationCategory: updatedProfile.educationCategory,
-          stateName: updatedProfile.stateName,
-          boardOrUniversity: updatedProfile.boardOrUniversity,
-          streamOrSubject: updatedProfile.streamOrSubject,
-          targetYear: updatedProfile.targetYear,
-          bio: updatedProfile.bio,
-          studyGoal: updatedProfile.studyGoal,
-          avatar_url: resolvedAvatar,
-          pinnedBadges: updatedProfile.pinnedBadges,
-          themeAccent: updatedProfile.themeAccent,
-          isProfileComplete: true,
-          streakDays: updatedProfile.streakDays,
-          xp: updatedProfile.xp,
-          coins: updatedProfile.coins,
-          level: updatedProfile.level,
-        };
-
-        await Promise.allSettled([
-          fetch('/api/user/update-profile', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-          }),
-          fetch('/api/user/profile', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify(payload),
-          })
-        ]);
-      }
+      try {
+        const token = localStorage.getItem('aspirantx_auth_token') || localStorage.getItem('supabase.auth.token');
+        await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify(updatedProfile)
+        });
+      } catch (_) {}
 
       triggerConfetti();
-      setSaveSuccessMessage('✨ Profile successfully updated! Changes live across your dashboard.');
-      if (onProfileUpdated) onProfileUpdated(updatedProfile);
-
-      setTimeout(() => {
-        setSaveSuccessMessage(null);
-      }, 2500);
+      setSaveSuccessMessage('Aapka profile aur study preferences successfully save ho gaye! ✓');
+      setTimeout(() => setSaveSuccessMessage(null), 4000);
     } catch (err: any) {
-      setSaveError(`Save karne me problem: ${err.message || 'Unknown error'}`);
+      setSaveError(err.message || 'Profile save karne me samasya aayi.');
     } finally {
       setIsSaving(false);
     }
   };
-
-  const handleCopyReferral = () => {
-    const code = user.referralCode || 'ASPIRANT-101';
-    navigator.clipboard.writeText(code);
-    setCopiedReferral(true);
-    setTimeout(() => setCopiedReferral(false), 2000);
-  };
-
-  // XP Level Calculations
-  const currentXP = user.xp || 150;
-  const currentLevel = user.level || Math.max(1, Math.floor(currentXP / 150) + 1);
-  const nextLevelXP = currentLevel * 150;
-  const prevLevelXP = (currentLevel - 1) * 150;
-  const xpProgress = Math.min(100, Math.round(((currentXP - prevLevelXP) / 150) * 100));
 
   if (!isOpen) return null;
 
@@ -416,7 +396,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       >
         {/* Dynamic Glowing Ambient Aura */}
         <div 
-          className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-30"
+          className="absolute -top-24 -right-24 w-96 h-96 rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-25"
           style={{ background: activeAura.glow }}
         />
         <div 
@@ -424,27 +404,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           style={{ background: activeAura.glow }}
         />
 
-        {/* Top Floating Action Bar */}
+        {/* Top Floating Action Bar: ONLY Close Button (No Logout in Profile) */}
         <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
-          {onLogout && (
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('Kya aap sure hain ki aapko StudyRide se Log Out karna hai?')) {
-                  onClose();
-                  onLogout();
-                }
-              }}
-              className="px-3 py-1.5 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 text-xs font-black flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
-              title="Log Out of StudyRide"
-            >
-              <LogOut className="w-3.5 h-3.5 text-rose-400" />
-              <span className="hidden sm:inline">Log Out</span>
-            </button>
-          )}
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-950/60 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 transition-all shadow-lg backdrop-blur-md"
+            className="p-2.5 rounded-2xl bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 transition-all shadow-lg backdrop-blur-md active:scale-95"
             title="Close Profile"
           >
             <X className="w-4 h-4" />
@@ -452,18 +416,22 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         </div>
 
         {/* ============================================================== */}
-        {/* DRIBBBLE HERO BANNER WITH AVATAR & PINNED BADGES */}
+        {/* HERO BANNER WITH AVATAR & CANDIDATE IDENTITY */}
         {/* ============================================================== */}
-        <div className="relative pt-6 pr-24 pl-5 sm:px-8 pb-5 border-b border-slate-800/80 bg-gradient-to-b from-slate-950/90 via-slate-900/80 to-slate-900/40">
+        <div className="relative pt-6 pr-16 pl-5 sm:px-8 pb-5 border-b border-slate-800/80 bg-gradient-to-b from-slate-950/90 via-slate-900/80 to-slate-900/40 shrink-0">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
             {/* Avatar & Core Identity */}
             <div className="flex items-center gap-4 sm:gap-5 min-w-0">
               {/* Concentric Level Ring Avatar */}
-              <div className="relative group shrink-0">
+              <div 
+                className="relative group shrink-0 cursor-pointer"
+                onClick={() => setActiveTab('avatar')}
+                title="Click to Open Avatar Studio"
+              >
                 <div 
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl p-1 relative overflow-hidden transition-transform duration-300 group-hover:scale-105"
+                  className="w-20 h-20 sm:w-22 sm:h-22 rounded-3xl p-1 relative overflow-hidden transition-transform duration-300 group-hover:scale-105"
                   style={{
-                    background: `linear-gradient(135deg, ${activeAura.glow}, rgba(255,255,255,0.1), ${activeAura.glow})`
+                    background: `linear-gradient(135deg, ${activeAura.glow}, rgba(255,255,255,0.15), ${activeAura.glow})`
                   }}
                 >
                   <img
@@ -474,33 +442,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   />
                   {uploadingPhoto && (
                     <div className="absolute inset-0 bg-slate-950/80 rounded-[22px] flex items-center justify-center backdrop-blur-sm">
-                      <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+                      <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
                     </div>
                   )}
+                  {/* Subtle Camera / Edit Overlay Badge */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-[22px] flex items-center justify-center">
+                    <Edit2 className="w-5 h-5 text-white drop-shadow" />
+                  </div>
                 </div>
 
-                {/* Level Badge Pill */}
-                <div className="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-[10px] tracking-wider uppercase border border-amber-300/40 shadow-lg flex items-center gap-1">
-                  <Star className="w-3 h-3 fill-slate-950" />
-                  LVL {currentLevel}
+                {/* Level Pill */}
+                <div className="absolute -bottom-2 -right-1 px-2 py-0.5 rounded-full bg-slate-950 border border-slate-700 text-[10px] font-black text-amber-400 shadow-md flex items-center gap-1">
+                  <Sparkles className="w-2.5 h-2.5 fill-amber-400" /> Lvl {currentLevel}
                 </div>
               </div>
 
-              {/* Name, Handle, Exam & Target Year */}
-              <div className="space-y-1.5 min-w-0 flex-1">
+              {/* Candidate Info */}
+              <div className="space-y-1.5 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-base sm:text-2xl font-black text-white tracking-tight truncate max-w-[170px] sm:max-w-md" title={name}>
+                  <h2 className="text-lg sm:text-xl font-black text-white tracking-tight truncate max-w-[280px]">
                     {name || 'Aspirant'}
-                  </h1>
-                  {user.isPremium ? (
-                    <span className="px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-400/20 to-orange-500/20 text-amber-300 border border-amber-400/30 text-[10px] font-black tracking-wide flex items-center gap-1">
-                      <Crown className="w-3 h-3" /> PRO PASS
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700 text-[10px] font-bold">
-                      Aspirant
-                    </span>
-                  )}
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-extrabold">
+                    Candidate Profile
+                  </span>
                 </div>
 
                 {/* Target Exam & Year Pills */}
@@ -510,539 +475,657 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     {examName}
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-slate-800/60 text-slate-300 border border-slate-700/60 font-semibold">
-                    Target: {targetYear}
+                    Target {targetYear}
                   </span>
-                  <span className="text-xs text-slate-400 hidden sm:inline">•</span>
-                  <span className="text-xs text-slate-400 truncate max-w-[200px]">
-                    {user.email}
+                  <span className="text-xs text-slate-400 truncate max-w-[180px] hidden sm:inline">
+                    {user.email || 'guest@studyride.internal'}
                   </span>
                 </div>
 
-                {/* Motto / Bio quote */}
+                {/* Motto */}
                 <p className="text-xs text-slate-300/90 italic line-clamp-1 max-w-md pt-0.5">
                   "{studyGoal || 'Discipline beats motivation every single day.'}"
                 </p>
               </div>
             </div>
 
-            {/* Quick Actions & Pinned Badges Showcase */}
-            <div className="flex flex-row md:flex-col items-start md:items-end justify-between gap-3 shrink-0">
-              {/* Pinned Badges Header Strip */}
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1 md:justify-end">
-                  <Pin className="w-3 h-3 text-amber-400" /> Featured Badges
-                </p>
-                <div className="flex items-center gap-2">
-                  {pinnedBadges.map((badgeId) => {
-                    const badge = PROFILE_BADGES.find(b => b.id === badgeId);
-                    if (!badge) return null;
-                    const IconComponent = ICON_MAP[badge.icon] || Award;
-                    return (
-                      <div
-                        key={badge.id}
-                        title={`${badge.name} (${badge.rarity})`}
-                        className={`w-9 h-9 rounded-xl bg-gradient-to-br ${badge.accentColor} p-0.5 shadow-md hover:scale-110 transition-transform cursor-pointer`}
-                        onClick={() => setActiveTab('badges')}
-                      >
-                        <div className="w-full h-full bg-slate-950/80 rounded-[10px] flex items-center justify-center backdrop-blur-sm">
-                          <IconComponent className="w-4 h-4 text-white" />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Edit Profile Button Trigger */}
+            {/* Quick Navigation Buttons */}
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
+                type="button"
+                onClick={() => setActiveTab('avatar')}
+                className={`px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all shadow-md active:scale-95 ${
+                  activeTab === 'avatar'
+                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black'
+                    : 'bg-slate-800/80 hover:bg-slate-700 text-white border-slate-700/80'
+                }`}
+              >
+                <Palette className="w-3.5 h-3.5 text-emerald-400" />
+                Avatar Studio
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab('edit')}
-                className="px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-white font-bold text-xs flex items-center gap-2 transition-all shadow-md active:scale-95"
+                className={`px-3.5 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all shadow-md active:scale-95 ${
+                  activeTab === 'edit'
+                    ? 'bg-emerald-500 text-slate-950 border-emerald-400 font-black'
+                    : 'bg-slate-800/80 hover:bg-slate-700 text-white border-slate-700/80'
+                }`}
               >
                 <Sliders className="w-3.5 h-3.5 text-cyan-400" />
-                Edit Profile & Preferences
+                Edit Profile
               </button>
             </div>
           </div>
 
-          {/* Dribbble Level XP Progress Bar */}
-          <div className="mt-5 pt-4 border-t border-slate-800/60">
+          {/* Level XP Progress Bar */}
+          <div className="mt-4 pt-3 border-t border-slate-800/60">
             <div className="flex items-center justify-between text-xs font-bold mb-1.5">
               <span className="text-slate-400 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Level {currentLevel} Mastery
               </span>
               <span className="text-white font-mono">
-                {currentXP} / {nextLevelXP} XP <span className="text-slate-500 font-sans">({xpProgress}%)</span>
+                {currentXP} XP <span className="text-emerald-400 font-sans font-bold">({currentLevelXP}/{levelBracketXP} XP to Lvl {currentLevel + 1} • {xpProgress}%)</span>
               </span>
             </div>
-            <div className="w-full h-2.5 rounded-full bg-slate-950/80 border border-slate-800 overflow-hidden p-0.5">
+            <div className="w-full h-2 rounded-full bg-slate-950/80 border border-slate-800 overflow-hidden p-0.5">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${xpProgress}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-indigo-400 to-amber-400 shadow-[0_0_12px_rgba(6,182,212,0.6)]"
+                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 shadow-[0_0_12px_rgba(16,185,129,0.6)]"
               />
             </div>
           </div>
         </div>
 
         {/* ============================================================== */}
-        {/* FOUR-TAB DRIBBBLE NAVIGATION BAR */}
+        {/* THREE CLEAN PROFILE-ONLY TABS (RESPONSIVE GRID) */}
         {/* ============================================================== */}
-        <div className="flex items-center border-b border-slate-800/80 bg-slate-950/60 px-6 sm:px-8 gap-6 sm:gap-8 overflow-x-auto custom-scrollbar shrink-0">
+        <div className="grid grid-cols-3 border-b border-slate-800/80 bg-slate-950/70 px-2 sm:px-6 shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('overview')}
-            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+            className={`py-3 text-[11px] sm:text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
               activeTab === 'overview'
-                ? `${activeAura.border} ${activeAura.text}`
+                ? 'border-emerald-400 text-emerald-400 bg-emerald-500/5'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <User className="w-4 h-4" /> Overview & Stats
+            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden sm:inline">Profile & Stats</span>
+            <span className="sm:hidden">Profile</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('badges')}
-            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'badges'
-                ? 'border-amber-400 text-amber-400'
+            onClick={() => setActiveTab('avatar')}
+            className={`py-3 text-[11px] sm:text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
+              activeTab === 'avatar'
+                ? 'border-cyan-400 text-cyan-400 bg-cyan-500/5'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Award className="w-4 h-4" /> Badges Showcase ({PROFILE_BADGES.length})
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('awards')}
-            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
-              activeTab === 'awards'
-                ? 'border-purple-400 text-purple-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Trophy className="w-4 h-4" /> Awards & Trophies ({PROFILE_AWARDS.length})
+            <Palette className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden sm:inline">Avatar Studio</span>
+            <span className="sm:hidden">Avatar</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('edit')}
-            className={`py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 whitespace-nowrap ${
+            className={`py-3 text-[11px] sm:text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center justify-center gap-1.5 sm:gap-2 ${
               activeTab === 'edit'
-                ? 'border-emerald-400 text-emerald-400'
+                ? 'border-amber-400 text-amber-400 bg-amber-500/5'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <UserCog className="w-4 h-4" /> Edit Profile & Setup
+            <UserCog className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span>Preferences</span>
           </button>
         </div>
 
         {/* Toast / Notification Banner */}
         {saveSuccessMessage && (
-          <div className="mx-6 mt-4 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <div className="mx-6 mt-3 p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>{saveSuccessMessage}</span>
           </div>
         )}
         {saveError && (
-          <div className="mx-6 mt-4 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <div className="mx-6 mt-3 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{saveError}</span>
           </div>
         )}
 
         {/* ============================================================== */}
-        {/* TAB 1: OVERVIEW & STATS */}
-        {/* ============================================================== */}
-        {/* ============================================================== */}
-        {/* TAB 1: OVERVIEW & STATS (100% REAL TELEMETRY) */}
+        {/* TAB 1: PROFILE & STATS (CANDIDATE CARD + REWARDS HUB LINK) */}
         {/* ============================================================== */}
         {activeTab === 'overview' && (
-          <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-            {/* Stat Cards Grid (6 Real Telemetry Metric Cards) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              {/* 1. Daily Study Streak Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-orange-500/40 transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Streak</span>
-                  <div className="p-2 rounded-xl bg-orange-500/10 text-orange-400 group-hover:scale-110 transition-transform">
-                    <Flame className="w-4 h-4 fill-orange-400" />
-                  </div>
-                </div>
-                <p className="text-2xl font-black text-white">{telemetry.streakDays} <span className="text-sm font-semibold text-orange-400">Days</span></p>
-                <p className="text-[10px] text-slate-500 mt-1">Verified Daily Discipline</p>
-              </div>
+          <div className="p-5 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            {/* Candidate Details Grid */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4 text-emerald-400" /> Academic & Personal Profile
+                </span>
+                <button
+                  onClick={() => setActiveTab('edit')}
+                  className="text-emerald-400 hover:text-emerald-300 text-xs font-bold flex items-center gap-1"
+                >
+                  <Edit2 className="w-3 h-3" /> Edit
+                </button>
+              </h3>
 
-              {/* 2. Aspirant Coins Balance Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-amber-500/40 transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Aspirant Coins</span>
-                  <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 group-hover:scale-110 transition-transform">
-                    <Coins className="w-4 h-4 fill-amber-400" />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Target Exam</span>
+                  <p className="text-xs font-black text-white">{examName}</p>
                 </div>
-                <p className="text-2xl font-black text-amber-400">{telemetry.coins} <span className="text-sm font-semibold text-slate-400">🪙</span></p>
-                {onNavigateToRewards && (
-                  <button
-                    onClick={onNavigateToRewards}
-                    className="text-[10px] text-amber-400/90 hover:text-amber-300 font-bold mt-1 flex items-center gap-1"
-                  >
-                    Redeem for Prizes →
-                  </button>
-                )}
-              </div>
 
-              {/* 3. Pomodoro Focus Today Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-cyan-500/40 transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Focus Today</span>
-                  <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition-transform">
-                    <Clock className="w-4 h-4" />
-                  </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Daily Study Target</span>
+                  <p className="text-xs font-black text-amber-400 flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" /> {dailyStudyTargetHours} Hours / Day
+                  </p>
                 </div>
-                <p className="text-2xl font-black text-white">{telemetry.todayStudyHours.toFixed(1)} <span className="text-sm font-semibold text-cyan-400">Hours</span></p>
-                <p className="text-[10px] text-slate-500 mt-1">{telemetry.pomodoroSessionsCount} Pomodoro sprints completed</p>
-              </div>
 
-              {/* 4. Total Verified Study Hours Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-emerald-500/40 transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Studied</span>
-                  <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 group-hover:scale-110 transition-transform">
-                    <BookOpen className="w-4 h-4" />
-                  </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Target Year</span>
+                  <p className="text-xs font-black text-white">{targetYear}</p>
                 </div>
-                <p className="text-2xl font-black text-white">{telemetry.totalStudyHours.toFixed(1)} <span className="text-sm font-semibold text-emerald-400">Hours</span></p>
-                <p className="text-[10px] text-slate-500 mt-1">{telemetry.totalSessionsCount} study sessions logged</p>
-              </div>
 
-              {/* 5. CBT Mock Hall Accuracy Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-rose-500/40 transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">CBT Accuracy</span>
-                  <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 group-hover:scale-110 transition-transform">
-                    <Target className="w-4 h-4" />
-                  </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Stream / Optional</span>
+                  <p className="text-xs font-black text-white truncate">{streamOrSubject || 'General Studies'}</p>
                 </div>
-                <p className="text-2xl font-black text-white">{telemetry.cbtAvgAccuracy}%</p>
-                <p className="text-[10px] text-slate-500 mt-1">{telemetry.cbtMocksCount} mock tests attempted</p>
-              </div>
 
-              {/* 6. Total XP & Rank Card */}
-              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-purple-500/40 transition-all group">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total XP</span>
-                  <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Board / University</span>
+                  <p className="text-xs font-black text-white truncate">{boardOrUniversity}</p>
                 </div>
-                <p className="text-2xl font-black text-white">{telemetry.xp} <span className="text-sm font-semibold text-purple-400">XP</span></p>
-                <p className="text-[10px] text-slate-500 mt-1">Level {telemetry.level} Aspirant</p>
+
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">State / Region</span>
+                  <p className="text-xs font-black text-white truncate">{stateName}</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Registered Email</span>
+                  <p className="text-xs font-bold text-slate-300 truncate">{user.email || 'guest@studyride.internal'}</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Mobile / WhatsApp</span>
+                  <p className="text-xs font-bold text-slate-300 truncate">{phoneNumber || 'Not provided'}</p>
+                </div>
+
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-slate-400">Persona / Bio</span>
+                  <p className="text-xs font-bold text-slate-300 truncate">{bio || 'Dedicated Aspirant'}</p>
+                </div>
               </div>
             </div>
 
-            {/* Referral Hero Banner */}
-            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-purple-500/15 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <h3 className="text-sm font-black text-amber-300">Invite Friends & Earn Rewards</h3>
+            {/* Verified Focus Telemetry */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-cyan-400" /> Focus Sessions & Consistency
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Focus Hours</span>
+                  <p className="text-lg font-black text-white mt-0.5">{telemetry.totalStudyHours} hrs</p>
                 </div>
-                <p className="text-xs text-slate-300">
-                  Share your referral code to unlock <span className="font-extrabold text-amber-300">+150 Coins</span> and free <span className="font-extrabold text-cyan-300">PRO Pass</span> for every classmate who joins.
-                </p>
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="px-3 py-1 rounded-lg bg-slate-950/80 border border-amber-500/40 font-mono text-xs font-black text-amber-400 tracking-wider">
-                    {user.referralCode || 'ASPIRANT-101'}
-                  </span>
-                  <button
-                    onClick={handleCopyReferral}
-                    className="p-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1 transition-all"
-                  >
-                    {copiedReferral ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copiedReferral ? 'Copied!' : 'Copy Code'}
-                  </button>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Completed Rides</span>
+                  <p className="text-lg font-black text-white mt-0.5">{telemetry.totalSessionsCount}</p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Current Streak</span>
+                  <p className="text-lg font-black text-amber-400 mt-0.5 flex items-center justify-center gap-1">
+                    <Flame className="w-4 h-4 fill-amber-400" /> {telemetry.streakDays}d
+                  </p>
+                </div>
+                <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Today's Study</span>
+                  <p className="text-lg font-black text-emerald-400 mt-0.5">{telemetry.todayStudyHours} hrs</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ============================================================== */}
+            {/* SEPARATE REWARDS SECTION PROMINENT CALLOUT BANNER */}
+            {/* Badges, Medals & Winning belong in dedicated Rewards Hub */}
+            {/* ============================================================== */}
+            <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-emerald-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+                  <Trophy className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white flex items-center gap-2">
+                    Badges, Medals & Winning Rewards Hub
+                  </h4>
+                  <p className="text-xs text-slate-300 mt-0.5 max-w-lg">
+                    Aapke sabhi achievement medals, subject badges, study streaks, aur physical swag prizes ab ek dedicated Rewards section me hain!
+                  </p>
                 </div>
               </div>
 
-              {onOpenReferralModal && (
+              {onNavigateToRewards && (
                 <button
                   type="button"
-                  onClick={onOpenReferralModal}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 shrink-0"
+                  onClick={() => {
+                    onClose();
+                    onNavigateToRewards();
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/25 transition-all active:scale-95 flex items-center gap-2 shrink-0 self-start sm:self-auto cursor-pointer"
                 >
-                  Referral Dashboard →
+                  <Trophy className="w-4 h-4" />
+                  Open Rewards Hub →
                 </button>
               )}
             </div>
-
-            {/* Academic Information Summary Card */}
-            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <h3 className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-cyan-400" /> Academic Roadmap
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-500">Target Commission / Exam</p>
-                  <p className="font-extrabold text-white mt-0.5">{examName}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-500">Board / University</p>
-                  <p className="font-extrabold text-white mt-0.5 truncate">{boardOrUniversity}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-500">State / Region</p>
-                  <p className="font-extrabold text-white mt-0.5">{stateName}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-800">
-                  <p className="text-[10px] text-slate-500">Syllabus Mastered</p>
-                  <p className="font-extrabold text-cyan-400 mt-0.5">{telemetry.completedSubtopicsCount} Topics</p>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
         {/* ============================================================== */}
-        {/* TAB 2: BADGES SHOWCASE (DRIVEN BY REAL TELEMETRY) */}
+        {/* TAB 2: AVATAR STUDIO & CREATOR (DIRECTLY INSIDE PROFILE) */}
         {/* ============================================================== */}
-        {activeTab === 'badges' && (
-          <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-            {/* Badges Filter Bar */}
-            <div className="flex items-center justify-between flex-wrap gap-3 pb-2 border-b border-slate-800/80">
-              <div>
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  <Award className="w-4 h-4 text-amber-400" /> Achievement Badges Collection
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Pomodoro sessions, CBT tests, streaks, aur study hours complete karke badges unlock karein. Click <Pin className="w-3 h-3 inline text-amber-400" /> to pin top 3 to your profile!
-                </p>
+        {activeTab === 'avatar' && (
+          <div className="p-5 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
+            {/* Studio Header Card */}
+            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-14 h-14 rounded-2xl p-0.5 bg-gradient-to-br from-emerald-400 to-cyan-400 shrink-0 overflow-hidden shadow-lg">
+                  <img
+                    src={avatarUrl}
+                    alt="Active Avatar"
+                    className="w-full h-full object-cover rounded-[14px] bg-slate-950"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-white flex items-center gap-2">
+                    Aspirant Avatar Studio
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                      Live
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Design your vector character, choose curated presets, or upload a custom photo.
+                  </p>
+                </div>
               </div>
 
-              {/* Filter Pills */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {(['ALL', 'STREAK', 'MASTERY', 'FOCUS', 'COMMUNITY', 'UNLOCKED'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setBadgeFilter(f)}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-extrabold uppercase transition-all ${
-                      badgeFilter === f
-                        ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                        : 'bg-slate-800/60 text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Badges Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {PROFILE_BADGES
-                .filter(b => {
-                  if (badgeFilter === 'ALL') return true;
-                  if (badgeFilter === 'UNLOCKED') return b.currentValue(telemetry) >= b.targetValue;
-                  return b.category === badgeFilter;
-                })
-                .map((badge) => {
-                  const currentVal = badge.currentValue(telemetry);
-                  const isUnlocked = currentVal >= badge.targetValue;
-                  const isPinned = pinnedBadges.includes(badge.id);
-                  const pct = Math.min(100, Math.round((currentVal / badge.targetValue) * 100));
-                  const IconComponent = ICON_MAP[badge.icon] || Award;
-
+              {/* Mode Selector Chips */}
+              <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800 self-start sm:self-auto flex-wrap">
+                {[
+                  { id: 'vector', label: 'Vector Character', icon: User },
+                  { id: 'presets', label: 'Aspirant Presets', icon: Sparkles },
+                  { id: 'monogram', label: 'Initials Monogram', icon: Palette },
+                  { id: 'upload', label: 'Upload Photo', icon: Upload }
+                ].map(mode => {
+                  const Icon = mode.icon;
+                  const active = avatarStudioMode === mode.id;
                   return (
-                    <div
-                      key={badge.id}
-                      className={`p-4 rounded-2xl border transition-all relative overflow-hidden group ${
-                        isUnlocked
-                          ? 'bg-slate-950/80 border-slate-800 hover:border-slate-700 shadow-md'
-                          : 'bg-slate-950/40 border-slate-800/40 opacity-70'
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => setAvatarStudioMode(mode.id as any)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        active
+                          ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
+                          : 'text-slate-400 hover:text-white'
                       }`}
                     >
-                      {/* Top Row: Icon + Rarity Tag + Pin Button */}
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${badge.accentColor} p-0.5 shadow-lg group-hover:scale-105 transition-transform`}>
-                          <div className="w-full h-full bg-slate-950/90 rounded-[14px] flex items-center justify-center">
-                            <IconComponent className={`w-6 h-6 ${isUnlocked ? 'text-white' : 'text-slate-500'}`} />
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          {/* Rarity Pill */}
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full border ${
-                            badge.rarity === 'LEGENDARY' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' :
-                            badge.rarity === 'EPIC' ? 'bg-purple-500/10 text-purple-300 border-purple-500/30' :
-                            badge.rarity === 'RARE' ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30' :
-                            'bg-slate-800 text-slate-400 border-slate-700'
-                          }`}>
-                            {badge.rarity}
-                          </span>
-
-                          {/* Pin Toggle Button */}
-                          {isUnlocked && (
-                            <button
-                              onClick={() => togglePinBadge(badge.id)}
-                              title={isPinned ? 'Unpin from profile' : 'Pin to profile top'}
-                              className={`p-1.5 rounded-lg border transition-all ${
-                                isPinned
-                                  ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/30'
-                                  : 'bg-slate-800/60 text-slate-400 hover:text-white border-slate-700'
-                              }`}
-                            >
-                              <Pin className="w-3.5 h-3.5 fill-current" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Title & Description */}
-                      <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
-                        {badge.name}
-                      </h4>
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-2">
-                        {badge.description}
-                      </p>
-
-                      {/* Progress Bar & Status */}
-                      <div className="mt-3 pt-3 border-t border-slate-800/60">
-                        <div className="flex items-center justify-between text-[11px] mb-1 font-bold">
-                          <span className={isUnlocked ? 'text-emerald-400 flex items-center gap-1' : 'text-slate-400'}>
-                            {isUnlocked ? <Check className="w-3 h-3" /> : null}
-                            {isUnlocked ? 'Unlocked' : `${currentVal} / ${badge.targetValue} ${badge.unit}`}
-                          </span>
-                          <span className="text-amber-400 font-extrabold">+{badge.xpReward} XP</span>
-                        </div>
-                        <div className="w-full h-1.5 rounded-full bg-slate-900 overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              isUnlocked ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-slate-700'
-                            }`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                      <Icon className="w-3.5 h-3.5" />
+                      <span>{mode.label}</span>
+                    </button>
                   );
                 })}
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* TAB 3: AWARDS & TROPHIES CABINET (DRIVEN BY REAL TELEMETRY) */}
-        {/* ============================================================== */}
-        {activeTab === 'awards' && (
-          <div className="p-6 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
-            <div>
-              <h3 className="text-sm font-black text-white flex items-center gap-2">
-                <Trophy className="w-4 h-4 text-purple-400" /> Academic Trophies & Prize Claims
-              </h3>
-              <p className="text-xs text-slate-400">
-                Aapki real preparation activities (Pomodoro focus, CBT tests, consistency) ke basis par unlock hone wale dynamic trophies.
-              </p>
+              </div>
             </div>
 
-            {/* Awards Trophy Showcase */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {PROFILE_AWARDS.map((award) => {
-                const isUnlocked = award.isUnlocked(telemetry);
-                const IconComp = ICON_MAP[award.icon] || Trophy;
-                return (
-                  <div
-                    key={award.id}
-                    className={`p-5 rounded-2xl border transition-all ${
-                      isUnlocked
-                        ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-purple-950/20 border-purple-500/30 shadow-lg'
-                        : 'bg-slate-950/40 border-slate-800/40 opacity-60'
-                    }`}
+            {/* Mode 1: Vector Character Creator */}
+            {avatarStudioMode === 'vector' && (
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+                {/* Character Preview Column */}
+                <div className="md:col-span-5 flex flex-col items-center">
+                  <div 
+                    className="w-full rounded-3xl p-6 relative overflow-hidden flex flex-col items-center justify-center text-center transition-colors duration-300 border border-slate-800 shadow-xl"
+                    style={{ backgroundColor: vectorConfig.bgColor || '#FACC15' }}
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 via-purple-500 to-indigo-600 p-0.5 shrink-0 shadow-lg">
-                        <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                          <IconComp className={`w-7 h-7 ${isUnlocked ? 'text-amber-400' : 'text-slate-600'}`} />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1 flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider">
-                            {award.category}
-                          </span>
-                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                            isUnlocked 
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                              : 'bg-slate-800/80 text-slate-400 border-slate-700'
-                          }`}>
-                            {isUnlocked ? 'UNLOCKED' : 'LOCKED'}
-                          </span>
-                        </div>
-                        <h4 className="text-base font-black text-white truncate">{award.title}</h4>
-                        <p className="text-xs text-slate-400 line-clamp-2">{award.description}</p>
-                        <div className="pt-2 flex flex-col gap-1 text-xs">
-                          <span className="text-amber-300 font-bold flex items-center gap-1.5">
-                            <Gift className="w-3.5 h-3.5 text-amber-400 shrink-0" /> {award.rewardText}
-                          </span>
-                          <span className="text-[11px] text-slate-400 bg-slate-900/80 px-2 py-1 rounded-lg border border-slate-800">
-                            🎯 Requirement: {award.requirementText}
-                          </span>
-                        </div>
-                      </div>
+                    <div className="w-48 h-48 sm:w-56 sm:h-56 relative">
+                      <AspirantAvatar config={vectorConfig} className="w-full h-full drop-shadow-2xl" />
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Real Reward Claims Status */}
-            <div className="pt-4 border-t border-slate-800/80">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
-                <Gift className="w-4 h-4 text-amber-400" /> Physical & Digital Prize Claims ({myClaims.length})
-              </h4>
-              {loadingClaims ? (
-                <div className="p-6 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-cyan-400" /> Loading claims...
+                  <button
+                    type="button"
+                    onClick={handleApplyVectorAvatar}
+                    className="mt-4 w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <Check className="w-4 h-4" />
+                    Apply Vector Avatar to Profile
+                  </button>
                 </div>
-              ) : myClaims.length === 0 ? (
-                <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center space-y-2">
-                  <p className="text-xs text-slate-400">Aapne abhi tak koi physical prize claim nahi kiya hai.</p>
-                  <p className="text-[11px] text-slate-500">Milestones complete karke Books, T-Shirts, aur Tablets claim karein!</p>
-                  {onNavigateToRewards && (
-                    <button
-                      onClick={onNavigateToRewards}
-                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow-md"
-                    >
-                      Milestones Hub Dekhein →
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {myClaims.map((claim: any) => (
-                    <div key={claim.id} className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs">
-                      <div>
-                        <p className="font-extrabold text-white">{claim.milestoneName || 'Prize Reward'}</p>
-                        <p className="text-[10px] text-slate-500">{claim.claimedAt ? new Date(claim.claimedAt).toLocaleDateString() : 'Recent'}</p>
+
+                {/* Customizer Tabs & Options Column */}
+                <div className="md:col-span-7 space-y-4">
+                  {/* Category Pill Nav */}
+                  <div className="flex items-center overflow-x-auto no-scrollbar gap-1.5 bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
+                    {(['Facial Hair', 'Hair', 'Face', 'Outfit', 'Accessories', 'Background'] as const).map(cat => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setVectorCategory(cat as any)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                          vectorCategory === cat
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Panel Content */}
+                  <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 min-h-[220px]">
+                    {/* Facial Hair */}
+                    {vectorCategory === 'Facial Hair' && (
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {VECTOR_FACIAL_HAIR_OPTIONS.map(opt => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setVectorConfig({ ...vectorConfig, facialHair: opt.id })}
+                            className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                              vectorConfig.facialHair === opt.id
+                                ? 'bg-emerald-950/40 border-emerald-500 shadow-md'
+                                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <span className="text-xs font-bold text-white">{opt.label}</span>
+                            <span className="text-[10px] text-slate-400 mt-1">{opt.desc}</span>
+                          </button>
+                        ))}
                       </div>
-                      <span className={`px-2.5 py-1 rounded-full font-bold uppercase text-[10px] ${
-                        claim.status === 'fulfilled' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' :
-                        claim.status === 'rejected' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30' :
-                        'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                      }`}>
-                        {claim.status || 'Pending Review'}
+                    )}
+
+                    {/* Hair */}
+                    {vectorCategory === 'Hair' && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2">
+                          {VECTOR_HAIR_STYLES.map(opt => (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => setVectorConfig({ ...vectorConfig, hairStyle: opt.id })}
+                              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                vectorConfig.hairStyle === opt.id
+                                  ? 'bg-emerald-950/40 border-emerald-500 shadow-md'
+                                  : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                              }`}
+                            >
+                              <span className="text-xs font-bold text-white">{opt.label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 mb-2">Hair Color</p>
+                          <div className="flex items-center gap-2.5">
+                            {['#161B18', '#3E2723', '#5D4037', '#78909C', '#F59E0B'].map(c => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => setVectorConfig({ ...vectorConfig, hairColor: c })}
+                                className={`w-8 h-8 rounded-full border-2 transition-all ${
+                                  vectorConfig.hairColor === c ? 'border-emerald-400 scale-110 shadow-lg' : 'border-transparent'
+                                }`}
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Skin Tone */}
+                    {vectorCategory === 'Face' && (
+                      <div className="space-y-3">
+                        <p className="text-[11px] font-bold text-slate-400">Skin Tone</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                          {VECTOR_SKIN_TONES.map(opt => (
+                            <button
+                              key={opt.color}
+                              type="button"
+                              onClick={() => setVectorConfig({ ...vectorConfig, skinTone: opt.color })}
+                              className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                                vectorConfig.skinTone === opt.color
+                                  ? 'bg-emerald-950/40 border-emerald-500 shadow-md'
+                                  : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                              }`}
+                            >
+                              <span className="w-6 h-6 rounded-full border border-black/30 shrink-0" style={{ backgroundColor: opt.color }} />
+                              <span className="text-xs font-bold text-white">{opt.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Outfit */}
+                    {vectorCategory === 'Outfit' && (
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {VECTOR_BODY_STYLES.map(opt => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setVectorConfig({ ...vectorConfig, bodyStyle: opt.id })}
+                            className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
+                              vectorConfig.bodyStyle === opt.id
+                                ? 'bg-emerald-950/40 border-emerald-500 shadow-md'
+                                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <span className="text-lg">{opt.emoji}</span>
+                            <span className="text-xs font-bold text-white">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Accessories */}
+                    {vectorCategory === 'Accessories' && (
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {VECTOR_ACCESSORIES.map(opt => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            onClick={() => setVectorConfig({ ...vectorConfig, accessory: opt.id })}
+                            className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2 cursor-pointer ${
+                              vectorConfig.accessory === opt.id
+                                ? 'bg-emerald-950/40 border-emerald-500 shadow-md'
+                                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <span className="text-lg">{opt.emoji}</span>
+                            <span className="text-xs font-bold text-white">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Background */}
+                    {vectorCategory === 'Background' && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {VECTOR_BG_COLORS.map(opt => (
+                          <button
+                            key={opt.color}
+                            type="button"
+                            onClick={() => setVectorConfig({ ...vectorConfig, bgColor: opt.color })}
+                            className={`p-3 rounded-xl border text-left transition-all flex items-center gap-2.5 cursor-pointer ${
+                              vectorConfig.bgColor === opt.color
+                                ? 'bg-emerald-950/40 border-emerald-500 shadow-md'
+                                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <span className="w-6 h-6 rounded-full border border-black/30 shrink-0" style={{ backgroundColor: opt.color }} />
+                            <span className="text-xs font-bold text-white">{opt.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mode 2: Curated Aspirant Presets */}
+            {avatarStudioMode === 'presets' && (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-400">
+                  Select a curated aspirant avatar that matches your study mindset:
+                </p>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                  {CURATED_AVATARS.map((av) => (
+                    <button
+                      key={av.id}
+                      type="button"
+                      onClick={() => {
+                        setAvatarUrl(av.url);
+                        storeUserAvatar(av.url, user.id, user.email);
+                        syncAvatarToServer(av.url, user.email, user.id);
+                        if (onProfileUpdated) {
+                          onProfileUpdated({ ...user, avatar_url: av.url });
+                        }
+                        triggerConfetti();
+                        setSaveSuccessMessage(`${av.label} set ho gaya! ✓`);
+                        setTimeout(() => setSaveSuccessMessage(null), 3000);
+                      }}
+                      className={`relative rounded-2xl overflow-hidden border-2 transition-all p-1 group flex flex-col items-center cursor-pointer ${
+                        avatarUrl === av.url
+                          ? 'border-emerald-400 bg-emerald-500/20 scale-105 shadow-lg shadow-emerald-500/30'
+                          : 'border-slate-800 bg-slate-900/60 hover:border-slate-600'
+                      }`}
+                    >
+                      <img src={av.url} alt={av.label} className="w-full h-20 sm:h-24 object-cover rounded-xl" />
+                      <span className="text-[10px] font-bold text-slate-300 mt-1 truncate px-1 text-center">
+                        {av.label}
                       </span>
-                    </div>
+                      {avatarUrl === av.url && (
+                        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-[10px] font-black">
+                          ✓
+                        </div>
+                      )}
+                    </button>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Mode 3: Monogram Generator */}
+            {avatarStudioMode === 'monogram' && (
+              <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 max-w-lg mx-auto text-center">
+                <div className="w-24 h-24 mx-auto rounded-3xl overflow-hidden shadow-2xl border border-slate-700">
+                  <img
+                    src={generateMonogramDataUrl(monogramInitials, monogramGrad)}
+                    alt="Monogram Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="space-y-1.5 text-left">
+                  <label className="text-xs font-bold text-slate-300">Initials (1-2 Characters)</label>
+                  <input
+                    type="text"
+                    maxLength={2}
+                    value={monogramInitials}
+                    onChange={(e) => setMonogramInitials(e.target.value.toUpperCase())}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-center font-black text-lg text-white outline-none uppercase"
+                  />
+                </div>
+
+                <div className="space-y-1.5 text-left">
+                  <label className="text-xs font-bold text-slate-300">Gradient Theme</label>
+                  <div className="flex items-center justify-center gap-3">
+                    {[
+                      { id: 'emerald', label: 'Emerald' },
+                      { id: 'violet', label: 'Violet' },
+                      { id: 'cyan', label: 'Cyan' },
+                      { id: 'amber', label: 'Amber' },
+                      { id: 'rose', label: 'Rose' }
+                    ].map(g => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setMonogramGrad(g.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                          monogramGrad === g.id
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400 shadow-md'
+                            : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+                        }`}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleApplyMonogram}
+                  className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                >
+                  Apply Monogram Avatar
+                </button>
+              </div>
+            )}
+
+            {/* Mode 4: Custom Device Upload */}
+            {avatarStudioMode === 'upload' && (
+              <div className="p-6 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-4 max-w-lg mx-auto text-center">
+                <div className="w-24 h-24 mx-auto rounded-3xl overflow-hidden shadow-2xl border-2 border-emerald-500/40">
+                  <img
+                    src={avatarUrl}
+                    alt="Current Avatar"
+                    className="w-full h-full object-cover bg-slate-900"
+                  />
+                </div>
+
+                {uploadError && (
+                  <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
+                <label className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs cursor-pointer transition-all shadow-lg shadow-emerald-500/20 active:scale-95">
+                  <Upload className="w-4 h-4" />
+                  {uploadingPhoto ? 'Uploading & Compressing...' : 'Select Photo from Phone / Device'}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    disabled={uploadingPhoto}
+                  />
+                </label>
+                <p className="text-[11px] text-slate-400">
+                  Image auto-crop aur auto-compress hokar permanently aapke profile pe save ho jayegi.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {/* ============================================================== */}
-        {/* TAB 4: EDIT PROFILE & SETUP (STUDYRIDE TEAM STANDARD) */}
+        {/* TAB 3: EDIT PROFILE & PREFERENCES (THEME ALIGNED - NO LOGOUT) */}
         {/* ============================================================== */}
         {activeTab === 'edit' && (
           <form onSubmit={handleSaveProfile} className="p-5 sm:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
@@ -1053,16 +1136,16 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   <UserCog className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-white">Edit Student Profile & Target Plan</h3>
-                  <p className="text-xs text-slate-400">Team StudyRide • Custom Roadmap & Daily Consistency Target</p>
+                  <h3 className="text-sm font-black text-white">Edit Student Profile & Preferences</h3>
+                  <p className="text-xs text-slate-400">Custom Target Exam, Daily Study Hours & Notification Reminders</p>
                 </div>
               </div>
             </div>
 
-            {/* Section 1: Candidate Identity & Contact */}
+            {/* Section 1: Candidate Identity */}
             <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
               <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <User className="w-4 h-4 text-emerald-400" /> Candidate Identity & Contact Details
+                <User className="w-4 h-4 text-emerald-400" /> Candidate Identity & Contact
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1073,7 +1156,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 text-xs text-white outline-none"
                     placeholder="e.g. Ambuj Yadav"
                   />
                 </div>
@@ -1108,7 +1191,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300">Mobile / WhatsApp Number</label>
+                  <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                    <span>Mobile / WhatsApp Number</span>
+                    <span className="text-[10px] text-slate-500">For daily streak reports</span>
+                  </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
                       <Phone className="w-3.5 h-3.5" />
@@ -1117,7 +1203,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       type="tel"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
+                      className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400/30 text-xs text-white outline-none"
                       placeholder="e.g. +91 98765 43210"
                     />
                   </div>
@@ -1133,7 +1219,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
-                    placeholder="e.g. UPSC CSE Aspirant • Sociology Optional"
+                    placeholder="e.g. UPSC CSE Aspirant • High-Performance Monk"
                   />
                 </div>
 
@@ -1146,71 +1232,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none"
                     placeholder="e.g. Tu banega Officer! LBSNAA is calling 🇮🇳"
                   />
-                </div>
-              </div>
-
-              {/* Avatar Studio */}
-              <div className="space-y-3 pt-2">
-                <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
-                  <span>Profile Photo & Avatar Studio</span>
-                  {uploadingPhoto && <span className="text-emerald-400 text-[10px] flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Saving photo...</span>}
-                </label>
-
-                {uploadError && (
-                  <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{uploadError}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-4 flex-wrap">
-                  <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-xs font-black text-emerald-300 cursor-pointer transition-all shadow-md active:scale-95">
-                    <Upload className="w-4 h-4 text-emerald-400" /> Upload from Device
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handlePhotoUpload}
-                      className="hidden"
-                      disabled={uploadingPhoto}
-                    />
-                  </label>
-
-                  {avatarUrl && avatarUrl.startsWith('data:') && (
-                    <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Custom Photo Active
-                    </span>
-                  )}
-
-                  <span className="text-[11px] text-slate-400">Ya select karein curated presets:</span>
-                </div>
-
-                {/* Preset Avatar Gallery */}
-                <div className="flex items-center gap-2.5 flex-wrap pt-1">
-                  {CURATED_AVATARS.map((av) => (
-                    <button
-                      key={av.id}
-                      type="button"
-                      onClick={() => {
-                        setAvatarUrl(av.url);
-                        storeUserAvatar(av.url, user.id, user.email);
-                        syncAvatarToServer(av.url, user.email, user.id);
-                        if (onProfileUpdated) {
-                          onProfileUpdated({ ...user, avatar_url: av.url });
-                        }
-                      }}
-                      title={av.label}
-                      className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${
-                        avatarUrl === av.url ? 'border-emerald-400 scale-110 shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-400/40' : 'border-slate-800 hover:border-slate-600 opacity-80 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={av.url} alt={av.label} className="w-full h-full object-cover" />
-                      {avatarUrl === av.url && (
-                        <div className="absolute inset-0 bg-emerald-500/20 flex items-center justify-center">
-                          <Check className="w-3.5 h-3.5 text-white drop-shadow" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
                 </div>
               </div>
             </div>
@@ -1318,16 +1339,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     value={streamOrSubject}
                     onChange={(e) => setStreamOrSubject(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-cyan-400 text-xs text-white outline-none"
-                    placeholder="e.g. Science / Arts / Commerce"
+                    placeholder="e.g. Science / Humanities"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Section 3: Daily Goals & Focus Targets */}
+            {/* Section 3: Daily Study Target Hours */}
             <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
-              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-400" /> Daily Study Target (Team Consistency Standard)
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-400" /> Daily Study Target (Team Consistency Standard)
+                </span>
+                <span className="text-amber-400 font-bold">{dailyStudyTargetHours} hrs / day</span>
               </label>
 
               <div className="flex items-center gap-2.5 flex-wrap">
@@ -1336,7 +1360,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     key={hours}
                     type="button"
                     onClick={() => setDailyStudyTargetHours(hours)}
-                    className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all border ${
+                    className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
                       dailyStudyTargetHours === hours
                         ? 'bg-amber-500/20 text-amber-300 border-amber-400 shadow-md scale-105'
                         : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
@@ -1347,11 +1371,54 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 ))}
               </div>
               <p className="text-[11px] text-slate-400">
-                Highway Focus Timer aur Progress Hub is daily goal ke according aapki live pace calculate karte hain.
+                Highway Focus Timer aur Progress Hub is daily target ke according aapki live pace track karte hain.
               </p>
             </div>
 
-            {/* Section 4: Dynamic Aura Theme Accent */}
+            {/* Section 4: Daily Reminder & Notification Preferences */}
+            <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-4">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                <Bell className="w-4 h-4 text-emerald-400" /> Study Reminders & Sound Preferences
+              </label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300">Daily Study Call Time</label>
+                  <input
+                    type="time"
+                    value={reminderSettings.reminderTime || '06:00'}
+                    onChange={(e) => setReminderSettings({ ...reminderSettings, reminderTime: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 focus:border-emerald-400 text-xs text-white outline-none cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800">
+                  <div>
+                    <span className="text-xs font-bold text-white block">Sound & Bell Effects</span>
+                    <span className="text-[10px] text-slate-400">Timer alerts and audio feedback</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !soundEnabled;
+                      setSoundEnabled(next);
+                      soundFx.setEnabled(next);
+                    }}
+                    className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer ${
+                      soundEnabled ? 'bg-emerald-500' : 'bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                        soundEnabled ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 5: Profile Aura Theme Accent */}
             <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
               <label className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
                 <Palette className="w-4 h-4 text-purple-400" /> Profile Aura Theme Accent
@@ -1362,9 +1429,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     key={t.id}
                     type="button"
                     onClick={() => setThemeAccent(t.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 border ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 border cursor-pointer ${
                       themeAccent === t.id
-                        ? `${t.bg} ${t.text} ${t.border} shadow-lg shadow-cyan-500/20 scale-105`
+                        ? `${t.bg} ${t.text} ${t.border} shadow-lg shadow-emerald-500/20 scale-105`
                         : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
                     }`}
                   >
@@ -1375,50 +1442,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             </div>
 
-            {/* Section 5: Account Session & Log Out */}
-            <div className="p-5 rounded-2xl bg-rose-950/20 border border-rose-900/40 flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-rose-500/15 text-rose-400 flex items-center justify-center shrink-0">
-                  <LogOut className="w-5 h-5" />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-black text-rose-300">Account Session & Devices</h4>
-                  <p className="text-[11px] text-slate-400 truncate">
-                    Signed in as <span className="text-white font-bold">{user.email || 'Guest User'}</span>
-                  </p>
-                </div>
-              </div>
-
-              {onLogout && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm('Kya aap sure hain ki aapko StudyRide se Log Out karna hai?')) {
-                      onClose();
-                      onLogout();
-                    }
-                  }}
-                  className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-2"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Log Out of StudyRide
-                </button>
-              )}
-            </div>
-
-            {/* Bottom Save Trigger Button */}
-            <div className="pt-2 flex items-center justify-end gap-3 sticky bottom-0 bg-slate-950/90 backdrop-blur-md p-3 -mx-5 -mb-5 sm:-mx-8 sm:-mb-8 border-t border-slate-800/80">
+            {/* Bottom Save Trigger Button (STRICTLY NO LOGOUT HERE) */}
+            <div className="pt-2 flex items-center justify-end gap-3 sticky bottom-0 bg-slate-950/90 backdrop-blur-md p-3 -mx-5 -mb-5 sm:-mx-8 sm:-mb-8 border-t border-slate-800/80 z-20">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all"
+                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/25 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                 {isSaving ? 'Saving Changes...' : 'Save & Sync Profile'}

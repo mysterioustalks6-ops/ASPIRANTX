@@ -157,8 +157,8 @@ export const DEFAULT_APP_GROUPS: AppGroup[] = [
 const DEFAULT_SCHEDULES: StudySchedule[] = [];
 
 export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophyUnlock }) => {
-  // Navigation Tabs: 'FOCUS' | 'PLANNER' | 'BLOCKS' | 'PROFILE'
-  const [activeTab, setActiveTab] = useState<'FOCUS' | 'PLANNER' | 'BLOCKS' | 'PROFILE'>('FOCUS');
+  // Navigation Tabs: 'FOCUS' | 'PLANNER' | 'BLOCKS'
+  const [activeTab, setActiveTab] = useState<'FOCUS' | 'PLANNER' | 'BLOCKS'>('FOCUS');
 
   // Focus Goal & Screen Time
   const [dailyGoalMinutes, setDailyGoalMinutes] = useState<number>(180); // 3 Hours
@@ -688,8 +688,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
           {[
             { id: 'FOCUS', label: 'Focus', icon: Timer },
             { id: 'PLANNER', label: 'Planner', icon: Calendar },
-            { id: 'BLOCKS', label: 'Blocks', icon: Shield },
-            { id: 'PROFILE', label: 'Profile', icon: User }
+            { id: 'BLOCKS', label: 'Blocks', icon: Shield }
           ].map(tab => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -1385,81 +1384,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
           </div>
         )}
 
-        {/* ══════════════════════════════════════════════
-            TAB 4: PROFILE & AVATAR STUDIO
-           ══════════════════════════════════════════════ */}
-        {activeTab === 'PROFILE' && (
-          <div className="space-y-4 animate-in fade-in duration-300">
-            {/* 1. Yellow Illustrated Hero Avatar Banner */}
-            <div 
-              className="rounded-3xl p-6 relative overflow-hidden flex flex-col items-center justify-center text-center transition-colors duration-300"
-              style={{ backgroundColor: avatarConfig.bgColor || '#FACC15' }}
-            >
-              <div className="w-36 h-36 relative">
-                <AspirantAvatar config={avatarConfig} className="w-full h-full drop-shadow-xl" />
-              </div>
 
-              <button
-                onClick={() => setShowAvatarStudio(true)}
-                className="mt-3 px-4 py-1.5 rounded-full bg-black/60 hover:bg-black/80 text-white font-bold text-xs backdrop-blur-md flex items-center gap-1.5 shadow-lg transition-all cursor-pointer"
-              >
-                <Edit2 className="w-3.5 h-3.5 text-emerald-400" />
-                Customize Avatar
-              </button>
-            </div>
-
-            {/* 2. User Info */}
-            <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-1">
-              <h3 className="text-base font-bold text-white">
-                {user?.fullName || user?.name || 'Ambuj Yadav'}
-              </h3>
-              <p className="text-xs text-slate-400">{user?.email || 'mysterioustalks6@gmail.com'}</p>
-              <p className="text-[11px] text-emerald-400 font-medium pt-1">
-                Target: UPSC CSE 2026 • Focusing since Sept 2026
-              </p>
-            </div>
-
-            {/* 3. Achievements & Badges */}
-            <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Focus Achievements</h4>
-                <span className="text-xs font-bold text-emerald-400">5 Badges</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-2.5">
-                {[
-                  { title: '3H FOCUS', date: 'Earned Sept 03', icon: '⏳', unlocked: true },
-                  { title: '7-DAY STREAK', date: 'Earned Sept 10', icon: '🔥', unlocked: true },
-                  { title: '50H MASTER', date: 'In Progress (38h)', icon: '🛡️', unlocked: false }
-                ].map((b, i) => (
-                  <div
-                    key={i}
-                    className={`p-3 rounded-2xl border text-center flex flex-col items-center justify-center ${
-                      b.unlocked
-                        ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-300'
-                        : 'bg-[#121614] border-[#1E2520] text-slate-500 opacity-60'
-                    }`}
-                  >
-                    <span className="text-2xl mb-1">{b.icon}</span>
-                    <span className="text-[11px] font-black">{b.title}</span>
-                    <span className="text-[9px] text-slate-400 mt-0.5">{b.date}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 4. Weekly Focus Summary */}
-            <div className="p-4 rounded-3xl bg-[#161B18] border border-[#1E2520] flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-slate-400">Weekly Average</span>
-                <h4 className="text-lg font-bold text-white mt-0.5">2h 13m / day</h4>
-              </div>
-              <div className="w-12 h-12 rounded-full border-4 border-emerald-500/30 border-t-emerald-400 flex items-center justify-center font-bold text-xs text-emerald-400">
-                84%
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ── FLOATING START FOCUS ACTION BUTTON (Like Regain) ── */}
@@ -1641,16 +1566,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
         </div>
       )}
 
-      {/* 4. Avatar Studio Modal */}
-      <AvatarStudioModal
-        isOpen={showAvatarStudio}
-        onClose={() => setShowAvatarStudio(false)}
-        currentConfig={avatarConfig}
-        onSave={cfg => {
-          setAvatarConfig(cfg);
-          localStorage.setItem('studyride_user_avatar', JSON.stringify(cfg));
-        }}
-      />
+
 
       {/* 6. Multi-App Device Picker Modal (Select ANY installed app) */}
       <AppPickerModal
