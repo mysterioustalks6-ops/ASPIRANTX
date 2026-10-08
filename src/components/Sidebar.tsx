@@ -39,7 +39,8 @@ import {
   Download,
   RotateCcw,
   LayoutGrid,
-  Search
+  Search,
+  Compass
 } from 'lucide-react';
 
 import { AppCustomizerSettings } from '../lib/customizer';
@@ -656,6 +657,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               label: 'Pomodoro Focus Timer',
               icon: Timer,
               badge: '25/50m',
+            })}
+            {renderNavItem({
+              id: 'mountain_ride',
+              label: 'Mountain Ride',
+              icon: Compass,
+              badge: 'Soon',
             })}
             {activePreferences.some((p) => p.featureId === 'study_buddy') &&
               renderNavItem({

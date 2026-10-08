@@ -84,3 +84,6 @@ docs/screenshots/*
 !docs/screenshots/phase4/
 !docs/screenshots/phase4/*.png
 test_*.png
+artifacts/
+screenshots/
+!public/studyride.apk

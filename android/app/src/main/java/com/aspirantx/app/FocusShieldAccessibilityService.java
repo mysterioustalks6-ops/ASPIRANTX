@@ -23,12 +23,42 @@ public class FocusShieldAccessibilityService extends AccessibilityService {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        try {
+            android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
+            if (info == null) {
+                info = new android.accessibilityservice.AccessibilityServiceInfo();
+            }
+            // Strictly scope accessibility service to YouTube and Instagram only
+            info.packageNames = new String[]{
+                "com.google.android.youtube",
+                "com.instagram.android"
+            };
+            info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED | AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED;
+            info.feedbackType = android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_GENERIC;
+            info.flags = 0; // Default flags: no interactive window inspection across external apps
+            info.notificationTimeout = 100;
+            setServiceInfo(info);
+            Log.d(TAG, "FocusShieldAccessibilityService strictly scoped to YouTube and Instagram only.");
+        } catch (Exception e) {
+            Log.e(TAG, "Error configuring AccessibilityServiceInfo: " + e.getMessage());
+        }
+    }
+
+    @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event == null) return;
 
         CharSequence pkgChar = event.getPackageName();
         if (pkgChar == null) return;
         String packageName = pkgChar.toString();
+
+        // ── STRICT WHITELIST GUARD ──
+        // Only inspect YouTube and Instagram. Never touch, inspect, or intercept banking, payment, or system apps.
+        if (!"com.google.android.youtube".equals(packageName) && !"com.instagram.android".equals(packageName)) {
+            return;
+        }
 
         SharedPreferences prefs = getSharedPreferences(FocusShieldPlugin.PREFS_NAME, Context.MODE_PRIVATE);
         boolean blockShorts = prefs.getBoolean(PREF_BLOCK_SHORTS, false);

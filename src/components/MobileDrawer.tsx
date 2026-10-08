@@ -29,7 +29,8 @@ import {
   User,
   GraduationCap,
   Smartphone,
-  Search
+  Search,
+  Compass
 } from 'lucide-react';
 import { AppCustomizerSettings } from '../lib/customizer';
 import { getCustomExamsFromStorage } from '../lib/customExamStore';
@@ -101,6 +102,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         { id: 'focus_shield' as ActiveTab, label: 'Focus Shield & App Lock', icon: ShieldCheck, badge: 'Shield' },
         { id: 'tasks' as ActiveTab, label: 'Daily Study Tasks', icon: CheckSquare },
         { id: 'timer' as ActiveTab, label: 'Pomodoro Focus Timer', icon: Timer, badge: '25/50m' },
+        { id: 'mountain_ride' as ActiveTab, label: 'Mountain Ride', icon: Compass, badge: 'Soon' },
         { id: 'study_buddy' as ActiveTab, label: 'Study Buddy', icon: Users },
       ]
     },

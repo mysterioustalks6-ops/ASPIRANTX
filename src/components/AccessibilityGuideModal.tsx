@@ -343,14 +343,28 @@ export const AccessibilityGuideModal: React.FC<AccessibilityGuideModalProps> = (
         </div>
 
         {/* Privacy First Prominent In-App Disclosure (Google Play Compliant) */}
-        <div className="p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 space-y-1 relative z-10">
-          <div className="flex items-center gap-1.5 text-slate-200 font-semibold">
+        <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-emerald-500/30 text-[11px] text-slate-300 space-y-2 relative z-10 shadow-lg">
+          <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
             <Lock className="w-3.5 h-3.5 text-emerald-400" />
-            <span>100% Private & Device Local</span>
+            <span>Prominent Privacy Disclosure</span>
           </div>
-          <p className="leading-relaxed text-[10.5px]">
-            StudyRide uses this permission <strong>only to detect Shorts & Reels</strong> so you can watch full lectures uninterrupted. We <strong>never</strong> record, transmit, or read personal texts or passwords.
+          <p className="leading-relaxed text-[11px] text-slate-300">
+            StudyRide Focus Mode needs Accessibility permission <strong>strictly to detect and close YouTube Shorts and Instagram Reels</strong> so aspirants can watch lectures without doomscrolling distractions.
           </p>
+          <div className="pt-1 border-t border-slate-800/80 space-y-1 text-[10.5px] text-slate-400">
+            <div className="flex items-center gap-1.5 text-emerald-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Locked to YouTube & Instagram only</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-slate-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>We do <strong>NOT</strong> collect, read, or transfer personal data, messages, passwords, or banking info</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+              <span>Banking apps (GPay, PhonePe, Paytm) remain 100% untouched</span>
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}

@@ -65,6 +65,7 @@ const QuestionBankEngine = lazy(() => import('./components/QuestionBankEngine').
 const HighwayFocusTimer = lazy(() => import('./features/focus/bike/HighwayFocusTimer').then(m => ({ default: m.HighwayFocusTimer })));
 const GarageScreen = lazy(() => import('./features/focus/bike/GarageScreen').then(m => ({ default: m.GarageScreen })));
 const MyRidesScreen = lazy(() => import('./features/focus/bike/MyRidesScreen').then(m => ({ default: m.MyRidesScreen })));
+const MountainRidePage = lazy(() => import('./features/mountain-ride/MountainRidePage').then(m => ({ default: m.MountainRidePage })));
 const AssetCheckScreen = import.meta.env.DEV
   ? lazy(() => import('./features/focus/bike/AssetCheckScreen').then(m => ({ default: m.AssetCheckScreen })))
   : (() => null) as unknown as React.ComponentType<{ onBack?: () => void }>;
@@ -231,11 +232,12 @@ function AppContent() {
       return 'download';
     }
     const hash = window.location.hash.replace('#', '');
+    if (hash === 'mountain-ride' || hash === 'mountain_ride') return 'mountain_ride';
     if (hash.startsWith('blog-submit')) return 'blog_submit';
     if (hash.startsWith('blog')) return 'blog';
     if (hash === 'debug-galaxy' || hash === 'debug/galaxy' || hash === 'galaxy-debug') return 'debug_galaxy';
     if (import.meta.env.DEV && (hash === 'design-system' || hash === 'design_system')) return 'design_system';
-    const validTabs = ['syllabus','pyq','question_bank','timer','garage','tasks','chat',
+    const validTabs = ['syllabus','pyq','question_bank','timer','garage','my_rides','mountain_ride','tasks','chat',
       'dashboard','cbt','leaderboard','community','premium','earn_premium','admin',
       'library', 'flashcards', 'weakness', 'teachers', 'podcasts', 'eligibility', 'feedback', 'blog', 'blog_submit', 'wallpaper',
       'rewards', 'reward_milestones', 'focus_shield', 'download', 'practice_hub', 'progress_hub', 'more_hub', 'debug_galaxy', ...(import.meta.env.DEV ? ['design_system'] : [])];
@@ -1361,30 +1363,32 @@ function AppContent() {
       )}
 
       {/* Desktop Sidebar Navigation */}
-      <Suspense fallback={null}>
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={handleSelectTab}
-          user={user}
-          onLogout={handleLogout}
-          isAdminUnlocked={isAdminUnlocked}
-          onTriggerAdminSecret={handleTriggerAdminSecret}
-          onOpenProfileModal={() => setShowProfileModal(true)}
-          onOpenReferralModal={() => setShowReferralModal(true)}
-          onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
-          onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
-          customizer={customizer}
-          selectedExam={selectedExam}
-          onExamChange={handleExamChange}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={handleToggleSidebarCollapse}
-        />
-      </Suspense>
+      {activeTab !== 'mountain_ride' && (
+        <Suspense fallback={null}>
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={handleSelectTab}
+            user={user}
+            onLogout={handleLogout}
+            isAdminUnlocked={isAdminUnlocked}
+            onTriggerAdminSecret={handleTriggerAdminSecret}
+            onOpenProfileModal={() => setShowProfileModal(true)}
+            onOpenReferralModal={() => setShowReferralModal(true)}
+            onOpenCustomizerModal={isAdmin ? () => setShowCustomizerModal(true) : undefined}
+            onOpenWorkspaceCustomizer={() => setShowWorkspaceCustomizer(true)}
+            customizer={customizer}
+            selectedExam={selectedExam}
+            onExamChange={handleExamChange}
+            isCollapsed={isSidebarCollapsed}
+            onToggleCollapse={handleToggleSidebarCollapse}
+          />
+        </Suspense>
+      )}
 
       {/* Main Content Dashboard Area with Full-Width Screen Workspace */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
         {/* Slim Header: Visible across mobile and desktop except full-screen focus modes */}
-        {!['focus_shield', 'timer'].includes(activeTab) && (
+        {!['focus_shield', 'timer', 'mountain_ride'].includes(activeTab) && (
           <Header
             activeTab={activeTab}
             user={user}
@@ -1415,7 +1419,7 @@ function AppContent() {
         <main className={`flex-1 w-full mx-auto transition-all duration-200 ${
           activeTab === 'focus_shield'
             ? 'p-0 space-y-0 pb-32 md:pb-8 min-h-screen overflow-y-auto'
-            : activeTab === 'timer'
+            : activeTab === 'timer' || activeTab === 'mountain_ride'
             ? 'p-0 space-y-0 pb-0 min-h-screen'
             : `p-3 sm:p-5 md:p-8 space-y-6 md:space-y-8 pb-32 md:pb-8 min-h-screen overflow-y-auto ${
                 isSidebarCollapsed ? 'max-w-[1600px]' : 'max-w-7xl'
@@ -1579,10 +1583,19 @@ function AppContent() {
                     selectedExam={selectedExam} 
                     onOpenGarage={() => setActiveTab('garage')}
                     onNavigateToMyRides={() => setActiveTab('my_rides')}
+                    onNavigateToMountainRide={() => setActiveTab('mountain_ride')}
                     onBack={() => setActiveTab('dashboard')}
                     onTimerRunningChange={(running) => setIsFocusTimerRunning(running)}
                   />
                 </PremiumGate>
+              </div>
+            )}
+
+            {activeTab === 'mountain_ride' && (
+              <div data-screen="mountain_ride" className="w-full h-screen fixed inset-0 z-50">
+                <Suspense fallback={<SuspenseFallback />}>
+                  <MountainRidePage onBack={() => setActiveTab('timer')} />
+                </Suspense>
               </div>
             )}
 
@@ -2106,8 +2119,8 @@ function AppContent() {
         onExamChange={handleExamChange}
       />
 
-      {/* Mobile Sticky Bottom Navigation (Hidden during active focus ride) */}
-      {!(activeTab === 'timer' && isFocusTimerRunning) && (
+      {/* Mobile Sticky Bottom Navigation (Hidden during active focus ride or mountain ride) */}
+      {!( (activeTab === 'timer' && isFocusTimerRunning) || activeTab === 'mountain_ride' ) && (
         <MobileBottomNav
           activeTab={activeTab}
           setActiveTab={handleSelectTab}

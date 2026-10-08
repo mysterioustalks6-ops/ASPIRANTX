@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, 
   ShieldAlert, CheckCircle2, ChevronRight, Sliders, Wrench, 
-  ArrowLeft, Eye, EyeOff, Info, Clock, AlertTriangle, Coffee, Compass, BarChart2,
-  CloudRain, Wind
+  ArrowLeft, Info, Clock, AlertTriangle, Coffee, BarChart2
 } from 'lucide-react';
 import { 
   FocusSession, 
@@ -22,7 +21,6 @@ import {
   UserBikePreferences 
 } from '../../../lib/focus/bikeEngine';
 import { DEFAULT_BIKE_CONFIG } from '../../../lib/focus/bikeConfig';
-import { RELAX_SCENES_MANIFEST, RelaxScene } from './relaxManifest';
 import { RiderAssetSlot } from './RiderAssetSlot';
 import { scheduleFocusNotifications, clearFocusNotifications } from './notifications';
 import { soundFx } from '../../../lib/soundEffects';
@@ -37,6 +35,7 @@ export interface HighwayFocusTimerProps {
   onNavigateToGarage?: () => void;
   onOpenGarage?: () => void;
   onNavigateToMyRides?: () => void;
+  onNavigateToMountainRide?: () => void;
   onBack?: () => void;
   onTimerRunningChange?: (isRunning: boolean) => void;
 }
@@ -47,6 +46,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
   onNavigateToGarage,
   onOpenGarage,
   onNavigateToMyRides,
+  onNavigateToMountainRide,
   onBack,
   onTimerRunningChange
 }) => {
@@ -73,57 +73,11 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
   // ── 3. HARDWARE BACK / ABANDON CONFIRMATION ──
   const [showExitConfirmModal, setShowExitConfirmModal] = useState<boolean>(false);
 
-  // ── 4. RELAX SCENERY VIEW & CLOCK CHIP (PERSISTED) ──
-  const [isRelaxViewActive, setIsRelaxViewActive] = useState<boolean>(false);
-  const [selectedSceneIndex, setSelectedSceneIndex] = useState<number>(0);
-  const [showSceneCredits, setShowSceneCredits] = useState<boolean>(false);
-  const [showClockChip, setShowClockChip] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('studyride_show_clock_chip') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  const handleToggleClockChip = () => {
-    setShowClockChip(prev => {
-      const next = !prev;
-      try {
-        localStorage.setItem('studyride_show_clock_chip', String(next));
-      } catch {}
-      return next;
-    });
-  };
-
-  // ── RELAX AMBIENCE & SCENERY PACE STATE ──
-  const [ambientSound, setAmbientSound] = useState<'off' | 'rain' | 'wind' | 'engine'>('off');
-  const [sceneryPace, setSceneryPace] = useState<number>(1.0);
-
-  const handleSelectAmbientSound = (soundType: 'off' | 'rain' | 'wind' | 'engine') => {
-    soundFx.playTap();
-    soundFx.triggerHaptic(12);
-    setAmbientSound(soundType);
-    soundFx.setAmbient(soundType);
-  };
-
-  const handleSelectPace = (pace: number) => {
-    soundFx.playTap();
-    soundFx.triggerHaptic(10);
-    setSceneryPace(pace);
-  };
-
-  const handleExitRelaxView = () => {
-    soundFx.playTap();
-    soundFx.stopAmbient();
-    setAmbientSound('off');
-    setIsRelaxViewActive(false);
-  };
-
   useEffect(() => {
     onTimerRunningChange?.(isRunning);
   }, [isRunning, onTimerRunningChange]);
 
-  // ── 5. BIKE ENGINE & USER PREFERENCES ──
+  // ── 4. BIKE ENGINE & USER PREFERENCES ──
   const [userPrefs, setUserPrefs] = useState<UserBikePreferences>(() => {
     try {
       const saved = localStorage.getItem(`aspirantx_bike_prefs_${userId}`);
@@ -134,8 +88,6 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
 
   const [targetInputVal, setTargetInputVal] = useState<string>('');
   const [showTargetModal, setShowTargetModal] = useState<boolean>(false);
-
-  const currentScene = RELAX_SCENES_MANIFEST[selectedSceneIndex] || RELAX_SCENES_MANIFEST[0];
 
   // Derived Bike state from Session Store
   const sessions = useMemo(() => loadSessions(userId), [userId, isRunning]);
@@ -387,7 +339,6 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
     clearFocusNotifications();
     timerStateRef.current = null;
     soundFx.stopAmbient();
-    setAmbientSound('off');
     setIsRunning(false);
     setIsPaused(false);
 
@@ -463,155 +414,6 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
 
   return (
     <div className="relative min-h-screen w-full flex flex-col justify-between overflow-hidden select-none">
-      {/* ── ZEN RELAX VIEW (ZERO DIGITS BY DEFAULT, 60FPS PARALLAX, DUO-STYLE CLOCK CHIP & AMBIENCE) ── */}
-      {isRelaxViewActive ? (
-        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-between overflow-hidden select-none">
-          {/* Endless highway background towards distant mountains & valleys */}
-          <div className="absolute inset-0 z-0">
-            <EndlessHighwayLandscape 
-              isDriving={isRunning && !isPaused} 
-              progressPercent={rideProgressPercent}
-              playbackRate={sceneryPace}
-            />
-          </div>
-
-          {/* Minimalist Top Control Bar */}
-          <div className="relative z-30 w-full max-w-4xl mx-auto px-4 pt-4 sm:pt-6 flex items-center justify-between gap-2">
-            <button
-              onClick={handleExitRelaxView}
-              className="px-3.5 py-2 min-h-[44px] rounded-2xl bg-slate-950/85 hover:bg-slate-900 active:scale-95 backdrop-blur-md text-xs font-bold text-white border border-slate-700/80 flex items-center gap-2 cursor-pointer shadow-xl transition-all"
-              aria-label="Exit relax view"
-            >
-              <ArrowLeft className="w-4 h-4 text-emerald-400" />
-              <span>Exit relax</span>
-            </button>
-
-            {/* Digits hidden by default with visible toggle */}
-            {showClockChip ? (
-              <button
-                onClick={handleToggleClockChip}
-                aria-label="Hide clock"
-                className="px-3.5 py-2 min-h-[44px] rounded-full bg-slate-950/90 hover:bg-slate-900 active:scale-95 backdrop-blur-md text-xs font-mono font-bold text-white border border-indigo-500/50 flex items-center gap-1.5 cursor-pointer shadow-xl transition-all"
-              >
-                <Clock className="w-4 h-4 text-amber-400" />
-                <span>{mode === 'pomodoro' ? formatTime(timeRemainingMs) : formatStopwatch(stopwatchElapsedMs)}</span>
-              </button>
-            ) : (
-              <button
-                onClick={handleToggleClockChip}
-                aria-label="Show time"
-                className="px-3.5 py-2 min-h-[44px] rounded-2xl bg-slate-950/85 hover:bg-slate-900 active:scale-95 backdrop-blur-md text-xs font-bold text-slate-300 border border-slate-700/80 flex items-center gap-1.5 cursor-pointer shadow-md transition-all"
-              >
-                <Clock className="w-4 h-4 text-slate-400" />
-                <span>Show time</span>
-              </button>
-            )}
-          </div>
-
-          {/* Bottom Floating Action Dock (2 rows to prevent cutting chips, 48dp controls, above gesture bar) */}
-          <div className="relative z-30 w-full max-w-lg mx-auto pb-8 sm:pb-8 px-4 flex flex-col items-center gap-3">
-            {/* Ambience & Speed Toolbar (2 Rows: Sound Chips on Row 1, Speed Chips on Row 2) */}
-            <div className="w-full flex flex-col gap-2 p-2 rounded-2xl bg-slate-950/90 backdrop-blur-md border border-slate-800/90 shadow-2xl">
-              {/* Row 1: Ambient Sounds (Disabled with "Coming soon") */}
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-[11px] font-bold text-slate-400 pl-1">Sound:</span>
-                <div className="flex items-center gap-1">
-                  {[
-                    { id: 'off', label: 'Off' },
-                    { id: 'rain', label: 'Rain' },
-                    { id: 'wind', label: 'Wind' },
-                    { id: 'engine', label: 'Engine' },
-                  ].map(s => (
-                    <button
-                      key={s.id}
-                      disabled
-                      title="Audio coming soon"
-                      aria-label={`${s.label} - Coming soon`}
-                      className="px-2.5 py-1.5 min-h-[36px] rounded-xl text-[11px] font-bold bg-slate-900/60 text-slate-500 border border-slate-800/60 cursor-not-allowed opacity-60"
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                  <span className="text-[10px] text-slate-500 font-medium pl-1">Coming soon</span>
-                </div>
-              </div>
-
-              {/* Row 2: Highway Pace Selector (0.8x, 1.0x, 1.25x - clearly visible without horizontal cut) */}
-              <div className="flex items-center justify-between gap-1 pt-1.5 border-t border-slate-800/60">
-                <span className="text-[11px] font-bold text-slate-400 pl-1">Speed:</span>
-                <div className="flex items-center gap-1.5">
-                  {[
-                    { rate: 0.8, label: '0.8x' },
-                    { rate: 1.0, label: '1.0x' },
-                    { rate: 1.25, label: '1.25x' }
-                  ].map(({ rate, label }) => (
-                    <button
-                      key={rate}
-                      onClick={() => handleSelectPace(rate)}
-                      className={`px-3 py-1.5 min-h-[36px] min-w-[48px] rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                        sceneryPace === rate
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'bg-slate-900/80 text-slate-300 hover:text-white border border-slate-800'
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Tactile Primary Action Buttons (Start / Pause / Resume / End - 48dp min touch targets) */}
-            <div className="w-full flex items-center justify-center gap-3">
-              {!isRunning ? (
-                <TactileButton
-                  variant="primary"
-                  size="lg"
-                  onClick={handleStartTimer}
-                  icon={<Play className="w-5 h-5 fill-current" />}
-                  className="w-full max-w-xs shadow-2xl text-sm font-bold min-h-[48px]"
-                >
-                  Start focus ride
-                </TactileButton>
-              ) : (
-                <>
-                  {isPaused ? (
-                    <TactileButton
-                      variant="primary"
-                      size="md"
-                      onClick={handleResumeTimer}
-                      icon={<Play className="w-4 h-4 fill-current" />}
-                      className="flex-1 shadow-lg font-bold min-h-[48px]"
-                    >
-                      Resume ride
-                    </TactileButton>
-                  ) : (
-                    <TactileButton
-                      variant="secondary"
-                      size="md"
-                      onClick={handlePauseTimer}
-                      icon={<Pause className="w-4 h-4" />}
-                      className="flex-1 shadow-lg font-bold min-h-[48px]"
-                    >
-                      Pause ride
-                    </TactileButton>
-                  )}
-                  <TactileButton
-                    variant="ghost"
-                    size="md"
-                    onClick={() => setShowExitConfirmModal(true)}
-                    className="flex-1 border border-slate-700/80 bg-slate-900/80 hover:bg-rose-950/50 hover:text-rose-400 font-bold min-h-[48px]"
-                  >
-                    End ride
-                  </TactileButton>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-
       {/* ── TOP CONTROL BAR (1 ROW AT 360PX WITHOUT SCROLL) ── */}
       <div className="relative z-10 w-full max-w-4xl mx-auto px-4 pt-3 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -635,20 +437,8 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
           </h1>
         </div>
 
-        {/* Action Icon Buttons: Relax, Rides, Garage (48dp touch targets, fits 1 row at 360) */}
+        {/* Action Icon Buttons: Rides, Garage (48dp touch targets, fits 1 row at 360) */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Relax View Toggle */}
-          <button
-            onClick={() => {
-              soundFx.playTap();
-              setIsRelaxViewActive(true);
-            }}
-            aria-label="Relax scenery"
-            title="Relax scenery"
-            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-emerald-300 border border-slate-800 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <Eye className="w-5 h-5 text-emerald-400" />
-          </button>
 
           {/* My Rides Navigation */}
           {onNavigateToMyRides && (
@@ -881,8 +671,6 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
           </button>
         </div>
       </div>
-    </>
-  )}
 
       {/* ── MODAL: EXIT / ABANDON CONFIRMATION ── */}
       {showExitConfirmModal && (
