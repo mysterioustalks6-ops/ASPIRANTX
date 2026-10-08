@@ -26,6 +26,8 @@ import { getLocalCompletedSubtopicIds, saveCompletedSubtopicIds } from '../lib/s
 import { triggerConfetti } from '../lib/animations';
 import { soundFx } from '../lib/soundEffects';
 import { TactileButton } from './TactileButton';
+import { useLanguage } from '../lib/i18n/LanguageContext';
+import { getLocalizedSubject, getLocalizedExamName } from '../lib/subjectUtils';
 
 interface MapJourneyViewProps {
   user: UserProfile;
@@ -58,6 +60,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
   onOpenPremium,
   onRequireLogin,
 }) => {
+  const { currentLanguage, isHindi } = useLanguage();
   // Territory View is the default mode
   const [viewMode, setViewMode] = useState<'territory' | 'list' | 'path'>('territory');
   const [selectedTopic, setSelectedTopic] = useState<TopicCellData | null>(null);
@@ -201,14 +204,14 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
     switch (state) {
       case 'strong':
         return {
-          label: 'Mastered',
+          label: isHindi ? 'सिद्ध' : 'Mastered',
           badgeClass: 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]/30',
           icon: CheckCircle2,
           color: 'var(--sr-primary)',
         };
       case 'learning':
         return {
-          label: 'In Progress',
+          label: isHindi ? 'प्रगति पर' : 'In Progress',
           badgeClass: 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30',
           icon: Clock,
           color: 'var(--sr-blue)',
@@ -216,7 +219,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
       case 'new':
       default:
         return {
-          label: 'New',
+          label: isHindi ? 'नया' : 'New',
           badgeClass: 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)]',
           icon: Circle,
           color: 'var(--sr-text-muted)',
@@ -238,7 +241,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
             }`}
           >
             <Compass className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Territory</span>
+            <span className="truncate">{isHindi ? 'क्षेत्रफल' : 'Territory'}</span>
           </button>
 
           <button
@@ -250,7 +253,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
             }`}
           >
             <BookOpen className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">List</span>
+            <span className="truncate">{isHindi ? 'सूची' : 'List'}</span>
           </button>
 
           <button
@@ -262,7 +265,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
             }`}
           >
             <Map className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">Path</span>
+            <span className="truncate">{isHindi ? 'पाथ' : 'Path'}</span>
           </button>
         </div>
       </div>
@@ -278,20 +281,20 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
               </div>
               <div>
                 <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-primary)]">
-                  Exam Syllabus Territory
+                  {isHindi ? 'परीक्षा पाठ्यक्रम क्षेत्रफल' : 'Exam Syllabus Territory'}
                 </span>
                 <h2 className="text-base sm:text-lg font-black text-[var(--sr-text)] tracking-tight">
-                  {examConfig.displayName}
+                  {getLocalizedExamName(examConfig.displayName, isHindi)}
                 </h2>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2.5 py-1 rounded-full border border-[var(--sr-primary)]/30 shrink-0">
-                {getExamDaysLeft(selectedExam)} days left
+                {getExamDaysLeft(selectedExam)} {isHindi ? 'दिन शेष' : 'days left'}
               </span>
               <span className="text-xs font-bold text-[var(--sr-text-muted)]">
-                {territories.reduce((acc, t) => acc + t.completedCount, 0)}/{territories.reduce((acc, t) => acc + t.totalCount, 0)} Mastered
+                {territories.reduce((acc, t) => acc + t.completedCount, 0)}/{territories.reduce((acc, t) => acc + t.totalCount, 0)} {isHindi ? 'सिद्ध' : 'Mastered'}
               </span>
             </div>
           </div>
@@ -311,10 +314,12 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)] line-clamp-2 leading-snug break-words">
-                        {territory.subject} Region
+                        {getLocalizedSubject(territory.subject, isHindi)} {isHindi ? 'खंड' : 'Region'}
                       </h3>
                       <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 leading-normal break-words mt-0.5">
-                        {territory.completedCount} of {territory.totalCount} topics mastered ({territory.progressPercent}%)
+                        {isHindi
+                          ? `${territory.totalCount} में से ${territory.completedCount} विषय सिद्ध (${territory.progressPercent}%)`
+                          : `${territory.completedCount} of ${territory.totalCount} topics mastered (${territory.progressPercent}%)`}
                       </p>
                     </div>
                   </div>
@@ -367,7 +372,7 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                         className="text-xs sm:text-sm font-bold text-[var(--sr-text)] line-clamp-2 leading-snug break-words"
                         style={{ overflowWrap: 'anywhere', hyphens: 'auto' }}
                       >
-                        {cell.title}
+                        {getLocalizedSubject(cell.title, isHindi)}
                       </h4>
                     </button>
                   );
@@ -416,10 +421,10 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
             <div className="flex items-start justify-between gap-3 border-b border-[var(--sr-line)] pb-3">
               <div className="min-w-0 flex-1">
                 <span className="text-xs font-black uppercase text-[var(--sr-primary)] tracking-wider">
-                  {selectedTopic.subject}
+                  {getLocalizedSubject(selectedTopic.subject, isHindi)}
                 </span>
                 <h3 className="text-base sm:text-lg font-black text-[var(--sr-text)] leading-snug line-clamp-2 mt-0.5">
-                  {selectedTopic.title}
+                  {getLocalizedSubject(selectedTopic.title, isHindi)}
                 </h3>
               </div>
               <button
@@ -446,8 +451,12 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                     <BookOpen className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">Learn Concepts</span>
-                    <span className="block text-xs text-[var(--sr-text-muted)]">Core notes, formulas & overview</span>
+                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">
+                      {isHindi ? 'अवधारणाएं सीखें' : 'Learn Concepts'}
+                    </span>
+                    <span className="block text-xs text-[var(--sr-text-muted)]">
+                      {isHindi ? 'मुख्य नोट्स, सूत्र एवं सारांश' : 'Core notes, formulas & overview'}
+                    </span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-[var(--sr-text-muted)]" />
@@ -467,8 +476,12 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                     <Target className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">Solve PYQs</span>
-                    <span className="block text-xs text-[var(--sr-text-muted)]">Previous years' solved MCQs</span>
+                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">
+                      {isHindi ? 'गत वर्ष प्रश्न हल करें' : 'Solve PYQs'}
+                    </span>
+                    <span className="block text-xs text-[var(--sr-text-muted)]">
+                      {isHindi ? 'पिछले वर्षों के हल किए गए प्रश्न' : 'Previous years\' solved MCQs'}
+                    </span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-[var(--sr-text-muted)]" />
@@ -488,8 +501,12 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">Active Flashcards</span>
-                    <span className="block text-xs text-[var(--sr-text-muted)]">Spaced repetition memory cards</span>
+                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">
+                      {isHindi ? 'सक्रिय स्मरण फ्लैशकार्ड्स' : 'Active Flashcards'}
+                    </span>
+                    <span className="block text-xs text-[var(--sr-text-muted)]">
+                      {isHindi ? 'वैज्ञानिक दोहराव स्मृति कार्ड' : 'Spaced repetition memory cards'}
+                    </span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-[var(--sr-text-muted)]" />
@@ -509,8 +526,12 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                     <HelpCircle className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">Ask Veer AI Mentor</span>
-                    <span className="block text-xs text-[var(--sr-text-muted)]">Clarify topic doubts & tricks</span>
+                    <span className="block text-xs sm:text-sm font-black text-[var(--sr-text)]">
+                      {isHindi ? 'वीर एआई से पूछें' : 'Ask Veer AI Mentor'}
+                    </span>
+                    <span className="block text-xs text-[var(--sr-text-muted)]">
+                      {isHindi ? 'संदेह निवारण एवं त्वरित युक्तियां' : 'Clarify topic doubts & tricks'}
+                    </span>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-[var(--sr-text-muted)]" />
@@ -525,7 +546,9 @@ export const MapJourneyView: React.FC<MapJourneyViewProps> = ({
                   leftIcon={<Check className="w-4 h-4" />}
                   onClick={() => handleToggleCompletion(selectedTopic)}
                 >
-                  {selectedTopic.isCompleted ? 'Mark as Incomplete' : 'Mark Topic as Mastered (+50 XP)'}
+                  {selectedTopic.isCompleted
+                    ? (isHindi ? 'अपूर्ण चिह्नित करें' : 'Mark as Incomplete')
+                    : (isHindi ? 'विषय को सिद्ध चिह्नित करें (+५० XP)' : 'Mark Topic as Mastered (+50 XP)')}
                 </TactileButton>
               </div>
             </div>

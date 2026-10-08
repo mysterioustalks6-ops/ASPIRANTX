@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Sparkles, BookOpen, Layers, CheckCircle2, Shield } fro
 import { CustomExamConfig, saveCustomExam } from '../lib/customExamStore';
 import { saveUserProfile } from '../lib/gamification';
 import { UserProfile } from '../types';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 interface CustomExamModalProps {
   isOpen: boolean;
@@ -17,29 +18,45 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
   userProfile,
   onExamCreated,
 }) => {
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
+
   const [examTitle, setExamTitle] = useState('');
   const [targetYear, setTargetYear] = useState(2026);
   const [category, setCategory] = useState('GOVT_JOBS');
 
   // Subjects & Topics Builder State
-  const [subjects, setSubjects] = useState<string[]>(['General Studies', 'Quantitative Aptitude']);
+  const [subjects, setSubjects] = useState<string[]>(isHindi ? ['सामान्य अध्ययन', 'संख्यात्मक अभियोग्यता'] : ['General Studies', 'Quantitative Aptitude']);
   const [newSubjectInput, setNewSubjectInput] = useState('');
 
   // Structured Topic Nodes
   const [topicsBySubject, setTopicsBySubject] = useState<
     Record<string, { topicName: string; subtopics: string[]; importance: 'High' | 'Medium' | 'Low' }[]>
-  >({
-    'General Studies': [
-      { topicName: 'Indian Polity & Constitution', subtopics: ['Fundamental Rights', 'Preamble', 'Executive'], importance: 'High' },
-      { topicName: 'Indian History & Culture', subtopics: ['Ancient India', 'Modern Freedom Struggle'], importance: 'High' },
-    ],
-    'Quantitative Aptitude': [
-      { topicName: 'Number System & Arithmetic', subtopics: ['Percentages', 'Profit and Loss', 'Ratios'], importance: 'High' },
-      { topicName: 'Algebra & Geometry', subtopics: ['Linear Equations', 'Triangles & Circles'], importance: 'Medium' },
-    ],
-  });
+  >(
+    isHindi
+      ? {
+          'सामान्य अध्ययन': [
+            { topicName: 'भारतीय राजव्यवस्था एवं संविधान', subtopics: ['मौलिक अधिकार', 'प्रस्तावना', 'कार्यपालिका'], importance: 'High' },
+            { topicName: 'भारत का इतिहास एवं संस्कृति', subtopics: ['प्राचीन भारत', 'आधुनिक स्वतंत्रता संग्राम'], importance: 'High' },
+          ],
+          'संख्यात्मक अभियोग्यता': [
+            { topicName: 'संख्या पद्धति एवं अंकगणित', subtopics: ['प्रतिशत', 'लाभ एवं हानि', 'अनुपात'], importance: 'High' },
+            { topicName: 'बीजगणित एवं ज्यामिति', subtopics: ['रैखिक समीकरण', 'त्रिभुज एवं वृत्त'], importance: 'Medium' },
+          ],
+        }
+      : {
+          'General Studies': [
+            { topicName: 'Indian Polity & Constitution', subtopics: ['Fundamental Rights', 'Preamble', 'Executive'], importance: 'High' },
+            { topicName: 'Indian History & Culture', subtopics: ['Ancient India', 'Modern Freedom Struggle'], importance: 'High' },
+          ],
+          'Quantitative Aptitude': [
+            { topicName: 'Number System & Arithmetic', subtopics: ['Percentages', 'Profit and Loss', 'Ratios'], importance: 'High' },
+            { topicName: 'Algebra & Geometry', subtopics: ['Linear Equations', 'Triangles & Circles'], importance: 'Medium' },
+          ],
+        }
+  );
 
-  const [activeSubjectTab, setActiveSubjectTab] = useState('General Studies');
+  const [activeSubjectTab, setActiveSubjectTab] = useState(isHindi ? 'सामान्य अध्ययन' : 'General Studies');
   const [newTopicInput, setNewTopicInput] = useState('');
   const [newSubtopicInput, setNewSubtopicInput] = useState('');
   const [selectedTopicIndex, setSelectedTopicIndex] = useState<number | null>(0);
@@ -53,7 +70,7 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
     const clean = newSubjectInput.trim();
     if (!clean) return;
     if (subjects.map((s) => s.toLowerCase()).includes(clean.toLowerCase())) {
-      alert('This subject is already added!');
+      alert(isHindi ? 'यह विषय पहले से जुड़ा हुआ है!' : 'This subject is already added!');
       return;
     }
     setSubjects((prev) => [...prev, clean]);
@@ -254,7 +271,11 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
       onExamCreated(examId, updatedUserProfile);
     }
 
-    alert(`🎉 Success! Custom Exam "${cleanLabel}" created and set as your active exam!`);
+    alert(
+      isHindi
+        ? `🎉 सफलता! कस्टम परीक्षा "${cleanLabel}" बन गई है और आपकी सक्रिय परीक्षा के रूप में लागू हो गई है!`
+        : `🎉 Success! Custom Exam "${cleanLabel}" created and set as your active exam!`
+    );
     onClose();
   };
 
@@ -268,8 +289,12 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl md:text-2xl font-extrabold text-white">Create Custom Exam & Syllabus</h2>
-              <p className="text-xs text-slate-400">Define your own target exam, custom subjects & custom subtopics</p>
+              <h2 className="text-xl md:text-2xl font-extrabold text-white">
+                {isHindi ? 'कस्टम परीक्षा एवं पाठ्यक्रम निर्माण' : 'Create Custom Exam & Syllabus'}
+              </h2>
+              <p className="text-xs text-slate-400">
+                {isHindi ? 'अपनी लक्ष्य परीक्षा, कस्टम विषय एवं उप-विषय निर्धारित करें' : 'Define your own target exam, custom subjects & custom subtopics'}
+              </p>
             </div>
           </div>
 
@@ -284,18 +309,22 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
         {/* STEP 1: EXAM BASIC INFO */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-950 p-4 rounded-2xl border border-slate-800">
           <div className="md:col-span-2 space-y-1.5">
-            <label className="text-xs font-bold text-slate-300">Exam Title / Full Name *</label>
+            <label className="text-xs font-bold text-slate-300">
+              {isHindi ? 'परीक्षा का नाम / पूरा शीर्षक *' : 'Exam Title / Full Name *'}
+            </label>
             <input
               type="text"
               value={examTitle}
               onChange={(e) => setExamTitle(e.target.value)}
-              placeholder="e.g. GATE Computer Science 2026, WBCS Mains, REET Level 1..."
+              placeholder={isHindi ? 'जैसे: गेट सीएस २०२६, राज्य पीसीएस, रीट लेवल १...' : 'e.g. GATE Computer Science 2026, WBCS Mains, REET Level 1...'}
               className="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none font-medium"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300">Target Year</label>
+            <label className="text-xs font-bold text-slate-300">
+              {isHindi ? 'लक्ष्य वर्ष' : 'Target Year'}
+            </label>
             <input
               type="number"
               value={targetYear}
@@ -309,15 +338,22 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-sky-400 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-sky-400" /> Paste Syllabus for Structure Parsing (Optional)
+              <Sparkles className="w-4 h-4 text-sky-400" />
+              {isHindi ? 'पाठ्यक्रम संरचना हेतु विवरण चिपकाएं (वैकल्पिक)' : 'Paste Syllabus for Structure Parsing (Optional)'}
             </label>
-            <span className="text-[10px] text-slate-400">Structured topics & subtopics will be generated</span>
+            <span className="text-[10px] text-slate-400">
+              {isHindi ? 'विषय एवं उप-विषय स्वचालित रूप से संरचित होंगे' : 'Structured topics & subtopics will be generated'}
+            </span>
           </div>
           <textarea
             value={rawSyllabusText}
             onChange={(e) => setRawSyllabusText(e.target.value)}
             rows={3}
-            placeholder="Paste raw syllabus text, official PDF contents, or subject list here... (e.g. '1. Data Structures: Arrays, Stacks, Queues. 2. Algorithms: Sorting, Searching, Graphs...')"
+            placeholder={
+              isHindi
+                ? 'यहाँ आधिकारिक पाठ्यक्रम या विषयों की सूची दर्ज करें... (जैसे: १. भौतिकी: यांत्रिकी, ऊष्मागतिकी... २. गणित: कलन, बीजगणित...)'
+                : "Paste raw syllabus text, official PDF contents, or subject list here... (e.g. '1. Data Structures: Arrays, Stacks, Queues. 2. Algorithms: Sorting, Searching, Graphs...')"
+            }
             className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none font-medium"
           />
         </div>
@@ -326,9 +362,12 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-sky-400" /> 1. Define Exam Subjects
+              <BookOpen className="w-4 h-4 text-sky-400" />
+              {isHindi ? '१. परीक्षा के विषय निर्धारित करें' : '1. Define Exam Subjects'}
             </label>
-            <span className="text-xs text-slate-400">{subjects.length} Subjects Defined</span>
+            <span className="text-xs text-slate-400">
+              {isHindi ? `${subjects.length} विषय निर्धारित` : `${subjects.length} Subjects Defined`}
+            </span>
           </div>
 
           {/* Add Subject Bar */}
@@ -338,14 +377,14 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
               value={newSubjectInput}
               onChange={(e) => setNewSubjectInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddSubject()}
-              placeholder="Add Subject (e.g. Data Structures, General Science, Geography...)"
+              placeholder={isHindi ? 'विषय जोड़ें (जैसे: सामान्य अध्ययन, गणित, तर्कशक्ति...)' : 'Add Subject (e.g. Data Structures, General Science, Geography...)'}
               className="flex-1 px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
             />
             <button
               onClick={handleAddSubject}
               className="px-4 py-2 rounded-xl bg-sky-600/20 text-sky-300 border border-sky-500/30 text-xs font-bold hover:bg-sky-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Add Subject
+              <Plus className="w-4 h-4" /> {isHindi ? 'विषय जोड़ें' : 'Add Subject'}
             </button>
           </div>
 
@@ -379,7 +418,9 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
           <div className="space-y-4 bg-slate-950 p-5 rounded-2xl border border-slate-800">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-sky-400" /> Syllabus Topics for: <span className="text-sky-400">{activeSubjectTab}</span>
+                <Layers className="w-4 h-4 text-sky-400" />
+                {isHindi ? 'पाठ्यक्रम विषय सूची: ' : 'Syllabus Topics for: '}
+                <span className="text-sky-400">{activeSubjectTab}</span>
               </h3>
             </div>
 
@@ -390,14 +431,14 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                 value={newTopicInput}
                 onChange={(e) => setNewTopicInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
-                placeholder={`Add Topic under ${activeSubjectTab} (e.g. Fundamental Rights, Percentage, Mechanics...)`}
+                placeholder={isHindi ? `${activeSubjectTab} के अंतर्गत टॉपिक जोड़ें...` : `Add Topic under ${activeSubjectTab} (e.g. Fundamental Rights, Percentage, Mechanics...)`}
                 className="flex-1 px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none"
               />
               <button
                 onClick={handleAddTopic}
                 className="px-4 py-2 rounded-xl bg-sky-600/20 text-sky-300 border border-sky-500/30 text-xs font-bold hover:bg-sky-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Add Topic
+                <Plus className="w-4 h-4" /> {isHindi ? 'टॉपिक जोड़ें' : 'Add Topic'}
               </button>
             </div>
 
@@ -405,7 +446,9 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
             <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
               {(topicsBySubject[activeSubjectTab] || []).length === 0 ? (
                 <p className="text-xs text-slate-500 italic text-center py-4">
-                  No topics added yet for {activeSubjectTab}. Add a topic above!
+                  {isHindi
+                    ? `${activeSubjectTab} के लिए अभी कोई टॉपिक नहीं जोड़ा गया है। ऊपर से जोड़ें!`
+                    : `No topics added yet for ${activeSubjectTab}. Add a topic above!`}
                 </p>
               ) : (
                 (topicsBySubject[activeSubjectTab] || []).map((topicItem, tIdx) => (
@@ -419,7 +462,7 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                         onClick={() => handleRemoveTopic(tIdx)}
                         className="text-slate-500 hover:text-rose-400 text-xs flex items-center gap-1 cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                        <Trash2 className="w-3.5 h-3.5" /> {isHindi ? 'हटाएं' : 'Remove'}
                       </button>
                     </div>
 
@@ -439,7 +482,7 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                     <div className="flex gap-2 pl-4 pt-1">
                       <input
                         type="text"
-                        placeholder="Add subtopic..."
+                        placeholder={isHindi ? 'उप-विषय जोड़ें...' : 'Add subtopic...'}
                         value={selectedTopicIndex === tIdx ? newSubtopicInput : ''}
                         onFocus={() => setSelectedTopicIndex(tIdx)}
                         onChange={(e) => {
@@ -453,7 +496,7 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
                         onClick={() => handleAddSubtopic(tIdx)}
                         className="px-3 py-1 rounded-lg bg-slate-800 text-slate-200 text-[11px] font-bold hover:bg-slate-700 cursor-pointer"
                       >
-                        + Subtopic
+                        {isHindi ? '+ उप-विषय' : '+ Subtopic'}
                       </button>
                     </div>
                   </div>
@@ -467,7 +510,11 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
         <div className="flex items-center justify-between border-t border-slate-800 pt-4">
           <div className="text-xs text-slate-400 flex items-center gap-1.5">
             <Shield className="w-4 h-4 text-sky-400" />
-            <span>Syllabus Tracker, CBT Mock Engine & AI Chat will adapt to this exam!</span>
+            <span>
+              {isHindi
+                ? 'पाठ्यक्रम ट्रैकर, सीबीटी टेस्ट और एआई सहायक इस परीक्षा के अनुरूप तैयार होंगे!'
+                : 'Syllabus Tracker, CBT Mock Engine & AI Chat will adapt to this exam!'}
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -475,13 +522,14 @@ export const CustomExamModal: React.FC<CustomExamModalProps> = ({
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-bold text-slate-300 hover:bg-slate-800 transition-all cursor-pointer"
             >
-              Cancel
+              {isHindi ? 'रद्द करें' : 'Cancel'}
             </button>
             <button
               onClick={handleSaveAndApply}
               className="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs shadow-md shadow-sky-600/25 active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4 text-white" /> Create & Apply Target Exam
+              <CheckCircle2 className="w-4 h-4 text-white" />
+              {isHindi ? 'परीक्षा बनाएं एवं लागू करें' : 'Create & Apply Target Exam'}
             </button>
           </div>
         </div>

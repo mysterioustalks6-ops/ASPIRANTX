@@ -135,6 +135,8 @@ export interface Quote {
   id: string;
   text: string;
   author: string;
+  textHi?: string;
+  authorHi?: string;
   category: 'upsc' | 'discipline' | 'grit' | 'ssc';
   likes?: number;
 }

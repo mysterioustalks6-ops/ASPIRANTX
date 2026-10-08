@@ -7,6 +7,7 @@ export type AppLanguage = 'hi' | 'en';
 
 export interface LanguageContextValue {
   language: AppLanguage;
+  currentLanguage: AppLanguage;
   isHindi: boolean;
   isEnglish: boolean;
   setLanguage: (lang: AppLanguage) => void;

@@ -134,6 +134,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const value = useMemo<LanguageContextValue>(() => ({
     language,
+    currentLanguage: language,
     isHindi: language === 'hi',
     isEnglish: language === 'en',
     setLanguage,

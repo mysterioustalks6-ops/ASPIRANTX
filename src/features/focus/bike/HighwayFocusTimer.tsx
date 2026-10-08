@@ -52,7 +52,8 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
   onBack,
   onTimerRunningChange
 }) => {
-  const { isHindi } = useLanguage();
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
   const handleOpenGarage = onOpenGarage || onNavigateToGarage;
   // ── 1. TIMER STATE & CONFIG ──
   const [mode, setMode] = useState<'pomodoro' | 'stopwatch'>('pomodoro');
@@ -436,7 +437,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             </button>
           )}
           <h1 className="text-base sm:text-lg font-bold text-white truncate">
-            {isHindi ? 'फोकस राइड' : 'Focus ride'}
+            {isHindi ? 'एकाग्रता अध्ययन' : 'Focus ride'}
           </h1>
         </div>
 
@@ -448,8 +449,8 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
           {onNavigateToMyRides && (
             <button
               onClick={onNavigateToMyRides}
-              aria-label="My rides"
-              title="My rides"
+              aria-label={isHindi ? 'अध्ययन सत्र' : 'My rides'}
+              title={isHindi ? 'अध्ययन सत्र' : 'My rides'}
               className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-indigo-300 border border-slate-800 flex items-center justify-center transition-colors cursor-pointer"
             >
               <BarChart2 className="w-5 h-5 text-indigo-400" />
@@ -460,8 +461,8 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
           {handleOpenGarage && (
             <button
               onClick={handleOpenGarage}
-              aria-label="Garage"
-              title="Garage"
+              aria-label={isHindi ? 'प्रगति' : 'Garage'}
+              title={isHindi ? 'प्रगति' : 'Garage'}
               className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-amber-300 border border-slate-800 flex items-center justify-center transition-colors cursor-pointer"
             >
               <Wrench className="w-5 h-5 text-amber-400" />
@@ -486,7 +487,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[var(--sr-amber)] animate-pulse" />
               <span className="text-xs font-bold text-[var(--sr-amber)]">
-                Veer coach
+                {isHindi ? 'वीर मार्गदर्शक' : 'Veer coach'}
               </span>
             </div>
             <p className="text-xs font-medium text-slate-200 mt-0.5 leading-snug">
@@ -504,7 +505,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                 mode === 'pomodoro' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Pomodoro
+              {isHindi ? 'पोमोडोरो सत्र' : 'Pomodoro'}
             </button>
             <button
               onClick={() => { setMode('stopwatch'); setTimerType('focus'); }}
@@ -512,7 +513,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                 mode === 'stopwatch' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
-              Highway stopwatch
+              {isHindi ? 'स्टॉपवॉच टाइमर' : 'Highway stopwatch'}
             </button>
           </div>
         )}
@@ -527,7 +528,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                   timerType === 'focus' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'text-slate-400'
                 }`}
               >
-                Focus Block {blockIndex}/4
+                {isHindi ? `एकाग्रता खंड ${blockIndex}/४` : `Focus Block ${blockIndex}/4`}
               </button>
               <button
                 onClick={() => setTimerType('break')}
@@ -535,7 +536,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                   timerType === 'break' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'text-slate-400'
                 }`}
               >
-                Rest Break
+                {isHindi ? 'विश्राम अंतराल' : 'Rest Break'}
               </button>
             </div>
 
@@ -554,7 +555,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                         : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
                     }`}
                   >
-                    {mins}m
+                    {mins}{isHindi ? ' मि' : 'm'}
                   </button>
                 ))
               ) : (
@@ -571,7 +572,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                         : 'bg-slate-900 text-slate-400 hover:text-white border-slate-800'
                     }`}
                   >
-                    {mins}m
+                    {mins}{isHindi ? ' मि' : 'm'}
                   </button>
                 ))
               )}
@@ -585,7 +586,11 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             {mode === 'pomodoro' ? formatTime(timeRemainingMs) : formatStopwatch(stopwatchElapsedMs)}
           </div>
           <span className="text-xs font-bold text-slate-400 mt-2">
-            {timerType === 'focus' ? (mode === 'pomodoro' ? 'Deep highway focus' : 'Open road stopwatch') : 'Recharge break'}
+            {timerType === 'focus'
+              ? (mode === 'pomodoro'
+                  ? (isHindi ? 'गहन एकाग्रता अध्ययन' : 'Deep highway focus')
+                  : (isHindi ? 'स्वतंत्र स्टॉपवॉच' : 'Open road stopwatch'))
+              : (isHindi ? 'ऊर्जा संचय विश्राम' : 'Recharge break')}
           </span>
         </div>
 
@@ -598,7 +603,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
               onClick={handleStartTimer}
               icon={<Play className="w-5 h-5 fill-current" />}
             >
-              Start focus ride
+              {isHindi ? 'अध्ययन सत्र प्रारंभ करें' : 'Start focus ride'}
             </TactileButton>
           ) : (
             <>
@@ -609,7 +614,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                   onClick={handleResumeTimer}
                   icon={<Play className="w-4 h-4 fill-current" />}
                 >
-                  Resume ride
+                  {isHindi ? 'सत्र पुनः जारी रखें' : 'Resume ride'}
                 </TactileButton>
               ) : (
                 <TactileButton
@@ -618,7 +623,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                   onClick={handlePauseTimer}
                   icon={<Pause className="w-4 h-4" />}
                 >
-                  Pause ride
+                  {isHindi ? 'सत्र विराम दें' : 'Pause ride'}
                 </TactileButton>
               )}
 
@@ -627,7 +632,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                 size="md"
                 onClick={() => setShowExitConfirmModal(true)}
               >
-                End ride
+                {isHindi ? 'सत्र समाप्त करें' : 'End ride'}
               </TactileButton>
             </>
           )}
@@ -637,14 +642,20 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
         {!bikeState.weeklyTargetHours && (
           <div className="p-3 rounded-2xl bg-amber-950/30 border border-amber-500/40 text-xs text-amber-200 flex flex-col sm:flex-row items-center justify-between gap-2">
             <div>
-              <span className="font-bold text-amber-400">Target unset: </span>
-              <span>Suggested: {suggestion.suggestedHours}h/week ({suggestion.formulaDescription})</span>
+              <span className="font-bold text-amber-400">
+                {isHindi ? 'साप्ताहिक लक्ष्य अनिर्धारित: ' : 'Target unset: '}
+              </span>
+              <span>
+                {isHindi
+                  ? `सुझाव: ${suggestion.suggestedHours} घंटे/सप्ताह`
+                  : `Suggested: ${suggestion.suggestedHours}h/week (${suggestion.formulaDescription})`}
+              </span>
             </div>
             <button
               onClick={() => handleSaveWeeklyTarget(suggestion.suggestedHours)}
               className="px-3 py-1 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs shrink-0 cursor-pointer"
             >
-              Apply suggestion
+              {isHindi ? 'सुझाव लागू करें' : 'Apply suggestion'}
             </button>
           </div>
         )}
@@ -659,10 +670,12 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold text-white truncate">
-                {bikeState.currentTier.name} • {bikeState.progressPercent}% built
+                {bikeState.currentTier.name} • {bikeState.progressPercent}% {isHindi ? 'पूर्ण' : 'built'}
               </p>
               <p className="text-[10px] text-slate-400 truncate">
-                {bikeState.unlockedParts.length} / 8 parts installed • Week {bikeState.currentWeekNumber} of 12
+                {isHindi
+                  ? `८ में से ${bikeState.unlockedParts.length} भाग अनलॉक • सप्ताह ${bikeState.currentWeekNumber}/१२`
+                  : `${bikeState.unlockedParts.length} / 8 parts installed • Week ${bikeState.currentWeekNumber} of 12`}
               </p>
             </div>
           </div>
@@ -671,7 +684,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             onClick={handleOpenGarage}
             className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shrink-0 transition-colors cursor-pointer"
           >
-            View assembly →
+            {isHindi ? 'प्रगति विवरण देखें →' : 'View assembly →'}
           </button>
         </div>
       </div>
@@ -684,9 +697,13 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-base font-bold text-white">Leave session?</h3>
+              <h3 className="text-base font-bold text-white">
+                {isHindi ? 'सत्र समाप्त करें?' : 'Leave session?'}
+              </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Ending early saves this session as abandoned and will not count towards your bike build.
+                {isHindi
+                  ? 'जल्दी समाप्त करने से यह सत्र अपूर्ण माना जाएगा और आपकी अध्ययन प्रगति में नहीं जुड़ेगा।'
+                  : 'Ending early saves this session as abandoned and will not count towards your bike build.'}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-2">
@@ -695,14 +712,14 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                 size="md"
                 onClick={() => setShowExitConfirmModal(false)}
               >
-                Stay in ride
+                {isHindi ? 'सत्र में बने रहें' : 'Stay in ride'}
               </TactileButton>
               <TactileButton
                 variant="danger"
                 size="md"
                 onClick={handleAbandonSession}
               >
-                End session
+                {isHindi ? 'सत्र समाप्त करें' : 'End session'}
               </TactileButton>
             </div>
           </div>
@@ -718,10 +735,12 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             </div>
             <div className="space-y-1">
               <h3 className="text-base font-bold text-white">
-                Session finished while away
+                {isHindi ? 'सत्र पृष्ठभूमि में पूर्ण हुआ' : 'Session finished while away'}
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Your planned focus ride ({pendingAwaySession.plannedMinutes || 25} minutes) completed while the app was in the background. Count it towards your weekly target?
+                {isHindi
+                  ? `आपका निर्धारित ${pendingAwaySession.plannedMinutes || 25} मिनट का अध्ययन सत्र पूरा हो चुका है। क्या आप इसे अपने साप्ताहिक लक्ष्य में जोड़ना चाहते हैं?`
+                  : `Your planned focus ride (${pendingAwaySession.plannedMinutes || 25} minutes) completed while the app was in the background. Count it towards your weekly target?`}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-2">
@@ -732,7 +751,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                   setPendingAwaySession(null);
                 }}
               >
-                Discard
+                {isHindi ? 'रद्द करें' : 'Discard'}
               </TactileButton>
               <TactileButton
                 variant="primary"
@@ -744,7 +763,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                   triggerConfetti({ particleCount: 50, spread: 70 });
                 }}
               >
-                Count it!
+                {isHindi ? 'लक्ष्य में जोड़ें' : 'Count it!'}
               </TactileButton>
             </div>
           </div>
@@ -760,13 +779,15 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
 
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-amber-400">
-                Focus milestone achieved
+                {isHindi ? 'अध्ययन मील का पत्थर प्राप्त' : 'Focus milestone achieved'}
               </span>
               <h3 className="text-lg font-bold text-white">
-                Ride completed!
+                {isHindi ? 'सत्र सफलतापूर्वक पूर्ण!' : 'Ride completed!'}
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Great highway pace! {Math.round((completedSessionModal.actualSeconds || 0) / 60)} minutes recorded towards your weekly bike build progression.
+                {isHindi
+                  ? `शानदार एकाग्रता! ${Math.round((completedSessionModal.actualSeconds || 0) / 60)} मिनट आपके अध्ययन लक्ष्य में दर्ज किए गए।`
+                  : `Great highway pace! ${Math.round((completedSessionModal.actualSeconds || 0) / 60)} minutes recorded towards your weekly bike build progression.`}
               </p>
             </div>
 
@@ -780,7 +801,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                 className="w-full py-2.5 px-3 rounded-2xl bg-[#25D366] hover:bg-[#20ba59] active:scale-95 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
               >
                 <Share2 className="w-4 h-4 text-slate-950" />
-                <span>Share on WhatsApp Status</span>
+                <span>{isHindi ? 'व्हाट्सएप स्टेटस पर साझा करें' : 'Share on WhatsApp Status'}</span>
               </a>
 
               <TactileButton
@@ -789,7 +810,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
                 onClick={() => setCompletedSessionModal(null)}
                 className="w-full text-xs font-bold"
               >
-                Keep riding
+                {isHindi ? 'अध्ययन जारी रखें' : 'Keep riding'}
               </TactileButton>
             </div>
           </div>

@@ -76,8 +76,10 @@ export function saveStudyReminderSettings(settings: StudyReminderSettings, userI
  */
 export function getDailyStudySummary(
   user: UserProfile,
-  selectedExam?: string
+  selectedExam?: string,
+  lang?: 'hi' | 'en'
 ): DailyStudySummary {
+  const effectiveLang: 'hi' | 'en' = lang || (typeof localStorage !== 'undefined' && localStorage.getItem('aspirantx_app_language') === 'en' ? 'en' : 'hi');
   const activeExamId = selectedExam || user.exam || 'UPSC_CSE';
   const examInfo = EXAM_LIST.find((e) => e.id === activeExamId);
   const examLabel = examInfo ? examInfo.label : activeExamId.replace(/_/g, ' ');
@@ -116,15 +118,15 @@ export function getDailyStudySummary(
       allTopics.push(
         {
           id: 'sub_1',
-          title: `${examLabel} High-Yield Core Topic Revision`,
-          subject: 'Core Concept',
+          title: effectiveLang === 'hi' ? `${examLabel} महत्वपूर्ण मूल विषय पुनरावलोकन` : `${examLabel} High-Yield Core Topic Revision`,
+          subject: effectiveLang === 'hi' ? 'मूल संकल्पना' : 'Core Concept',
           completed: completedSet.size > 0,
           source: 'syllabus',
         },
         {
           id: 'sub_2',
-          title: 'Speed & Accuracy PYQ Practice Session',
-          subject: 'Problem Solving',
+          title: effectiveLang === 'hi' ? 'गत वर्ष प्रश्न गति व सटीकता अभ्यास' : 'Speed & Accuracy PYQ Practice Session',
+          subject: effectiveLang === 'hi' ? 'समस्या समाधान' : 'Problem Solving',
           completed: completedSet.size > 2,
           source: 'syllabus',
         }
@@ -141,19 +143,25 @@ export function getDailyStudySummary(
   const completedCount = completedTopics.length;
   const isCompletedForToday = pendingCount === 0 && completedCount > 0;
 
-  // Copy Generation strictly adhering to research guidelines:
-  // - If tasks pending: "Abhi der nahi hui hai. [N] topics baaki hai aaj ke liye."
-  // - If all tasks done: "Aaj ka target complete! 🎯 [N]-day streak"
-  // - Never use loss-framed/urgent words like "lose your streak", "hurry", "last chance", or ALL CAPS
   let headlineCopy = '';
   let streakCopy = '';
 
-  if (isCompletedForToday) {
-    headlineCopy = `Aaj ka target complete! 🎯 ${streakDays}-day streak`;
-    streakCopy = `${streakDays}-day streak maintained`;
+  if (effectiveLang === 'hi') {
+    if (isCompletedForToday) {
+      headlineCopy = `आज का लक्ष्य पूर्ण! 🎯 ${streakDays} दिन की निरंतरता`;
+      streakCopy = `${streakDays} दिन निरंतरता सुरक्षित`;
+    } else {
+      headlineCopy = `अभी भी समय है। आज के लिए ${pendingCount} विषय शेष हैं।`;
+      streakCopy = `${streakDays} दिन निरंतरता सक्रिय`;
+    }
   } else {
-    headlineCopy = `Abhi der nahi hui hai. ${pendingCount} topics baaki hai aaj ke liye.`;
-    streakCopy = `${streakDays}-day streak alive`;
+    if (isCompletedForToday) {
+      headlineCopy = `Today's target complete! 🎯 ${streakDays}-day streak`;
+      streakCopy = `${streakDays}-day streak maintained`;
+    } else {
+      headlineCopy = `There is still time. ${pendingCount} topics left for today.`;
+      streakCopy = `${streakDays}-day streak active`;
+    }
   }
 
   return {

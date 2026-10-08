@@ -277,7 +277,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
           setUploadingPhoto(false);
           triggerConfetti();
-          setSaveSuccessMessage('Profile photo successfully update ho gayi! ✓');
+          setSaveSuccessMessage(isHindi ? 'प्रोफ़ाइल फ़ोटो सफलतापूर्वक अपडेट हो गई! ✓' : 'Profile photo successfully updated! ✓');
           setTimeout(() => setSaveSuccessMessage(null), 3000);
         } else {
           setAvatarUrl(rawDataUrl);
@@ -286,13 +286,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         }
       };
       img.onerror = () => {
-        setUploadError('Image process nahi ho saki.');
+        setUploadError(isHindi ? 'छवि संसाधित नहीं की जा सकी।' : 'Image could not be processed.');
         setUploadingPhoto(false);
       };
       img.src = rawDataUrl;
     };
     reader.onerror = () => {
-      setUploadError('File read karne me error aayi.');
+      setUploadError(isHindi ? 'फ़ाइल पढ़ने में त्रुटि हुई।' : 'Error reading the file.');
       setUploadingPhoto(false);
     };
     reader.readAsDataURL(file);
@@ -309,7 +309,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       onProfileUpdated({ ...user, avatar_url: dataUri });
     }
     triggerConfetti();
-    setSaveSuccessMessage('Vector Aspirant Avatar set ho gaya! ✓');
+    setSaveSuccessMessage(isHindi ? 'वेक्टर परीक्षार्थी अवतार सफलतापूर्वक सेट हो गया! ✓' : 'Vector Aspirant Avatar set successfully! ✓');
     setTimeout(() => setSaveSuccessMessage(null), 3000);
   };
 
@@ -323,7 +323,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       onProfileUpdated({ ...user, avatar_url: dataUri });
     }
     triggerConfetti();
-    setSaveSuccessMessage('Monogram Avatar set ho gaya! ✓');
+    setSaveSuccessMessage(isHindi ? 'मोनोग्राम अवतार सफलतापूर्वक सेट हो गया! ✓' : 'Monogram Avatar set successfully! ✓');
     setTimeout(() => setSaveSuccessMessage(null), 3000);
   };
 

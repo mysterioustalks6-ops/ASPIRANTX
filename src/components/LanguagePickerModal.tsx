@@ -52,7 +52,7 @@ export const LanguagePickerModal: React.FC = () => {
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto leading-relaxed">
-              StudyRide ko pure Hindi ya pure English mein customize karein. Header toggle se aap kabhi bhi bhasha badal sakte hain.
+              स्टडीराइड को शुद्ध हिन्दी अथवा अंग्रेजी में अनुभव करें। हेडर में मौजूद टॉगल बटन से आप कभी भी भाषा बदल सकते हैं।
             </p>
           </div>
 

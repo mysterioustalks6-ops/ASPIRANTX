@@ -19,6 +19,7 @@ import { ForecastResult, WhatIfConfig } from '../lib/forecast/types';
 import { ExamType } from '../types';
 import { EXAM_LIST } from '../lib/examList';
 import { getDefaultExamDate, getExamDaysLeft } from '../lib/packetSyncService';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 interface SyllabusVelocityHudProps {
   forecast: ForecastResult;
@@ -36,12 +37,12 @@ interface SyllabusVelocityHudProps {
   onOpenAddCustomTopic: () => void;
 }
 
-function formatNiceDate(isoDateStr: string): string {
-  if (!isoDateStr) return 'TBD';
+function formatNiceDate(isoDateStr: string, isHindi = false): string {
+  if (!isoDateStr) return isHindi ? 'निर्धारित नहीं' : 'TBD';
   try {
     const d = new Date(isoDateStr);
     if (isNaN(d.getTime())) return isoDateStr;
-    return d.toLocaleDateString('en-US', {
+    return d.toLocaleDateString(isHindi ? 'hi-IN' : 'en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -62,6 +63,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
   examName,
   onOpenAddCustomTopic
 }) => {
+  const { isHindi } = useLanguage();
   const [isToolsExpanded, setIsToolsExpanded] = useState(false);
 
   // Baseline effective pace & current simulated pace (single source of truth with projection engine)
@@ -86,30 +88,30 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
   const speedBadge = useMemo(() => {
     if (simulatedPace < 3.5) {
       return {
-        label: 'Sluggish Pace',
+        label: isHindi ? 'धीमी गति' : 'Sluggish Pace',
         color: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
         dot: 'bg-rose-400'
       };
     } else if (simulatedPace <= 6.5) {
       return {
-        label: 'Steady Standard',
+        label: isHindi ? 'स्थिर मानक' : 'Steady Standard',
         color: 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]/30',
         dot: 'bg-[var(--sr-primary)]'
       };
     } else if (simulatedPace <= 9.0) {
       return {
-        label: 'Turbo Sprint',
+        label: isHindi ? 'तीव्र गति' : 'Turbo Sprint',
         color: 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30',
         dot: 'bg-[var(--sr-blue)]'
       };
     } else {
       return {
-        label: 'Maximum Pace',
+        label: isHindi ? 'अधिकतम गति' : 'Maximum Pace',
         color: 'bg-purple-500/15 text-purple-400 border-purple-500/30',
         dot: 'bg-purple-400'
       };
     }
-  }, [simulatedPace]);
+  }, [simulatedPace, isHindi]);
 
   const completionPct = Math.min(100, Math.max(0, forecast.syllabusCompletionPercentage || 0));
 
@@ -122,7 +124,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             <Flame className="w-4 h-4 fill-current" />
           </div>
           <span className="text-[10px] font-black uppercase tracking-wider text-[var(--sr-primary)]">
-            TARGET SYLLABUS
+            {isHindi ? 'लक्ष्य पाठ्यक्रम' : 'TARGET SYLLABUS'}
           </span>
         </div>
 
@@ -130,15 +132,15 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border shrink-0 whitespace-nowrap ${speedBadge.color}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${speedBadge.dot} animate-pulse`} />
-            {simulatedPace}h/day
+            {simulatedPace}{isHindi ? ' घंटे/दिन' : 'h/day'}
           </span>
           <button
             onClick={onOpenAddCustomTopic}
             className="px-2.5 py-1.5 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] text-[var(--sr-blue)] border border-[var(--sr-line)] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-            title="Add custom topic to syllabus"
+            title={isHindi ? 'पाठ्यक्रम में नया विषय जोड़ें' : 'Add custom topic to syllabus'}
           >
             <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Add Topic</span>
+            <span className="hidden sm:inline">{isHindi ? 'विषय जोड़ें' : 'Add Topic'}</span>
           </button>
           <button
             onClick={() => setIsToolsExpanded(!isToolsExpanded)}
@@ -147,7 +149,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
                 ? 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30' 
                 : 'bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] text-[var(--sr-text-muted)] border-[var(--sr-line)]'
             }`}
-            title="Adjust study velocity and pace simulation"
+            title={isHindi ? 'अध्ययन गति एवं अनुकरण समायोजित करें' : 'Adjust study velocity and pace simulation'}
           >
             <Sliders className="w-3.5 h-3.5" />
           </button>
@@ -159,7 +161,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
         <div className="w-full bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] rounded-xl px-3.5 py-2.5 flex items-center justify-between gap-2 transition cursor-pointer select-none">
           <div className="min-w-0 flex-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--sr-text-muted)] block mb-0.5">
-              Active Examination
+              {isHindi ? 'सक्रिय परीक्षा' : 'Active Examination'}
             </span>
             <div className="text-xs sm:text-sm font-black text-[var(--sr-text)] line-clamp-2 leading-snug break-words">
               {EXAM_LIST.find(ex => ex.id === selectedExam)?.label || examName || selectedExam}
@@ -170,7 +172,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
         <select
           value={selectedExam}
           onChange={(e) => setSelectedExam(e.target.value as ExamType)}
-          aria-label="Target Examination"
+          aria-label={isHindi ? 'लक्ष्य परीक्षा' : 'Target Examination'}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-base"
         >
           {EXAM_LIST.map((ex) => (
@@ -184,7 +186,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
       {/* ── ROW 2: SINGLE EXAM DATE IN LIST HEADER ── */}
       <div className="mb-3 text-xs">
         <p className="text-[var(--sr-text-muted)] font-medium">
-          Exam Date: <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(examDate)}</strong>
+          {isHindi ? 'परीक्षा तिथि: ' : 'Exam Date: '}<strong className="text-[var(--sr-text)] font-black">{formatNiceDate(examDate, isHindi)}</strong>
         </p>
       </div>
 
@@ -193,7 +195,7 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
         <div className="flex items-center justify-between text-xs font-bold mb-1.5">
           <span className="text-[var(--sr-text)] flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-[var(--sr-primary)]" />
-            Syllabus Completion
+            {isHindi ? 'पाठ्यक्रम पूर्णता' : 'Syllabus Completion'}
           </span>
           <span className="text-[var(--sr-primary)] font-black text-sm">
             {completionPct}%
@@ -210,32 +212,47 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
       {/* ── 3-METRIC SUMMARY CHIPS (CONSISTENT WITH EXAM COUNTDOWN) ── */}
       <div className="grid grid-cols-3 gap-2 mt-3 text-center">
         <div className="p-2 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
-          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">Exam Countdown</span>
-          <span className="text-sm font-black text-[var(--sr-text)]">{daysUntilExam} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">days left</span></span>
+          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">
+            {isHindi ? 'परीक्षा उलटी गिनती' : 'Exam Countdown'}
+          </span>
+          <span className="text-sm font-black text-[var(--sr-text)]">
+            {daysUntilExam} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">{isHindi ? 'दिन शेष' : 'days left'}</span>
+          </span>
         </div>
         <div className="p-2 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
-          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">Estimated Workload</span>
-          <span className="text-sm font-black text-[var(--sr-text)]">{forecast.remainingWorkloadHours} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">hrs</span></span>
+          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">
+            {isHindi ? 'अनुमानित अध्ययन भार' : 'Estimated Workload'}
+          </span>
+          <span className="text-sm font-black text-[var(--sr-text)]">
+            {forecast.remainingWorkloadHours} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">{isHindi ? 'घंटे' : 'hrs'}</span>
+          </span>
         </div>
         <div className="p-2 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
-          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">Buffer Cushion</span>
+          <span className="text-[10px] text-[var(--sr-text-muted)] font-bold uppercase tracking-wider block">
+            {isHindi ? 'रिवीजन बफर' : 'Buffer Cushion'}
+          </span>
           <span className={`text-sm font-black ${forecast.revisionBufferDays > 0 ? 'text-[var(--sr-primary)]' : 'text-amber-500'}`}>
-            {forecast.revisionBufferDays} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">days</span>
+            {forecast.revisionBufferDays} <span className="text-[10px] font-normal text-[var(--sr-text-muted)]">{isHindi ? 'दिन' : 'days'}</span>
           </span>
         </div>
       </div>
 
       {/* ── FORMULA ASSUMPTIONS INFO LINE (GATE-A3 HONESTY) ── */}
       <div className="mt-2 text-center text-[10px] text-[var(--sr-text-muted)] opacity-85 leading-tight">
-        <span>Formula assumptions: ~5.8h/unit base (unverified) × 2.15 multiplier (1.45×v + 0.35×cycles, v=1.0, cycles=2)</span>
+        <span>
+          {isHindi 
+            ? 'गणना सूत्र: ~५.८ घंटे/इकाई आधार × २.१५ गुणांक (१.४५×v + ०.३५×चक्र)' 
+            : 'Formula assumptions: ~5.8h/unit base (unverified) × 2.15 multiplier (1.45×v + 0.35×cycles, v=1.0, cycles=2)'}
+        </span>
       </div>
 
       {/* ── PROJECTED SYLLABUS COMPLETION STATUS ── */}
       <div className="mt-3 text-center text-xs text-[var(--sr-text-muted)] font-medium">
-        Projected syllabus completion: <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(forecast.realisticDate)}</strong>
+        {isHindi ? 'अनुमानित पाठ्यक्रम समाप्ति तिथि: ' : 'Projected syllabus completion: '}
+        <strong className="text-[var(--sr-text)] font-black">{formatNiceDate(forecast.realisticDate, isHindi)}</strong>
         {forecast.revisionBufferDays > 0 && (
           <span className="text-[var(--sr-primary)] font-bold ml-1.5">
-            ({forecast.revisionBufferDays}d buffer)
+            ({forecast.revisionBufferDays}{isHindi ? ' दिन बफर' : 'd buffer'})
           </span>
         )}
       </div>
@@ -252,18 +269,18 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-[var(--sr-text)] flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-[var(--sr-blue)]" />
-                Daily Study Hours Adjustment
+                {isHindi ? 'दैनिक अध्ययन घंटे समायोजन' : 'Daily Study Hours Adjustment'}
               </span>
               <div className="flex items-center gap-2">
                 <span className="font-mono font-black text-[var(--sr-blue)]">
-                  {simulatedPace} hrs/day
+                  {simulatedPace} {isHindi ? 'घंटे/दिन' : 'hrs/day'}
                 </span>
                 {whatIfConfig.dailyHourDelta !== 0 && (
                   <button
                     onClick={() => onUpdateWhatIf(prev => ({ ...prev, dailyHourDelta: 0 }))}
                     className="text-[10px] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center gap-0.5 underline cursor-pointer"
                   >
-                    <RotateCcw className="w-2.5 h-2.5" /> Reset
+                    <RotateCcw className="w-2.5 h-2.5" /> {isHindi ? 'रीसेट' : 'Reset'}
                   </button>
                 )}
               </div>
@@ -283,27 +300,30 @@ export const SyllabusVelocityHud: React.FC<SyllabusVelocityHudProps> = ({
                 className="w-full accent-[var(--sr-blue)] h-2 bg-[var(--sr-surface-2)] rounded-lg cursor-pointer border border-[var(--sr-line)]"
               />
               <div className="flex justify-between text-[10px] text-[var(--sr-text-muted)] px-1">
-                <span>Slump (-3h)</span>
-                <span>Normal ({basePace}h)</span>
-                <span>Turbo (+4h)</span>
+                <span>{isHindi ? 'मंदी (-३ घंटे)' : 'Slump (-3h)'}</span>
+                <span>{isHindi ? `सामान्य (${basePace} घंटे)` : `Normal (${basePace}h)`}</span>
+                <span>{isHindi ? 'तीव्र (+४ घंटे)' : 'Turbo (+4h)'}</span>
               </div>
             </div>
 
             {/* Quick Math Feedback */}
             <div className="p-2.5 rounded-xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-between text-xs">
               <span className="text-[var(--sr-text-muted)]">
-                Finish Date: <strong className="text-[var(--sr-text)]">{formatNiceDate(forecast.realisticDate)}</strong>
+                {isHindi ? 'समाप्ति तिथि: ' : 'Finish Date: '}
+                <strong className="text-[var(--sr-text)]">{formatNiceDate(forecast.realisticDate, isHindi)}</strong>
               </span>
               {daysSavedOrDelayed > 0 ? (
                 <span className="text-[var(--sr-primary)] font-bold text-[11px] flex items-center gap-1">
-                  <TrendingDown className="w-3 h-3" /> {daysSavedOrDelayed} days saved
+                  <TrendingDown className="w-3 h-3" /> {daysSavedOrDelayed} {isHindi ? 'दिन की बचत' : 'days saved'}
                 </span>
               ) : daysSavedOrDelayed < 0 ? (
                 <span className="text-rose-400 font-bold text-[11px] flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> {Math.abs(daysSavedOrDelayed)}d delay risk
+                  <TrendingUp className="w-3 h-3" /> {Math.abs(daysSavedOrDelayed)}{isHindi ? ' दिन विलंब जोखिम' : 'd delay risk'}
                 </span>
               ) : (
-                <span className="text-[#9CA3AF] text-[11px]">Normal schedule</span>
+                <span className="text-[#9CA3AF] text-[11px]">
+                  {isHindi ? 'सामान्य समय-सारणी' : 'Normal schedule'}
+                </span>
               )}
             </div>
           </motion.div>

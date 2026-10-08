@@ -3,8 +3,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Quote } from '../types';
 import { fetchRandomQuote } from '../data/quotes';
 import { RefreshCw, Quote as QuoteIcon, Heart, Share2, Sparkles, Check } from 'lucide-react';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 export const DailyQuoteCard: React.FC = () => {
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +24,7 @@ export const DailyQuoteCard: React.FC = () => {
       setQuote(q);
       setLikeCount(q.likes || 100);
     } catch (err: any) {
-      setError(err?.message || 'Failed to fetch quote');
+      setError(err?.message || (isHindi ? 'प्रेरणा संदेश लोड करने में त्रुटि' : 'Failed to fetch quote'));
     } finally {
       setLoading(false);
     }
@@ -43,7 +46,9 @@ export const DailyQuoteCard: React.FC = () => {
 
   const handleShare = () => {
     if (quote) {
-      const textToCopy = `"${quote.text}" — ${quote.author} (via StudyRide)`;
+      const displayQuote = isHindi && quote.textHi ? quote.textHi : quote.text;
+      const displayAuthor = isHindi && quote.authorHi ? quote.authorHi : quote.author;
+      const textToCopy = `"${displayQuote}" — ${displayAuthor} (via StudyRide)`;
       navigator.clipboard.writeText(textToCopy);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -60,10 +65,12 @@ export const DailyQuoteCard: React.FC = () => {
           </div>
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--sr-primary)] flex items-center gap-1.5">
-              Daily Dose of Grit
+              {isHindi ? 'दैनिक प्रेरणा' : 'Daily Dose of Grit'}
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-[var(--sr-primary)] animate-ping" />
             </h3>
-            <p className="text-[11px] text-[var(--sr-text-secondary)]">Curated for Aspirants</p>
+            <p className="text-[11px] text-[var(--sr-text-secondary)]">
+              {isHindi ? 'परीक्षार्थियों के लिए विशेष संकलन' : 'Curated for Aspirants'}
+            </p>
           </div>
         </div>
 
@@ -109,11 +116,11 @@ export const DailyQuoteCard: React.FC = () => {
               <div className="relative pl-6 border-l-2 border-[var(--sr-primary)]">
                 <QuoteIcon className="absolute left-1 top-0 w-4 h-4 text-[var(--sr-primary)] opacity-40 -translate-x-full" />
                 <p className="text-[var(--sr-text)] font-medium text-base md:text-lg leading-relaxed italic tracking-tight font-serif">
-                  "{quote.text}"
+                  "{isHindi && quote.textHi ? quote.textHi : quote.text}"
                 </p>
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-xs font-semibold text-[var(--sr-primary)] tracking-wide">
-                    — {quote.author}
+                    — {isHindi && quote.authorHi ? quote.authorHi : quote.author}
                   </span>
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-[var(--sr-surface-2)] text-[var(--sr-text-secondary)] border border-[var(--sr-line)] uppercase tracking-widest">
                     #{quote.category}
@@ -149,19 +156,19 @@ export const DailyQuoteCard: React.FC = () => {
             {copied ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-emerald-500 font-semibold text-xs">Copied!</span>
+                <span className="text-emerald-500 font-semibold text-xs">{isHindi ? 'प्रतिलिपि बनाई गई!' : 'Copied!'}</span>
               </>
             ) : (
               <>
                 <Share2 className="w-3.5 h-3.5" />
-                <span className="font-semibold text-xs text-[var(--sr-text)]">Share</span>
+                <span className="font-semibold text-xs text-[var(--sr-text)]">{isHindi ? 'साझा करें' : 'Share'}</span>
               </>
             )}
           </button>
         </div>
 
         <span className="text-[11px] text-[var(--sr-text-muted)] hidden sm:inline">
-          Refreshes every 24h or on demand
+          {isHindi ? 'हर 24 घंटे में या क्लिक पर अपडेट' : 'Refreshes every 24h or on demand'}
         </span>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Radio, Sparkles, ChevronRight, Lock, BookOpen, Clock } from 'lucide-react';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 const DEFAULT_ADSENSE_CONFIG: AdSenseConfig = {
   enabled: true,
@@ -44,6 +45,7 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
   config: propConfig,
   isPremium = false,
 }) => {
+  const { isHindi } = useLanguage();
   // --- ALL HOOKS MUST BE DECLARED AT TOP LEVEL (RULES OF HOOKS) ---
   const [isDismissed, setIsDismissed] = useState(false);
   const [config, setConfig] = useState<AdSenseConfig>(propConfig || DEFAULT_ADSENSE_CONFIG);
@@ -241,8 +243,8 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
 
         {/* Ad Label */}
         <div className="w-full flex items-center justify-between px-2 pb-1 text-xs text-[var(--sr-text-secondary)] uppercase tracking-wider font-bold">
-          <span>Advertisement</span>
-          {isDev && <span className="text-[var(--sr-primary)] font-bold">Connecting AdSense...</span>}
+          <span>{isHindi ? 'विज्ञापन' : 'Advertisement'}</span>
+          {isDev && <span className="text-[var(--sr-primary)] font-bold">{isHindi ? 'ऐडसेंस से संपर्क हो रहा है...' : 'Connecting AdSense...'}</span>}
         </div>
 
         <ins
@@ -272,11 +274,15 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
               </div>
               <div className="text-left space-y-0.5">
                 <h4 className="font-extrabold text-[var(--sr-text)] text-xs sm:text-sm flex items-center gap-2">
-                  Upgrade to StudyRide Premium Pass
-                  <span className="text-xs bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-black tracking-wide">20% OFF</span>
+                  {isHindi ? 'स्टडीराइड प्रीमियम पास प्राप्त करें' : 'Upgrade to StudyRide Premium Pass'}
+                  <span className="text-xs bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-black tracking-wide">
+                    {isHindi ? '२०% छूट' : '20% OFF'}
+                  </span>
                 </h4>
                 <p className="text-xs text-[var(--sr-text-muted)]">
-                  Ad-free study experience, detailed mock answers, and unlimited syllabus pdf downloads.
+                  {isHindi
+                    ? 'विज्ञापन-मुक्त अध्ययन अनुभव, विस्तृत मॉक समाधान एवं असीमित पाठ्यक्रम पीडीएफ डाउनलोड।'
+                    : 'Ad-free study experience, detailed mock answers, and unlimited syllabus pdf downloads.'}
                 </p>
               </div>
             </div>
@@ -285,7 +291,7 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
               onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'premium' }))}
               className="px-4 py-2 bg-[var(--sr-primary)] hover:bg-[var(--sr-primary-hover)] text-[var(--sr-on-primary)] font-black text-xs rounded-xl transition-all shadow-sm shrink-0 flex items-center gap-1 cursor-pointer"
             >
-              <span>Unlock Premium</span>
+              <span>{isHindi ? 'प्रीमियम अनलॉक करें' : 'Unlock Premium'}</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -296,13 +302,19 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
           <div className="bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] rounded-2xl p-4 space-y-4 shadow-sm text-left relative overflow-hidden">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-[var(--sr-primary)]" />
-              <span className="text-xs text-[var(--sr-primary)] font-extrabold uppercase tracking-wider">NCERT Study Guide</span>
+              <span className="text-xs text-[var(--sr-primary)] font-extrabold uppercase tracking-wider">
+                {isHindi ? 'एनसीईआरटी अध्ययन मार्गदर्शिका' : 'NCERT Study Guide'}
+              </span>
             </div>
             
             <div className="space-y-1">
-              <h4 className="font-bold text-[var(--sr-text)] text-xs">Complete NCERT Notes Bundle</h4>
+              <h4 className="font-bold text-[var(--sr-text)] text-xs">
+                {isHindi ? 'संपूर्ण एनसीईआरटी नोट्स संग्रह' : 'Complete NCERT Notes Bundle'}
+              </h4>
               <p className="text-xs text-[var(--sr-text-muted)] leading-normal">
-                Class 6-12 concise summary cards for foundational concepts. Pre-mapped to syllabus tracker.
+                {isHindi
+                  ? 'कक्षा ६-१२ हेतु संक्षिप्त अवधारणा सारांश कार्ड, पाठ्यक्रम ट्रैकर से सीधे जुड़े हुए।'
+                  : 'Class 6-12 concise summary cards for foundational concepts. Pre-mapped to syllabus tracker.'}
               </p>
             </div>
 
@@ -310,7 +322,7 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
               onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'library' }))}
               className="w-full py-2 bg-[var(--sr-surface-2)] border border-[var(--sr-line)] hover:border-[var(--sr-primary)] text-[var(--sr-text)] font-extrabold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>Browse Library</span>
+              <span>{isHindi ? 'पुस्तकालय देखें' : 'Browse Library'}</span>
               <ChevronRight className="w-3.5 h-3.5 text-[var(--sr-primary)]" />
             </button>
           </div>
@@ -324,15 +336,19 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
                 <Clock className="w-4 h-4" />
               </div>
               <div>
-                <h5 className="font-bold text-[var(--sr-text)] text-xs">Stay Focused with Pomodoro Rooms</h5>
-                <p className="text-xs text-[var(--sr-text-muted)]">Join other aspirants studying together live.</p>
+                <h5 className="font-bold text-[var(--sr-text)] text-xs">
+                  {isHindi ? 'पोमोडोरो कमरों के साथ केंद्रित रहें' : 'Stay Focused with Pomodoro Rooms'}
+                </h5>
+                <p className="text-xs text-[var(--sr-text-muted)]">
+                  {isHindi ? 'लाइव अध्ययन कर रहे अन्य परीक्षार्थियों से जुड़ें।' : 'Join other aspirants studying together live.'}
+                </p>
               </div>
             </div>
             <button 
               onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'timer' }))}
               className="text-xs text-[var(--sr-primary)] font-bold hover:underline shrink-0 cursor-pointer"
             >
-              Start Timer →
+              {isHindi ? 'टाइमर आरंभ करें →' : 'Start Timer →'}
             </button>
           </div>
         );
@@ -341,14 +357,18 @@ export const AdSenseBanner: React.FC<AdSenseBannerProps> = ({
         return (
           <div className="bg-[var(--sr-surface)] border border-[var(--sr-line)] rounded-2xl p-3 flex items-center justify-between text-xs my-2">
             <div className="flex items-center gap-2">
-              <div className="px-2 py-0.5 rounded bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-xs font-bold">PRO Tip</div>
-              <p className="text-[var(--sr-text-muted)] text-xs">Keep your daily streak going to earn free Premium days!</p>
+              <div className="px-2 py-0.5 rounded bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-xs font-bold">
+                {isHindi ? 'विशेष सुझाव' : 'PRO Tip'}
+              </div>
+              <p className="text-[var(--sr-text-muted)] text-xs">
+                {isHindi ? 'मुफ्त प्रीमियम दिन प्राप्त करने हेतु अपना दैनिक स्ट्रीक जारी रखें!' : 'Keep your daily streak going to earn free Premium days!'}
+              </p>
             </div>
             <button 
               onClick={() => window.dispatchEvent(new CustomEvent('aspirantx_navigate_tab', { detail: 'streak' }))}
               className="text-xs text-[var(--sr-primary)] font-bold hover:underline shrink-0 cursor-pointer"
             >
-              Claim Perks →
+              {isHindi ? 'लाभ प्राप्त करें →' : 'Claim Perks →'}
             </button>
           </div>
         );

@@ -41,7 +41,8 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate, 
 }) => {
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
-  const { t, isHindi } = useLanguage();
+  const { t, currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
 
   const currentExamId = selectedExam || user?.exam || 'NEET_UG';
   const currentExamLabel = useMemo(() => {
@@ -51,6 +52,16 @@ export const Header: React.FC<HeaderProps> = ({
   }, [currentExamId]);
 
   const shortExamLabel = useMemo(() => {
+    if (isHindi) {
+      if (currentExamLabel.includes('NEET')) return 'नीट (UG)';
+      if (currentExamLabel.includes('JEE Main')) return 'जेईई मेन';
+      if (currentExamLabel.includes('JEE Adv')) return 'जेईई एडवांस';
+      if (currentExamLabel.includes('UPSC')) return 'यूपीएससी';
+      if (currentExamLabel.includes('GATE')) return 'गेट';
+      if (currentExamLabel.includes('CAT')) return 'कैट';
+      if (currentExamLabel.includes('SSC')) return 'एसएससी';
+      if (currentExamLabel.includes('NDA')) return 'एनडीए';
+    }
     if (currentExamLabel.includes('NEET')) return 'NEET (UG)';
     if (currentExamLabel.includes('JEE Main')) return 'JEE Main';
     if (currentExamLabel.includes('JEE Adv')) return 'JEE Adv';
@@ -59,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (currentExamLabel.includes('CAT')) return 'CAT';
     if (currentExamLabel.length > 12) return currentExamLabel.slice(0, 10) + '…';
     return currentExamLabel;
-  }, [currentExamLabel]);
+  }, [currentExamLabel, isHindi]);
 
   const handleOpenExamPicker = () => {
     soundFx.playTap();
@@ -118,6 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
         <LanguageToggle />
         <button
           onClick={handleOpenMe}
+          data-testid="header-profile-btn"
           aria-label={t('header.candidateProfile', 'Candidate Profile and Tools')}
           className="w-9 h-9 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] text-[var(--sr-primary)] font-black text-xs flex items-center justify-center cursor-pointer transition-transform active:scale-95 shrink-0 overflow-hidden shadow-sm"
         >

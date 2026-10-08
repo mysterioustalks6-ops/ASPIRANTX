@@ -239,7 +239,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 PRO v{CANONICAL_APP_RELEASE.version}
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium">Precision Exam Suite</p>
+            <p className="text-[10px] text-slate-400 font-medium">{isHindi ? 'सटीक परीक्षा मंच' : 'Precision Exam Suite'}</p>
           </div>
         </div>
 
@@ -253,10 +253,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 href={CANONICAL_APP_RELEASE.apkDownloadUrl}
                 download={CANONICAL_APP_RELEASE.apkFileName}
                 className="btn-3d btn-3d-slate flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tap-target-44"
-                title={`Download Android APK v${CANONICAL_APP_RELEASE.version}`}
+                title={isHindi ? `एंड्रॉइड ऐप v${CANONICAL_APP_RELEASE.version} डाउनलोड करें` : `Download Android APK v${CANONICAL_APP_RELEASE.version}`}
               >
                 <Download className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span>Android APK v{CANONICAL_APP_RELEASE.version}</span>
+                <span>{isHindi ? `एंड्रॉइड ऐप v${CANONICAL_APP_RELEASE.version}` : `Android APK v${CANONICAL_APP_RELEASE.version}`}</span>
               </a>
             )}
 
@@ -304,7 +304,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               <div className="flex text-amber-400 text-xs tracking-tight">
                 ★★★★★
               </div>
-              <span className="font-extrabold text-white">4.9/5 Rating</span>
+              <span className="font-extrabold text-white">{isHindi ? '4.9/5 रेटिंग' : '4.9/5 Rating'}</span>
               <span className="text-slate-300">• {isHindi ? '12,000+ परीक्षार्थी जुड़े हैं' : '12,000+ Aspirants Trust StudyRide'}</span>
             </div>
 
@@ -319,7 +319,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2 max-w-md mx-auto lg:mx-0">
               <div className="p-2.5 sm:p-3 rounded-2xl bg-[#0c1017]/90 border border-white/[0.12] text-center shadow-sm">
                 <div className="text-sm sm:text-base font-extrabold text-sky-400 flex items-center justify-center gap-1">
-                  <span>35+ Yrs</span>
+                  <span>{isHindi ? '35+ वर्ष' : '35+ Yrs'}</span>
                   <Award className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider mt-0.5">{isHindi ? 'गत वर्ष प्रश्न' : 'PYQ Archive'}</div>
@@ -349,7 +349,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">NEET UG</span>
               <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">SSC CGL</span>
               <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">JEE Main</span>
-              <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">+ State PSC</span>
+              <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">{isHindi ? '+ राज्य पीएससी' : '+ State PSC'}</span>
             </div>
           </motion.div>
 
@@ -467,7 +467,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                             : 'text-slate-400 hover:text-slate-200'
                         }`}
                       >
-                        Sign In
+                        {isHindi ? 'साइन इन' : 'Sign In'}
                       </button>
                       <span className="text-slate-600 text-xs">•</span>
                       <button
@@ -479,7 +479,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                             : 'text-slate-400 hover:text-slate-200'
                         }`}
                       >
-                        Create Account
+                        {isHindi ? 'खाता बनाएं' : 'Create Account'}
                       </button>
                     </div>
 
@@ -488,25 +488,29 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                       onClick={() => setActiveAuthMethod('options')}
                       className="text-[11px] text-slate-400 hover:text-slate-200 font-semibold"
                     >
-                      ← Back
+                      {isHindi ? '← वापस' : '← Back'}
                     </button>
                   </div>
 
                   {activeAuthMethod === 'signup' && (
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">Full Name</label>
+                      <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                        {isHindi ? 'पूरा नाम' : 'Full Name'}
+                      </label>
                       <input
                         type="text"
                         value={nameInput}
                         onChange={(e) => setNameInput(e.target.value)}
-                        placeholder="e.g. Rahul Sharma"
+                        placeholder={isHindi ? 'उदा. राहुल शर्मा' : 'e.g. Rahul Sharma'}
                         className="w-full px-3 py-2.5 rounded-xl bg-[#06080d] border border-white/[0.12] text-xs text-white focus:outline-none focus:border-sky-500"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Email Address</label>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      {isHindi ? 'ईमेल पता' : 'Email Address'}
+                    </label>
                     <input
                       type="email"
                       required
@@ -518,7 +522,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">Password</label>
+                    <label className="block text-[11px] font-semibold text-slate-400 mb-1">
+                      {isHindi ? 'पासवर्ड' : 'Password'}
+                    </label>
                     <input
                       type="password"
                       required
@@ -537,7 +543,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                     {loading ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                     ) : (
-                      <span>{activeAuthMethod === 'signup' ? 'Create Free Account' : 'Sign In Now'}</span>
+                      <span>
+                        {activeAuthMethod === 'signup'
+                          ? (isHindi ? 'निःशुल्क खाता बनाएं' : 'Create Free Account')
+                          : (isHindi ? 'अभी प्रवेश करें' : 'Sign In Now')}
+                      </span>
                     )}
                   </button>
                 </form>
@@ -546,7 +556,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               {/* Security Pill */}
               <div className="pt-2 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-medium">
                 <Shield className="w-3 h-3 text-emerald-400" />
-                <span>256-Bit Encrypted • Verified Neon Auth</span>
+                <span>{isHindi ? '256-बिट सुरक्षित • सत्यापित नियॉन प्रमाणीकरण' : '256-Bit Encrypted • Verified Neon Auth'}</span>
               </div>
             </div>
           </motion.div>
@@ -558,13 +568,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold">
             <Zap className="w-3 h-3" />
-            <span>High Velocity System</span>
+            <span>{isHindi ? 'तीव्र गति अध्ययन प्रणाली' : 'High Velocity System'}</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-            How It Works
+            {isHindi ? 'यह कैसे कार्य करता है' : 'How It Works'}
           </h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            3 simple steps to transform your exam preparation from chaotic to high rank certainty.
+            {isHindi
+              ? 'परीक्षा तैयारी को व्यवस्थित कर शीर्ष रैंक सुनिश्चित करने के 3 सरल चरण।'
+              : '3 simple steps to transform your exam preparation from chaotic to high rank certainty.'}
           </p>
         </div>
 
@@ -576,12 +588,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 🎯
               </div>
               <span className="px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 text-[10px] font-extrabold uppercase">
-                1 Tap
+                {isHindi ? '1 स्पर्श' : '1 Tap'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm text-white">Pick Your Exam</h4>
+            <h4 className="font-extrabold text-sm text-white">{isHindi ? 'अपनी परीक्षा चुनें' : 'Pick Your Exam'}</h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Select UPSC, NEET, SSC or JEE. The entire official micro-syllabus loads instantly into your workspace.
+              {isHindi
+                ? 'यूपीएससी, नीट, एसएससी या जेईई चुनें। संपूर्ण आधिकारिक सूक्ष्म पाठ्यक्रम आपके कार्यक्षेत्र में तुरंत लोड हो जाएगा।'
+                : 'Select UPSC, NEET, SSC or JEE. The entire official micro-syllabus loads instantly into your workspace.'}
             </p>
           </div>
 
@@ -592,12 +606,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 ⚡
               </div>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-extrabold uppercase">
-                Smart Pacing
+                {isHindi ? 'स्मार्ट गति' : 'Smart Pacing'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm text-white">Study With Radar</h4>
+            <h4 className="font-extrabold text-sm text-white">{isHindi ? 'रडार के साथ अध्ययन' : 'Study With Radar'}</h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Speedometer tracks study velocity in background. Days & finish countdown update live with zero mental fatigue.
+              {isHindi
+                ? 'स्पीडोमीटर पृष्ठभूमि में अध्ययन की गति ट्रैक करता है। बिना किसी मानसिक तनाव के दिन और परीक्षा उलटी गिनती लाइव अपडेट होती है।'
+                : 'Speedometer tracks study velocity in background. Days & finish countdown update live with zero mental fatigue.'}
             </p>
           </div>
 
@@ -608,12 +624,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 🚀
               </div>
               <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 text-[10px] font-extrabold uppercase">
-                AIR 1 Ready
+                {isHindi ? 'रैंक 1 की तैयारी' : 'AIR 1 Ready'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm text-white">Crack High Rank</h4>
+            <h4 className="font-extrabold text-sm text-white">{isHindi ? 'शीर्ष रैंक प्राप्त करें' : 'Crack High Rank'}</h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Official CBT simulator, 35-yr archives, and automated revision alerts guarantee peak exam-day mastery.
+              {isHindi
+                ? 'आधिकारिक सीबीटी सिमुलेटर, 35 वर्षों के प्रश्न संग्रह और स्वचालित दोहराव अलर्ट परीक्षा के दिन आपकी श्रेष्ठता सुनिश्चित करते हैं।'
+                : 'Official CBT simulator, 35-yr archives, and automated revision alerts guarantee peak exam-day mastery.'}
             </p>
           </div>
         </div>
@@ -624,13 +642,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
         <div className="text-center space-y-1.5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[11px] font-bold">
             <Compass className="w-3 h-3" />
-            <span>Powerhouse Features</span>
+            <span>{isHindi ? 'उत्कृष्ट सुविधाएं' : 'Powerhouse Features'}</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-            Engineered For Serious Aspirants
+            {isHindi ? 'गंभीर परीक्षार्थियों के लिए विशेष निर्मित' : 'Engineered For Serious Aspirants'}
           </h3>
           <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Everything you need, zero distractions. Clean, fast, and 60fps responsive on all screens.
+            {isHindi
+              ? 'आपकी आवश्यकता का सब कुछ, बिना किसी भटकाव के। स्वच्छ, तीव्र और सभी स्क्रीन पर सहज।'
+              : 'Everything you need, zero distractions. Clean, fast, and 60fps responsive on all screens.'}
           </p>
         </div>
 
@@ -643,12 +663,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 ⏱️
               </div>
               <span className="px-2 py-0.5 rounded-full bg-sky-500/15 text-sky-300 text-[10px] font-extrabold">
-                ⚡ Auto Streak
+                {isHindi ? '⚡ स्वतः निरंतरता' : '⚡ Auto Streak'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm sm:text-base text-white">Track Study Time</h4>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">
+              {isHindi ? 'अध्ययन समय ट्रैक करें' : 'Track Study Time'}
+            </h4>
             <p className="text-xs text-slate-400 leading-snug">
-              1-tap daily hour logs, heatmap streaks, and subject distribution charts.
+              {isHindi
+                ? '1-स्पर्श दैनिक घंटे लॉग, हीटमैप निरंतरता और विषयवार वितरण चार्ट।'
+                : '1-tap daily hour logs, heatmap streaks, and subject distribution charts.'}
             </p>
           </div>
 
@@ -659,12 +683,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 🎯
               </div>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 text-[10px] font-extrabold">
-                🚀 Smart Forecast
+                {isHindi ? '🚀 स्मार्ट पूर्वानुमान' : '🚀 Smart Forecast'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm sm:text-base text-white">Syllabus Speedometer HUD</h4>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">
+              {isHindi ? 'पाठ्यक्रम स्पीडोमीटर' : 'Syllabus Speedometer HUD'}
+            </h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Animated velocity gauge, live finish countdown, and custom topic addition.
+              {isHindi
+                ? 'सजीव गति गेज, लाइव उलटी गिनती और कस्टम विषय जोड़ने की सुविधा।'
+                : 'Animated velocity gauge, live finish countdown, and custom topic addition.'}
             </p>
           </div>
 
@@ -675,12 +703,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 🛡️
               </div>
               <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-300 text-[10px] font-extrabold">
-                🧘 App Blocker
+                {isHindi ? '🧘 ऐप अवरोधक' : '🧘 App Blocker'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm sm:text-base text-white">Distraction Focus Shield</h4>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">
+              {isHindi ? 'भटकाव रोधी फ़ोकस शील्ड' : 'Distraction Focus Shield'}
+            </h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Blocks social media and doom-scrolling during Pomodoro focus sessions.
+              {isHindi
+                ? 'पोमोडोरो अध्ययन सत्रों के दौरान सोशल मीडिया और अनावश्यक स्क्रॉलिंग को रोकता है।'
+                : 'Blocks social media and doom-scrolling during Pomodoro focus sessions.'}
             </p>
           </div>
 
@@ -691,12 +723,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 📝
               </div>
               <span className="px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-300 text-[10px] font-extrabold">
-                🏆 35-Yr Archive
+                {isHindi ? '🏆 35-वर्षीय संग्रह' : '🏆 35-Yr Archive'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm sm:text-base text-white">Official CBT Simulator</h4>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">
+              {isHindi ? 'आधिकारिक सीबीटी सिमुलेटर' : 'Official CBT Simulator'}
+            </h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Practice exact NTA/UPSC examination screens with negative marking calculation.
+              {isHindi
+                ? 'नकारात्मक अंकन गणना के साथ वास्तविक एनटीए/यूपीएससी परीक्षा स्क्रीन पर अभ्यास।'
+                : 'Practice exact NTA/UPSC examination screens with negative marking calculation.'}
             </p>
           </div>
 
@@ -707,12 +743,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 🤖
               </div>
               <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-extrabold">
-                💡 Instant Solves
+                {isHindi ? '💡 त्वरित समाधान' : '💡 Instant Solves'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm sm:text-base text-white">24/7 AI Mentor</h4>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">
+              {isHindi ? '24/7 एआई गुरु' : '24/7 AI Mentor'}
+            </h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Smart doubt resolution, memory mnemonics, and adaptive flashcard generation.
+              {isHindi
+                ? 'स्मार्ट शंका समाधान, स्मृति सूत्र और अनुकूलित फ़्लैशकार्ड निर्माण।'
+                : 'Smart doubt resolution, memory mnemonics, and adaptive flashcard generation.'}
             </p>
           </div>
 
@@ -723,12 +763,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 🎁
               </div>
               <span className="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 text-[10px] font-extrabold">
-                💎 100% Free
+                {isHindi ? '💎 100% निःशुल्क' : '💎 100% Free'}
               </span>
             </div>
-            <h4 className="font-extrabold text-sm sm:text-base text-white">Earn Free PRO</h4>
+            <h4 className="font-extrabold text-sm sm:text-base text-white">
+              {isHindi ? 'निःशुल्क प्रो अर्जित करें' : 'Earn Free PRO'}
+            </h4>
             <p className="text-xs text-slate-400 leading-snug">
-              Answer peer doubts, complete daily streaks, and unlock PRO features for free.
+              {isHindi
+                ? 'सहपाठियों की शंकाएं हल करें, दैनिक निरंतरता बनाए रखें और प्रो सुविधाएं मुफ्त पाएं।'
+                : 'Answer peer doubts, complete daily streaks, and unlock PRO features for free.'}
             </p>
           </div>
         </div>

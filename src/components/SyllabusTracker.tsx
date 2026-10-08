@@ -129,14 +129,16 @@ function formatNiceDate(isoDateStr: string): string {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function formatStudiedTime(seconds: number): string {
+function formatStudiedTime(seconds: number, isHindi = false): string {
   if (!seconds || seconds <= 0) return '';
-  if (seconds < 60) return `${seconds}s studied`;
+  if (seconds < 60) return isHindi ? `${seconds}से. अध्ययन` : `${seconds}s studied`;
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m studied`;
+  if (minutes < 60) return isHindi ? `${minutes}मि. अध्ययन` : `${minutes}m studied`;
   const hours = Math.floor(minutes / 60);
   const remMinutes = minutes % 60;
-  return remMinutes > 0 ? `${hours}h ${remMinutes}m studied` : `${hours}h studied`;
+  return remMinutes > 0
+    ? (isHindi ? `${hours}घं ${remMinutes}मि अध्ययन` : `${hours}h ${remMinutes}m studied`)
+    : (isHindi ? `${hours}घं अध्ययन` : `${hours}h studied`);
 }
 
 export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({ 
@@ -867,7 +869,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           <button
             onClick={handleResetProgress}
             className="p-2 rounded-xl bg-[var(--sr-surface-2)] hover:bg-rose-500/10 text-[var(--sr-text-muted)] hover:text-rose-500 border border-[var(--sr-line)] transition cursor-pointer shadow-sm"
-            title="Reset All Progress"
+            title={isHindi ? 'सभी प्रगति रीसेट करें' : 'Reset All Progress'}
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -879,13 +881,15 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
         <div className="space-y-4">
           <div className="p-3.5 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex items-center justify-between">
             <span className="text-xs text-[#9CA3AF] font-semibold">
-              Browsing all 48 national & state examinations curriculum archive.
+              {isHindi 
+                ? 'सभी ४८ राष्ट्रीय एवं राज्य परीक्षाओं के पाठ्यक्रम अभिलेखागार देख रहे हैं।'
+                : 'Browsing all 48 national & state examinations curriculum archive.'}
             </span>
             <button
               onClick={() => setActiveTab('official')}
               className="text-xs text-[#1CB0F6] font-bold hover:underline cursor-pointer"
             >
-              Back to Active Tracker →
+              {isHindi ? '← सक्रिय ट्रैकर पर लौटें' : 'Back to Active Tracker →'}
             </button>
           </div>
           <OpenKoshExamDirectory 
@@ -901,10 +905,12 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           <div className="p-4 rounded-2xl bg-[#15181F] border border-[#2A2F3A] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <h4 className="text-xs font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#1CB0F6]" /> Custom Student Learning Path
+                <Sparkles className="w-4 h-4 text-[#1CB0F6]" /> {isHindi ? 'कस्टम अध्ययन पाथ' : 'Custom Student Learning Path'}
               </h4>
               <p className="text-[11px] text-[#9CA3AF] mt-0.5">
-                Drag, rearrange, add custom chapters, or import directly from official exam benchmarks.
+                {isHindi 
+                  ? 'अध्यायों को व्यवस्थित करें, नए अध्याय जोड़ें या आधिकारिक बेंचमार्क से आयात करें।'
+                  : 'Drag, rearrange, add custom chapters, or import directly from official exam benchmarks.'}
               </p>
             </div>
             <button
@@ -914,7 +920,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               }}
               className="px-4 py-2 rounded-xl bg-[#1CB0F6] hover:bg-[#1899D6] text-[#052840] font-extrabold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md border-b-2 border-[#1899D6]"
             >
-              <Plus className="w-4 h-4" /> Add Subject / Chapter
+              <Plus className="w-4 h-4" /> {isHindi ? '+ विषय / अध्याय जोड़ें' : 'Add Subject / Chapter'}
             </button>
           </div>
 
@@ -971,19 +977,21 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/30">
-                    Syllabus Mastery
+                    {isHindi ? 'पाठ्यक्रम महारत' : 'Syllabus Mastery'}
                   </span>
                   <span className="text-xs text-[var(--sr-amber)] font-extrabold flex items-center gap-1">
-                    🎯 +10 XP per subtopic
+                    {isHindi ? '🎯 +१० XP प्रति उप-विषय' : '🎯 +10 XP per subtopic'}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm font-bold text-[var(--sr-text)] mt-0.5">
-                  Roz 2 chapters mark off karo. Consistency hi AIR-1 banati hai! Tap Veer for power!
+                  {isHindi
+                    ? 'प्रतिदिन २ अध्याय पूर्ण करें। नियमित अध्ययन से ही सफलता मिलती है! ऊर्जा हेतु वीर को स्पर्श करें!'
+                    : 'Mark off 2 chapters daily. Consistent discipline guarantees top rank! Tap Veer for power!'}
                 </p>
               </div>
             </div>
             <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/30 text-xs font-black">
-              Tap Mascot 🪶
+              {isHindi ? 'वीर को स्पर्श करें 🪶' : 'Tap Mascot 🪶'}
             </span>
           </div>
 
@@ -991,7 +999,11 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           {selectedExam === 'NEET_UG' && (
             <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-2.5 text-amber-300 text-xs font-semibold">
               <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
-              <span>Curriculum (Unverified): Official statutory syllabus from NTA/NMC could not be retrieved via live fetch in this offline environment.</span>
+              <span>
+                {isHindi 
+                  ? 'पाठ्यक्रम (असत्यापित): इस ऑफलाइन वातावरण में एनटीए/एनएमसी से आधिकारिक वैधानिक पाठ्यक्रम प्राप्त नहीं हो सका।'
+                  : 'Curriculum (Unverified): Official statutory syllabus from NTA/NMC could not be retrieved via live fetch in this offline environment.'}
+              </span>
             </div>
           )}
 
@@ -1006,7 +1018,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                     : 'bg-[var(--sr-surface)] border border-[var(--sr-line-strong)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] hover:bg-[var(--sr-surface-2)]'
                 }`}
               >
-                <span>All Subjects</span>
+                <span>{isHindi ? 'सभी विषय' : 'All Subjects'}</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/20 font-mono">
                   {currentTopics.length}
                 </span>
@@ -1037,7 +1049,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search chapters or topics..."
+                placeholder={isHindi ? 'अध्याय या विषय खोजें...' : 'Search chapters or topics...'}
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-7 py-2 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-xs text-white placeholder-[#6B7280] outline-none focus:border-[#1CB0F6] transition"
@@ -1061,7 +1073,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                   className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
                 >
                   {stages.map(st => (
-                    <option key={st} value={st}>{st}</option>
+                    <option key={st} value={st}>{st === 'All' && isHindi ? 'सभी चरण' : st}</option>
                   ))}
                 </select>
               )}
@@ -1071,18 +1083,18 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                 onChange={e => setMasteryFilter(e.target.value as any)}
                 className="bg-[#0F1115] border border-[#2A2F3A] text-xs font-bold text-[#F3F4F6] rounded-xl px-2.5 py-2 outline-none cursor-pointer"
               >
-                <option value="All">All Status</option>
-                <option value="Pending">Pending Only</option>
-                <option value="Completed">Completed Only</option>
-                <option value="HighWeightage">High Weightage</option>
-                <option value="NeedsRevision">Needs Revision</option>
-                <option value="Weak">Weak (≤2★)</option>
+                <option value="All">{isHindi ? 'सभी स्थिति' : 'All Status'}</option>
+                <option value="Pending">{isHindi ? 'केवल लंबित' : 'Pending Only'}</option>
+                <option value="Completed">{isHindi ? 'केवल पूर्ण' : 'Completed Only'}</option>
+                <option value="HighWeightage">{isHindi ? 'उच्च वेटेज' : 'High Weightage'}</option>
+                <option value="NeedsRevision">{isHindi ? 'दोहराव आवश्यक' : 'Needs Revision'}</option>
+                <option value="Weak">{isHindi ? 'कमजोर (≤२★)' : 'Weak (≤2★)'}</option>
               </select>
 
               <button
                 onClick={() => toggleExpandAll(filteredTopics)}
                 className="p-2.5 rounded-xl bg-[#0F1115] border border-[#2A2F3A] text-[#9CA3AF] hover:text-white text-xs font-bold shrink-0 cursor-pointer"
-                title="Expand or collapse all chapters"
+                title={isHindi ? 'सभी अध्याय खोलें या समेटें' : 'Expand or collapse all chapters'}
               >
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
@@ -1090,10 +1102,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               <button
                 onClick={() => setIsAddCustomTopicOpen(true)}
                 className="px-3.5 py-2 rounded-xl bg-[#1CB0F6] hover:bg-[#1899D6] text-xs font-black text-[#052840] shrink-0 cursor-pointer flex items-center gap-1 shadow-sm border-b-[3px] border-[#137BAE] active:border-b-0 active:translate-y-0.5"
-                title="Add your own custom chapter or topic"
+                title={isHindi ? 'नया अध्याय अथवा विषय जोड़ें' : 'Add your own custom chapter or topic'}
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Topic</span>
+                <span>{isHindi ? '+ विषय' : '+ Topic'}</span>
               </button>
             </div>
           </div>
@@ -1103,14 +1115,26 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
             {currentTopics.length === 0 ? (
               <div className="p-10 text-center rounded-3xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
                 <BookOpen className="w-10 h-10 text-[var(--sr-text-muted)] mx-auto mb-2" />
-                <p className="text-[var(--sr-text)] font-bold text-sm">Syllabus not available yet</p>
-                <p className="text-[var(--sr-text-muted)] text-xs mt-1">Official verified syllabus for this examination has not been integrated yet.</p>
+                <p className="text-[var(--sr-text)] font-bold text-sm">
+                  {isHindi ? 'पाठ्यक्रम अभी उपलब्ध नहीं है' : 'Syllabus not available yet'}
+                </p>
+                <p className="text-[var(--sr-text-muted)] text-xs mt-1">
+                  {isHindi 
+                    ? 'इस परीक्षा के लिए आधिकारिक सत्यापित पाठ्यक्रम अभी एकीकृत नहीं किया गया है।'
+                    : 'Official verified syllabus for this examination has not been integrated yet.'}
+                </p>
               </div>
             ) : filteredTopics.length === 0 ? (
               <div className="p-10 text-center rounded-3xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)]">
                 <BookOpen className="w-10 h-10 text-[var(--sr-text-muted)] mx-auto mb-2" />
-                <p className="text-[var(--sr-text)] font-bold text-sm">No chapters match your filter</p>
-                <p className="text-[var(--sr-text-muted)] text-xs mt-1">Try resetting the search query or status filter.</p>
+                <p className="text-[var(--sr-text)] font-bold text-sm">
+                  {isHindi ? 'फ़िल्टर से मेल खाता कोई अध्याय नहीं मिला' : 'No chapters match your filter'}
+                </p>
+                <p className="text-[var(--sr-text-muted)] text-xs mt-1">
+                  {isHindi 
+                    ? 'कृपया खोज शब्द या स्थिति फ़िल्टर रीसेट करके पुनः प्रयास करें।'
+                    : 'Try resetting the search query or status filter.'}
+                </p>
               </div>
             ) : (() => {
                 const firstIncompleteId = filteredTopics.find(t => {
@@ -1137,7 +1161,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                               {topic.title}
                             </h4>
                             <p className="text-[11px] text-[#9CA3AF]">
-                              Login or Register to unlock complete syllabus.
+                              {isHindi ? 'संपूर्ण पाठ्यक्रम अनलॉक करने हेतु लॉगिन या पंजीकरण करें।' : 'Login or Register to unlock complete syllabus.'}
                             </p>
                           </div>
                         </div>
@@ -1146,7 +1170,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                           onClick={onRequireLogin}
                           className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition shadow-md shrink-0 flex items-center gap-1 cursor-pointer"
                         >
-                          <Sparkles className="w-3 h-3" /> Unlock Full Syllabus
+                          <Sparkles className="w-3 h-3" /> {isHindi ? 'पूर्ण पाठ्यक्रम अनलॉक करें' : 'Unlock Full Syllabus'}
                         </button>
                       </div>
                     );
@@ -1204,7 +1228,9 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                   ? 'bg-[#58CC02] text-[#0B2300] border-b-[3px] border-[#3C8801]'
                                   : 'bg-[#0F1115] text-[#9CA3AF] border-2 border-[#2A2F3A] border-b-[3px] hover:border-[#58CC02]'
                               }`}
-                              title={isFullyCompleted ? 'Mark topic as incomplete' : 'Mark topic as complete'}
+                              title={isFullyCompleted 
+                                ? (isHindi ? 'विषय को अपूर्ण चिह्नित करें' : 'Mark topic as incomplete') 
+                                : (isHindi ? 'विषय को पूर्ण चिह्नित करें' : 'Mark topic as complete')}
                             >
                               {isFullyCompleted ? (
                                 <CheckCircle2 className="w-6 h-6 stroke-[3]" />
@@ -1221,19 +1247,19 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
 
                                 {isNextUp && !isFullyCompleted && (
                                   <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#58CC02] text-[#0B2300] shadow-sm">
-                                    Active Quest ⚡
+                                    {isHindi ? 'सक्रिय लक्ष्य ⚡' : 'Active Quest ⚡'}
                                   </span>
                                 )}
 
                                 {topic.weightage === 'High' && (
                                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                                    High Weightage 🔥
+                                    {isHindi ? 'उच्च वेटेज 🔥' : 'High Weightage 🔥'}
                                   </span>
                                 )}
 
                                 {(topic.isVerified === false || selectedExam === 'NEET_UG') && (
                                   <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                                    Unverified
+                                    {isHindi ? 'असत्यापित' : 'Unverified'}
                                   </span>
                                 )}
                               </div>
@@ -1241,11 +1267,11 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                               <p className="text-[11px] text-[#9CA3AF] mt-1 flex items-center gap-1.5 flex-wrap font-medium">
                                 <span className="font-bold text-[#1CB0F6]">{topic.category}</span>
                                 <span>•</span>
-                                <span>{subCount} Subtopics</span>
+                                <span>{subCount} {isHindi ? 'उप-विषय' : 'Subtopics'}</span>
                                 {completedCount > 0 && (
                                   <>
                                     <span>•</span>
-                                    <span className="text-[#58CC02] font-black">{completedCount} Completed</span>
+                                    <span className="text-[#58CC02] font-black">{completedCount} {isHindi ? 'पूर्ण' : 'Completed'}</span>
                                   </>
                                 )}
                               </p>
@@ -1295,10 +1321,14 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                   ? 'bg-[#58CC02] text-[#0B2300] border-[#3C8801]'
                                   : 'bg-[#0F1115] text-[#9CA3AF] border-[#2A2F3A] hover:text-white'
                               }`}
-                              title="Concept understanding"
+                              title={isHindi ? 'अवधारणा समझ' : 'Concept understanding'}
                             >
                               <BookOpen className="w-3 h-3" />
-                              <span>Concept: {progress.learningStatus === 'completed' ? 'Done' : 'Pending'}</span>
+                              <span>
+                                {isHindi
+                                  ? `अवधारणा: ${progress.learningStatus === 'completed' ? 'पूर्ण' : 'लंबित'}`
+                                  : `Concept: ${progress.learningStatus === 'completed' ? 'Done' : 'Pending'}`}
+                              </span>
                             </button>
 
                             {/* 2. Practice Pill */}
@@ -1311,20 +1341,27 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                   ? 'bg-[#FF9600] text-[#0B2300] border-[#B86800]'
                                   : 'bg-[#0F1115] text-[#9CA3AF] border-[#2A2F3A] hover:text-white'
                               }`}
-                              title="Question solving practice"
+                              title={isHindi ? 'प्रश्न अभ्यास' : 'Question solving practice'}
                             >
                               <Edit2 className="w-3 h-3" />
-                              <span>Practice: {progress.practiceStatus === 'completed' ? 'Done' : progress.practiceStatus === 'in_progress' ? 'Active' : 'Pending'}</span>
+                              <span>
+                                {isHindi
+                                  ? `अभ्यास: ${progress.practiceStatus === 'completed' ? 'पूर्ण' : progress.practiceStatus === 'in_progress' ? 'सक्रिय' : 'लंबित'}`
+                                  : `Practice: ${progress.practiceStatus === 'completed' ? 'Done' : progress.practiceStatus === 'in_progress' ? 'Active' : 'Pending'}`}
+                              </span>
                             </button>
 
                             {/* 3. PYQ % Button */}
                             <button
                               onClick={() => cyclePyq(topic.id)}
                               className="px-2.5 py-1.5 rounded-xl font-black text-[10px] bg-[#0F1115] hover:bg-[#1A1D24] text-[#9CA3AF] border border-[#2A2F3A] border-b-[2px] transition flex items-center gap-1 cursor-pointer active:translate-y-0.5"
-                              title="Cycle PYQ coverage"
+                              title={isHindi ? 'गत वर्ष प्रश्न चक्र' : 'Cycle PYQ coverage'}
                             >
                               <Zap className="w-3 h-3 text-[#FF9600]" />
-                              <span>PYQ: <strong className="text-white">{progress.pyqPercentage}%</strong></span>
+                              <span>
+                                {isHindi ? 'गत वर्ष प्रश्न: ' : 'PYQ: '}
+                                <strong className="text-white">{progress.pyqPercentage}%</strong>
+                              </span>
                             </button>
 
                             {/* 4. Spaced Revision Cycle */}
@@ -1335,16 +1372,22 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                                   ? 'bg-purple-500 text-slate-950 border-purple-800'
                                   : 'bg-[#0F1115] text-[#9CA3AF] border-[#2A2F3A] hover:text-white'
                               }`}
-                              title="Advance revision cycle"
+                              title={isHindi ? 'दोहराव चक्र आगे बढ़ाएं' : 'Advance revision cycle'}
                             >
                               <RotateCcw className="w-3 h-3" />
-                              <span>{progress.revisionCycle === 0 ? 'Rev 0' : `Rev ${progress.revisionCycle}`}</span>
+                              <span>
+                                {progress.revisionCycle === 0 
+                                  ? (isHindi ? 'दोहराव ०' : 'Rev 0') 
+                                  : (isHindi ? `दोहराव ${progress.revisionCycle}` : `Rev ${progress.revisionCycle}`)}
+                              </span>
                             </button>
                           </div>
 
                           {/* 5. Mastery 1 to 5 Stars Rating */}
                           <div className="flex items-center gap-1 bg-[#0F1115] px-2.5 py-1 rounded-xl border border-[#2A2F3A]">
-                            <span className="text-[10px] text-[#9CA3AF] font-bold mr-0.5">Rating:</span>
+                            <span className="text-[10px] text-[#9CA3AF] font-bold mr-0.5">
+                              {isHindi ? 'रेटिंग:' : 'Rating:'}
+                            </span>
                             {([1, 2, 3, 4, 5] as MasteryRating[]).map((star) => (
                               <button
                                 key={star}
@@ -1368,10 +1411,10 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
                         <div className="space-y-2">
                           <div className="flex items-center justify-between px-1">
                             <span className="text-[11px] font-black uppercase tracking-wider text-[#9CA3AF]">
-                              Lesson Checkpoints ({subList.length})
+                              {isHindi ? 'पाठ जांच-बिंदु' : 'Lesson Checkpoints'} ({subList.length})
                             </span>
                             <span className="text-[10px] font-bold text-[#58CC02]">
-                              +10 XP each
+                              {isHindi ? 'प्रत्येक +१० XP' : '+10 XP each'}
                             </span>
                           </div>
 

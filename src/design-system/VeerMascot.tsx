@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
 import { soundFx } from '../lib/soundEffects';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 export type VeerState = 'idle' | 'cheering' | 'thinking' | 'worried' | 'sleeping';
 
@@ -13,30 +13,57 @@ export interface VeerMascotProps {
   showClickTip?: boolean;
 }
 
-const VEER_DIALOGUES: Record<VeerState, string[]> = {
+const VEER_DIALOGUES_HI: Record<VeerState, string[]> = {
   idle: [
-    'Aaj ki Ride shuru karein? Bas 3 stops baaki hain! 🚀',
-    'Roz 2 chapters mark off karo, consistency hi exam nikalwayegi. 📚',
-    'Dhyan se padho, jaldbazi nahi! Main yahin hoon. 🦉',
+    'आज का अध्ययन प्रारंभ करें? केवल 3 चरण शेष हैं! 🚀',
+    'प्रतिदिन 2 अध्याय पूर्ण करें, निरंतरता ही सफलता दिलाएगी। 📚',
+    'एकाग्रता से पढ़ें, जल्दबाजी न करें! मैं आपके साथ हूं। 🦉',
   ],
   cheering: [
-    'Shabaash! Ek aur topic lock ho gaya! 🎉',
-    'Gazab accuracy! Aaj AIR-1 wali pace hai! ⚡',
-    'Target poora! Aaj ki padhai top-class rahi! 🏆',
+    'उत्कृष्ट! एक और विषय सिद्ध हो गया! 🎉',
+    'शानदार सटीकता! आज शीर्ष रैंक वाली तैयारी है! ⚡',
+    'लक्ष्य पूर्ण! आज का अध्ययन सत्र सर्वोत्तम रहा! 🏆',
   ],
   thinking: [
-    'Is question ko dhyan se padho, concept clear hai na? 🤔',
-    'Pehle eliminate karo, phir answer choose karo! 💭',
-    'Formula yaad karo, derivation samajh aa jayegi. 📐',
+    'इस प्रश्न को ध्यानपूर्वक पढ़ें, संकल्पना स्पष्ट है न? 🤔',
+    'पहले विकल्प हटाएं, फिर सही उत्तर चुनें! 💭',
+    'सूत्र स्मरण करें, हल स्वतः समझ आ जाएगा। 📐',
   ],
   worried: [
-    'Revision time aa gaya hai! Ye topics thode fade ho rahe hain. ⚠️',
-    'Streak tutne mat dena! Bas 10 minute ka drill kar lo. 🔥',
-    'Galat hua? Koi baat nahi, solution sheet dekho aur seekho! 💡',
+    'रिवीजन का समय आ गया है! इन विषयों का दोहराव करें। ⚠️',
+    'निरंतरता बनाए रखें! 10 मिनट का त्वरित अभ्यास करें। 🔥',
+    'गलत हुआ? कोई बात नहीं, हल व्याख्या देखें और सीखें! 💡',
   ],
   sleeping: [
-    'Zzz... Aaj ka goal complete! Ab acchi neend lo. 🌙',
-    'Brain recharge time! Kal subah nayi Ride shuru karenge. 😴',
+    'आज का लक्ष्य पूर्ण! अब विश्राम करें। 🌙',
+    'मस्तिष्क ऊर्जा का समय! कल नया अध्ययन प्रारंभ करेंगे। 😴',
+  ],
+};
+
+const VEER_DIALOGUES_EN: Record<VeerState, string[]> = {
+  idle: [
+    'Ready for today\'s Study Ride? Just 3 stops ahead! 🚀',
+    'Mark off 2 chapters daily; consistency unlocks top ranks. 📚',
+    'Read with focus, not haste! I am right here with you. 🦉',
+  ],
+  cheering: [
+    'Well done! Another critical topic locked in! 🎉',
+    'Outstanding accuracy! This is Rank-1 pace! ⚡',
+    'Daily target achieved! High-yield session completed! 🏆',
+  ],
+  thinking: [
+    'Examine this question carefully—is the core concept clear? 🤔',
+    'Eliminate incorrect options first before answering! 💭',
+    'Recall the key formula and boundary conditions. 📐',
+  ],
+  worried: [
+    'Time for revision! These topics are due for review. ⚠️',
+    'Protect your streak! Complete a 10-minute drill now. 🔥',
+    'Mistake? Review the detailed solution and master the concept! 💡',
+  ],
+  sleeping: [
+    'Today\'s target complete! Rest well tonight. 🌙',
+    'Recharge your mind! We resume tomorrow morning. 😴',
   ],
 };
 
@@ -50,6 +77,9 @@ export const VeerMascot: React.FC<VeerMascotProps> = ({
   showClickTip = true,
 }) => {
   const [dialogueIndex, setDialogueIndex] = useState(0);
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
+  const dialogues = isHindi ? VEER_DIALOGUES_HI : VEER_DIALOGUES_EN;
 
   const getDimensions = () => {
     switch (size) {
@@ -71,13 +101,13 @@ export const VeerMascot: React.FC<VeerMascotProps> = ({
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate?.(15);
     }
-    const pool = VEER_DIALOGUES[state];
+    const pool = dialogues[state];
     setDialogueIndex((prev) => (prev + 1) % pool.length);
     onClick?.();
   };
 
   const activeSpeech = showSpeechBubble
-    ? (speechBubble || VEER_DIALOGUES[state][dialogueIndex % VEER_DIALOGUES[state].length])
+    ? (speechBubble || dialogues[state][dialogueIndex % dialogues[state].length])
     : null;
 
   return (

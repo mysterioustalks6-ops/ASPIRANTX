@@ -12,6 +12,8 @@ import { soundFx } from '../lib/soundEffects';
 import { TactileButton } from '../design-system/TactileButton';
 import { VeerMascot } from '../design-system/VeerMascot';
 import { loadSessions, computeStreakDays } from '../lib/focus/sessionStore';
+import { useLanguage } from '../lib/i18n/LanguageContext';
+import { getLocalizedExamName } from '../lib/subjectUtils';
 
 interface MoreHubProps {
   user: UserProfile;
@@ -36,6 +38,8 @@ export const MoreHub: React.FC<MoreHubProps> = ({
   onLogout,
   isAdminUnlocked = false
 }) => {
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
   const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'done'>('idle');
   const [isSoundOn, setIsSoundOn] = useState(() => soundFx.isEnabled());
   const [isHapticOn, setIsHapticOn] = useState(() => soundFx.isHaptics());
@@ -73,12 +77,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
 
   const userXp = user.xp ?? 0;
   const getLeagueInfo = (xp: number) => {
-    if (xp <= 0) return { name: 'Unranked', icon: '🌱', badgeClass: 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)]' };
-    if (xp < 500) return { name: 'Bronze League', icon: '🥉', badgeClass: 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] border-[var(--sr-amber)]/30' };
-    if (xp < 1500) return { name: 'Silver League', icon: '🥈', badgeClass: 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30' };
-    if (xp < 3000) return { name: 'Gold League', icon: '🥇', badgeClass: 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] border-[var(--sr-amber)]/30' };
-    if (xp < 6000) return { name: 'Platinum League', icon: '🏆', badgeClass: 'bg-[var(--sr-purple-subtle)] text-[var(--sr-purple)] border-[var(--sr-purple)]/30' };
-    return { name: 'Diamond League', icon: '💎', badgeClass: 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]/30' };
+    if (xp <= 0) return { name: isHindi ? 'अनारक्षित' : 'Unranked', icon: '🌱', badgeClass: 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] border-[var(--sr-line)]' };
+    if (xp < 500) return { name: isHindi ? 'कांस्य लीग' : 'Bronze League', icon: '🥉', badgeClass: 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] border-[var(--sr-amber)]/30' };
+    if (xp < 1500) return { name: isHindi ? 'रजत लीग' : 'Silver League', icon: '🥈', badgeClass: 'bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] border-[var(--sr-blue)]/30' };
+    if (xp < 3000) return { name: isHindi ? 'स्वर्ण लीग' : 'Gold League', icon: '🥇', badgeClass: 'bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] border-[var(--sr-amber)]/30' };
+    if (xp < 6000) return { name: isHindi ? 'प्लैटिनम लीग' : 'Platinum League', icon: '🏆', badgeClass: 'bg-[var(--sr-purple-subtle)] text-[var(--sr-purple)] border-[var(--sr-purple)]/30' };
+    return { name: isHindi ? 'डायमंड लीग' : 'Diamond League', icon: '💎', badgeClass: 'bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border-[var(--sr-primary)]/30' };
   };
   const league = getLeagueInfo(userXp);
   const liveStreak = useMemo(() => computeStreakDays(loadSessions(user.id)), [user.id]);
@@ -93,12 +97,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <div 
                 className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] overflow-hidden flex items-center justify-center font-black text-[var(--sr-primary)] text-xl sm:text-2xl shrink-0 cursor-pointer"
                 onClick={() => onOpenProfileModal('avatar')}
-                title="Open Avatar Studio"
+                title={isHindi ? 'अवतार स्टूडियो खोलें' : 'Open Avatar Studio'}
               >
                 {user.avatar_url ? (
-                  <img src={user.avatar_url} alt={user.name || 'Aspirant'} className="w-full h-full object-cover" />
+                  <img src={user.avatar_url} alt={user.name || (isHindi ? 'परीक्षार्थी' : 'Aspirant')} className="w-full h-full object-cover" />
                 ) : (
-                  user.name ? user.name[0].toUpperCase() : 'A'
+                  user.name ? user.name[0].toUpperCase() : (isHindi ? 'प' : 'A')
                 )}
               </div>
               <span className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[var(--sr-primary)] text-[var(--sr-on-primary)] border-2 border-[var(--sr-surface)] flex items-center justify-center text-[10px] sm:text-xs font-black">
@@ -109,17 +113,17 @@ export const MoreHub: React.FC<MoreHubProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                 <h2 className="text-base sm:text-lg font-black text-[var(--sr-text)] tracking-tight truncate">
-                  {user.name || 'Aspirant'}
+                  {user.name && user.name.toLowerCase() !== 'aspirant' ? user.name : (isHindi ? 'परीक्षार्थी' : 'Aspirant')}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-xs font-black border border-[var(--sr-blue)]/30 shrink-0">
-                  LVL {user.level || 1}
+                  {isHindi ? 'स्तर' : 'LVL'} {user.level || 1}
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-black border shrink-0 ${league.badgeClass}`}>
                   {league.icon} {league.name}
                 </span>
               </div>
               <p className="text-xs font-bold text-[var(--sr-text-muted)] mt-1 truncate">
-                Target: {selectedExam.replace(/_/g, ' ')}
+                {isHindi ? 'लक्ष्य परीक्षा: ' : 'Target: '}{getLocalizedExamName(selectedExam.replace(/_/g, ' '), isHindi)}
               </p>
             </div>
           </div>
@@ -131,7 +135,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               onClick={() => onOpenProfileModal('avatar')}
               icon={<Palette className="w-3.5 h-3.5 text-[var(--sr-primary)]" />}
             >
-              Avatar Studio
+              {isHindi ? 'अवतार स्टूडियो' : 'Avatar Studio'}
             </TactileButton>
             <TactileButton
               variant="secondary"
@@ -139,7 +143,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               onClick={() => onOpenProfileModal('edit')}
               icon={<User className="w-3.5 h-3.5" />}
             >
-              Edit Profile
+              {isHindi ? 'प्रोफ़ाइल संपादन' : 'Edit Profile'}
             </TactileButton>
           </div>
         </div>
@@ -149,9 +153,9 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--sr-surface-2)]">
             <div className="flex items-center gap-1 text-[var(--sr-amber)] font-black text-sm">
               <Flame className="w-4 h-4 fill-current" />
-              <span>{liveStreak}d</span>
+              <span>{liveStreak}{isHindi ? ' दिन' : 'd'}</span>
             </div>
-            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">Streak</span>
+            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">{isHindi ? 'निरंतरता' : 'Streak'}</span>
           </div>
 
           <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--sr-surface-2)]">
@@ -159,7 +163,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Sparkles className="w-4 h-4 fill-current" />
               <span>{user.xp ?? 0}</span>
             </div>
-            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">XP</span>
+            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">{isHindi ? 'एक्सपी' : 'XP'}</span>
           </div>
 
           <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-[var(--sr-surface-2)]">
@@ -167,7 +171,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Coins className="w-4 h-4" />
               <span>{user.coins ?? 0}</span>
             </div>
-            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">Coins</span>
+            <span className="text-xs font-bold text-[var(--sr-text-muted)] mt-0.5">{isHindi ? 'सिक्के' : 'Coins'}</span>
           </div>
         </div>
       </div>
@@ -180,13 +184,15 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)]">Veer AI Mentor</h3>
+              <h3 className="text-sm sm:text-base font-black text-[var(--sr-text)]">
+                {isHindi ? 'वीर एआई गुरु' : 'Veer AI Mentor'}
+              </h3>
               <span className="px-2.5 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary-depth)] dark:text-[var(--sr-primary)] text-xs font-black uppercase shrink-0 border border-[var(--sr-primary)]/30">
-                Tutor
+                {isHindi ? 'शिक्षक' : 'Tutor'}
               </span>
             </div>
             <p className="text-xs text-[var(--sr-text-muted)] line-clamp-2 mt-0.5">
-              Ask exam doubts, formula clarifications or revision strategy
+              {isHindi ? 'परीक्षा संबंधी शंकाएं, सूत्र स्पष्टीकरण या रिवीजन रणनीति पूछें' : 'Ask exam doubts, formula clarifications or revision strategy'}
             </p>
           </div>
         </div>
@@ -197,15 +203,19 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           icon={<Sparkles className="w-3.5 h-3.5" />}
           className="shrink-0"
         >
-          Ask Doubts
+          {isHindi ? 'शंका पूछें' : 'Ask Doubts'}
         </TactileButton>
       </div>
 
       {/* ── AUDIO & HAPTIC PREFERENCES (Rule 7: 2 List Rows with Switches) ── */}
       <div className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] space-y-3">
         <div className="border-b border-[var(--sr-line)] pb-2.5">
-          <h3 className="text-sm font-black text-[var(--sr-text)]">Interaction Feedback</h3>
-          <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">Customize tactile sound effects and touch haptics</p>
+          <h3 className="text-sm font-black text-[var(--sr-text)]">
+            {isHindi ? 'संवेदी प्रतिक्रिया व ध्वनियां' : 'Interaction Feedback'}
+          </h3>
+          <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
+            {isHindi ? 'स्पर्श ध्वनि प्रभाव एवं कंपन (हैप्टिक्स) अनुकूलित करें' : 'Customize tactile sound effects and touch haptics'}
+          </p>
         </div>
 
         {/* Sound Row */}
@@ -215,8 +225,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               {isSoundOn ? <Volume2 className="w-4 h-4 text-[var(--sr-primary)]" /> : <VolumeX className="w-4 h-4 text-[var(--sr-text-subtle)]" />}
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)]">Sound Effects</span>
-              <span className="block text-xs text-[var(--sr-text-muted)] leading-tight mt-0.5">Audio feedback on answers and actions</span>
+              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)]">
+                {isHindi ? 'ध्वनि प्रभाव' : 'Sound Effects'}
+              </span>
+              <span className="block text-xs text-[var(--sr-text-muted)] leading-tight mt-0.5">
+                {isHindi ? 'उत्तरों एवं क्रियाओं पर ध्वनि प्रतिक्रिया' : 'Audio feedback on answers and actions'}
+              </span>
             </div>
           </div>
           <button
@@ -244,8 +258,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Vibrate className={`w-4 h-4 ${isHapticOn ? 'text-[var(--sr-primary)]' : 'text-[var(--sr-text-subtle)]'}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)]">Vibration Haptics</span>
-              <span className="block text-xs text-[var(--sr-text-muted)] leading-tight mt-0.5">Tactile micro-vibrations on button press</span>
+              <span className="block text-xs sm:text-sm font-bold text-[var(--sr-text)]">
+                {isHindi ? 'कंपन (हैप्टिक्स)' : 'Vibration Haptics'}
+              </span>
+              <span className="block text-xs text-[var(--sr-text-muted)] leading-tight mt-0.5">
+                {isHindi ? 'बटन दबाने पर स्पर्शनीय सूक्ष्म कंपन' : 'Tactile micro-vibrations on button press'}
+              </span>
             </div>
           </div>
           <button
@@ -270,7 +288,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
       {/* ── 1. FOCUS & TIME MANAGEMENT ── */}
       <div className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-[var(--sr-text-subtle)] px-1">
-          Focus & Time Management
+          {isHindi ? 'एकाग्रता एवं समय प्रबंधन' : 'Focus & Time Management'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
@@ -281,8 +299,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Shield className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Focus Shield</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">App distraction blocker</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'फोकस शील्ड' : 'Focus Shield'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'ऐप ध्यान भटकाव अवरोधक' : 'App distraction blocker'}
+              </span>
             </div>
           </button>
 
@@ -294,8 +316,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Clock className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Focus Ride Timer</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Scientific study intervals</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'फोकस राइड टाइमर' : 'Focus Ride Timer'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'वैज्ञानिक अध्ययन अंतराल' : 'Scientific study intervals'}
+              </span>
             </div>
           </button>
 
@@ -307,8 +333,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <Calendar className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Daily Planner</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Target timetable checklist</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'दैनिक योजनाकार' : 'Daily Planner'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'दैनिक समय-सारणी सूची' : 'Target timetable checklist'}
+              </span>
             </div>
           </button>
         </div>
@@ -317,7 +347,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
       {/* ── 2. PRACTICE & QUESTION VAULTS ── */}
       <div className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-[var(--sr-text-subtle)] px-1">
-          Practice & Question Vaults
+          {isHindi ? 'अभ्यास एवं प्रश्न संग्रह' : 'Practice & Question Vaults'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
@@ -329,8 +359,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
                 <BookMarked className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <span className="block text-sm font-black text-[var(--sr-text)] truncate">PYQ 35-Year Archive</span>
-                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Past solved papers with analysis</span>
+                <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                  {isHindi ? '३५-वर्षीय गत वर्ष प्रश्न' : 'PYQ 35-Year Archive'}
+                </span>
+                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                  {isHindi ? 'हल किए गए प्रश्नपत्र व विश्लेषण' : 'Past solved papers with analysis'}
+                </span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[var(--sr-text-subtle)] shrink-0" />
@@ -345,8 +379,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
                 <BookOpen className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <span className="block text-sm font-black text-[var(--sr-text)] truncate">Topic Question Bank</span>
-                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">243,000+ categorized MCQs</span>
+                <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                  {isHindi ? 'विषयवार प्रश्न बैंक' : 'Topic Question Bank'}
+                </span>
+                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                  {isHindi ? '२,४३,०००+ वर्गीकृत बहुविकल्पीय प्रश्न' : '243,000+ categorized MCQs'}
+                </span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[var(--sr-text-subtle)] shrink-0" />
@@ -361,8 +399,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
                 <Award className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <span className="block text-sm font-black text-[var(--sr-text)] truncate">CBT Mock Simulator</span>
-                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Real NTA/SSC exam interface</span>
+                <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                  {isHindi ? 'सीबीटी मॉक सिमुलेटर' : 'CBT Mock Simulator'}
+                </span>
+                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                  {isHindi ? 'वास्तविक परीक्षा कंप्यूटर इंटरफ़ेस' : 'Real NTA/SSC exam interface'}
+                </span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[var(--sr-text-subtle)] shrink-0" />
@@ -377,8 +419,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
                 <Sparkles className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <span className="block text-sm font-black text-[var(--sr-text)] truncate">Spaced Flashcards</span>
-                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Active recall formula decks</span>
+                <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                  {isHindi ? 'स्मरण फ्लैशकार्ड्स' : 'Spaced Flashcards'}
+                </span>
+                <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                  {isHindi ? 'सक्रिय स्मरण सूत्र व मुख्य बिंदु' : 'Active recall formula decks'}
+                </span>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-[var(--sr-text-subtle)] shrink-0" />
@@ -389,7 +435,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
       {/* ── 3. DIGITAL LIBRARY & MEDIA ── */}
       <div className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-[var(--sr-text-subtle)] px-1">
-          Digital Library & Media
+          {isHindi ? 'डिजिटल पुस्तकालय एवं मीडिया' : 'Digital Library & Media'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
@@ -398,8 +444,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <FileText className="w-5 h-5 text-[var(--sr-blue)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">NCERT Library</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Textbooks & Notes</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'एनसीईआरटी पुस्तकालय' : 'NCERT Library'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'पाठ्यपुस्तकें व नोट्स' : 'Textbooks & Notes'}
+              </span>
             </div>
           </button>
 
@@ -409,8 +459,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <Mic className="w-5 h-5 text-[var(--sr-purple)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Topper Podcasts</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Audio Strategy</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'टॉपर पॉडकास्ट' : 'Topper Podcasts'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'रणनीति ऑडियो चर्चा' : 'Audio Strategy'}
+              </span>
             </div>
           </button>
 
@@ -420,8 +474,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <GraduationCap className="w-5 h-5 text-[var(--sr-primary)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Editorial & Blog</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Strategy Articles</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'संपादकीय एवं लेख' : 'Editorial & Blog'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'तैयारी रणनीति लेख' : 'Strategy Articles'}
+              </span>
             </div>
           </button>
         </div>
@@ -430,7 +488,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
       {/* ── 4. COMMUNITY & SOCIAL ── */}
       <div className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-[var(--sr-text-subtle)] px-1">
-          Community & Mentorship
+          {isHindi ? 'समुदाय एवं मार्गदर्शन' : 'Community & Mentorship'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
@@ -439,8 +497,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <Users className="w-5 h-5 text-[var(--sr-primary)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Study Buddy</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Accountability partner</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'अध्ययन साथी' : 'Study Buddy'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'जवाबदेही एवं सहपाठी' : 'Accountability partner'}
+              </span>
             </div>
           </button>
 
@@ -450,8 +512,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <MessageSquare className="w-5 h-5 text-[var(--sr-blue)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Community Feed</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Peer discussion</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'सामुदायिक फ़ीड' : 'Community Feed'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'सहपाठी चर्चा व समाधान' : 'Peer discussion'}
+              </span>
             </div>
           </button>
 
@@ -461,8 +527,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <Briefcase className="w-5 h-5 text-[var(--sr-amber)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Ambassadors</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Collaboration perks</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'ब्रांड एंबेसडर' : 'Ambassadors'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'सहयोग व पुरस्कार' : 'Collaboration perks'}
+              </span>
             </div>
           </button>
         </div>
@@ -471,7 +541,7 @@ export const MoreHub: React.FC<MoreHubProps> = ({
       {/* ── 5. UTILITIES, REWARDS & ADMIN ── */}
       <div className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-[var(--sr-text-subtle)] px-1">
-          Utilities & Rewards
+          {isHindi ? 'सुविधाएं एवं पुरस्कार' : 'Utilities & Rewards'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
@@ -480,8 +550,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <Trophy className="w-5 h-5 text-[var(--sr-amber)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Rewards & Milestones</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Earn trophies & streak freezes</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'उपलब्धियां व पुरस्कार' : 'Rewards & Milestones'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'ट्रॉफी एवं स्ट्रीक सुरक्षा प्राप्त करें' : 'Earn trophies & streak freezes'}
+              </span>
             </div>
           </button>
 
@@ -491,8 +565,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <Smartphone className="w-5 h-5 text-[var(--sr-blue)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Habit Wallpaper</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Lockscreen countdown art</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'प्रेरणादायक वॉलपेपर' : 'Habit Wallpaper'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'लॉकस्क्रीन उलटी गिनती कला' : 'Lockscreen countdown art'}
+              </span>
             </div>
           </button>
 
@@ -502,8 +580,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <ShieldCheck className="w-5 h-5 text-[var(--sr-primary)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">Eligibility Checker</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Age limits & attempts</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'पात्रता जांचकर्ता' : 'Eligibility Checker'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'आयु सीमा व परीक्षा प्रयास' : 'Age limits & attempts'}
+              </span>
             </div>
           </button>
 
@@ -513,8 +595,12 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           >
             <Crown className="w-5 h-5 text-[var(--sr-purple)] shrink-0" />
             <div className="min-w-0">
-              <span className="block text-sm font-black text-[var(--sr-text)] truncate">StudyRide PRO Pass</span>
-              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">Unlimited AI & full mocks</span>
+              <span className="block text-sm font-black text-[var(--sr-text)] truncate">
+                {isHindi ? 'स्टडीराइड प्रो पास' : 'StudyRide PRO Pass'}
+              </span>
+              <span className="block text-xs font-medium text-[var(--sr-text-muted)] truncate">
+                {isHindi ? 'असीमित एआई व संपूर्ण मॉक' : 'Unlimited AI & full mocks'}
+              </span>
             </div>
           </button>
         </div>
@@ -526,12 +612,16 @@ export const MoreHub: React.FC<MoreHubProps> = ({
           <div className="flex items-center gap-2.5">
             <Shield className="w-5 h-5 text-[var(--sr-coral)]" />
             <div>
-              <span className="block text-sm font-black text-[var(--sr-text)]">Administrator Console</span>
-              <span className="block text-xs text-[var(--sr-text-muted)]">Verified server role active</span>
+              <span className="block text-sm font-black text-[var(--sr-text)]">
+                {isHindi ? 'व्यवस्थापक कंसोल' : 'Administrator Console'}
+              </span>
+              <span className="block text-xs text-[var(--sr-text-muted)]">
+                {isHindi ? 'सत्यापित व्यवस्थापक खाता सक्रिय' : 'Verified server role active'}
+              </span>
             </div>
           </div>
           <TactileButton variant="danger" size="sm" onClick={() => navigateTo('admin')}>
-            Open Console
+            {isHindi ? 'कंसोल खोलें' : 'Open Console'}
           </TactileButton>
         </div>
       )}
@@ -541,16 +631,18 @@ export const MoreHub: React.FC<MoreHubProps> = ({
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-black text-[var(--sr-text)]">StudyRide Educational Platform</h4>
+              <h4 className="text-sm font-black text-[var(--sr-text)]">
+                {isHindi ? 'स्टडीराइड शैक्षणिक मंच' : 'StudyRide Educational Platform'}
+              </h4>
               <span className="px-2 py-0.5 rounded-full bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-xs font-black">
                 v{CANONICAL_APP_RELEASE.version}
               </span>
               <span className="px-2 py-0.5 rounded-full bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-xs font-black">
-                Build {CANONICAL_APP_RELEASE.versionCode}
+                {isHindi ? 'बिल्ड ' : 'Build '}{CANONICAL_APP_RELEASE.versionCode}
               </span>
             </div>
             <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
-              Engineered for UPSC, NEET, JEE, SSC & State PSC Aspirants
+              {isHindi ? 'यूपीएससी, नीट, जेईई, एसएससी व राज्य सेवा अभ्यर्थियों के लिए निर्मित' : 'Engineered for UPSC, NEET, JEE, SSC & State PSC Aspirants'}
             </p>
           </div>
 
@@ -561,7 +653,11 @@ export const MoreHub: React.FC<MoreHubProps> = ({
             disabled={checkStatus === 'checking'}
             icon={<RotateCcw className={`w-3.5 h-3.5 ${checkStatus === 'checking' ? 'animate-spin' : ''}`} />}
           >
-            {checkStatus === 'checking' ? 'Checking...' : checkStatus === 'done' ? 'Up to date ✓' : 'Check Updates'}
+            {checkStatus === 'checking'
+              ? (isHindi ? 'जांच जारी...' : 'Checking...')
+              : checkStatus === 'done'
+              ? (isHindi ? 'अद्यतन है ✓' : 'Up to date ✓')
+              : (isHindi ? 'अपडेट जांचें' : 'Check Updates')}
           </TactileButton>
         </div>
 
@@ -569,7 +665,11 @@ export const MoreHub: React.FC<MoreHubProps> = ({
         {user.isGuest && (
           <div className="p-3 rounded-2xl bg-[var(--sr-amber-subtle)] border border-[var(--sr-amber)]/30 text-xs text-[var(--sr-amber)] font-bold flex items-center gap-2">
             <Clock className="w-4 h-4 shrink-0" />
-            <span>Currently using Guest Session. Create a free account to sync progress permanently across devices.</span>
+            <span>
+              {isHindi
+                ? 'वर्तमान में अतिथि सत्र सक्रिय है। सभी उपकरणों में प्रगति सहेजने हेतु निःशुल्क खाता बनाएं।'
+                : 'Currently using Guest Session. Create a free account to sync progress permanently across devices.'}
+            </span>
           </div>
         )}
       </div>
@@ -582,9 +682,14 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               <LogOut className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-sm font-black text-[var(--sr-text)]">Account & Session</h4>
+              <h4 className="text-sm font-black text-[var(--sr-text)]">
+                {isHindi ? 'खाता एवं सक्रिय सत्र' : 'Account & Session'}
+              </h4>
               <p className="text-xs text-[var(--sr-text-muted)] truncate max-w-[220px] sm:max-w-sm">
-                Signed in as <span className="font-bold text-[var(--sr-text)]">{user.email || user.name || 'Aspirant'}</span>
+                {isHindi ? 'सक्रिय खाता: ' : 'Signed in as '}
+                <span className="font-bold text-[var(--sr-text)]">
+                  {user.email || user.name || (isHindi ? 'परीक्षार्थी' : 'Aspirant')}
+                </span>
               </p>
             </div>
           </div>
@@ -594,13 +699,16 @@ export const MoreHub: React.FC<MoreHubProps> = ({
               variant="danger"
               size="md"
               onClick={() => {
-                if (window.confirm('Kya aap sure hain ki aapko StudyRide se Log Out karna hai?')) {
+                const confirmMsg = isHindi
+                  ? 'क्या आप निश्चित रूप से स्टडीराइड से लॉग आउट करना चाहते हैं?'
+                  : 'Are you sure you want to log out of StudyRide?';
+                if (window.confirm(confirmMsg)) {
                   onLogout();
                 }
               }}
               icon={<LogOut className="w-4 h-4" />}
             >
-              Log Out
+              {isHindi ? 'लॉग आउट' : 'Log Out'}
             </TactileButton>
           )}
         </div>

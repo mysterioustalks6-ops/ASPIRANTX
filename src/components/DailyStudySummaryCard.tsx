@@ -20,6 +20,7 @@ import {
   StudyReminderSettings
 } from '../lib/studyReminderService';
 import { awardXPAndCoins } from '../lib/gamification';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 interface DailyStudySummaryCardProps {
   user: UserProfile;
@@ -38,17 +39,23 @@ export const DailyStudySummaryCard: React.FC<DailyStudySummaryCardProps> = ({
   variant = 'wallpaper',
   className = '',
 }) => {
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
   const [summary, setSummary] = useState<DailyStudySummary>(() =>
-    getDailyStudySummary(user, selectedExam)
+    getDailyStudySummary(user, selectedExam, currentLanguage)
   );
   const [settings, setSettings] = useState<StudyReminderSettings>(() =>
     loadStudyReminderSettings(user?.id)
   );
 
   const refreshData = () => {
-    setSummary(getDailyStudySummary(user, selectedExam));
+    setSummary(getDailyStudySummary(user, selectedExam, currentLanguage));
     setSettings(loadStudyReminderSettings(user?.id));
   };
+
+  useEffect(() => {
+    refreshData();
+  }, [currentLanguage]);
 
   useEffect(() => {
     refreshData();
@@ -214,8 +221,8 @@ export const DailyStudySummaryCard: React.FC<DailyStudySummaryCardProps> = ({
           </h2>
           <p className="text-xs text-[var(--sr-text-muted)] mt-1">
             {summary.isCompletedForToday
-              ? 'Great consistency today. Keep the momentum going whenever you are ready.'
-              : 'Every small concept mastered moves you closer to your goal.'}
+              ? (isHindi ? 'आज की शानदार निरंतरता। जब भी तैयार हों, अध्ययन जारी रखें।' : 'Great consistency today. Keep the momentum going whenever you are ready.')
+              : (isHindi ? 'प्रत्येक सीखी गई छोटी संकल्पना आपको आपके लक्ष्य के करीब ले जाती है।' : 'Every small concept mastered moves you closer to your goal.')}
           </p>
         </div>
 
@@ -234,7 +241,7 @@ export const DailyStudySummaryCard: React.FC<DailyStudySummaryCardProps> = ({
                 </span>
               </div>
               <span className="text-xs font-bold text-[var(--sr-primary)] bg-[var(--sr-primary-subtle)] px-2 py-0.5 rounded border border-[var(--sr-primary)]/30 shrink-0">
-                Done
+                {isHindi ? 'पूर्ण' : 'Done'}
               </span>
             </div>
           ))}
@@ -253,7 +260,7 @@ export const DailyStudySummaryCard: React.FC<DailyStudySummaryCardProps> = ({
                 </span>
               </div>
               <span className="text-xs font-medium text-[var(--sr-text-muted)] bg-[var(--sr-surface)] px-2 py-0.5 rounded border border-[var(--sr-line)] shrink-0">
-                {topic.subject || 'Target Topic'}
+                {topic.subject || (isHindi ? 'लक्ष्य विषय' : 'Target Topic')}
               </span>
             </div>
           ))}
@@ -263,11 +270,15 @@ export const DailyStudySummaryCard: React.FC<DailyStudySummaryCardProps> = ({
         <div className="pt-2 flex items-center justify-between text-xs text-[var(--sr-text-muted)] border-t border-[var(--sr-line)]">
           <div className="flex items-center gap-1.5 text-xs">
             <Calendar className="w-3.5 h-3.5 text-[var(--sr-text-subtle)]" />
-            <span>Reminder at {formatReminderTimeLabel(settings.reminderTime)}</span>
+            <span>{isHindi ? `दैनिक स्मरण: ${formatReminderTimeLabel(settings.reminderTime)}` : `Reminder at ${formatReminderTimeLabel(settings.reminderTime)}`}</span>
           </div>
 
           <div className="flex items-center gap-1 font-bold text-[var(--sr-primary)] group-hover:underline transition-colors text-xs">
-            <span>{summary.isCompletedForToday ? 'Review Workspace' : 'Continue Studying'}</span>
+            <span>
+              {summary.isCompletedForToday 
+                ? (isHindi ? 'कार्यक्षेत्र देखें' : 'Review Workspace') 
+                : (isHindi ? 'अध्ययन जारी रखें' : 'Continue Studying')}
+            </span>
             <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </div>
         </div>

@@ -379,7 +379,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
       }
     } catch {}
     const examSubjects = examCfg2.subjects && examCfg2.subjects.length > 0 ? examCfg2.subjects : ['Physics', 'Chemistry', 'Biology'];
-    const subj1 = examSubjects[0] || 'Core Subject';
+    const subj1 = examSubjects[0] || (isHindi ? 'मुख्य विषय' : 'Core Subject');
     const subj2 = examSubjects[1] || subj1;
     const subj3 = examSubjects[2] || subj1;
     const isCivilOrSsc = examCfg2.category === 'CIVIL_SERVICES' || normalizeExamId(activeExamTag).includes('UPSC') || normalizeExamId(activeExamTag).includes('SSC');
@@ -387,24 +387,28 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return [
       {
         id: 'goal-1',
-        title: `${subj1}: Core Concepts & High-Yield Summary`,
-        duration: '20m',
+        title: isHindi 
+          ? `${subj1}: मुख्य अवधारणाएं एवं सारांश`
+          : `${subj1}: Core Concepts & High-Yield Summary`,
+        duration: isHindi ? '२०मि' : '20m',
         xp: 20,
         completed: false,
       },
       {
         id: 'goal-2',
         title: isCivilOrSsc
-          ? 'Daily Exam Current Affairs & Editorial Analysis'
-          : `${subj2}: High-Yield Problem Solving & Formula Drill`,
-        duration: '15m',
+          ? (isHindi ? 'दैनिक समसामयिकी एवं संपादकीय विश्लेषण' : 'Daily Exam Current Affairs & Editorial Analysis')
+          : (isHindi ? `${subj2}: उच्च वेटेज समस्या समाधान एवं सूत्र अभ्यास` : `${subj2}: High-Yield Problem Solving & Formula Drill`),
+        duration: isHindi ? '१५मि' : '15m',
         xp: 20,
         completed: false,
       },
       {
         id: 'goal-3',
-        title: `Practice 10 High-Yield ${subj3} PYQ MCQs`,
-        duration: '15m',
+        title: isHindi
+          ? `${subj3} के १० महत्वपूर्ण गत वर्ष प्रश्न हल करें`
+          : `Practice 10 High-Yield ${subj3} PYQ MCQs`,
+        duration: isHindi ? '१५मि' : '15m',
         xp: 20,
         completed: false,
       },
@@ -456,15 +460,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const getRecommendationAction = () => {
     const text = (primarySuggestion || '').toLowerCase();
     if (text.includes('cbt') || text.includes('mock') || text.includes('test series')) {
-      return { label: 'Take Mock Test', tab: 'cbt' as ActiveTab };
+      return { label: isHindi ? 'मॉक टेस्ट दें' : 'Take Mock Test', tab: 'cbt' as ActiveTab };
     }
     if (text.includes('pyq') || text.includes('previous')) {
-      return { label: 'Solve PYQs', tab: 'pyq' as ActiveTab };
+      return { label: isHindi ? 'गत वर्ष प्रश्न हल करें' : 'Solve PYQs', tab: 'pyq' as ActiveTab };
     }
     if (text.includes('mcq') || text.includes('question') || text.includes('practice')) {
-      return { label: 'Practice MCQs', tab: 'question_bank' as ActiveTab };
+      return { label: isHindi ? 'बहुविकल्पीय प्रश्न अभ्यास' : 'Practice MCQs', tab: 'question_bank' as ActiveTab };
     }
-    return { label: 'Practice Now', tab: 'pyq' as ActiveTab };
+    return { label: isHindi ? 'अब अभ्यास करें' : 'Practice Now', tab: 'pyq' as ActiveTab };
   };
 
   const recAction = getRecommendationAction();
@@ -655,8 +659,12 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           <div className="relative w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line-strong)] p-5 sm:p-6 shadow-2xl z-10 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-[var(--sr-line)]">
               <div>
-                <span className="text-xs font-black uppercase text-[var(--sr-primary)] tracking-wider">Aaj ki Ride Session</span>
-                <h3 className="text-base sm:text-lg font-black text-[var(--sr-text)]">3-Stop Action Plan</h3>
+                <span className="text-xs font-black uppercase text-[var(--sr-primary)] tracking-wider">
+                  {isHindi ? 'आज का अध्ययन सत्र' : "Today's Ride Session"}
+                </span>
+                <h3 className="text-base sm:text-lg font-black text-[var(--sr-text)]">
+                  {isHindi ? '३-चरणीय कार्य योजना' : '3-Stop Action Plan'}
+                </h3>
               </div>
               <button
                 onClick={() => setShowRideSessionModal(false)}
@@ -677,7 +685,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                       </div>
                       <div className="min-w-0">
                         <span className="block text-xs font-black uppercase text-[var(--sr-primary)]">
-                          Stop {stop.stopNumber}: {stop.title}
+                          {isHindi ? `चरण ${stop.stopNumber}: ${stop.title}` : `Stop ${stop.stopNumber}: ${stop.title}`}
                         </span>
                         <h4 className="text-sm font-bold text-[var(--sr-text)] truncate">{stop.label}</h4>
                         <p className="text-xs text-[var(--sr-text-muted)] truncate">{stop.description}</p>
@@ -691,7 +699,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                         if (onNavigate) onNavigate(stop.actionTab);
                       }}
                     >
-                      Go
+                      {isHindi ? 'आरंभ' : 'Go'}
                     </TactileButton>
                   </div>
                 );
@@ -774,7 +782,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             <div className="flex items-center gap-2 mb-1.5">
               <Sparkles className="w-3.5 h-3.5 text-[var(--sr-amber)]" />
               <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-amber)]">
-                RECOMMENDED PRACTICE
+                {isHindi ? 'अनुशंसित अभ्यास' : 'RECOMMENDED PRACTICE'}
               </span>
             </div>
             <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)]">
@@ -799,20 +807,22 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           <div>
             <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[var(--sr-coral)]">
               <Target className="w-3.5 h-3.5" />
-              <span>Exam Target</span>
+              <span>{isHindi ? 'लक्ष्य परीक्षा' : 'Exam Target'}</span>
             </div>
             <h4 className="text-xs sm:text-sm font-bold text-[var(--sr-text)] mt-1">
               {examCfg2.displayName} {new Date(getDefaultExamDate(activeExamTag)).getFullYear()}
             </h4>
             <p className="text-xs text-[var(--sr-text-muted)] mt-0.5">
-              {data.daysLeftForExam} Days Remaining
+              {data.daysLeftForExam} {isHindi ? 'दिन शेष' : 'Days Remaining'}
             </p>
           </div>
 
           <div className="pt-2 flex items-center justify-between text-xs border-t border-[var(--sr-line)]">
-            <span className="text-[var(--sr-text-muted)]">Target Velocity:</span>
+            <span className="text-[var(--sr-text-muted)]">{isHindi ? 'लक्ष्य गति:' : 'Target Velocity:'}</span>
             <span className={`font-black ${isPaceBehind ? 'text-[var(--sr-coral)]' : 'text-[var(--sr-primary)]'}`}>
-              {paceLabel === 'Just starting' ? 'Calibration phase' : paceLabel}
+              {paceLabel === 'Just starting' 
+                ? (isHindi ? 'प्रारंभिक चरण' : 'Calibration phase') 
+                : paceLabel}
             </span>
           </div>
         </div>
@@ -829,13 +839,19 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <Zap className="w-3.5 h-3.5 text-[var(--sr-blue)]" />
             </div>
             <div>
-              <h3 className="text-xs font-black text-[var(--sr-text)]">Live Study Telemetry</h3>
-              <p className="text-xs text-[var(--sr-text-muted)]">Syllabus, accuracy & daily focus metrics</p>
+              <h3 className="text-xs font-black text-[var(--sr-text)]">
+                {isHindi ? 'सजीव अध्ययन मेट्रिक्स' : 'Live Study Telemetry'}
+              </h3>
+              <p className="text-xs text-[var(--sr-text-muted)]">
+                {isHindi ? 'पाठ्यक्रम, सटीकता एवं दैनिक फोकस मेट्रिक्स' : 'Syllabus, accuracy & daily focus metrics'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-[var(--sr-primary)]">
-              {showTelemetryRings ? 'Collapse' : 'Tap to View'}
+              {showTelemetryRings 
+                ? (isHindi ? 'समेटें' : 'Collapse') 
+                : (isHindi ? 'देखने हेतु स्पर्श करें' : 'Tap to View')}
             </span>
             <ChevronRight className={`w-4 h-4 text-[var(--sr-text-muted)] transition-transform duration-200 ${showTelemetryRings ? 'rotate-90' : ''}`} />
           </div>
@@ -866,9 +882,11 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)]">
-                Quick Shortcuts
+                {isHindi ? 'त्वरित शॉर्टकट' : 'Quick Shortcuts'}
               </h3>
-              <p className="text-xs text-[var(--sr-text-muted)]">Direct access to primary study engines</p>
+              <p className="text-xs text-[var(--sr-text-muted)]">
+                {isHindi ? 'प्रमुख अध्ययन मॉड्यूल तक सीधी पहुंच' : 'Direct access to primary study engines'}
+              </p>
             </div>
           </div>
 
@@ -878,7 +896,9 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 onClick={() => setShowAllShortcuts(!showAllShortcuts)}
                 className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-text)] transition-all cursor-pointer"
               >
-                {showAllShortcuts ? 'Show Top 4' : `All (${allFeatures.length})`}
+                {showAllShortcuts 
+                  ? (isHindi ? 'शीर्ष ४ दिखाएं' : 'Show Top 4') 
+                  : (isHindi ? `सभी (${allFeatures.length})` : `All (${allFeatures.length})`)}
               </button>
             )}
             {onOpenWorkspaceCustomizer && (
@@ -887,7 +907,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 className="px-2.5 py-1 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-text-muted)] hover:text-[var(--sr-text)] flex items-center gap-1 transition-all cursor-pointer"
               >
                 <Sliders className="w-3 h-3 text-[var(--sr-blue)]" />
-                <span>Customize</span>
+                <span>{isHindi ? 'अनुकूलित करें' : 'Customize'}</span>
               </button>
             )}
           </div>
@@ -895,26 +915,52 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
 
         {/* Grid of Compact Shortcuts with Stagger */}
         <Stagger staggerDelay={0.03} className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-          {displayedShortcuts.map((item) => (
-            <StaggerItem key={item.id}>
-              <button
-                onClick={() => {
-                  recordFeatureUsage(item.id, userProfile.id);
-                  if (onNavigate) onNavigate(item.id as ActiveTab);
-                }}
-                className="w-full p-3 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-primary-subtle)] border border-[var(--sr-line)] hover:border-[var(--sr-primary)]/40 active:border-b-0 active:translate-y-0.5 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer shadow-sm select-none"
-              >
-                <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface)] group-hover:bg-[var(--sr-primary-subtle)] border border-[var(--sr-line)] group-hover:border-[var(--sr-primary)]/40 flex items-center justify-center text-xs font-black text-[var(--sr-text-muted)] group-hover:text-[var(--sr-primary)] transition-all">
-                  {item.label.charAt(0)}
-                </div>
-                <div className="min-w-0 w-full text-center">
-                  <span className="text-xs font-bold text-[var(--sr-text)] group-hover:text-[var(--sr-primary)] transition-colors block truncate">
-                    {item.label}
-                  </span>
-                </div>
-              </button>
-            </StaggerItem>
-          ))}
+          {displayedShortcuts.map((item) => {
+            const FEATURE_HI_LABELS: Record<string, string> = {
+              syllabus: 'पाठ्यक्रम',
+              pyq: 'गत वर्ष प्रश्न',
+              cbt: 'सीबीटी टेस्ट',
+              cbt_exam: 'सीबीटी टेस्ट',
+              question_bank: 'प्रश्न बैंक',
+              flashcards: 'फ्लैशकार्ड्स',
+              timer: 'फोकस टाइमर',
+              tasks: 'दैनिक योजनाकार',
+              focus_shield: 'फोकस शील्ड',
+              library: 'पुस्तकालय',
+              podcasts: 'पॉडकास्ट',
+              study_buddy: 'अध्ययन साथी',
+              community: 'सामुदायिक फ़ीड',
+              collaboration: 'ब्रांड एंबेसडर',
+              reward_milestones: 'उपलब्धियां',
+              rewards: 'उपलब्धियां',
+              wallpaper: 'वॉलपेपर',
+              eligibility: 'पात्रता जांचकर्ता',
+              chat: 'वीर एआई',
+              blog: 'संपादकीय एवं लेख'
+            };
+            const label = isHindi ? (FEATURE_HI_LABELS[item.id] || item.label) : item.label;
+
+            return (
+              <StaggerItem key={item.id}>
+                <button
+                  onClick={() => {
+                    recordFeatureUsage(item.id, userProfile.id);
+                    if (onNavigate) onNavigate(item.id as ActiveTab);
+                  }}
+                  className="w-full p-3 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-primary-subtle)] border border-[var(--sr-line)] hover:border-[var(--sr-primary)]/40 active:border-b-0 active:translate-y-0.5 transition-all text-center group flex flex-col items-center gap-1.5 cursor-pointer shadow-sm select-none"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-[var(--sr-surface)] group-hover:bg-[var(--sr-primary-subtle)] border border-[var(--sr-line)] group-hover:border-[var(--sr-primary)]/40 flex items-center justify-center text-xs font-black text-[var(--sr-text-muted)] group-hover:text-[var(--sr-primary)] transition-all">
+                    {label.charAt(0)}
+                  </div>
+                  <div className="min-w-0 w-full text-center">
+                    <span className="text-xs font-bold text-[var(--sr-text)] group-hover:text-[var(--sr-primary)] transition-colors block truncate">
+                      {label}
+                    </span>
+                  </div>
+                </button>
+              </StaggerItem>
+            );
+          })}
         </Stagger>
       </div>
 

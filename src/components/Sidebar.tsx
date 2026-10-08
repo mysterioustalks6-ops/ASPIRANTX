@@ -55,6 +55,8 @@ import {
   activateFeatureInWorkspace,
   saveWorkspaceConfig 
 } from '../lib/workspacePreferences';
+import { useLanguage } from '../lib/i18n/LanguageContext';
+import { getLocalizedExamName } from '../lib/subjectUtils';
 
 interface SidebarProps {
   activeTab: ActiveTab;
@@ -115,6 +117,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed: propIsCollapsed,
   onToggleCollapse,
 }) => {
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
   const [clickCount, setClickCount] = React.useState<number>(0);
   const [isMoreFeaturesOpen, setIsMoreFeaturesOpen] = React.useState<boolean>(false);
   const [isExamModalOpen, setIsExamModalOpen] = useState<boolean>(false);
@@ -220,9 +224,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const adminItem = {
     id: 'admin' as ActiveTab,
-    label: 'Admin Panel',
+    label: isHindi ? 'व्यवस्थापक पैनल' : 'Admin Panel',
     icon: ShieldCheck,
-    badge: 'Admin'
+    badge: isHindi ? 'व्यवस्थापक' : 'Admin'
   };
 
   const showAdmin = isAdminUnlocked || activeTab === 'admin' || user?.role === 'ADMIN';
@@ -347,7 +351,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400 font-medium line-clamp-1">
-                  {customizer?.brandTagline || 'Precision Exam Prep'}
+                  {isHindi ? 'सटीक परीक्षा तैयारी मंच' : (customizer?.brandTagline || 'Precision Exam Prep')}
                 </p>
               </div>
             </div>
@@ -390,11 +394,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 shadow-card space-y-2">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                <Target className="w-3.5 h-3.5 text-sky-400" /> Target Exam
+                <Target className="w-3.5 h-3.5 text-sky-400" /> {isHindi ? 'लक्ष्य परीक्षा' : 'Target Exam'}
               </span>
               <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
                 <Flame className="w-3 h-3 text-amber-400 fill-amber-400/30" />
-                {liveStreak}d Streak
+                {liveStreak}{isHindi ? ' दिन' : 'd Streak'}
               </span>
             </div>
 
@@ -402,18 +406,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={() => setIsExamModalOpen(true)}
               className="w-full relative flex items-center justify-between bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-sky-500/50 rounded-xl px-3 py-2 transition-all cursor-pointer text-left group"
-              title="Search & Change Target Exam"
+              title={isHindi ? 'लक्ष्य परीक्षा खोजें व बदलें' : 'Search & Change Target Exam'}
             >
               <div className="truncate flex-1 pr-2">
                 <span className="text-xs font-semibold text-slate-100 group-hover:text-white truncate block">
-                  {EXAM_LIST.find(e => e.id === (selectedExam || user?.exam))?.label.split(/[–—]/)[0].trim() || (selectedExam || user?.exam || 'NEET_UG')}
+                  {getLocalizedExamName(
+                    EXAM_LIST.find(e => e.id === (selectedExam || user?.exam))?.label.split(/[–—]/)[0].trim() || (selectedExam || user?.exam || 'NEET (UG)'),
+                    isHindi
+                  )}
                 </span>
                 <span className="text-[10px] text-slate-500 group-hover:text-sky-400 flex items-center gap-1 mt-0.5">
-                  <Search className="w-2.5 h-2.5" /> Search all exams
+                  <Search className="w-2.5 h-2.5" /> {isHindi ? 'सभी परीक्षाएं खोजें' : 'Search all exams'}
                 </span>
               </div>
               <span className="text-[10px] text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-lg border border-sky-500/20 font-bold shrink-0">
-                Change
+                {isHindi ? 'बदलें' : 'Change'}
               </span>
             </button>
 
@@ -440,12 +447,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <Gift className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-xs font-semibold text-amber-300">Refer & Earn</p>
+                <p className="text-xs font-semibold text-amber-300">{isHindi ? 'रेफ़र करें और कमाएं' : 'Refer & Earn'}</p>
                 <p className="text-[10px] text-slate-400 font-mono">{user?.referralCode || 'ASPIRANT'}</p>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-              +150 Coins
+              {isHindi ? '+150 सिक्के' : '+150 Coins'}
             </span>
           </div>
         )}
@@ -456,7 +463,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center justify-between px-2">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <Sliders className="w-3 h-3 text-sky-400" />
-                My Workspace
+                {isHindi ? 'मेरा कार्यक्षेत्र' : 'My Workspace'}
               </span>
               {onOpenWorkspaceCustomizer && (
                 <button
@@ -465,9 +472,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenWorkspaceCustomizer();
                   }}
                   className="text-[10px] text-sky-400 hover:text-sky-300 font-bold transition-colors flex items-center gap-1"
-                  title="Add, remove or reorder tools"
+                  title={isHindi ? 'उपकरण जोड़ें, हटाएं या क्रम बदलें' : 'Add, remove or reorder tools'}
                 >
-                  <span>Customize</span>
+                  <span>{isHindi ? 'कस्टमाइज़' : 'Customize'}</span>
                   <span>→</span>
                 </button>
               )}
@@ -486,7 +493,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     if (onOpenWorkspaceCustomizer) onOpenWorkspaceCustomizer();
                   }}
                   className="relative z-20 p-2.5 rounded-xl bg-gradient-to-r from-sky-950/60 via-slate-900 to-sky-950/60 border border-sky-500/40 shadow-lg shadow-sky-950/50 flex items-center justify-between gap-2 cursor-pointer group hover:border-sky-400 transition-all"
-                  title="Click to customize workspace"
+                  title={isHindi ? 'कार्यक्षेत्र कस्टमाइज़ करने हेतु क्लिक करें' : 'Click to customize workspace'}
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="relative flex h-2.5 w-2.5 shrink-0">
@@ -494,7 +501,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
                     </span>
                     <p className="text-[11px] font-semibold text-sky-200 group-hover:text-white leading-tight">
-                      Tap here to add or remove tools anytime
+                      {isHindi ? 'उपकरण जोड़ने या हटाने हेतु कभी भी यहां टैप करें' : 'Tap here to add or remove tools anytime'}
                     </p>
                   </div>
                   <button
@@ -504,7 +511,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       dismissCustomizeHint();
                     }}
                     className="p-1 text-slate-400 hover:text-white rounded-md transition-colors shrink-0"
-                    aria-label="Dismiss hint"
+                    aria-label={isHindi ? 'संकेत हटाएं' : 'Dismiss hint'}
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -522,40 +529,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-sky-400/90 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Target className="w-3 h-3 text-sky-400" />
-                  5 Core Pillars
+                  {isHindi ? '5 मुख्य आधार' : '5 Core Pillars'}
                 </span>
-                <span className="text-[9px] text-sky-500/70 font-mono">Pillar 1–5</span>
+                <span className="text-[9px] text-sky-500/70 font-mono">{isHindi ? 'आधार 1–5' : 'Pillar 1–5'}</span>
               </div>
             )}
             {renderNavItem({
               id: 'dashboard',
-              label: '1. Home (Today)',
+              label: isHindi ? '1. मुख्य पृष्ठ (आज)' : '1. Home (Today)',
               icon: Target,
-              badge: 'Hero',
+              badge: isHindi ? 'मुख्य' : 'Hero',
             })}
             {renderNavItem({
               id: 'syllabus',
-              label: '2. Study (Syllabus)',
+              label: isHindi ? '2. अध्ययन (पाठ्यक्रम)' : '2. Study (Syllabus)',
               icon: BookOpen,
-              badge: 'Tree',
+              badge: isHindi ? 'वृक्ष' : 'Tree',
             })}
             {renderNavItem({
               id: 'practice_hub',
-              label: '3. Practice (PYQ & CBT)',
+              label: isHindi ? '3. अभ्यास (पीवाईक्यू व सीबीटी)' : '3. Practice (PYQ & CBT)',
               icon: Award,
-              badge: 'Test',
+              badge: isHindi ? 'मॉक' : 'Test',
             })}
             {renderNavItem({
               id: 'progress_hub',
-              label: '4. Progress (Telemetry)',
+              label: isHindi ? '4. प्रगति (टेलीमेट्री)' : '4. Progress (Telemetry)',
               icon: BarChart3,
-              badge: 'Rings',
+              badge: isHindi ? 'रिंग' : 'Rings',
             })}
             {renderNavItem({
               id: 'more_hub',
-              label: '5. More (Tools & Perks)',
+              label: isHindi ? '5. अन्य (उपकरण व लाभ)' : '5. More (Tools & Perks)',
               icon: LayoutGrid,
-              badge: 'All',
+              badge: isHindi ? 'सभी' : 'All',
             })}
           </div>
 
@@ -565,20 +572,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <BookOpen className="w-3 h-3 text-sky-400" />
-                  Learn
+                  {isHindi ? 'अध्ययन सामग्री' : 'Learn'}
                 </span>
-                <span className="text-[9px] text-slate-600 font-mono">Content</span>
+                <span className="text-[9px] text-slate-600 font-mono">{isHindi ? 'सामग्री' : 'Content'}</span>
               </div>
             )}
             {renderNavItem({
               id: 'syllabus',
-              label: 'Syllabus Tracker',
+              label: isHindi ? 'पाठ्यक्रम ट्रैकर' : 'Syllabus Tracker',
               icon: BookOpen,
               badge: 'AI',
             })}
             {renderNavItem({
               id: 'library',
-              label: 'Digital Library & Notes',
+              label: isHindi ? 'डिजिटल लाइब्रेरी व नोट्स' : 'Digital Library & Notes',
               icon: BookMarked,
               badge: 'PDF',
             })}
@@ -586,16 +593,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {activePreferences.some((p) => p.featureId === 'flashcards') &&
               renderNavItem({
                 id: 'flashcards',
-                label: 'Active Recall Decks',
+                label: isHindi ? 'सक्रिय स्मरण फ़्लैशकार्ड' : 'Active Recall Decks',
                 icon: Sparkles,
-                badge: 'Cards',
+                badge: isHindi ? 'कार्ड' : 'Cards',
               })}
             {activePreferences.some((p) => p.featureId === 'podcasts') &&
               renderNavItem({
                 id: 'podcasts',
-                label: 'Audio Lecture Series',
+                label: isHindi ? 'ऑडियो व्याख्यान श्रृंखला' : 'Audio Lecture Series',
                 icon: Mic,
-                badge: 'Audio',
+                badge: isHindi ? 'ऑडियो' : 'Audio',
               })}
           </div>
 
@@ -605,26 +612,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Award className="w-3 h-3 text-emerald-400" />
-                  Practice
+                  {isHindi ? 'अभ्यास मंच' : 'Practice'}
                 </span>
-                <span className="text-[9px] text-slate-600 font-mono">Exam Prep</span>
+                <span className="text-[9px] text-slate-600 font-mono">{isHindi ? 'परीक्षा तैयारी' : 'Exam Prep'}</span>
               </div>
             )}
             {renderNavItem({
               id: 'cbt',
-              label: 'CBT Mock Tests',
+              label: isHindi ? 'सीबीटी मॉक टेस्ट' : 'CBT Mock Tests',
               icon: Award,
               badge: 'NTA',
             })}
             {renderNavItem({
               id: 'pyq',
-              label: 'PYQ Archive (35 Yrs)',
+              label: isHindi ? 'गत वर्ष प्रश्न (35 वर्ष)' : 'PYQ Archive (35 Yrs)',
               icon: BookMarked,
               badge: '1991–26',
             })}
             {renderNavItem({
               id: 'question_bank',
-              label: 'Question Bank',
+              label: isHindi ? 'प्रश्न बैंक' : 'Question Bank',
               icon: HelpCircle,
               badge: '4000+',
             })}
@@ -636,38 +643,38 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Timer className="w-3 h-3 text-indigo-400" />
-                  Plan & Focus
+                  {isHindi ? 'योजना व एकाग्रता' : 'Plan & Focus'}
                 </span>
               </div>
             )}
             {renderNavItem({
               id: 'tasks',
-              label: 'Daily Study Tasks',
+              label: isHindi ? 'दैनिक अध्ययन लक्ष्य' : 'Daily Study Tasks',
               icon: CheckSquare,
-              badge: 'Tasks',
+              badge: isHindi ? 'लक्ष्य' : 'Tasks',
             })}
             {renderNavItem({
               id: 'focus_shield',
-              label: 'Focus Shield & App Lock',
+              label: isHindi ? 'फ़ोकस शील्ड व ऐप लॉक' : 'Focus Shield & App Lock',
               icon: ShieldCheck,
-              badge: 'Shield',
+              badge: isHindi ? 'शील्ड' : 'Shield',
             })}
             {renderNavItem({
               id: 'timer',
-              label: 'Pomodoro Focus Timer',
+              label: isHindi ? 'पोमोडोरो फ़ोकस टाइमर' : 'Pomodoro Focus Timer',
               icon: Timer,
               badge: '25/50m',
             })}
             {renderNavItem({
               id: 'mountain_ride',
-              label: 'Mountain Ride',
+              label: isHindi ? 'माउंटेन राइड' : 'Mountain Ride',
               icon: Compass,
-              badge: 'Soon',
+              badge: isHindi ? 'शीघ्र' : 'Soon',
             })}
             {activePreferences.some((p) => p.featureId === 'study_buddy') &&
               renderNavItem({
                 id: 'study_buddy',
-                label: 'Study Buddy',
+                label: isHindi ? 'अध्ययन साथी' : 'Study Buddy',
                 icon: Users,
                 badge: 'Sync',
               })}
@@ -679,28 +686,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <BarChart3 className="w-3 h-3 text-amber-400" />
-                  Improve
+                  {isHindi ? 'सुधार व विश्लेषण' : 'Improve'}
                 </span>
               </div>
             )}
             {renderNavItem({
               id: 'weakness',
-              label: 'Weak Areas & Accuracy',
+              label: isHindi ? 'कमजोर विषय व सटीकता' : 'Weak Areas & Accuracy',
               icon: BarChart3,
               badge: 'AI',
             })}
             {renderNavItem({
               id: 'leaderboard',
-              label: 'All-India Rank',
+              label: isHindi ? 'अखिल भारतीय रैंक' : 'All-India Rank',
               icon: Flame,
               badge: 'AIR',
             })}
             {activePreferences.some((p) => p.featureId === 'eligibility') &&
               renderNavItem({
                 id: 'eligibility',
-                label: 'Eligibility Checker',
+                label: isHindi ? 'पात्रता जांचकर्ता' : 'Eligibility Checker',
                 icon: ShieldCheck,
-                badge: 'Check',
+                badge: isHindi ? 'जांच' : 'Check',
               })}
           </div>
 
@@ -710,21 +717,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <MessageSquare className="w-3 h-3 text-purple-400" />
-                  Connect
+                  {isHindi ? 'मार्गदर्शन व समुदाय' : 'Connect'}
                 </span>
               </div>
             )}
             {renderNavItem({
               id: 'chat',
-              label: 'AI Study Mentor',
+              label: isHindi ? 'एआई अध्ययन गुरु' : 'AI Study Mentor',
               icon: Sparkles,
               badge: 'AI',
             })}
             {renderNavItem({
               id: 'community',
-              label: 'Aspirants Community',
+              label: isHindi ? 'परीक्षार्थी समुदाय' : 'Aspirants Community',
               icon: Users,
-              badge: 'Forum',
+              badge: isHindi ? 'फ़ोरम' : 'Forum',
             })}
           </div>
 
@@ -734,26 +741,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-slate-500 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <Crown className="w-3 h-3 text-amber-400" />
-                  Account & Perks
+                  {isHindi ? 'खाता व सुविधाएं' : 'Account & Perks'}
                 </span>
               </div>
             )}
             {renderNavItem({
               id: 'premium',
-              label: 'Premium Subscription',
+              label: isHindi ? 'प्रीमियम सदस्यता' : 'Premium Subscription',
               icon: Crown,
-              badge: 'Pro',
+              badge: isHindi ? 'प्रो' : 'Pro',
             })}
             {renderNavItem({
               id: 'reward_milestones',
-              label: 'Rewards & Milestones',
+              label: isHindi ? 'पुरस्कार व उपलब्धियां' : 'Rewards & Milestones',
               icon: Gift,
-              badge: 'Coins',
+              badge: isHindi ? 'सिक्के' : 'Coins',
             })}
             {activePreferences.some((p) => p.featureId === 'wallpaper') &&
               renderNavItem({
                 id: 'wallpaper',
-                label: 'Habit Wallpaper',
+                label: isHindi ? 'आदतें वॉलपेपर' : 'Habit Wallpaper',
                 icon: Smartphone,
                 badge: 'HD',
               })}
@@ -765,7 +772,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               {!isCollapsed && (
                 <div className="px-2 py-1 text-[10px] font-bold tracking-wider uppercase text-rose-400/90 flex items-center gap-1.5">
                   <ShieldCheck className="w-3 h-3 text-rose-400" />
-                  Administration
+                  {isHindi ? 'प्रशासन' : 'Administration'}
                 </div>
               )}
               {showAdmin && renderNavItem(adminItem, true)}
@@ -773,15 +780,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <>
                   {renderNavItem({
                     id: 'teachers',
-                    label: 'Teacher Portal',
+                    label: isHindi ? 'शिक्षक पोर्टल' : 'Teacher Portal',
                     icon: Users,
-                    badge: 'Faculty',
+                    badge: isHindi ? 'संकाय' : 'Faculty',
                   })}
                   {renderNavItem({
                     id: 'blog_submit',
-                    label: 'Publish Blog Post',
+                    label: isHindi ? 'ब्लॉग प्रकाशित करें' : 'Publish Blog Post',
                     icon: BookOpen,
-                    badge: 'Editor',
+                    badge: isHindi ? 'संपादक' : 'Editor',
                   })}
                 </>
               )}
@@ -799,11 +806,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div className="flex items-center gap-2 truncate">
                 <Plus className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform shrink-0" />
-                <span className="truncate">Add More Features</span>
+                <span className="truncate">{isHindi ? 'अतिरिक्त सुविधाएं जोड़ें' : 'Add More Features'}</span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
-                  {inactivePreferences.length} hidden
+                  {inactivePreferences.length} {isHindi ? 'छिपी हुई' : 'hidden'}
                 </span>
                 {isMoreFeaturesOpen ? (
                   <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
@@ -837,10 +844,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <button
                         onClick={(e) => handleQuickAddFeature(e, pref.featureId)}
                         className="px-2 py-0.5 rounded bg-sky-600/20 hover:bg-sky-600 text-sky-300 hover:text-white border border-sky-500/30 text-[10px] font-bold flex items-center gap-1 transition-colors shrink-0"
-                        title="Add this feature to active workspace"
+                        title={isHindi ? 'सक्रिय कार्यक्षेत्र में जोड़ें' : 'Add this feature to active workspace'}
                       >
                         <Plus className="w-2.5 h-2.5" />
-                        <span>Add</span>
+                        <span>{isHindi ? 'जोड़ें' : 'Add'}</span>
                       </button>
                     </div>
                   );
@@ -851,7 +858,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onClick={onOpenWorkspaceCustomizer}
                     className="w-full text-center py-1.5 text-[11px] text-sky-400 hover:text-sky-300 font-bold transition-colors"
                   >
-                    Open Full Customizer →
+                    {isHindi ? 'संपूर्ण अनुकूलक खोलें →' : 'Open Full Customizer →'}
                   </button>
                 )}
               </div>
@@ -875,7 +882,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div 
                 onClick={onOpenProfileModal}
                 className="cursor-pointer group"
-                title={`${user.name} - My Account Settings`}
+                title={`${user.name} - ${isHindi ? 'खाता सेटिंग्स' : 'My Account Settings'}`}
               >
                 <img
                   src={resolveUserAvatar(user.avatar_url, user.id, user.email)}
@@ -887,8 +894,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="logout-btn"
                 onClick={onLogout}
                 className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-                title="Sign Out"
-                aria-label="Sign Out"
+                title={isHindi ? 'लॉग आउट' : 'Sign Out'}
+                aria-label={isHindi ? 'लॉग आउट' : 'Sign Out'}
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -906,7 +913,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
                 <div className="truncate min-w-0">
                   <p className="text-xs font-semibold text-slate-200 group-hover:text-sky-300 transition-colors truncate">{user.name}</p>
-                  <p className="text-[10px] text-slate-400 truncate">My Account Settings</p>
+                  <p className="text-[10px] text-slate-400 truncate">{isHindi ? 'खाता सेटिंग्स' : 'My Account Settings'}</p>
                 </div>
               </div>
 
@@ -914,7 +921,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="logout-btn"
                 onClick={onLogout}
                 className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors shrink-0 ml-1"
-                title="Sign Out"
+                title={isHindi ? 'लॉग आउट' : 'Sign Out'}
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -929,10 +936,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('studyride:check-update'))}
               className="hover:text-emerald-400 transition-colors flex items-center gap-1 cursor-pointer text-slate-400 hover:underline"
-              title="Check for newest updates"
+              title={isHindi ? 'नवीनतम अपडेट जांचें' : 'Check for newest updates'}
             >
               <RotateCcw className="w-3 h-3" />
-              <span>Check updates</span>
+              <span>{isHindi ? 'अपडेट जांचें' : 'Check updates'}</span>
             </button>
           </div>
         )}

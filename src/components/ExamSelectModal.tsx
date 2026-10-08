@@ -5,6 +5,7 @@ import {
 import { EXAM_LIST, ExamOption } from '../lib/examList';
 import { getCustomExamsFromStorage, CustomExamConfig } from '../lib/customExamStore';
 import { soundFx } from '../lib/soundEffects';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 export interface ExamSelectModalProps {
   isOpen: boolean;
@@ -15,15 +16,37 @@ export interface ExamSelectModalProps {
 }
 
 const CATEGORIES = [
-  { id: 'ALL', label: 'All Exams (48+)' },
-  { id: 'ENGINEERING', label: 'Engineering' },
-  { id: 'MEDICAL', label: 'Medical' },
-  { id: 'CIVIL_SERVICES', label: 'Civil Services' },
-  { id: 'SSC_RAILWAYS', label: 'SSC & Railways' },
-  { id: 'DEFENCE', label: 'Defence' },
-  { id: 'BANKING', label: 'Banking' },
-  { id: 'STATE_EXAMS', label: 'State PSCs' },
+  { id: 'ALL', labelEn: 'All Exams (48+)', labelHi: 'सभी परीक्षाएं (४८+)' },
+  { id: 'ENGINEERING', labelEn: 'Engineering', labelHi: 'इंजीनियरिंग' },
+  { id: 'MEDICAL', labelEn: 'Medical', labelHi: 'चिकित्सा (मेडिकल)' },
+  { id: 'CIVIL_SERVICES', labelEn: 'Civil Services', labelHi: 'सिविल सेवा' },
+  { id: 'SSC_RAILWAYS', labelEn: 'SSC & Railways', labelHi: 'एसएससी एवं रेलवे' },
+  { id: 'DEFENCE', labelEn: 'Defence', labelHi: 'रक्षा सेवाएं' },
+  { id: 'BANKING', labelEn: 'Banking', labelHi: 'बैंकिंग' },
+  { id: 'STATE_EXAMS', labelEn: 'State PSCs', labelHi: 'राज्य लोक सेवा आयोग' },
 ];
+
+const EXAM_LABEL_HI: Record<string, { shortName: string; fullName: string }> = {
+  'JEE_MAIN': { shortName: 'जेईई मेन', fullName: 'संयुक्त प्रवेश परीक्षा (मुख्य)' },
+  'JEE_ADVANCED': { shortName: 'जेईई एडवांस्ड', fullName: 'आईआईटी संयुक्त प्रवेश परीक्षा' },
+  'NEET_UG': { shortName: 'नीट (UG)', fullName: 'राष्ट्रीय पात्रता सह प्रवेश परीक्षा (चिकित्सा)' },
+  'UPSC_CSE': { shortName: 'यूपीएससी सिविल सेवा', fullName: 'संघ लोक सेवा आयोग सिविल सेवा परीक्षा' },
+  'GATE': { shortName: 'गेट', fullName: 'इंजीनियरिंग स्नातक अभिरुचि परीक्षा' },
+  'NDA_NA': { shortName: 'एनडीए एवं एनए', fullName: 'राष्ट्रीय रक्षा अकादमी परीक्षा' },
+  'CDS': { shortName: 'सीडीएस', fullName: 'संयुक्त रक्षा सेवा परीक्षा' },
+  'SSC_CGL': { shortName: 'एसएससी सीजीएल', fullName: 'कर्मचारी चयन आयोग संयुक्त स्नातक स्तरीय परीक्षा' },
+  'SSC_CHSL': { shortName: 'एसएससी सीएचएसएल', fullName: 'कर्मचारी चयन आयोग उच्चतर माध्यमिक परीक्षा' },
+  'SSC_MTS': { shortName: 'एसएससी एमटीएस', fullName: 'मल्टी टास्किंग स्टाफ परीक्षा' },
+  'SSC_GD': { shortName: 'एसएससी जीडी', fullName: 'एसएससी कांस्टेबल जीडी परीक्षा' },
+  'SSC_JE': { shortName: 'एसएससी जेई', fullName: 'कनिष्ठ अभियंता परीक्षा' },
+  'CAT': { shortName: 'कैट', fullName: 'आईआईएम प्रबंधन प्रवेश परीक्षा' },
+  'IBPS_PO': { shortName: 'आईबीपीएस पीओ', fullName: 'बैंक प्रोबेशनरी ऑफिसर परीक्षा' },
+  'SBI_PO': { shortName: 'एसबीआई पीओ', fullName: 'भारतीय स्टेट बैंक पीओ परीक्षा' },
+  'RRB_NTPC': { shortName: 'आरआरबी एनटीपीसी', fullName: 'रेलवे भर्ती बोर्ड गैर-तकनीकी परीक्षा' },
+  'UPPSC_PCS': { shortName: 'यूपीपीएससी पीसीएस', fullName: 'उत्तर प्रदेश राज्य सिविल सेवा परीक्षा' },
+  'BPSC_CCE': { shortName: 'बीपीएससी', fullName: 'बिहार लोक सेवा आयोग संयुक्त प्रतियोगी परीक्षा' },
+  'UPSC_CAPF': { shortName: 'यूपीएससी सीएपीएफ', fullName: 'केंद्रीय सशस्त्र पुलिस बल परीक्षा' },
+};
 
 export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
   isOpen,
@@ -32,6 +55,8 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
   onExamChange,
   onOpenCustomModal
 }) => {
+  const { currentLanguage, isHindi: ctxIsHindi } = useLanguage();
+  const isHindi = Boolean(ctxIsHindi || currentLanguage === 'hi');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -143,10 +168,10 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-black text-[var(--sr-text)] tracking-tight">
-                Select Target Exam
+                {isHindi ? 'लक्ष्य परीक्षा चुनें' : 'Select Target Exam'}
               </h3>
               <p className="text-xs text-[var(--sr-text-muted)] font-medium">
-                48+ National & State Exams Available
+                {isHindi ? '४८+ राष्ट्रीय एवं राज्य स्तरीय परीक्षाएं उपलब्ध' : '48+ National & State Exams Available'}
               </p>
             </div>
           </div>
@@ -168,7 +193,7 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search 48+ exams..."
+              placeholder={isHindi ? '४८+ परीक्षाएं खोजें...' : 'Search 48+ exams...'}
               style={{ outline: 'none', boxShadow: 'none' }}
               className="w-full bg-transparent text-[var(--sr-text)] placeholder-[var(--sr-text-subtle)] text-xs sm:text-sm font-bold border-none outline-none ring-0 focus:outline-none focus:ring-0 min-h-[36px]"
             />
@@ -195,7 +220,7 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
                   : 'bg-[var(--sr-surface-2)] text-[var(--sr-text-muted)] hover:text-[var(--sr-text)]'
               }`}
             >
-              {cat.label}
+              {isHindi ? cat.labelHi : cat.labelEn}
             </button>
           ))}
         </div>
@@ -205,7 +230,10 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
           {filteredExams.map((ex) => {
             const isSelected = ex.id === selectedExam;
             const { code, color } = getExamBadge(ex.id);
-            const { shortName, fullName } = parseExamLabel(ex.label);
+            const parsed = parseExamLabel(ex.label);
+            const hiLabel = EXAM_LABEL_HI[ex.id];
+            const shortName = isHindi && hiLabel ? hiLabel.shortName : parsed.shortName;
+            const fullName = isHindi && hiLabel ? hiLabel.fullName : parsed.fullName;
 
             return (
               <button
@@ -248,7 +276,7 @@ export const ExamSelectModal: React.FC<ExamSelectModalProps> = ({
 
           {filteredExams.length === 0 && (
             <div className="py-12 text-center text-xs text-[var(--sr-text-muted)] font-medium">
-              No exams found matching "{searchQuery}".
+              {isHindi ? `"${searchQuery}" से मेल खाती कोई परीक्षा नहीं मिली।` : `No exams found matching "${searchQuery}".`}
             </div>
           )}
         </div>

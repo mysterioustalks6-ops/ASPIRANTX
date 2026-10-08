@@ -92,19 +92,23 @@ const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
 import { LanguagePickerModal } from './components/LanguagePickerModal';
+import { useLanguage } from './lib/i18n/LanguageContext';
 
 const EXAMS = EXAM_LIST;
 
 const SuspenseFallback = () => (
   <div className="p-12 text-center text-slate-400 space-y-3">
     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-    <div className="text-xs font-semibold tracking-wide uppercase text-indigo-400">Loading Enterprise View...</div>
+    <div className="text-xs font-semibold tracking-wide uppercase text-indigo-400">
+      {typeof document !== 'undefined' && document.documentElement.lang === 'hi' ? 'दृश्य लोड हो रहा है...' : 'Loading Enterprise View...'}
+    </div>
   </div>
 );
 
 export const DESIGNATED_ADMIN_EMAIL = 'ambujyadav0010@gmail.com';
 
 function AppContent() {
+  const { isHindi } = useLanguage();
   const [user, setUser] = useState<UserProfile | null>(() => {
     try {
       const saved = typeof window !== 'undefined' ? (localStorage.getItem('studyride_user') || localStorage.getItem('aspirantx_auth_user') || localStorage.getItem('aspirantx_user_profile')) : null;
@@ -1434,10 +1438,12 @@ function AppContent() {
                 <div className="hidden md:flex w-full px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-purple-500/10 to-cyan-500/10 border border-amber-500/30 items-center justify-between gap-3 text-xs shadow-md">
                   <div className="flex items-center gap-2 overflow-hidden">
                     <span className="px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 font-black text-[10px] uppercase shrink-0">
-                      Announcement
+                      {isHindi ? 'महत्वपूर्ण सूचना' : 'Announcement'}
                     </span>
                     <p className="text-amber-800 dark:text-amber-200 font-bold truncate">
-                      {customizer.announcementText}
+                      {isHindi && (!customizer.announcementText || customizer.announcementText.includes('New Syllabus Templates'))
+                        ? '🔥 यूपीपीएससी, बिहार बोर्ड, कक्षा १०/१२ एवं पीएचडी प्रवेश परीक्षा हेतु नवीन पाठ्यक्रम टेम्पलेट्स जोड़े गए! प्रोफ़ाइल में अपना लक्ष्य अनुकूलित करें।'
+                        : customizer.announcementText}
                     </p>
                   </div>
 
@@ -1446,7 +1452,7 @@ function AppContent() {
                       onClick={() => setShowCustomizerModal(true)}
                       className="text-[11px] font-extrabold text-cyan-600 dark:text-cyan-400 hover:underline shrink-0 hidden sm:inline"
                     >
-                      Customize Ticker →
+                      {isHindi ? 'सूचना पट्टी बदलें →' : 'Customize Ticker →'}
                     </button>
                   )}
                 </div>
@@ -1470,15 +1476,20 @@ function AppContent() {
                   {/* Banner Content */}
                   <div className="relative z-10 p-6 md:p-8 max-w-2xl space-y-3">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-black uppercase tracking-wider backdrop-blur-md">
-                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Custom Prep Suite Banner
+                      <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                      {isHindi ? 'विशेष परीक्षा तैयारी मंच' : 'Custom Prep Suite Banner'}
                     </div>
 
                     <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
-                      {customizer.heroBannerTitle}
+                      {isHindi && (!customizer.heroBannerTitle || customizer.heroBannerTitle.includes('Complete Prep Suite'))
+                        ? 'सभी परीक्षाओं हेतु संपूर्ण तैयारी मंच (कक्षा १ से पीएचडी)'
+                        : customizer.heroBannerTitle}
                     </h2>
 
                     <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-medium">
-                      {customizer.heroBannerSubtitle}
+                      {isHindi && (!customizer.heroBannerSubtitle || customizer.heroBannerSubtitle.includes('Track Syllabus'))
+                        ? 'पाठ्यक्रम ट्रैकिंग, वीर एआई अध्ययन साथी, सजीव मॉक भविष्यवक्ता एवं समुदाय चर्चा — सब कुछ एक स्थान पर।'
+                        : customizer.heroBannerSubtitle}
                     </p>
 
                     <div className="pt-2 flex flex-wrap items-center gap-3">
@@ -1486,7 +1497,7 @@ function AppContent() {
                         onClick={() => setActiveTab('syllabus')}
                         className="px-5 py-2.5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition-all shadow-lg shadow-cyan-500/20"
                       >
-                        {customizer.heroBannerCtaText || 'Explore Syllabus Tracker'}
+                        {isHindi ? 'पाठ्यक्रम ट्रैकर देखें' : (customizer.heroBannerCtaText || 'Explore Syllabus Tracker')}
                       </button>
 
                       {isAdmin && (
@@ -1494,7 +1505,8 @@ function AppContent() {
                           onClick={() => setShowCustomizerModal(true)}
                           className="px-4 py-2.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all"
                         >
-                          <Sliders className="w-3.5 h-3.5 text-purple-400" /> Customize Banner Photo & Text
+                          <Sliders className="w-3.5 h-3.5 text-purple-400" />
+                          {isHindi ? 'बैनर फोटो व विवरण बदलें' : 'Customize Banner Photo & Text'}
                         </button>
                       )}
                     </div>
