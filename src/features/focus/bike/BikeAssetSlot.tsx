@@ -41,14 +41,14 @@ export const BikeAssetSlot: React.FC<BikeAssetSlotProps> = ({
       } ${sizeClasses} ${className}`}
     >
       {/* Top Header */}
-      <div className="w-full flex items-center justify-between text-[8px] font-black uppercase tracking-wider">
+      <div className="w-full flex items-center justify-between text-[8px] font-bold">
         <span className="font-mono text-slate-400 truncate max-w-[80px]">
           {asset.id}
         </span>
-        <span className={`px-1 py-0.2 rounded text-[8px] font-black ${
+        <span className={`px-1 py-0.2 rounded text-[8px] font-bold ${
           isUnlocked ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
         }`}>
-          {isUnlocked ? 'UNLOCKED' : 'LOCKED'}
+          {isUnlocked ? 'Unlocked' : 'Locked'}
         </span>
       </div>
 
@@ -68,8 +68,8 @@ export const BikeAssetSlot: React.FC<BikeAssetSlotProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="w-full text-[7px] font-bold uppercase tracking-tight text-slate-400 border-t border-slate-800/80 pt-0.5">
-        Penpot SVG Slot
+      <div className="w-full text-[7px] font-bold text-slate-400 border-t border-slate-800/80 pt-0.5">
+        SVG Slot
       </div>
     </div>
   );

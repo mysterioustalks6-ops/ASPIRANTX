@@ -77,6 +77,8 @@
     "autoprefixer": "^10.4.21",
     "axe-core": "^4.14.0",
     "esbuild": "^0.25.0",
+    "pixelmatch": "^8.0.0",
+    "pngjs": "^7.0.0",
     "puppeteer-core": "^25.10.0",
     "rollup-plugin-visualizer": "^7.1.1",
     "tailwindcss": "^4.1.14",

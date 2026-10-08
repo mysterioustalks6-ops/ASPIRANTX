@@ -1,0 +1,127 @@
+[
+  {
+    "file": "timer_fs11_dark.png",
+    "sha256": "e5e395a86f65d22fcc9fa92b0bfb1e98a21fba2be8cb7c24bc874248c227dab6",
+    "bytes": 204787
+  },
+  {
+    "file": "garage_fs11_dark.png",
+    "sha256": "b89769ee34efee11ca52a482479e32ade95eeff92bedd88dc22312c658a72f22",
+    "bytes": 261020
+  },
+  {
+    "file": "relax_idle_fs11_dark.png",
+    "sha256": "ddc916f6300aca3bbdc78bcebafa01711aa779cddabaad599f175951bc0bfc45",
+    "bytes": 630528
+  },
+  {
+    "file": "relax_running_fs11_dark.png",
+    "sha256": "f831d15b536d4d4ae2454b63897874b13b8c40c416f42127715d7aaa13ff4d58",
+    "bytes": 634915
+  },
+  {
+    "file": "relax_paused_fs11_dark.png",
+    "sha256": "a734cdcef8febdeb4faf37acfc54138dd4e216e9a066fccaebb78a68841b4aee",
+    "bytes": 631913
+  },
+  {
+    "file": "timer_fs11_light.png",
+    "sha256": "49b990271656a83e960e92a13702ff80dc4007c66d25406a281ff79da380befe",
+    "bytes": 629232
+  },
+  {
+    "file": "garage_fs11_light.png",
+    "sha256": "8df0cf76099d35abfb4ea8eb4bec7aa2d631a64a0d8b044397b173d1f7e195dd",
+    "bytes": 213763
+  },
+  {
+    "file": "relax_idle_fs11_light.png",
+    "sha256": "1757b41f1a58489c14864bf8066002007c016175b4c8b57b053b98ba5857b322",
+    "bytes": 630476
+  },
+  {
+    "file": "relax_running_fs11_light.png",
+    "sha256": "2d626a284365666e72c2c64e7dadb893f2878f4d4f710e709c0523fcef80751b",
+    "bytes": 635816
+  },
+  {
+    "file": "relax_paused_fs11_light.png",
+    "sha256": "e7a384691a5274b1e6391c605e72a83652c9e7bccc830080b67b861eb3aeeac2",
+    "bytes": 630987
+  },
+  {
+    "file": "timer_fs13_dark.png",
+    "sha256": "301f10f3629ceb9dfc7bcab343737c3eee0bcbb583fa6e30dfdacef19f64f24d",
+    "bytes": 218469
+  },
+  {
+    "file": "garage_fs13_dark.png",
+    "sha256": "44625f83ed14d2cb88e009f85986dfe0662c433ef64a202b0abc48de1e5432fc",
+    "bytes": 289967
+  },
+  {
+    "file": "relax_idle_fs13_dark.png",
+    "sha256": "64505014d11e87661da647d9bb1480bdc91fd1d59587b09a28cb7d56cf90fb4a",
+    "bytes": 635459
+  },
+  {
+    "file": "relax_running_fs13_dark.png",
+    "sha256": "91b0e1a5664d9ec6789adba6370f3e30b659279c90a5dc97229d5af00cebeed8",
+    "bytes": 637159
+  },
+  {
+    "file": "relax_paused_fs13_dark.png",
+    "sha256": "64505014d11e87661da647d9bb1480bdc91fd1d59587b09a28cb7d56cf90fb4a",
+    "bytes": 635459
+  },
+  {
+    "file": "timer_fs13_light.png",
+    "sha256": "cda864ea63eaaf4ab82f207106de74cfd509f0b670587653408fcef7995e86d4",
+    "bytes": 634868
+  },
+  {
+    "file": "garage_fs13_light.png",
+    "sha256": "85fa5da2271fb75787e1ac81051f92e8f62e8b091d3a356172b5855074a7b4f9",
+    "bytes": 233175
+  },
+  {
+    "file": "relax_idle_fs13_light.png",
+    "sha256": "bac15dd271c54349fb31641f7bf9b2c6e3d03da57232fcec790f5ce4ded74456",
+    "bytes": 634659
+  },
+  {
+    "file": "relax_running_fs13_light.png",
+    "sha256": "61c961d240b3148d0cf9b2ae7f5cba414163cfcc663d7c0fecdfbeb62538939a",
+    "bytes": 638646
+  },
+  {
+    "file": "relax_paused_fs13_light.png",
+    "sha256": "cb264c11c55c8f44ce268165afa7b5aacec11f361412b7e66909e9fd6285720c",
+    "bytes": 634267
+  },
+  {
+    "file": "relax_running_f1.png",
+    "sha256": "99abb75361b2e24ba34c4dcf15b92a4c75c46acf7f374e6d8fb7fd928245a091",
+    "bytes": 30967
+  },
+  {
+    "file": "relax_running_f2.png",
+    "sha256": "99abb75361b2e24ba34c4dcf15b92a4c75c46acf7f374e6d8fb7fd928245a091",
+    "bytes": 30967
+  },
+  {
+    "file": "relax_paused_f1.png",
+    "sha256": "99abb75361b2e24ba34c4dcf15b92a4c75c46acf7f374e6d8fb7fd928245a091",
+    "bytes": 30967
+  },
+  {
+    "file": "relax_paused_f2.png",
+    "sha256": "7f99fe12232250cfe359ea12d0ee0b5d45b8dfbfb41b060eb497750fbeffebe8",
+    "bytes": 30731
+  },
+  {
+    "file": "relax_running_diff.png",
+    "sha256": "575ec74e1bdb95212ea11ef91ca2510e753dc7d98e896d29c7378b550afa881e",
+    "bytes": 25415
+  }
+]

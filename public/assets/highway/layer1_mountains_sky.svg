@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="100%" height="100%">
+  <defs>
+    <!-- Sky Twilight Gradient -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0a0f1d" />
+      <stop offset="35%" stop-color="#1e1b4b" />
+      <stop offset="65%" stop-color="#312e81" />
+      <stop offset="85%" stop-color="#4c1d95" />
+      <stop offset="100%" stop-color="#831843" />
+    </linearGradient>
+
+    <!-- Sunset Horizon Glow -->
+    <radialGradient id="horizonSunGlow" cx="50%" cy="85%" r="60%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.8" />
+      <stop offset="30%" stop-color="#f43f5e" stop-opacity="0.5" />
+      <stop offset="70%" stop-color="#6366f1" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#0a0f1d" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Far Mountain Ridge Gradient -->
+    <linearGradient id="farMtnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4338ca" stop-opacity="0.6" />
+      <stop offset="50%" stop-color="#312e81" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0.95" />
+    </linearGradient>
+
+    <!-- Mid-Far Mountain Ridge Gradient -->
+    <linearGradient id="midFarMtnGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3730a3" />
+      <stop offset="60%" stop-color="#1e1b4b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+
+    <!-- Atmospheric Mist / Cloud Gradient -->
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fda4af" stop-opacity="0" />
+      <stop offset="50%" stop-color="#fda4af" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#fda4af" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sky Canvas -->
+  <rect width="1600" height="900" fill="url(#skyGrad)" />
+
+  <!-- Distant Stars (Subtle Twilight) -->
+  <g fill="#ffffff" opacity="0.6">
+    <circle cx="120" cy="80" r="1.5" />
+    <circle cx="280" cy="140" r="1" />
+    <circle cx="450" cy="90" r="1.8" />
+    <circle cx="680" cy="120" r="1.2" />
+    <circle cx="890" cy="70" r="1.5" />
+    <circle cx="1120" cy="130" r="1.2" />
+    <circle cx="1340" cy="85" r="1.8" />
+    <circle cx="1490" cy="150" r="1" />
+    <circle cx="340" cy="60" r="1.4" opacity="0.8" />
+    <circle cx="980" cy="110" r="1.4" opacity="0.9" />
+  </g>
+
+  <!-- Horizon Sun & Twilight Glow -->
+  <rect y="300" width="1600" height="600" fill="url(#horizonSunGlow)" />
+  <circle cx="800" cy="530" r="90" fill="#fbbf24" opacity="0.35" filter="blur(20px)" />
+  <circle cx="800" cy="530" r="45" fill="#fef08a" opacity="0.75" />
+
+  <!-- Drifting High Clouds (Soft Streaks) -->
+  <path d="M100 240 Q 400 220 700 240 T 1300 230" stroke="url(#cloudGrad)" stroke-width="28" stroke-linecap="round" fill="none" />
+  <path d="M300 310 Q 700 290 1050 310 T 1550 300" stroke="url(#cloudGrad)" stroke-width="22" stroke-linecap="round" fill="none" opacity="0.7" />
+
+  <!-- ── LAYER 1A: Ultra Distant Mountain Peaks ── -->
+  <path d="M0 580 L 120 440 L 260 520 L 410 390 L 580 480 L 800 340 L 1020 470 L 1180 380 L 1340 500 L 1480 410 L 1600 520 L 1600 900 L 0 900 Z" fill="url(#farMtnGrad)" />
+
+  <!-- ── LAYER 1B: Secondary Mountain Silhouettes (Dusk Haze) ── -->
+  <path d="M0 620 L 180 490 L 360 560 L 530 460 L 710 540 L 800 480 L 920 540 L 1120 450 L 1290 530 L 1460 470 L 1600 580 L 1600 900 L 0 900 Z" fill="url(#midFarMtnGrad)" />
+
+  <!-- Atmospheric Horizon Fog Ribbon -->
+  <rect y="520" width="1600" height="70" fill="#f43f5e" opacity="0.12" filter="blur(10px)" />
+</svg>

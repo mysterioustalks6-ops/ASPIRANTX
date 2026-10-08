@@ -313,8 +313,8 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
             <span>Back</span>
           </button>
           <div className="text-center">
-            <h1 className="text-lg font-black tracking-wide text-white">MY RIDES</h1>
-            <p className="text-[11px] text-slate-400 font-mono">Performance & Analytics</p>
+            <h1 className="text-lg font-bold text-white">My rides</h1>
+            <p className="text-[11px] text-slate-400 font-mono">Performance & analytics</p>
           </div>
           <div className="w-16" />
         </div>
@@ -325,7 +325,7 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
             <TrendingUp className="w-12 h-12 text-slate-500" />
           </div>
           <div className="space-y-2 max-w-sm">
-            <h2 className="text-xl font-black text-white">No Rides Logged Yet</h2>
+            <h2 className="text-xl font-bold text-white">No rides logged yet</h2>
             <p className="text-xs text-slate-400 leading-relaxed">
               Complete your first study ride on the highway to unlock precision pace tracking, subject distribution, and streak analytics.
             </p>
@@ -360,8 +360,8 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
           <span>Back</span>
         </button>
         <div className="text-center">
-          <h1 className="text-lg font-black tracking-wide text-white">MY RIDES</h1>
-          <p className="text-[11px] text-slate-400 font-mono">Calm Highway Study Telemetry</p>
+          <h1 className="text-lg font-bold text-white">My rides</h1>
+          <p className="text-[11px] text-slate-400 font-mono">Calm highway study telemetry</p>
         </div>
         <button
           onClick={onStartRide}
@@ -397,7 +397,7 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
             <Clock className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-white">{currentPeriodMetrics.hours}</span>
+            <span className="text-2xl font-bold text-white">{currentPeriodMetrics.hours}</span>
             <span className="text-xs text-slate-400 ml-1 font-mono">hrs</span>
           </div>
         </div>
@@ -408,7 +408,7 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
             <Award className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-white">{currentPeriodMetrics.count}</span>
+            <span className="text-2xl font-bold text-white">{currentPeriodMetrics.count}</span>
             <span className="text-xs text-slate-400 ml-1 font-mono">sessions</span>
           </div>
         </div>
@@ -419,7 +419,7 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
             <TrendingUp className="w-4 h-4 text-amber-400" />
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-white">{currentPeriodMetrics.avgMins}</span>
+            <span className="text-2xl font-bold text-white">{currentPeriodMetrics.avgMins}</span>
             <span className="text-xs text-slate-400 ml-1 font-mono">mins</span>
           </div>
         </div>
@@ -430,7 +430,7 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
             <Flame className="w-4 h-4 text-rose-400" />
           </div>
           <div className="mt-2">
-            <span className="text-2xl font-black text-white">{currentPeriodMetrics.longestMins}</span>
+            <span className="text-2xl font-bold text-white">{currentPeriodMetrics.longestMins}</span>
             <span className="text-xs text-slate-400 ml-1 font-mono">mins</span>
           </div>
         </div>
@@ -742,7 +742,7 @@ export const MyRidesScreen: React.FC<MyRidesScreenProps> = ({
           <div className="my-auto py-4 text-center space-y-2">
             {bestHourOfDay.status === 'available' ? (
               <>
-                <div className="text-2xl font-black text-amber-400">
+                <div className="text-2xl font-bold text-amber-400">
                   {bestHourOfDay.label}
                 </div>
                 <p className="text-xs text-slate-400 max-w-xs mx-auto">

@@ -56,25 +56,24 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto space-y-5 pb-28 px-3 sm:px-4 text-[var(--sr-text)] select-none">
-      {/* ── 1. TOP HEADER (CENTERED TITLE MATCHING REFERENCE) ── */}
-      <div className="relative flex items-center justify-between gap-2 pt-2">
-        {onBack && (
-          <button
-            onClick={onBack}
-            aria-label="Back to dashboard"
-            className="p-2.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] text-slate-300 border border-[var(--sr-line)] transition-colors shrink-0"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-        )}
-
-        <div className="flex-1 text-center px-1">
-          <h1 className="text-xl sm:text-2xl font-black text-white italic tracking-wide">
-            Garage and Collection
+      {/* ── 1. TOP HEADER (ONE-LINE TITLE "GARAGE", BUTTONS WRAP UNDER IF NEEDED) ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+        <div className="flex items-center gap-3">
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="Back to dashboard"
+              className="p-2.5 rounded-2xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] text-slate-300 border border-[var(--sr-line)] transition-colors shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          )}
+          <h1 className="text-xl sm:text-2xl font-bold text-white">
+            Garage
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           {onNavigateToMyRides && (
             <TactileButton
               variant="secondary"
@@ -82,7 +81,7 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
               onClick={onNavigateToMyRides}
               icon={<BarChart2 className="w-4 h-4 text-[var(--sr-blue)]" />}
             >
-              My Rides
+              My rides
             </TactileButton>
           )}
           <TactileButton
@@ -91,12 +90,12 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
             onClick={handleStartRide}
             icon={<Play className="w-4 h-4 fill-current" />}
           >
-            Ride Timer
+            Start ride
           </TactileButton>
         </div>
       </div>
 
-      {/* ── 2. RIDER FOCUS COACH CARD (MATCHING REFERENCE IMAGE) ── */}
+      {/* ── 2. RIDER FOCUS COACH CARD (VEER MASCOT) ── */}
       <div className="p-4 sm:p-5 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line)] shadow-md flex items-center gap-3.5">
         <div className="shrink-0 relative">
           <VeerMascot 
@@ -113,17 +112,17 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-amber)]">
-              RIDER FOCUS COACH •
-            </span>
             <span className="w-2 h-2 rounded-full bg-[var(--sr-amber)] animate-pulse" />
+            <span className="text-xs font-bold text-[var(--sr-amber)]">
+              Rider focus coach
+            </span>
           </div>
           <p className="text-xs sm:text-sm font-medium text-slate-200 mt-1 leading-snug">
             {isTierFullyAssembled
               ? `Machine fully forged! Hit celebrate to park your Cruiser in the permanent garage collection!`
               : hasBikes
               ? `You have forged ${bikeState.completedBikes.length} machine${bikeState.completedBikes.length > 1 ? 's' : ''}. Complete 100% of your weekly target to forge the ${bikeState.currentTier.name}!`
-              : `Your garage bay is open. Complete 100% in our weekly target to forge the ${bikeState.currentTier.name} into the permanent collection...`}
+              : `Your garage bay is open. Complete 100% of your weekly target to forge the ${bikeState.currentTier.name} into the permanent collection.`}
           </p>
         </div>
 
@@ -168,11 +167,11 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-xl sm:text-2xl font-black text-white">
+            <span className="text-xl sm:text-2xl font-bold text-white">
               {bikeState.progressPercent}%
             </span>
             <span className="text-[10px] font-bold text-[var(--sr-blue)]">
-              {bikeState.unlockedParts.length}/{bikeState.currentTier.parts.length} Parts
+              {bikeState.unlockedParts.length}/{bikeState.currentTier.parts.length} parts
             </span>
           </div>
         </div>
@@ -180,18 +179,18 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
         {/* Right Info */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="px-2 py-0.5 rounded-lg bg-[var(--sr-surface-2)] border border-[var(--sr-line)] text-[10px] font-black uppercase text-[var(--sr-amber)] whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded-lg bg-[var(--sr-surface-2)] border border-[var(--sr-line)] text-[10px] font-bold text-[var(--sr-amber)] whitespace-nowrap">
               Tier {bikeState.currentTier.tierNumber} / 4
             </span>
             <span className="text-xs text-[var(--sr-text-subtle)] font-bold">
-              Current Weekly Build
+              Current weekly build
             </span>
           </div>
-          <h2 className="text-base sm:text-xl font-black text-white truncate">
+          <h2 className="text-base sm:text-xl font-bold text-white truncate">
             {bikeState.currentTier.name}
           </h2>
           <p className="text-xs text-[var(--sr-text-subtle)] font-medium mt-1 leading-relaxed">
-            {bikeState.currentTier.subtitle} • {bikeState.currentTier.engineDisplacement} Air-Cooled
+            {[bikeState.currentTier.subtitle, bikeState.currentTier.engineDisplacement].filter(Boolean).join(' • ')}
           </p>
         </div>
       </div>
@@ -210,12 +209,12 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Target className="w-4 h-4 text-[var(--sr-primary)]" />
-            <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
-              Weekly Target: {hasUserSetTarget ? `${userPrefs.weeklyTargetHours}h` : 'Empty (Unset)'}
+            <h3 className="text-xs sm:text-sm font-bold text-white">
+              Weekly target: {hasUserSetTarget ? `${userPrefs.weeklyTargetHours}h` : 'Empty (Unset)'}
             </h3>
           </div>
-          <span className="px-2.5 py-1 rounded-xl bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-xs font-black">
-            {hasUserSetTarget ? `${bikeState.progressPercent}% Target` : 'Target Unset'}
+          <span className="px-2.5 py-1 rounded-xl bg-[var(--sr-blue-subtle)] text-[var(--sr-blue)] text-xs font-bold">
+            {hasUserSetTarget ? `${bikeState.progressPercent}% target` : 'Target unset'}
           </span>
         </div>
 
@@ -249,9 +248,9 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
 
       {/* ── 6. 12-WEEK SEASON STRIP ── */}
       <div className="p-4 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line)] shadow-md space-y-3">
-        <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-[var(--sr-text-subtle)]">
+        <div className="flex items-center justify-between text-xs font-bold text-[var(--sr-text-subtle)]">
           <span className="flex items-center gap-1.5 text-[var(--sr-blue)]">
-            12-Week Season Progression
+            12-Week season progression
           </span>
           <span className="text-[11px] font-bold text-[var(--sr-text-muted)]">
             Week {bikeState.currentWeekNumber} of 12
@@ -276,7 +275,7 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
                     : 'bg-[var(--sr-surface-2)]/60 border-[var(--sr-line)] text-slate-500 opacity-60'
                 }`}
               >
-                <span className="text-[10px] font-black">
+                <span className="text-[10px] font-bold">
                   W{weekNum}
                 </span>
                 <div className="mt-1">
@@ -298,9 +297,9 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
 
       {/* ── 7. COMPLETED COLLECTION (HONEST EMPTY STATE) ── */}
       <div className="space-y-3 pt-1">
-        <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-sm font-bold text-white flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-400" />
-          Completed Collection ({bikeState.completedBikes.length})
+          Completed collection ({bikeState.completedBikes.length})
         </h3>
 
         {!hasBikes ? (
@@ -309,8 +308,8 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
               <Bike className="w-8 h-8 stroke-[1.8]" />
             </div>
             <div className="max-w-sm mx-auto space-y-1">
-              <h4 className="text-base font-black text-white">
-                No Completed Bikes Yet
+              <h4 className="text-base font-bold text-white">
+                No completed bikes yet
               </h4>
               <p className="text-xs text-[var(--sr-text-subtle)] leading-relaxed">
                 Your garage is ready for its first machine. Complete your weekly focus target to forge and park your Cruiser here!
@@ -336,17 +335,17 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
                 className="p-4 rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line)] hover:border-amber-400/50 transition-all cursor-pointer space-y-3 group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="px-2 py-0.5 rounded-md bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] text-[10px] font-black uppercase">
+                  <span className="px-2 py-0.5 rounded-md bg-[var(--sr-amber-subtle)] text-[var(--sr-amber)] text-[10px] font-bold">
                     Week {bike.weekNumber}
                   </span>
                   <Trophy className="w-4 h-4 text-amber-400" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-black text-white group-hover:text-amber-300 transition-colors">
+                  <h4 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
                     {bike.name}
                   </h4>
                   <p className="text-xs text-[var(--sr-text-subtle)]">
-                    {bike.totalHours}h logged • {bike.partsUnlockedCount} parts installed
+                    {[bike.totalHours ? `${bike.totalHours}h logged` : '', bike.partsUnlockedCount ? `${bike.partsUnlockedCount} parts installed` : ''].filter(Boolean).join(' • ')}
                   </p>
                 </div>
               </div>
@@ -370,8 +369,8 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
             <div className="w-20 h-20 rounded-3xl bg-amber-400/20 border-2 border-amber-400 mx-auto flex items-center justify-center text-amber-400">
               <Sparkles className="w-10 h-10 fill-current" />
             </div>
-            <h3 className="text-2xl font-black text-white">
-              Cruiser 150 Assembled!
+            <h3 className="text-2xl font-bold text-white">
+              Cruiser 150 assembled!
             </h3>
             <p className="text-xs text-[var(--sr-text-muted)] leading-relaxed">
               Incredible focus dedication! All 8 parts forged and tuned. Your Highway Cruiser is ready for the open road.
@@ -382,7 +381,7 @@ export const GarageScreen: React.FC<GarageScreenProps> = ({
               className="w-full"
               onClick={() => setShowCelebrationModal(false)}
             >
-              Claim to Collection
+              Claim to collection
             </TactileButton>
           </div>
         </div>

@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500" width="100%" height="100%">
+  <defs>
+    <!-- Midground Hill Gradient -->
+    <linearGradient id="midHillGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="40%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Warm Cabin Window Glow -->
+    <radialGradient id="windowGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="80%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </radialGradient>
+  </defs>
+
+  <!-- Rolling Foothill Contour (Left to Right) -->
+  <path d="M0 260 Q 240 180 500 240 T 1000 210 Q 1300 170 1600 250 L 1600 500 L 0 500 Z" fill="url(#midHillGrad)" />
+
+  <!-- Alpine Pine Tree Cluster (Left Side) -->
+  <g fill="#0b1329">
+    <!-- Pine 1 -->
+    <polygon points="120,380 90,260 150,260" />
+    <polygon points="120,300 95,200 145,200" />
+    <polygon points="120,230 105,150 135,150" />
+    <polygon points="120,165 112,110 128,110" />
+    <rect x="117" y="380" width="6" height="40" fill="#060913" />
+
+    <!-- Pine 2 -->
+    <polygon points="190,410 165,300 215,300" />
+    <polygon points="190,330 170,240 210,240" />
+    <polygon points="190,260 178,190 202,190" />
+    <rect x="187" y="410" width="6" height="35" fill="#060913" />
+
+    <!-- Pine 3 (Smaller) -->
+    <polygon points="60,350 40,270 80,270" />
+    <polygon points="60,290 45,220 75,220" />
+    <polygon points="60,230 50,170 70,170" />
+    <rect x="58" y="350" width="4" height="25" fill="#060913" />
+
+    <!-- Pine 4 (Mid-left) -->
+    <polygon points="340,320 320,250 360,250" />
+    <polygon points="340,270 325,200 355,200" />
+    <polygon points="340,215 330,160 350,160" />
+    <rect x="338" y="320" width="4" height="20" fill="#060913" />
+  </g>
+
+  <!-- Roadside Cozy Himalayan Cabin (Left Ridge) -->
+  <g id="mountainCabin">
+    <!-- Cabin Roof -->
+    <polygon points="260,230 220,260 300,260" fill="#1e293b" />
+    <polygon points="220,260 215,263 295,263 300,260" fill="#334155" />
+    <!-- Cabin Walls -->
+    <rect x="225" y="260" width="70" height="40" fill="#0f172a" stroke="#1e293b" stroke-width="2" />
+    <!-- Chimney & Smoke -->
+    <rect x="275" y="225" width="8" height="18" fill="#334155" />
+    <path d="M279 220 Q 285 205 278 190 T 286 170" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.4" />
+    <!-- Glowing Window -->
+    <rect x="240" y="270" width="16" height="14" rx="2" fill="url(#windowGlow)" filter="drop-shadow(0 0 6px #f59e0b)" />
+    <!-- Window Cross Grille -->
+    <line x1="248" y1="270" x2="248" y2="284" stroke="#78350f" stroke-width="1.5" />
+    <line x1="240" y1="277" x2="256" y2="277" stroke="#78350f" stroke-width="1.5" />
+  </g>
+
+  <!-- Roadside Wooden Utility Poles / Cables (Right Side) -->
+  <g id="utilityPoles" stroke="#1e293b">
+    <line x1="1250" y1="230" x2="1250" y2="390" stroke-width="5" stroke-linecap="round" />
+    <line x1="1230" y1="250" x2="1270" y2="250" stroke-width="3" />
+    <line x1="1480" y1="250" x2="1480" y2="430" stroke-width="6" stroke-linecap="round" />
+    <line x1="1455" y1="275" x2="1505" y2="275" stroke-width="4" />
+    <!-- Drooping Power Cable Wire -->
+    <path d="M1250 250 Q 1365 290 1480 275" fill="none" stroke-width="1.5" opacity="0.6" />
+  </g>
+
+  <!-- Alpine Pine Tree Cluster (Right Side) -->
+  <g fill="#0b1329">
+    <!-- Right Pine 1 -->
+    <polygon points="1380,360 1355,270 1405,270" />
+    <polygon points="1380,290 1360,215 1400,215" />
+    <polygon points="1380,230 1368,170 1392,170" />
+    <rect x="1377" y="360" width="6" height="25" fill="#060913" />
+
+    <!-- Right Pine 2 -->
+    <polygon points="1520,380 1490,280 1550,280" />
+    <polygon points="1520,300 1495,220 1545,220" />
+    <polygon points="1520,235 1505,160 1535,160" />
+    <rect x="1517" y="380" width="6" height="30" fill="#060913" />
+  </g>
+
+  <!-- Distant Highway Route Sign (Milestone) -->
+  <g id="roadsign" transform="translate(1120, 290)">
+    <rect x="0" y="0" width="38" height="26" rx="4" fill="#065f46" stroke="#10b981" stroke-width="2" />
+    <rect x="17" y="26" width="4" height="28" fill="#475569" />
+    <text x="19" y="12" fill="#ffffff" font-size="8" font-family="monospace" font-weight="bold" text-anchor="middle">NH-44</text>
+    <text x="19" y="21" fill="#a7f3d0" font-size="6" font-family="sans-serif" font-weight="bold" text-anchor="middle">FOCUS</text>
+  </g>
+</svg>

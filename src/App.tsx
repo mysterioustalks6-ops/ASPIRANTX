@@ -895,7 +895,7 @@ function AppContent() {
               };
 
               // AUTHORITATIVE EXAM RESOLUTION BEFORE SHELL RENDER
-              const resolvedExam = normalizeExamId(u.exam || cachedExam || 'UPSC_CSE');
+              const resolvedExam = normalizeExamId(u.exam || cachedExam || 'NEET_UG');
               u.exam = resolvedExam;
               setSelectedExamId(resolvedExam, { persist: true, syncUser: false, userId: u.id });
               recordPerfMarker('examResolved');

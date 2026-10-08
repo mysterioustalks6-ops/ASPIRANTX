@@ -6,6 +6,7 @@
 
 import { FocusSession, getDailyCountedSecondsMap, getLocalDateKey } from './sessionStore';
 import { BikeEngineConfig, DEFAULT_BIKE_CONFIG, VehicleTierConfig, BikePartConfig } from './bikeConfig';
+import { BIKE_COACH_MESSAGES } from './bikeCoachCopy';
 
 export interface UserBikePreferences {
   weeklyTargetHours?: number | null; // default null (EMPTY)
@@ -260,46 +261,40 @@ export function getBikeState(
     nextPartToUnlock = currentTier.parts[0];
   }
 
-  // 5. Original Nudges (Veer OR Rider — never both at the same time)
+  // 5. Nudges (Consistent Veer companion with plain sentence-case copy)
   let activeNudge: { speaker: 'veer' | 'rider'; title: string; message: string };
 
   if (!weeklyTargetHours) {
     activeNudge = {
-      speaker: 'rider',
-      title: 'Set Your Weekly Target',
-      message: 'Every champion needs a destination. Set your target weekly study hours to begin forging the Highway Cruiser!'
+      speaker: 'veer',
+      title: 'Set weekly goal',
+      message: BIKE_COACH_MESSAGES.noTarget
     };
   } else if (progressPercent >= 100) {
     activeNudge = {
-      speaker: 'rider',
-      title: 'Target Smashed!',
-      message: `Exceptional discipline! 100% of weekly target conquered. The ${currentTier.name} is fully built and ready for the Garage.`
+      speaker: 'veer',
+      title: 'Goal reached',
+      message: BIKE_COACH_MESSAGES.targetReached
     };
   } else if (healthStatus === 'workshop') {
     activeNudge = {
-      speaker: 'rider',
-      title: 'Workshop Pit Stop',
-      message: `Bike is in the workshop for maintenance. Complete a ${rebuildMinutesNeeded - rebuildMinutesCompleted}m focus ride today to hit the highway again!`
+      speaker: 'veer',
+      title: 'Quick tune-up',
+      message: BIKE_COACH_MESSAGES.workshop
     };
-  } else if (healthStatus === 'damaged') {
+  } else if (healthStatus === 'damaged' || healthStatus === 'warning') {
     activeNudge = {
       speaker: 'veer',
-      title: 'Veer is Watching Over You',
-      message: 'Pace yourself, dost! Two missed rides noticed. Hop in for a calm 25-minute session today to keep your ride healthy.'
-    };
-  } else if (healthStatus === 'warning') {
-    activeNudge = {
-      speaker: 'veer',
-      title: 'Gentle Reminder',
-      message: 'One rest day behind you. Jump on the highway today to keep the engine humming!'
+      title: 'Gentle reminder',
+      message: BIKE_COACH_MESSAGES.warning
     };
   } else {
     activeNudge = {
-      speaker: 'rider',
-      title: 'Highway Momentum',
+      speaker: 'veer',
+      title: 'Flow state',
       message: nextPartToUnlock
-        ? `Next part: ${nextPartToUnlock.name} unlocks at ${nextPartToUnlock.unlockPercent}% of weekly target. Keep riding!`
-        : 'Stay in the flow zone!'
+        ? `Next part: ${nextPartToUnlock.name} unlocks at ${nextPartToUnlock.unlockPercent}% of your goal.`
+        : BIKE_COACH_MESSAGES.riding
     };
   }
 

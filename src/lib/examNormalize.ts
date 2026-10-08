@@ -1,9 +1,9 @@
 import { EXAM_LIST } from './examList';
 
 export function normalizeExamId(raw: string | undefined | null): string {
-  if (!raw) return 'UPSC_CSE';
+  if (!raw) return 'NEET_UG';
   const trimmed = raw.trim();
-  if (!trimmed) return 'UPSC_CSE';
+  if (!trimmed) return 'NEET_UG';
 
   const s = trimmed.toLowerCase();
 

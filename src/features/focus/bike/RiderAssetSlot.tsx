@@ -35,7 +35,7 @@ export const RiderAssetSlot: React.FC<RiderAssetSlotProps> = ({
       }}
     >
       {/* Top Header Badge */}
-      <div className="w-full flex items-center justify-between text-[10px] font-black uppercase tracking-wider">
+      <div className="w-full flex items-center justify-between text-[10px] font-bold">
         <span className="px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/20">
           Coach
         </span>
@@ -48,7 +48,7 @@ export const RiderAssetSlot: React.FC<RiderAssetSlotProps> = ({
       {/* Center Initials "R" Avatar */}
       <div className="flex-1 flex flex-col items-center justify-center my-auto">
         <div
-          className={`${avatarSize} rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-800 text-white font-black flex items-center justify-center shadow-lg border-2 border-indigo-300/40 relative group`}
+          className={`${avatarSize} rounded-2xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-800 text-white font-bold flex items-center justify-center shadow-lg border-2 border-indigo-300/40 relative group`}
           style={{
             boxShadow: '0 6px 0 0 rgba(30, 27, 75, 0.6)'
           }}
@@ -58,18 +58,18 @@ export const RiderAssetSlot: React.FC<RiderAssetSlotProps> = ({
           <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-slate-900" />
         </div>
 
-        <p className="text-xs font-black text-white mt-2.5 tracking-tight">
+        <p className="text-xs font-bold text-white mt-2.5 tracking-tight">
           Rider
         </p>
         <p className="text-[10px] font-medium text-slate-400">
-          Highway Focus Coach
+          Highway focus coach
         </p>
       </div>
 
       {/* Bottom Placeholder / Status Notice */}
       <div className="w-full pt-1.5 border-t border-slate-800/80">
-        <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-          Rider Slot • Ready
+        <span className="block text-[9px] font-bold text-slate-400">
+          Rider slot • Ready
         </span>
       </div>
     </div>

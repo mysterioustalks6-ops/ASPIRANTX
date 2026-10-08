@@ -83,6 +83,26 @@ export const typography = {
   },
 } as const;
 
+/**
+ * ── STAGE 2B UNIFIED PHONE TYPE SCALE ─────────────────────────────────────
+ * Derived 1:1 from Today screen (Nunito font stack).
+ * Used exclusively across Timer, Garage, Relax, and My Rides screens.
+ * Strict Constraints:
+ * - Font family: 'Nunito', system-ui, sans-serif
+ * - BANNED: italic, uppercase text-transform, letter-spacing > 0.02em, weight 900 (except timer digits)
+ * - Sentence case everywhere
+ * - Semantic token colors
+ */
+export const phoneTypeScale = {
+  title: 'font-sans text-lg sm:text-xl font-bold tracking-tight text-[var(--sr-text)]',
+  section: 'font-sans text-sm font-bold tracking-normal text-[var(--sr-text)]',
+  body: 'font-sans text-xs sm:text-sm font-medium tracking-normal text-[var(--sr-text-subtle)] leading-relaxed',
+  caption: 'font-sans text-xs font-semibold tracking-normal text-[var(--sr-text-muted)]',
+  button: 'font-sans text-xs sm:text-sm font-bold tracking-normal',
+  chip: 'font-sans text-xs font-bold tracking-normal',
+  digits: 'font-mono text-7xl sm:text-8xl md:text-9xl font-black tracking-tight text-white'
+} as const;
+
 // Semantic Surface Colors (Dark Academic Identity)
 export const surfaces = {
   background: '#0F1115',         // Base app background (Calm obsidian)

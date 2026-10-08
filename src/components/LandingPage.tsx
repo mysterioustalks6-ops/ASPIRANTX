@@ -153,6 +153,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
   const handleGuestLogin = () => {
     startDemoSession();
     const guestExam = 'NEET_UG';
+    try {
+      localStorage.setItem('aspirantx_global_selected_exam', 'NEET_UG');
+      localStorage.setItem('aspirantx_selected_exam', 'NEET_UG');
+    } catch (e) {}
     const guestExamDateStr = getKnownExamDateString(guestExam);
     const guestTargetYear = guestExamDateStr ? new Date(guestExamDateStr).getFullYear() : (new Date().getFullYear() + 1);
     const demoUser: UserProfile = {

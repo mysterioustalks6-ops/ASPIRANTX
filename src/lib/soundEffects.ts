@@ -245,6 +245,143 @@ class SoundFxEngine {
       }
     } catch {}
   }
+
+  // ── AMBIENT HIGHWAY SOUND GENERATOR (100% OFFLINE WEB AUDIO) ──
+  private ambientType: 'off' | 'rain' | 'wind' | 'engine' = 'off';
+  private ambientGainNode: GainNode | null = null;
+  private ambientNodes: AudioNode[] = [];
+
+  public getAmbientType(): 'off' | 'rain' | 'wind' | 'engine' {
+    return this.ambientType;
+  }
+
+  public setAmbient(type: 'off' | 'rain' | 'wind' | 'engine') {
+    this.stopAmbient();
+    if (type === 'off') {
+      this.ambientType = 'off';
+      return;
+    }
+    this.ambientType = type;
+    this.initContext();
+    if (!this.ctx) return;
+
+    try {
+      const masterGain = this.ctx.createGain();
+      masterGain.gain.setValueAtTime(0.001, this.ctx.currentTime);
+      masterGain.gain.exponentialRampToValueAtTime(0.28, this.ctx.currentTime + 1.0);
+      masterGain.connect(this.ctx.destination);
+      this.ambientGainNode = masterGain;
+
+      if (type === 'rain') {
+        const bufferSize = this.ctx.sampleRate * 2;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        let b0 = 0, b1 = 0, b2 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          output[i] = (b0 + b1 + b2) * 0.32;
+        }
+
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = noiseBuffer;
+        whiteNoise.loop = true;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(950, this.ctx.currentTime);
+
+        whiteNoise.connect(filter);
+        filter.connect(masterGain);
+        whiteNoise.start();
+        this.ambientNodes = [whiteNoise, filter, masterGain];
+      } else if (type === 'wind') {
+        const bufferSize = this.ctx.sampleRate * 2;
+        const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * 0.35;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(420, this.ctx.currentTime);
+        filter.Q.setValueAtTime(1.4, this.ctx.currentTime);
+
+        const lfo = this.ctx.createOscillator();
+        const lfoGain = this.ctx.createGain();
+        lfo.frequency.setValueAtTime(0.22, this.ctx.currentTime);
+        lfoGain.gain.setValueAtTime(180, this.ctx.currentTime);
+
+        lfo.connect(filter.frequency);
+        noise.connect(filter);
+        filter.connect(masterGain);
+
+        noise.start();
+        lfo.start();
+        this.ambientNodes = [noise, filter, lfo, lfoGain, masterGain];
+      } else if (type === 'engine') {
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const engineFilter = this.ctx.createBiquadFilter();
+
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(52, this.ctx.currentTime);
+
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(104, this.ctx.currentTime);
+
+        engineFilter.type = 'lowpass';
+        engineFilter.frequency.setValueAtTime(200, this.ctx.currentTime);
+
+        const subGain = this.ctx.createGain();
+        subGain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+
+        osc1.connect(engineFilter);
+        osc2.connect(engineFilter);
+        engineFilter.connect(subGain);
+        subGain.connect(masterGain);
+
+        osc1.start();
+        osc2.start();
+        this.ambientNodes = [osc1, osc2, engineFilter, subGain, masterGain];
+      }
+    } catch (err) {
+      console.warn('Ambient sound error:', err);
+    }
+  }
+
+  public stopAmbient() {
+    if (this.ambientGainNode && this.ctx) {
+      try {
+        const gain = this.ambientGainNode;
+        gain.gain.setValueAtTime(gain.gain.value, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+      } catch {}
+    }
+    const nodes = this.ambientNodes;
+    this.ambientNodes = [];
+    this.ambientGainNode = null;
+    this.ambientType = 'off';
+
+    setTimeout(() => {
+      nodes.forEach((n) => {
+        try {
+          if ('stop' in n && typeof (n as any).stop === 'function') {
+            (n as any).stop();
+          }
+          n.disconnect();
+        } catch {}
+      });
+    }, 500);
+  }
 }
 
 export const soundFx = new SoundFxEngine();
+

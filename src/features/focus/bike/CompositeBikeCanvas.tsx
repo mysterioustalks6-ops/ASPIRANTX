@@ -90,7 +90,7 @@ export const PART_DEFINITIONS: Record<BikeSlotId, SlotMeta> = {
     id: 'trophy',
     name: 'Mastery Crest',
     category: 'Milestone Insignia',
-    icon: <Award className="w-5 h-5 text-yellow-400" />,
+    icon: <Award className="w-5 h-5 text-amber-400" />,
     specSummary: 'Polished gold highway endurance milestone medallion.'
   }
 };
@@ -139,18 +139,18 @@ export const CompositeBikeCanvas: React.FC<CompositeBikeCanvasProps> = ({
       className={`relative w-full rounded-3xl bg-[var(--sr-surface)] border-2 border-[var(--sr-line)] shadow-lg p-4 sm:p-6 overflow-hidden select-none ${className}`}
     >
       {/* ── 1. WORKSHOP BAY HEADER ── */}
-      <div className="flex items-center justify-between pb-3 border-b border-[var(--sr-line)]">
-        <div>
-          <h2 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
-            Workshop Bay
+      <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--sr-line)]">
+        <div className="min-w-0">
+          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            Workshop bay
           </h2>
           <p className="text-xs text-[var(--sr-text-subtle)] font-medium">
-            Fuel Time: Ready • Specs: 150cc Single-Cylinder
+            Fuel time: Ready • Specs: 150cc single-cylinder
           </p>
         </div>
-        <div className="text-right">
-          <span className="px-2.5 py-1 rounded-xl bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-xs font-black">
-            {installedCount}/8 Parts Installed
+        <div className="shrink-0">
+          <span className="px-2.5 py-1 rounded-xl bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] text-xs font-bold whitespace-nowrap">
+            {installedCount}/8 parts installed
           </span>
         </div>
       </div>
@@ -185,10 +185,10 @@ export const CompositeBikeCanvas: React.FC<CompositeBikeCanvasProps> = ({
         </div>
       </div>
 
-      {/* ── 3. CHASSIS & ENGINE PARTS (8 TACTILE DUOLINGO-STYLE BADGES) ── */}
+      {/* ── 3. CHASSIS & ENGINE PARTS (8 TACTILE BADGES) ── */}
       <div className="space-y-3 pt-1">
-        <h3 className="text-xs font-black text-[var(--sr-text-muted)] uppercase tracking-wider">
-          Chassis & Powertrain Parts
+        <h3 className="text-xs font-bold text-[var(--sr-text-muted)]">
+          Chassis and powertrain parts
         </h3>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -224,7 +224,7 @@ export const CompositeBikeCanvas: React.FC<CompositeBikeCanvasProps> = ({
                 </div>
 
                 <div className="mt-2 min-w-0">
-                  <span className={`block text-xs font-black truncate ${installed ? 'text-white' : 'text-slate-400'}`}>
+                  <span className={`block text-xs font-bold truncate ${installed ? 'text-white' : 'text-slate-400'}`}>
                     {part.name}
                   </span>
                   <span className="block text-[10px] font-bold text-[var(--sr-text-subtle)]">
@@ -255,7 +255,7 @@ export const CompositeBikeCanvas: React.FC<CompositeBikeCanvasProps> = ({
                   {PART_DEFINITIONS[selectedSlotForDetail].icon}
                 </div>
                 <div>
-                  <h4 className="text-base font-black text-white">
+                  <h4 className="text-base font-bold text-white">
                     {PART_DEFINITIONS[selectedSlotForDetail].name}
                   </h4>
                   <p className="text-xs text-[var(--sr-text-subtle)] font-bold">
@@ -277,9 +277,9 @@ export const CompositeBikeCanvas: React.FC<CompositeBikeCanvasProps> = ({
             </p>
 
             <div className="p-3 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-between text-xs font-bold">
-              <span className="text-[var(--sr-text-subtle)]">Build Status</span>
+              <span className="text-[var(--sr-text-subtle)]">Build status</span>
               {isSlotInstalled(selectedSlotForDetail) ? (
-                <span className="text-[var(--sr-primary)] font-black flex items-center gap-1">
+                <span className="text-[var(--sr-primary)] font-bold flex items-center gap-1">
                   <Check className="w-4 h-4 stroke-[3]" /> Installed on Cruiser
                 </span>
               ) : (
@@ -291,7 +291,7 @@ export const CompositeBikeCanvas: React.FC<CompositeBikeCanvasProps> = ({
 
             <button
               onClick={() => setSelectedSlotForDetail(null)}
-              className="btn-3d btn-3d-slate w-full py-2.5 rounded-2xl text-xs font-black text-white"
+              className="btn-3d btn-3d-slate w-full py-2.5 rounded-2xl text-xs font-bold text-white"
             >
               Close
             </button>

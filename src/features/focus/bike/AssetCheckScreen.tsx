@@ -96,14 +96,14 @@ export const AssetCheckScreen: React.FC<AssetCheckScreenProps> = ({ onBack }) =>
           )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-black uppercase font-mono">
-                DEV INTERNAL INSPECTOR
+              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold font-mono">
+                Internal inspector
               </span>
               <span className="text-xs text-slate-400 font-mono">
                 52-Asset Slot Manifest
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-bold text-white mt-0.5">
               Asset Manifest & Slot Auditor
             </h1>
           </div>
@@ -123,20 +123,20 @@ export const AssetCheckScreen: React.FC<AssetCheckScreenProps> = ({ onBack }) =>
       {/* ── SUMMARY STATS BAR ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold">Total Slots</span>
-          <p className="text-2xl font-black text-white mt-1">{TOTAL_MANIFEST_ASSETS_COUNT}</p>
+          <span className="text-[10px] font-mono text-slate-400 font-bold">Total slots</span>
+          <p className="text-2xl font-bold text-white mt-1">{TOTAL_MANIFEST_ASSETS_COUNT}</p>
         </div>
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-          <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold">Found On Disk</span>
-          <p className="text-2xl font-black text-emerald-400 mt-1">{foundCount}</p>
+          <span className="text-[10px] font-mono text-emerald-400 font-bold">Found on disk</span>
+          <p className="text-2xl font-bold text-emerald-400 mt-1">{foundCount}</p>
         </div>
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-          <span className="text-[10px] font-mono uppercase text-rose-400 font-bold">Missing (Placeholders)</span>
-          <p className="text-2xl font-black text-rose-400 mt-1">{missingCount}</p>
+          <span className="text-[10px] font-mono text-rose-400 font-bold">Missing</span>
+          <p className="text-2xl font-bold text-rose-400 mt-1">{missingCount}</p>
         </div>
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-          <span className="text-[10px] font-mono uppercase text-indigo-400 font-bold">Completion</span>
-          <p className="text-2xl font-black text-indigo-400 mt-1">{percentPresent}%</p>
+          <span className="text-[10px] font-mono text-indigo-400 font-bold">Completion</span>
+          <p className="text-2xl font-bold text-indigo-400 mt-1">{percentPresent}%</p>
         </div>
       </div>
 
@@ -187,7 +187,7 @@ export const AssetCheckScreen: React.FC<AssetCheckScreenProps> = ({ onBack }) =>
       <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300 border-collapse">
-            <thead className="bg-slate-900/90 text-slate-400 font-mono uppercase text-[10px] border-b border-slate-800">
+            <thead className="bg-slate-900/90 text-slate-400 font-mono text-[10px] border-b border-slate-800">
               <tr>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Asset ID</th>

@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="100%" height="100%">
+  <defs>
+    <!-- Dark Asphalt Highway Gradient -->
+    <linearGradient id="asphaltGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="25%" stop-color="#0f172a" />
+      <stop offset="70%" stop-color="#090d16" />
+      <stop offset="100%" stop-color="#05080f" />
+    </linearGradient>
+
+    <!-- Highway Shoulder Turf / Gravel Gradient -->
+    <linearGradient id="shoulderGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#020617" />
+      <stop offset="40%" stop-color="#0f172a" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="60%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+
+    <!-- Glowing Amber Centerline Gradient -->
+    <linearGradient id="lineAmberGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.4" />
+      <stop offset="60%" stop-color="#fbbf24" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#fef08a" stop-opacity="1" />
+    </linearGradient>
+
+    <!-- Headlight Road Illumination Beam Cone -->
+    <linearGradient id="headlightBeam" x1="50%" y1="45%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7" stop-opacity="0" />
+      <stop offset="30%" stop-color="#fef3c7" stop-opacity="0.08" />
+      <stop offset="75%" stop-color="#fef08a" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.03" />
+    </linearGradient>
+  </defs>
+
+  <!-- ── 1. TERRAIN SURROUNDING THE ROAD (HORIZON TO BOTTOM) ── -->
+  <polygon points="0,480 1600,480 1600,900 0,900" fill="#020617" />
+
+  <!-- ── 2. ASPHALT ROAD PERSPECTIVE POLYS ── -->
+  <!-- Left Shoulder -->
+  <polygon points="760,480 840,480 1480,900 120,900" fill="url(#asphaltGrad)" />
+
+  <!-- Roadside Concrete Kerb / Rumble Strips (Left) -->
+  <polygon points="756,480 762,480 135,900 100,900" fill="#334155" />
+  <polygon points="754,480 758,480 115,900 85,900" fill="#f59e0b" opacity="0.6" />
+
+  <!-- Roadside Concrete Kerb / Rumble Strips (Right) -->
+  <polygon points="838,480 844,480 1500,900 1465,900" fill="#334155" />
+  <polygon points="842,480 846,480 1515,900 1485,900" fill="#f59e0b" opacity="0.6" />
+
+  <!-- Outer White Solid Edge Lines -->
+  <!-- Left White Edge Line -->
+  <polygon points="768,480 771,480 260,900 248,900" fill="#e2e8f0" opacity="0.8" />
+  <!-- Right White Edge Line -->
+  <polygon points="829,480 832,480 1352,900 1340,900" fill="#e2e8f0" opacity="0.8" />
+
+  <!-- ── 3. GLOWING AMBER CENTER DASHED STRIPES (PERSPECTIVE 3D SEGMENTS) ── -->
+  <g id="centerStripeSegments" fill="url(#lineAmberGlow)">
+    <!-- Segment 1 (Near Horizon - Thin & Short) -->
+    <polygon points="798,490 802,490 802.4,510 797.6,510" opacity="0.4" />
+    <!-- Segment 2 -->
+    <polygon points="797.4,525 802.6,525 803.2,550 796.8,550" opacity="0.55" />
+    <!-- Segment 3 -->
+    <polygon points="796.5,570 803.5,570 804.5,605 795.5,605" opacity="0.7" />
+    <!-- Segment 4 -->
+    <polygon points="795,630 805,630 806.5,675 793.5,675" opacity="0.8" />
+    <!-- Segment 5 -->
+    <polygon points="793,705 807,705 809.5,765 790.5,765" opacity="0.9" />
+    <!-- Segment 6 (Foreground - Wide & Bright) -->
+    <polygon points="790,805 810,805 814,895 786,895" opacity="1" filter="drop-shadow(0 0 8px #f59e0b)" />
+  </g>
+
+  <!-- ── 4. HEADLIGHT REFLECTION CONE (Illuminating the Highway Lane) ── -->
+  <polygon points="790,520 810,520 1200,900 400,900" fill="url(#headlightBeam)" />
+
+  <!-- Roadside Retro-Reflective Cat Eyes / Guardrail Posts -->
+  <g id="catEyes" fill="#38bdf8" filter="drop-shadow(0 0 5px #38bdf8)">
+    <circle cx="765" cy="500" r="1.5" opacity="0.6" />
+    <circle cx="835" cy="500" r="1.5" opacity="0.6" />
+    <circle cx="750" cy="535" r="2" opacity="0.7" />
+    <circle cx="850" cy="535" r="2" opacity="0.7" />
+    <circle cx="725" cy="580" r="3" opacity="0.8" />
+    <circle cx="875" cy="580" r="3" opacity="0.8" />
+    <circle cx="680" cy="645" r="4" opacity="0.9" />
+    <circle cx="920" cy="645" r="4" opacity="0.9" />
+    <circle cx="600" cy="740" r="5" opacity="0.95" />
+    <circle cx="1000" cy="740" r="5" opacity="0.95" />
+  </g>
+</svg>
