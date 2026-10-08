@@ -48,6 +48,7 @@ import { soundFx } from '../lib/soundEffects';
 import { AspirantMascot } from './highway/AspirantMascot';
 import { AddCustomTopicModal } from './AddCustomTopicModal';
 import { useExam } from '../context/ExamContext';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 // ── Exam Forecasting Engine Domain Imports ──────────────────────────────────
 import {
@@ -148,6 +149,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
   featureFlags = {},
   onOpenPremium
 }) => {
+  const { isHindi } = useLanguage();
   const { selectedExamId, setSelectedExamId } = useExam();
   // Universal exam state: automatically syncs with central ExamContext, header, and all modules
   const selectedExam = (selectedExamId || initialExam || 'JEE_MAIN') as ExamType;
@@ -801,7 +803,11 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               }`}
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>{selectedExam === 'NEET_UG' ? 'Curriculum (Unverified)' : 'Official Syllabus'}</span>
+              <span>
+                {isHindi 
+                  ? (selectedExam === 'NEET_UG' ? 'पाठ्यक्रम' : 'आधिकारिक पाठ्यक्रम') 
+                  : (selectedExam === 'NEET_UG' ? 'Curriculum (Unverified)' : 'Official Syllabus')}
+              </span>
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--sr-line)] text-[var(--sr-text)]">
                 {officialTopics.filter(t => t.completed).length}/{officialTopics.length}
               </span>
@@ -816,7 +822,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              <span>My Plan</span>
+              <span>{isHindi ? 'मेरी अध्ययन योजना' : 'My Plan'}</span>
               <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-[var(--sr-line)] text-[var(--sr-text)]">
                 {personalTopics.filter(t => t.completed).length}/{personalTopics.length}
               </span>
@@ -831,7 +837,7 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
               }`}
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>48 Exams</span>
+              <span>{isHindi ? '48 राष्ट्रीय परीक्षाएं' : '48 Exams'}</span>
             </button>
           </div>
           {/* Scroll fade gradient on right edge */}
@@ -843,19 +849,19 @@ export const SyllabusTracker: React.FC<SyllabusTrackerProps> = ({
           <button
             onClick={() => setIsGlobalSearchOpen(true)}
             className="px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-blue)] flex items-center gap-1.5 cursor-pointer"
-            title="Global syllabus keyword search"
+            title={isHindi ? 'खोजें' : 'Global syllabus keyword search'}
           >
             <Search className="w-3.5 h-3.5" />
-            <span>Search</span>
+            <span>{isHindi ? 'खोजें' : 'Search'}</span>
           </button>
 
           <button
             onClick={() => setIsImportModalOpen(true)}
             className="px-3 py-1.5 rounded-xl bg-[var(--sr-surface-2)] hover:bg-[var(--sr-surface-3)] border border-[var(--sr-line)] text-xs font-bold text-[var(--sr-primary)] flex items-center gap-1.5 cursor-pointer shadow-sm transition"
-            title="Import syllabus from spreadsheet"
+            title={isHindi ? 'स्प्रेडशीट से आयात करें' : 'Import syllabus from spreadsheet'}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Import</span>
+            <span>{isHindi ? 'आयात करें' : 'Import'}</span>
           </button>
 
           <button

@@ -91,6 +91,7 @@ const LiveWallpaperSetupModal = lazy(() => import('./components/LiveWallpaperSet
 const OnboardingWizard = lazy(() => import('./components/OnboardingWizard').then(m => ({ default: m.OnboardingWizard })));
 import { AchievementUnlockModal } from './components/AchievementUnlockModal';
 import { TrophyUnlock } from './lib/rewards/rewardEngine';
+import { LanguagePickerModal } from './components/LanguagePickerModal';
 
 const EXAMS = EXAM_LIST;
 
@@ -2158,6 +2159,7 @@ export default function App() {
   return (
     <ExamProvider>
       <AppContent />
+      <LanguagePickerModal />
     </ExamProvider>
   );
 }

@@ -72,6 +72,8 @@ import {
 } from '../lib/studyReminderService';
 
 import { soundFx } from '../lib/soundEffects';
+import { LanguageToggle } from './LanguageToggle';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 interface UserProfileModalProps {
   user: UserProfile;
@@ -143,6 +145,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onNavigateToRewards,
   onOpenCustomizerModal,
 }) => {
+  const { isHindi } = useLanguage();
   // Navigation Tabs: 'overview' | 'avatar' | 'edit'
   const [activeTab, setActiveTab] = useState<'overview' | 'avatar' | 'edit'>(initialTab);
 
@@ -371,10 +374,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       } catch (_) {}
 
       triggerConfetti();
-      setSaveSuccessMessage('Aapka profile aur study preferences successfully save ho gaye! ✓');
+      setSaveSuccessMessage(
+        isHindi 
+          ? 'आपकी प्रोफ़ाइल और अध्ययन प्राथमिकताएं सफलतापूर्वक सहेज ली गईं! ✓' 
+          : 'Your profile and study preferences were saved successfully! ✓'
+      );
       setTimeout(() => setSaveSuccessMessage(null), 4000);
     } catch (err: any) {
-      setSaveError(err.message || 'Profile save karne me samasya aayi.');
+      setSaveError(
+        isHindi 
+          ? 'प्रोफ़ाइल सहेजने में त्रुटि हुई। कृपया पुनः प्रयास करें।' 
+          : (err.message || 'Failed to save profile. Please try again.')
+      );
     } finally {
       setIsSaving(false);
     }
@@ -404,8 +415,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           style={{ background: activeAura.glow }}
         />
 
-        {/* Top Floating Action Bar: ONLY Close Button (No Logout in Profile) */}
+        {/* Top Floating Action Bar: Persistent LanguageToggle + Close Button */}
         <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
+          <LanguageToggle />
           <button
             onClick={onClose}
             className="p-2.5 rounded-2xl bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 transition-all shadow-lg backdrop-blur-md active:scale-95"
@@ -501,7 +513,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 }`}
               >
                 <Palette className="w-3.5 h-3.5 text-emerald-400" />
-                Avatar Studio
+                {isHindi ? 'अवतार स्टूडियो' : 'Avatar Studio'}
               </button>
 
               <button
@@ -514,7 +526,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 }`}
               >
                 <Sliders className="w-3.5 h-3.5 text-cyan-400" />
-                Edit Profile
+                {isHindi ? 'प्रोफ़ाइल संपादन' : 'Edit Profile'}
               </button>
             </div>
           </div>

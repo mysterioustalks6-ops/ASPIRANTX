@@ -27,6 +27,7 @@ import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 import { soundFx } from '../lib/soundEffects';
 import { getCandidateHearts } from '../lib/candidateHearts';
 import { loadSessions, computeWeeklyStudyMetrics, computeStreakDays } from '../lib/focus/sessionStore';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 interface StudentDashboardProps {
   userProfile: UserProfile;
@@ -47,6 +48,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   onOpenWorkspaceCustomizer, 
   onOpenReminderSettings 
 }) => {
+  const { t, isHindi, formatDate } = useLanguage();
   const [workspaceConfig, setWorkspaceConfig] = useState<WorkspaceConfig>(() => loadWorkspaceConfig(userProfile.id));
 
   useEffect(() => {
@@ -296,41 +298,61 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const [showTelemetryRings, setShowTelemetryRings] = useState<boolean>(false);
   const [dashboardViewMode, setDashboardViewMode] = useState<'path' | 'analytics'>('path');
 
-  const getExamAwareQuotes = (tag: string, cat: string) => {
+  const getExamAwareQuotes = (tag: string, cat: string, isHi: boolean) => {
     const norm = normalizeExamId(tag);
     if (cat === 'MEDICAL' || norm.includes('NEET') || norm.includes('AIIMS')) {
-      return [
-        "Tu banega Doctor! Dr. Aspirant, AIIMS is waiting 🩺",
-        "High-Yield NCERT focus: 180/180 in Biology pakka! 🧬",
-        "Physics numericals se mat daro, formula sheets revision karo! ⚡",
-        "Chemistry reaction mechanisms revise karo aur selection lo! ⚗️",
-        "Rank 1 mindset: Roz ka ek topic master karo! 🩺"
+      return isHi ? [
+        "आप डॉक्टर अवश्य बनेंगे! एम्स में आपकी सफलता प्रतीक्षारत है 🩺",
+        "एनसीईआरटी पर केंद्रित अध्ययन: जीव विज्ञान में शत-प्रतिशत अंक निश्चित! 🧬",
+        "भौतिक विज्ञान के संख्यात्मक प्रश्नों का सूत्र अभ्यास निरंतर करें! ⚡",
+        "रसायन विज्ञान की अभिक्रियाओं को दोहराएं और चयन सुनिश्चित करें! ⚗️",
+        "शीर्ष रैंक का संकल्प: प्रतिदिन एक महत्वपूर्ण विषय पूर्ण करें! 🎯"
+      ] : [
+        "You will become a Doctor! AIIMS awaits your success 🩺",
+        "High-Yield NCERT focus: 180/180 in Biology assured! 🧬",
+        "Conquer Physics numericals with daily formula revision! ⚡",
+        "Master Chemistry reaction mechanisms for top rank selection! ⚗️",
+        "Rank 1 mindset: Master one high-yield topic each day! 🎯"
       ];
     }
     if (cat === 'ENGINEERING' || norm.includes('JEE') || norm.includes('GATE')) {
-      return [
+      return isHi ? [
+        "आईआईटी का संकल्प: गति और सटीकता से शीर्ष स्थान प्राप्त करें ⚡",
+        "विभिन्न संकल्पनाओं के कठिन प्रश्नों का अभ्यास करें! 📐",
+        "प्रतिदिन 20 महत्वपूर्ण प्रश्नों का अभ्यास आपकी रैंक बढ़ाएगा! 🎯",
+        "निरंतर सूत्र अभ्यास से जेईई में सफलता निश्चित है! 🚀"
+      ] : [
         "IITian mindset! Speed + Accuracy = Top Percentile ⚡",
-        "Boundary conditions aur multi-concept problem solve karo! 📐",
-        "Roz 20 high-yield questions, rank boost guaranteed! 🎯",
-        "Formula practice + speed drills = JEE selection pakka! 🚀"
+        "Solve multi-concept problems and master boundary conditions! 📐",
+        "Solve 20 high-yield questions daily for guaranteed rank boost! 🎯",
+        "Consistent formula drills lead directly to JEE selection! 🚀"
       ];
     }
     if (cat === 'DEFENCE' || norm.includes('NDA') || norm.includes('CDS')) {
-      return [
+      return isHi ? [
+        "सशस्त्र बलों में शामिल होकर देश का गौरव बढ़ाएं 🎖️",
+        "शारीरिक अनुशासन और मानसिक दृढ़ता ही चयन का मार्ग है! 🇮🇳",
+        "दैनिक अभ्यास से अंतिम मेरिट सूची में स्थान सुनिश्चित करें! ⚔️"
+      ] : [
         "Join the Armed Forces! Officer's pride awaits you 🎖️",
-        "Physical discipline + Mental stamina = Selection! 🇮🇳",
-        "GAT and Mathematics daily drills se merit list pakki! ⚔️"
+        "Physical discipline + Mental stamina = Assured Selection! 🇮🇳",
+        "Daily GAT and Mathematics drills secure merit list rank! ⚔️"
       ];
     }
-    return [
-      "Tu banega Officer! LBSNAA is calling 🇮🇳",
-      "Syllabus revision and answer writing is the golden key! 📜",
-      "Polity and Economy concepts revise karo aur prelims clear karo! ⚖️",
+    return isHi ? [
+      "आप अधिकारी अवश्य बनेंगे! लबासना आपका स्वागत करने को तैयार है 🇮🇳",
+      "पाठ्यक्रम का पुनरावलोकन और उत्तर लेखन सफलता की कुंजी है! 📜",
+      "राजव्यवस्था व अर्थव्यवस्था की संकल्पनाओं को स्पष्ट कर प्रारंभिक परीक्षा उत्तीर्ण करें! ⚖️",
+      "दैनिक निरंतरता आपको अंतिम चयन सूची तक अवश्य पहुंचाएगी! 🎯"
+    ] : [
+      "You will become an Officer! LBSNAA is calling 🇮🇳",
+      "Syllabus revision and analytical answer writing is the golden key! 📜",
+      "Master Polity and Economy concepts to crack the Preliminary exam! ⚖️",
       "Daily consistency will take you to the final merit list! 🎯"
     ];
   };
 
-  const VEER_QUOTES = useMemo(() => getExamAwareQuotes(activeExamTag, examCfg2.category), [activeExamTag, examCfg2.category]);
+  const VEER_QUOTES = useMemo(() => getExamAwareQuotes(activeExamTag, examCfg2.category, isHindi), [activeExamTag, examCfg2.category, isHindi]);
   const [mascotQuoteIndex, setMascotQuoteIndex] = useState(0);
   const [mascotState, setMascotState] = useState<'idle' | 'happy' | 'celebrating'>('happy');
   const [showMoreForToday, setShowMoreForToday] = useState(false);
@@ -463,32 +485,34 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const rideStops = [
     {
       stopNumber: 1,
-      title: 'Learn',
+      title: isHindi ? 'अध्ययन' : 'Learn',
       label: lastTopic.chapter,
       subject: lastTopic.subject,
-      description: 'Foundational concepts and high-yield notes',
+      description: isHindi ? 'मूल संकल्पनाएं व महत्वपूर्ण नोट्स' : 'Foundational concepts and high-yield notes',
       icon: BookOpen,
       actionTab: lastTopic.tab || 'syllabus' as ActiveTab,
       status: 'active' as const,
     },
     {
       stopNumber: 2,
-      title: 'Practice',
-      label: `10 High-Yield MCQs`,
+      title: isHindi ? 'अभ्यास' : 'Practice',
+      label: isHindi ? '10 महत्वपूर्ण प्रश्न' : '10 High-Yield MCQs',
       subject: secondarySubject,
-      description: 'Targeted topic questions and accuracy drill',
+      description: isHindi ? 'सटीक विषय प्रश्न व गति अभ्यास' : 'Targeted topic questions and accuracy drill',
       icon: Target,
       actionTab: 'pyq' as ActiveTab,
       status: 'pending' as const,
     },
     {
       stopNumber: 3,
-      title: 'Revise',
-      label: data.topicsCompleted === 0 ? 'No reviews due yet' : 'Spaced Repetition Recall',
+      title: isHindi ? 'दोहराव' : 'Revise',
+      label: data.topicsCompleted === 0 
+        ? (isHindi ? 'अभी कोई दोहराव लंबित नहीं' : 'No reviews due yet') 
+        : (isHindi ? 'सक्रिय स्मरण दोहराव' : 'Spaced Repetition Recall'),
       subject: primarySubject,
       description: data.topicsCompleted === 0 
-        ? 'Complete topics in Learn or Practice to queue spaced recall' 
-        : 'Active flashcard recall before memory fades',
+        ? (isHindi ? 'दोहराव सूची में जोड़ने हेतु अध्ययन या अभ्यास पूर्ण करें' : 'Complete topics in Learn or Practice to queue spaced recall') 
+        : (isHindi ? 'विस्मृति से पूर्व सक्रिय फ़्लैशकार्ड दोहराव' : 'Active flashcard recall before memory fades'),
       icon: Sparkles,
       actionTab: 'flashcards' as ActiveTab,
       status: 'pending' as const,
@@ -499,7 +523,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
     return (
       <div className="p-12 text-center text-[var(--sr-text-muted)]">
         <div className="w-8 h-8 border-3 border-[var(--sr-primary)] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs font-bold">Syncing Study Telemetry...</p>
+        <p className="text-xs font-bold">{isHindi ? 'डेटा समन्वय हो रहा है...' : 'Syncing Study Telemetry...'}</p>
       </div>
     );
   }
@@ -521,23 +545,23 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-[var(--sr-primary)] animate-pulse shrink-0 flex-shrink-0" />
                 <span className="text-xs font-black uppercase tracking-wider text-[var(--sr-primary)]">
-                  Veer's Daily Ride Advice
+                  {isHindi ? 'वीर का दैनिक मार्गदर्शन' : "Veer's Daily Ride Advice"}
                 </span>
               </div>
               <p className="text-xs sm:text-sm font-bold text-[var(--sr-text)] leading-snug">
                 {VEER_QUOTES[mascotQuoteIndex % VEER_QUOTES.length]}
               </p>
               <span className="text-xs text-[var(--sr-text-muted)] font-medium mt-0.5 block">
-                Tap Veer for motivation • Target: {examCfg2.displayName}
+                {isHindi ? `दैनिक प्रेरणा हेतु स्पर्श करें • लक्ष्य: ${examCfg2.displayName}` : `Tap Veer for motivation • Target: ${examCfg2.displayName}`}
               </span>
             </div>
           </div>
 
           <div className="hidden sm:flex flex-col items-end shrink-0">
             <span className="text-xs font-bold text-[var(--sr-primary)]">
-              {data.daysLeftForExam} Days Left
+              {data.daysLeftForExam} {isHindi ? 'दिन शेष' : 'Days Left'}
             </span>
-            <span className="text-xs text-[var(--sr-text-muted)] font-medium">Until Exam Day</span>
+            <span className="text-xs text-[var(--sr-text-muted)] font-medium">{isHindi ? 'परीक्षा दिवस तक' : 'Until Exam Day'}</span>
           </div>
         </div>
       </SlideUp>
@@ -547,14 +571,14 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-[var(--sr-primary-subtle)] text-[var(--sr-primary)] border border-[var(--sr-primary)]/30">
-              AAJ KI RIDE
+              {isHindi ? 'आज का अध्ययन' : "TODAY'S RIDE"}
             </span>
             <span className="text-xs font-bold text-[var(--sr-text-muted)]">
               {lastTopic.subject}
             </span>
           </div>
           <span className="text-xs font-bold text-[var(--sr-primary)] shrink-0">
-            {data.overallProgressPercent}% Complete
+            {data.overallProgressPercent}% {isHindi ? 'पूर्ण' : 'Complete'}
           </span>
         </div>
 
@@ -570,8 +594,8 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         {/* 3-STOP PROGRESS ROAD */}
         <div className="p-3.5 sm:p-4 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] space-y-3">
           <div className="flex items-center justify-between text-xs">
-            <span className="font-bold text-[var(--sr-text)] uppercase tracking-wider">3-Stop Journey</span>
-            <span className="font-bold text-[var(--sr-primary)]">Stop 1: Learn Active</span>
+            <span className="font-bold text-[var(--sr-text)] uppercase tracking-wider">{isHindi ? '3-चरणीय अध्ययन चक्र' : '3-Stop Journey'}</span>
+            <span className="font-bold text-[var(--sr-primary)]">{isHindi ? 'चरण 1: अध्ययन सक्रिय' : 'Stop 1: Learn Active'}</span>
           </div>
 
           <div className="relative flex items-center justify-between px-3 py-2">
@@ -605,7 +629,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
         <div className="p-3 rounded-2xl bg-[var(--sr-surface-2)] border border-[var(--sr-line)] flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-[var(--sr-primary)]" />
-            <span className="text-[var(--sr-text-muted)] font-medium">Daily Pace:</span>
+            <span className="text-[var(--sr-text-muted)] font-medium">{isHindi ? 'दैनिक गति:' : 'Daily Pace:'}</span>
           </div>
           <span className={`font-bold ${isPaceBehind ? 'text-[var(--sr-amber)]' : 'text-[var(--sr-primary)]'}`}>
             {paceLabel}
@@ -620,7 +644,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
           leftIcon={<Play className="w-5 h-5 fill-current" />}
           onClick={() => setShowRideSessionModal(true)}
         >
-          START RIDE
+          {isHindi ? 'अध्ययन प्रारंभ करें' : 'START RIDE'}
         </TactileButton>
       </TactileCard>
 
@@ -688,13 +712,13 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
               <CheckSquare className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)] uppercase tracking-wider leading-snug line-clamp-2">More for today</h3>
-              <p className="text-xs text-[var(--sr-text-muted)] leading-snug line-clamp-2">Daily supplementary targets & bonus XP</p>
+              <h3 className="text-xs sm:text-sm font-black text-[var(--sr-text)] uppercase tracking-wider leading-snug line-clamp-2">{isHindi ? 'आज के अतिरिक्त लक्ष्य' : 'More for today'}</h3>
+              <p className="text-xs text-[var(--sr-text-muted)] leading-snug line-clamp-2">{isHindi ? 'दैनिक अतिरिक्त लक्ष्य व बोनस अंक' : 'Daily supplementary targets & bonus XP'}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-auto whitespace-nowrap">
             <span className="text-xs font-bold text-[var(--sr-primary)] whitespace-nowrap">
-              {dailyGoals.filter((g) => g.completed).length}/{dailyGoals.length} Done
+              {dailyGoals.filter((g) => g.completed).length}/{dailyGoals.length} {isHindi ? 'पूर्ण' : 'Done'}
             </span>
             <ChevronRight className={`w-4 h-4 text-[var(--sr-text-muted)] shrink-0 transition-transform duration-200 ${showMoreForToday ? 'rotate-90' : ''}`} />
           </div>

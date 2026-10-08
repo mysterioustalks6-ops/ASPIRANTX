@@ -388,6 +388,9 @@ export interface PyqRecord {
   options?: string[]; // For MCQ/Prelims
   correctOption?: number; // 0-based index
   explanation?: string;
+  questionTextHi?: string;
+  optionsHi?: string[];
+  explanationHi?: string;
   marks?: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   language: 'English' | 'Hindi';

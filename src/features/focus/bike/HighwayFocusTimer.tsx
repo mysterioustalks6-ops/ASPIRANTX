@@ -28,6 +28,8 @@ import { triggerConfetti } from '../../../lib/animations';
 import { TactileButton } from '../../../design-system/TactileButton';
 import { VeerMascot } from '../../../design-system/VeerMascot';
 import { EndlessHighwayLandscape } from './EndlessHighwayLandscape';
+import { LanguageToggle } from '../../../components/LanguageToggle';
+import { useLanguage } from '../../../lib/i18n/LanguageContext';
 
 export interface HighwayFocusTimerProps {
   userId?: string;
@@ -50,6 +52,7 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
   onBack,
   onTimerRunningChange
 }) => {
+  const { isHindi } = useLanguage();
   const handleOpenGarage = onOpenGarage || onNavigateToGarage;
   // ── 1. TIMER STATE & CONFIG ──
   const [mode, setMode] = useState<'pomodoro' | 'stopwatch'>('pomodoro');
@@ -433,12 +436,13 @@ export const HighwayFocusTimer: React.FC<HighwayFocusTimerProps> = ({
             </button>
           )}
           <h1 className="text-base sm:text-lg font-bold text-white truncate">
-            Focus ride
+            {isHindi ? 'फोकस राइड' : 'Focus ride'}
           </h1>
         </div>
 
-        {/* Action Icon Buttons: Rides, Garage (48dp touch targets, fits 1 row at 360) */}
+        {/* Action Icon Buttons: LanguageToggle, Rides, Garage */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <LanguageToggle />
 
           {/* My Rides Navigation */}
           {onNavigateToMyRides && (

@@ -120,9 +120,13 @@ if (!Capacitor.isNativePlatform()) {
   registerServiceWorker();
 }
 
+import { LanguageProvider } from './lib/i18n/LanguageContext.tsx';
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </StrictMode>,
 );
 

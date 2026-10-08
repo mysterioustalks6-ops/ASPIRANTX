@@ -31,12 +31,15 @@ import {
   Compass
 } from 'lucide-react';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
+import { useLanguage } from '../lib/i18n/LanguageContext';
+import { LanguageToggle } from './LanguageToggle';
 
 interface LandingPageProps {
   onLoginSuccess: (user: UserProfile) => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
+  const { isHindi, t } = useLanguage();
   const [loading, setLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
@@ -240,29 +243,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
           </div>
         </div>
 
-        {/* Desktop Quick Header CTAs */}
-        <div className="hidden sm:flex items-center gap-2.5">
-          {!Capacitor.isNativePlatform() && (
-            <a
-              id="landing-download-app-btn"
-              href={CANONICAL_APP_RELEASE.apkDownloadUrl}
-              download={CANONICAL_APP_RELEASE.apkFileName}
-              className="btn-3d btn-3d-slate flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tap-target-44"
-              title={`Download Android APK v${CANONICAL_APP_RELEASE.version}`}
-            >
-              <Download className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-              <span>Android APK v{CANONICAL_APP_RELEASE.version}</span>
-            </a>
-          )}
+        {/* Header CTAs with Persistent Language Toggle */}
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <div className="hidden sm:flex items-center gap-2.5">
+            {!Capacitor.isNativePlatform() && (
+              <a
+                id="landing-download-app-btn"
+                href={CANONICAL_APP_RELEASE.apkDownloadUrl}
+                download={CANONICAL_APP_RELEASE.apkFileName}
+                className="btn-3d btn-3d-slate flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tap-target-44"
+                title={`Download Android APK v${CANONICAL_APP_RELEASE.version}`}
+              >
+                <Download className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                <span>Android APK v{CANONICAL_APP_RELEASE.version}</span>
+              </a>
+            )}
 
-          <button
-            id="landing-guest-demo-btn"
-            onClick={handleGuestLogin}
-            className="btn-3d btn-3d-emerald px-4 py-2 rounded-xl text-xs font-bold tap-target-44 flex items-center gap-1.5 shadow-sm"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Guest Demo</span>
-          </button>
+            <button
+              id="landing-guest-demo-btn"
+              onClick={handleGuestLogin}
+              className="btn-3d btn-3d-emerald px-4 py-2 rounded-xl text-xs font-bold tap-target-44 flex items-center gap-1.5 shadow-sm cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isHindi ? 'अतिथि डेमो' : 'Guest Demo'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -279,17 +285,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-sky-500/15 via-indigo-500/15 to-purple-500/15 border border-sky-500/30 text-sky-300 text-xs font-bold tracking-wide shadow-sm">
               <Sparkles className="w-3.5 h-3.5 text-sky-400 animate-pulse" />
-              <span>India's #1 Gen Z Study Cockpit</span>
+              <span>{isHindi ? 'भारत का सर्वश्रेष्ठ परीक्षा तैयारी मंच' : "India's #1 Gen Z Study Cockpit"}</span>
               <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase">
-                100% Free
+                {isHindi ? 'निःशुल्क' : '100% Free'}
               </span>
             </div>
 
             {/* 3-Word Bold Title (Content Diet) */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.12]">
-              Study Smarter. <br className="hidden sm:inline" />
+              {isHindi ? 'स्मार्ट अध्ययन।' : 'Study Smarter.'} <br className="hidden sm:inline" />
               <span className="bg-gradient-to-r from-sky-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
-                Rank Faster.
+                {isHindi ? 'त्वरित सफलता।' : 'Rank Faster.'}
               </span>
             </h2>
 
@@ -299,12 +305,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                 ★★★★★
               </div>
               <span className="font-extrabold text-white">4.9/5 Rating</span>
-              <span className="text-slate-300">• 12,000+ Aspirants Trust StudyRide</span>
+              <span className="text-slate-300">• {isHindi ? '12,000+ परीक्षार्थी जुड़े हैं' : '12,000+ Aspirants Trust StudyRide'}</span>
             </div>
 
             {/* Micro 1-Line Subtitle with WCAG AA readable contrast */}
             <p className="text-xs sm:text-sm text-slate-200 font-medium max-w-lg mx-auto lg:mx-0 leading-relaxed">
-              Precision micro-syllabus radar, 35+ years PYQs archive, distraction-blocking focus shield & streak tracker.
+              {isHindi
+                ? 'सूक्ष्म पाठ्यक्रम विश्लेषण, 35 वर्षों के गत वर्ष प्रश्न, ध्यान केंद्रित फ़ोकस शील्ड और अध्ययन निरंतरता।'
+                : 'Precision micro-syllabus radar, 35+ years PYQs archive, distraction-blocking focus shield & streak tracker.'}
             </p>
 
             {/* 3 Visual Micro-Stats (Actionable benefits students care about) */}
@@ -314,7 +322,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                   <span>35+ Yrs</span>
                   <Award className="w-3.5 h-3.5" />
                 </div>
-                <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider mt-0.5">PYQ Archive</div>
+                <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider mt-0.5">{isHindi ? 'गत वर्ष प्रश्न' : 'PYQ Archive'}</div>
               </div>
 
               <div className="p-2.5 sm:p-3 rounded-2xl bg-[#0c1017]/90 border border-white/[0.12] text-center shadow-sm">
@@ -322,7 +330,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                   <span>100%</span>
                   <Shield className="w-3.5 h-3.5" />
                 </div>
-                <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider mt-0.5">Offline Mode</div>
+                <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider mt-0.5">{isHindi ? 'ऑफ़लाइन मोड' : 'Offline Mode'}</div>
               </div>
 
               <div className="p-2.5 sm:p-3 rounded-2xl bg-[#0c1017]/90 border border-white/[0.12] text-center shadow-sm">
@@ -330,13 +338,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                   <span>10,000+</span>
                   <Zap className="w-3.5 h-3.5" />
                 </div>
-                <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider mt-0.5">Aspirants</div>
+                <div className="text-[10px] text-slate-300 font-semibold uppercase tracking-wider mt-0.5">{isHindi ? 'परीक्षार्थी' : 'Aspirants'}</div>
               </div>
             </div>
 
             {/* Target Exams Supported Ticker with bright readable contrast */}
             <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-1.5 text-xs font-bold text-slate-200">
-              <span className="text-slate-300 uppercase text-[10px] font-bold mr-1 tracking-wider">Target Exams:</span>
+              <span className="text-slate-300 uppercase text-[10px] font-bold mr-1 tracking-wider">{isHindi ? 'लक्ष्य परीक्षाएं:' : 'Target Exams:'}</span>
               <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">UPSC CSE</span>
               <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">NEET UG</span>
               <span className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700/80 text-white shadow-xs">SSC CGL</span>
@@ -375,13 +383,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
               <div className="flex items-center justify-between pb-1">
                 <div>
                   <h3 className="font-extrabold text-sm sm:text-base text-white flex items-center gap-1.5">
-                    <span>Instant Access</span>
+                    <span>{isHindi ? 'त्वरित प्रवेश' : 'Instant Access'}</span>
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
                   </h3>
-                  <p className="text-[11px] text-slate-300 font-medium">One-tap demo or quick login</p>
+                  <p className="text-[11px] text-slate-300 font-medium">{isHindi ? 'एक स्पर्श में डेमो या सीधा लॉगिन' : 'One-tap demo or quick login'}</p>
                 </div>
                 <div className="px-2 py-0.5 rounded-full bg-slate-900 border border-white/[0.1] text-[10px] font-bold text-sky-400">
-                  ⚡ Fast Access
+                  ⚡ {isHindi ? 'तीव्र प्रवेश' : 'Fast Access'}
                 </div>
               </div>
 
@@ -395,7 +403,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                     className="btn-3d btn-3d-emerald w-full py-3.5 px-4 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 tap-target-44 shadow-lg shadow-emerald-500/20 cursor-pointer"
                   >
                     <Sparkles className="w-4 h-4 text-emerald-200" />
-                    <span>Try Free Demo (Instant Access)</span>
+                    <span>{isHindi ? 'निःशुल्क डेमो प्रारंभ करें' : 'Try Free Demo (Instant Access)'}</span>
                     <ArrowRight className="w-4 h-4 ml-1 text-emerald-200" />
                   </button>
 
@@ -416,7 +424,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                       </svg>
                     )}
-                    <span>Continue with Google</span>
+                    <span>{isHindi ? 'Google से आगे बढ़ें' : 'Continue with Google'}</span>
                   </button>
 
                   {/* 3. Subtle Clean Links: Email Login / Create Account */}
@@ -430,7 +438,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                       className="hover:text-sky-300 transition-colors flex items-center gap-1.5 cursor-pointer text-slate-300"
                     >
                       <Mail className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Sign In with Email</span>
+                      <span>{isHindi ? 'ईमेल से प्रवेश करें' : 'Sign In with Email'}</span>
                     </button>
                     <span className="text-slate-600">•</span>
                     <button
@@ -441,7 +449,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLoginSuccess }) => {
                       className="hover:text-emerald-300 transition-colors flex items-center gap-1.5 cursor-pointer text-slate-300"
                     >
                       <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Create Account</span>
+                      <span>{isHindi ? 'नया खाता बनाएं' : 'Create Account'}</span>
                     </button>
                   </div>
                 </div>

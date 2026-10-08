@@ -25,6 +25,7 @@ import {
 } from '../lib/animations';
 import { soundFx } from '../lib/soundEffects';
 import { AspirantMascot } from './highway/AspirantMascot';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 
 interface CbtExamEngineProps {
@@ -77,7 +78,9 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
   const [loadingReviewId, setLoadingReviewId] = useState<string | null>(null);
 
   // Universal Indian CBT state
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'hi'>('en');
+  const { language, setLanguage, isHindi, showBothLanguages, setShowBothLanguages, t } = useLanguage();
+  const currentLanguage = language;
+  const setCurrentLanguage = setLanguage;
   const [activeSectionId, setActiveSectionId] = useState<string>('');
   const [mobilePaletteSectionFilter, setMobilePaletteSectionFilter] = useState<string>('all');
 
@@ -2697,6 +2700,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               {/* BILINGUAL LANGUAGE SWITCHER */}
               <div className="ml-2 sm:ml-4 flex items-center bg-white border border-slate-300 rounded-lg p-0.5 text-[11px] font-bold shadow-2xs">
                 <button
+                  type="button"
                   onClick={() => setCurrentLanguage('en')}
                   className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                     currentLanguage === 'en' ? 'bg-sky-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
@@ -2705,12 +2709,24 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   English
                 </button>
                 <button
+                  type="button"
                   onClick={() => setCurrentLanguage('hi')}
                   className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
                     currentLanguage === 'hi' ? 'bg-sky-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   हिन्दी
+                </button>
+                <span className="text-slate-300 mx-1">|</span>
+                <button
+                  type="button"
+                  onClick={() => setShowBothLanguages(!showBothLanguages)}
+                  title="Toggle optional bilingual display"
+                  className={`px-1.5 py-0.5 rounded transition-all text-[10px] cursor-pointer ${
+                    showBothLanguages ? 'bg-purple-600 text-white shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {isHindi ? 'द्विभाषी' : 'Both'}
                 </button>
               </div>
             </div>
@@ -2724,7 +2740,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   ? 'text-slate-600 bg-slate-100 border-slate-200'
                   : 'text-rose-700 bg-rose-50 border-rose-200'
               }`}>
-                {currentQuestion.negativeMarks === 0 ? 'No Negative Marking' : `-${currentQuestion.negativeMarks}`}
+                {currentQuestion.negativeMarks === 0 ? (isHindi ? 'कोई नकारात्मक अंकन नहीं' : 'No Negative Marking') : `-${currentQuestion.negativeMarks}`}
               </span>
             </div>
           </div>
@@ -2735,7 +2751,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               {/* PASSAGE OR ASSERTION BOX IF APPLICABLE */}
               {currentQuestion.passageText && (
                 <div className="p-3.5 sm:p-4 bg-amber-50/60 border border-amber-200 rounded-xl text-slate-800 text-xs sm:text-sm leading-relaxed">
-                  <span className="font-bold text-amber-900 block mb-1">Passage Context:</span>
+                  <span className="font-bold text-amber-900 block mb-1">{isHindi ? 'संदर्भ अनुच्छेद:' : 'Passage Context:'}</span>
                   {currentQuestion.passageText}
                 </div>
               )}
@@ -2747,11 +2763,23 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 </div>
               )}
 
-              {/* QUESTION MAIN STATEMENT (BILINGUAL AWARE) */}
+              {/* QUESTION MAIN STATEMENT (STRICT LANGUAGE ISOLATION WITH OPTIONAL BILINGUAL MODE) */}
               <div className="text-sm sm:text-base font-semibold text-slate-900 whitespace-pre-line leading-relaxed">
-                {currentLanguage === 'hi' && currentQuestion.questionTextHi ? (
+                {showBothLanguages ? (
+                  <div className="space-y-3">
+                    <div className="text-slate-900">
+                      <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 mr-2 uppercase">English</span>
+                      {currentQuestion.questionText}
+                    </div>
+                    {currentQuestion.questionTextHi && (
+                      <div className="text-slate-900 pt-2 border-t border-slate-100">
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 mr-2 uppercase">हिन्दी</span>
+                        {currentQuestion.questionTextHi}
+                      </div>
+                    )}
+                  </div>
+                ) : currentLanguage === 'hi' && currentQuestion.questionTextHi ? (
                   <div>
-                    <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 mr-2 uppercase">हिन्दी</span>
                     {currentQuestion.questionTextHi}
                   </div>
                 ) : currentLanguage === 'hi' ? (
@@ -2806,12 +2834,16 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
               ) : (
                 /* STANDARD OPTIONS GRID (SUPPORTS BILINGUAL) */
                 <div className="space-y-2.5 sm:space-y-3 pt-1 sm:pt-2">
-                  {((currentLanguage === 'hi' && currentQuestion.optionsHi && currentQuestion.optionsHi.length > 0)
-                    ? currentQuestion.optionsHi
-                    : currentQuestion.options
-                  ).map((optText, optIdx) => {
+                  {currentQuestion.options.map((optText, optIdx) => {
                     const isSelected = currentResp.selectedOption === optIdx;
-                    const optionLabel = typeof optText === 'string' ? optText : ((optText as any)?.text ?? (typeof optText === 'object' && optText !== null ? JSON.stringify(optText) : ''));
+                    const enOpt = typeof optText === 'string' ? optText : ((optText as any)?.text ?? '');
+                    const hiOpt = currentQuestion.optionsHi?.[optIdx];
+                    let optionLabel = enOpt;
+                    if (showBothLanguages && hiOpt) {
+                      optionLabel = `${enOpt} / ${hiOpt}`;
+                    } else if (currentLanguage === 'hi' && hiOpt) {
+                      optionLabel = hiOpt;
+                    }
                     return (
                       <button
                         key={optIdx}
@@ -2846,16 +2878,16 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 onClick={handleMarkForReview}
                 className="px-2.5 sm:px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-800 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
               >
-                <span className="hidden sm:inline">Mark for Review & Next</span>
-                <span className="sm:hidden">Review</span>
+                <span className="hidden sm:inline">{isHindi ? 'समीक्षा हेतु चिन्हित करें' : 'Mark for Review & Next'}</span>
+                <span className="sm:hidden">{isHindi ? 'समीक्षा' : 'Review'}</span>
               </button>
               <button
                 id="cbt-btn-clear"
                 onClick={handleClearResponse}
                 className="px-2.5 sm:px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[11px] sm:text-xs font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
               >
-                <span className="hidden sm:inline">Clear Response</span>
-                <span className="sm:hidden">Clear</span>
+                <span className="hidden sm:inline">{isHindi ? 'उत्तर हटाएं' : 'Clear Response'}</span>
+                <span className="sm:hidden">{isHindi ? 'हटाएं' : 'Clear'}</span>
               </button>
             </div>
 
@@ -2867,7 +2899,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 className="px-2.5 sm:px-4 py-2 bg-white border border-slate-300 text-slate-700 text-[11px] sm:text-xs font-bold rounded-lg hover:bg-slate-50 disabled:opacity-40 transition-all flex items-center space-x-1 cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden xs:inline">Previous</span>
+                <span className="hidden xs:inline">{isHindi ? 'पिछला' : 'Previous'}</span>
               </button>
 
               {sessionState.currentQuestionIndex >= selectedTest.questions.length - 1 ? (
@@ -2876,7 +2908,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   onClick={handleSaveAndNext}
                   className="px-3 sm:px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
                 >
-                  <span>Save & Submit Exam</span>
+                  <span>{isHindi ? 'सहेजें व परीक्षा जमा करें' : 'Save & Submit Exam'}</span>
                   <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               ) : (
@@ -2885,7 +2917,7 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                   onClick={handleSaveAndNext}
                   className="px-3 sm:px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
                 >
-                  <span>Save & Next</span>
+                  <span>{isHindi ? 'सहेजें व आगे बढ़ें' : 'Save & Next'}</span>
                   <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </button>
               )}
@@ -2896,8 +2928,8 @@ export const CbtExamEngine: React.FC<CbtExamEngineProps> = ({ userProfile, selec
                 className="px-3 sm:px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-[11px] sm:text-xs font-bold rounded-lg shadow-md transition-all flex items-center space-x-1 cursor-pointer"
               >
                 <Send className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
-                <span className="hidden sm:inline">Submit Exam</span>
-                <span className="sm:hidden">Submit</span>
+                <span className="hidden sm:inline">{isHindi ? 'परीक्षा जमा करें' : 'Submit Exam'}</span>
+                <span className="sm:hidden">{isHindi ? 'जमा करें' : 'Submit'}</span>
               </button>
             </div>
           </div>

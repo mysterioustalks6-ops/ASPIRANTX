@@ -44,6 +44,8 @@ import { AspirantAvatar } from './AspirantAvatar';
 import { AppPickerModal, DistractingApp, FALLBACK_DEVICE_APPS } from './AppPickerModal';
 import { AppGroupModal, AppGroup } from './AppGroupModal';
 import { AccessibilityGuideModal } from './AccessibilityGuideModal';
+import { LanguageToggle } from './LanguageToggle';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 declare const Capacitor: any;
 
@@ -666,6 +668,7 @@ export const FocusShieldView: React.FC<FocusShieldViewProps> = ({ user, onTrophy
           </div>
 
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             {/* Streak Flame Badge */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#161B18] border border-[#1E2520]">
               <span className="text-amber-400 font-bold text-xs flex items-center gap-1">

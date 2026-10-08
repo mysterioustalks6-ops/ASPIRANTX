@@ -11,6 +11,8 @@ import {
 import { resolveUserAvatar } from '../lib/avatarStorage';
 import { ExamSelectModal } from './ExamSelectModal';
 import { soundFx } from '../lib/soundEffects';
+import { LanguageToggle } from './LanguageToggle';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -39,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate, 
 }) => {
   const [isExamModalOpen, setIsExamModalOpen] = useState(false);
+  const { t, isHindi } = useLanguage();
 
   const currentExamId = selectedExam || user?.exam || 'NEET_UG';
   const currentExamLabel = useMemo(() => {
@@ -104,17 +107,18 @@ export const Header: React.FC<HeaderProps> = ({
       {/* ── 2. CENTER: STREAK FLAME (NEVER TRUNCATED OR OVERLAPPED) ── */}
       <div 
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-[var(--sr-amber-subtle)] border-2 border-[var(--sr-amber)]/30 text-xs font-black text-[var(--sr-amber)] shrink-0 min-h-[40px] whitespace-nowrap"
-        title={`${user?.streakDays ?? 0} Days Active Study Streak`}
+        title={isHindi ? `${user?.streakDays ?? 0} दिन की निरंतरता` : `${user?.streakDays ?? 0} Days Active Study Streak`}
       >
         <Flame className="w-4 h-4 fill-current animate-pulse text-[var(--sr-amber)]" />
-        <span>{user?.streakDays ?? 0}d</span>
+        <span>{user?.streakDays ?? 0}{isHindi ? ' दिन' : 'd'}</span>
       </div>
 
-      {/* ── 3. RIGHT: CANDIDATE AVATAR / PROFILE LAUNCHER ── */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* ── 3. RIGHT: PERSISTENT LANGUAGE TOGGLE & CANDIDATE AVATAR ── */}
+      <div className="flex items-center gap-2 shrink-0">
+        <LanguageToggle />
         <button
           onClick={handleOpenMe}
-          aria-label="Candidate Profile and Tools"
+          aria-label={t('header.candidateProfile', 'Candidate Profile and Tools')}
           className="w-9 h-9 rounded-2xl bg-[var(--sr-primary-subtle)] border-2 border-[var(--sr-primary)] text-[var(--sr-primary)] font-black text-xs flex items-center justify-center cursor-pointer transition-transform active:scale-95 shrink-0 overflow-hidden shadow-sm"
         >
           {user?.name ? (

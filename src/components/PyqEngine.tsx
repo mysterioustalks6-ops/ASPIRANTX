@@ -35,6 +35,7 @@ import {
 import { soundFx } from '../lib/soundEffects';
 import { triggerConfetti } from '../lib/animations';
 import { AspirantMascot } from './highway/AspirantMascot';
+import { useLanguage } from '../lib/i18n/LanguageContext';
 
 interface PyqEngineProps {
   onOpenBulkImport?: () => void;
@@ -48,6 +49,7 @@ import { getStandardSubject, getExamSubjects } from '../lib/subjectUtils';
 export { getStandardSubject, getExamSubjects };
 
 export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin = false, initialExam }) => {
+  const { isHindi } = useLanguage();
   const { selectedExamId } = useExam();
   const [selectedExam, setSelectedExam] = useState<string>(() => normalizeExamId(initialExam || selectedExamId));
 
@@ -434,13 +436,13 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           </div>
           <div>
             <h1 className="text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-              Enterprise PYQ Engine (1991 – 2026)
+              {isHindi ? 'गत वर्ष प्रश्न संग्रह (1991 – 2026)' : 'Enterprise PYQ Engine (1991 – 2026)'}
               <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-700 dark:text-sky-300 border border-sky-500/30">
-                35+ Years Archive
+                {isHindi ? '35+ वर्ष आर्काइव' : '35+ Years Archive'}
               </span>
             </h1>
             <p className="text-xs text-slate-600 dark:text-slate-400">
-              Verified Past Year Question Papers with Subject Mapping & Explanations
+              {isHindi ? 'प्रमाणित गत वर्ष प्रश्न, विषयवार वर्गीकरण व विस्तृत समाधान' : 'Verified Past Year Question Papers with Subject Mapping & Explanations'}
             </p>
           </div>
         </div>
@@ -452,7 +454,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-xs font-bold text-sky-700 dark:text-sky-300 transition-all"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Bulk PYQ Import</span>
+              <span>{isHindi ? 'थोक प्रश्न आयात' : 'Bulk PYQ Import'}</span>
             </button>
           )}
 
@@ -462,7 +464,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-sky-500 hover:opacity-90 text-xs font-bold text-white transition-all shadow-lg"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add PYQ</span>
+              <span>{isHindi ? 'प्रश्न जोड़ें' : 'Add PYQ'}</span>
             </button>
           )}
         </div>
@@ -481,19 +483,19 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
           <div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
-                Veer PYQ Companion
+                {isHindi ? 'वीर गत वर्ष साथी' : 'Veer PYQ Companion'}
               </span>
               <span className="text-xs text-amber-600 dark:text-amber-300 font-extrabold flex items-center gap-1">
-                ⭐ +15 XP per correct answer
+                ⭐ {isHindi ? '+15 XP प्रति सही उत्तर' : '+15 XP per correct answer'}
               </span>
             </div>
             <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white mt-0.5">
-              "70% questions follow past patterns. Solve these with full focus! Tap me for good luck! 🪶"
+              {isHindi ? '"70% प्रश्न पिछले पैटर्न पर आधारित होते हैं। एकाग्रता से हल करें! शुभकामनाओं के लिए मुझे स्पर्श करें! 🪶"' : '"70% questions follow past patterns. Solve these with full focus! Tap me for good luck! 🪶"'}
             </p>
           </div>
         </div>
         <span className="hidden sm:inline-block px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-slate-950 text-xs font-black transition-all">
-          Cheer Me Up 🎉
+          {isHindi ? 'उत्साह बढ़ाएं 🎉' : 'Cheer Me Up 🎉'}
         </span>
       </div>
 
@@ -507,7 +509,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          Interactive Quiz Mode
+          {isHindi ? 'अभ्यास क्विज़ मोड' : 'Interactive Quiz Mode'}
         </button>
         <button
           onClick={() => { soundFx.playTap(); setSubTab('pdfs'); }}
@@ -517,7 +519,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          Official PDF Papers
+          {isHindi ? 'आधिकारिक पीडीएफ पेपर्स' : 'Official PDF Papers'}
           {pdfPapers.length > 0 && (
             <span className="px-1.5 py-0.5 text-[9px] bg-white/20 text-white rounded-full font-black">
               {pdfPapers.length}
@@ -532,7 +534,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               : 'text-amber-700 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300'
           }`}
         >
-          <span>🔥 PYQ Repeat Trends</span>
+          <span>{isHindi ? '🔥 दोहराए गए प्रश्न रुझान' : '🔥 PYQ Repeat Trends'}</span>
         </button>
         <button
           onClick={() => { soundFx.playTap(); setSubTab('ocr'); }}
@@ -542,7 +544,7 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
-          📄 PDF to Word Beautifier
+          {isHindi ? '📄 पीडीएफ प्रारूप संपादन' : '📄 PDF to Word Beautifier'}
         </button>
       </div>
 
@@ -801,87 +803,99 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                                       : 'bg-emerald-500/20 text-emerald-300'
                                   }`}
                                 >
-                                  {pyq.difficulty}
+                                  {isHindi ? (pyq.difficulty === 'Hard' ? 'कठिन' : pyq.difficulty === 'Medium' ? 'मध्यम' : 'सरल') : pyq.difficulty}
                                 </span>
                               </div>
 
-                              <div className="text-sm font-semibold text-white whitespace-pre-line leading-relaxed">
-                                <span className="text-[#1CB0F6] font-black mr-2">Q{index + 1}.</span>
-                                {pyq.questionText}
-                              </div>
+                              {(() => {
+                                const qText = (isHindi && pyq.questionTextHi) ? pyq.questionTextHi : pyq.questionText;
+                                const qOpts = (isHindi && pyq.optionsHi && pyq.optionsHi.length > 0) ? pyq.optionsHi : pyq.options;
+                                const qExpl = (isHindi && pyq.explanationHi) ? pyq.explanationHi : pyq.explanation;
 
-                              {pyq.options && pyq.options.length > 0 && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-                                  {pyq.options.map((opt, optIdx) => {
-                                    const isSelected = selectedOpt === optIdx;
-                                    const isOptionCorrect = pyq.correctOption === optIdx;
+                                return (
+                                  <>
+                                    <div className="text-sm font-semibold text-white whitespace-pre-line leading-relaxed">
+                                      <span className="text-[#1CB0F6] font-black mr-2">Q{index + 1}.</span>
+                                      {qText}
+                                    </div>
 
-                                    let cardStyle = 'bg-[#15181F] border-[#2A2F3A] border-b-4 border-b-[#1A1D24] text-[#F3F4F6] hover:bg-[#1A1D24] hover:border-[#3A404F]';
-                                    let badgeStyle = 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]';
+                                    {qOpts && qOpts.length > 0 && (
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                                        {qOpts.map((opt, optIdx) => {
+                                          const isSelected = selectedOpt === optIdx;
+                                          const isOptionCorrect = pyq.correctOption === optIdx;
 
-                                    if (isAnswered) {
-                                      if (isOptionCorrect) {
-                                        cardStyle = 'bg-[#58CC02]/15 border-[#58CC02] border-b-4 border-b-[#46A302] text-[#F3F4F6] font-bold';
-                                        badgeStyle = 'bg-[#58CC02] text-[#0B2300] font-black';
-                                      } else if (isSelected && !isCorrect) {
-                                        cardStyle = 'bg-[#FF4B4B]/15 border-[#FF4B4B] border-b-4 border-b-[#D32F2F] text-[#F3F4F6]';
-                                        badgeStyle = 'bg-[#FF4B4B] text-white font-black';
-                                      }
-                                    } else if (isSelected) {
-                                      cardStyle = 'bg-[#1CB0F6]/15 border-[#1CB0F6] border-b-4 border-b-[#1899D6] text-[#F3F4F6] font-bold';
-                                      badgeStyle = 'bg-[#1CB0F6] text-[#052840] font-black';
-                                    }
+                                          let cardStyle = 'bg-[#15181F] border-[#2A2F3A] border-b-4 border-b-[#1A1D24] text-[#F3F4F6] hover:bg-[#1A1D24] hover:border-[#3A404F]';
+                                          let badgeStyle = 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]';
 
-                                    return (
-                                      <button
-                                        key={optIdx}
-                                        onClick={() => handleSelectOption(pyq.id, optIdx)}
-                                        className={`p-3 min-h-[52px] rounded-xl border text-left text-xs transition-all flex items-center justify-between gap-3 cursor-pointer active:border-b-0 active:translate-y-1 ${cardStyle}`}
-                                      >
-                                        <div className="flex items-center gap-2.5 min-w-0">
-                                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${badgeStyle}`}>
-                                            {String.fromCharCode(65 + optIdx)}
-                                          </span>
-                                          <span className="leading-snug break-words">{opt}</span>
-                                        </div>
-                                        {isAnswered && isOptionCorrect && (
-                                          <CheckCircle2 className="w-4 h-4 text-[#58CC02] shrink-0" />
+                                          if (isAnswered) {
+                                            if (isOptionCorrect) {
+                                              cardStyle = 'bg-[#58CC02]/15 border-[#58CC02] border-b-4 border-b-[#46A302] text-[#F3F4F6] font-bold';
+                                              badgeStyle = 'bg-[#58CC02] text-[#0B2300] font-black';
+                                            } else if (isSelected && !isCorrect) {
+                                              cardStyle = 'bg-[#FF4B4B]/15 border-[#FF4B4B] border-b-4 border-b-[#D32F2F] text-[#F3F4F6]';
+                                              badgeStyle = 'bg-[#FF4B4B] text-white font-black';
+                                            }
+                                          } else if (isSelected) {
+                                            cardStyle = 'bg-[#1CB0F6]/15 border-[#1CB0F6] border-b-4 border-b-[#1899D6] text-[#F3F4F6] font-bold';
+                                            badgeStyle = 'bg-[#1CB0F6] text-[#052840] font-black';
+                                          }
+
+                                          return (
+                                            <button
+                                              key={optIdx}
+                                              onClick={() => handleSelectOption(pyq.id, optIdx)}
+                                              className={`p-3 min-h-[52px] rounded-xl border text-left text-xs transition-all flex items-center justify-between gap-3 cursor-pointer active:border-b-0 active:translate-y-1 ${cardStyle}`}
+                                            >
+                                              <div className="flex items-center gap-2.5 min-w-0">
+                                                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${badgeStyle}`}>
+                                                  {String.fromCharCode(65 + optIdx)}
+                                                </span>
+                                                <span className="leading-snug break-words">{opt}</span>
+                                              </div>
+                                              {isAnswered && isOptionCorrect && (
+                                                <CheckCircle2 className="w-4 h-4 text-[#58CC02] shrink-0" />
+                                              )}
+                                              {isAnswered && isSelected && !isCorrect && (
+                                                <XCircle className="w-4 h-4 text-[#FF4B4B] shrink-0" />
+                                              )}
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+
+                                    {qExpl && (
+                                      <div className="pt-1">
+                                        <button
+                                          onClick={() =>
+                                            setShowExplanations((prev) => ({ ...prev, [pyq.id]: !prev[pyq.id] }))
+                                          }
+                                          className="text-[11px] text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
+                                        >
+                                          <Sparkles className="w-3 h-3" />
+                                          {showExplanations[pyq.id] 
+                                            ? (isHindi ? 'व्याख्या छिपाएं' : 'Hide Explanation') 
+                                            : (isHindi ? 'विस्तृत मॉडल समाधान व व्याख्या देखें' : 'View Model Solution & Explanation')}
+                                        </button>
+
+                                        {showExplanations[pyq.id] && (
+                                          <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="mt-2 p-3 rounded-xl bg-slate-900/40 border border-sky-500/20 text-xs text-sky-200 leading-relaxed"
+                                          >
+                                            <strong className="block font-black text-sky-300 mb-0.5">
+                                              {isHindi ? 'आधिकारिक समाधान व व्याख्या:' : 'Official Solution & Explanation:'}
+                                            </strong>
+                                            {qExpl}
+                                          </motion.div>
                                         )}
-                                        {isAnswered && isSelected && !isCorrect && (
-                                          <XCircle className="w-4 h-4 text-[#FF4B4B] shrink-0" />
-                                        )}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {pyq.explanation && (
-                                <div className="pt-1">
-                                  <button
-                                    onClick={() =>
-                                      setShowExplanations((prev) => ({ ...prev, [pyq.id]: !prev[pyq.id] }))
-                                    }
-                                    className="text-[11px] text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1"
-                                  >
-                                    <Sparkles className="w-3 h-3" />
-                                    {showExplanations[pyq.id] ? 'Hide Explanation' : 'View Model Solution & Explanation'}
-                                  </button>
-
-                                  {showExplanations[pyq.id] && (
-                                    <motion.div
-                                      initial={{ opacity: 0, height: 0 }}
-                                      animate={{ opacity: 1, height: 'auto' }}
-                                      className="mt-2 p-3 rounded-xl bg-slate-900/40 border border-sky-500/20 text-xs text-sky-200 leading-relaxed"
-                                    >
-                                      <strong className="block font-black text-sky-300 mb-0.5">
-                                        Official Solution & Explanation:
-                                      </strong>
-                                      {pyq.explanation}
-                                    </motion.div>
-                                  )}
-                                </div>
-                              )}
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                           );
                         })}
@@ -963,87 +977,99 @@ export const PyqEngine: React.FC<PyqEngineProps> = ({ onOpenBulkImport, isAdmin 
                                   : 'bg-emerald-500/20 text-emerald-300'
                               }`}
                             >
-                              {pyq.difficulty}
+                              {isHindi ? (pyq.difficulty === 'Hard' ? 'कठिन' : pyq.difficulty === 'Medium' ? 'मध्यम' : 'सरल') : pyq.difficulty}
                             </span>
                           </div>
                         </div>
 
-                        {/* Question Body */}
-                        <div className="text-sm font-semibold text-white whitespace-pre-line leading-relaxed">
-                          <span className="text-[#1CB0F6] font-black mr-2">Q{(page - 1) * limit + index + 1}.</span>
-                          {pyq.questionText}
-                        </div>
+                        {(() => {
+                          const qText = (isHindi && pyq.questionTextHi) ? pyq.questionTextHi : pyq.questionText;
+                          const qOpts = (isHindi && pyq.optionsHi && pyq.optionsHi.length > 0) ? pyq.optionsHi : pyq.options;
+                          const qExpl = (isHindi && pyq.explanationHi) ? pyq.explanationHi : pyq.explanation;
 
-                        {/* Options */}
-                        {pyq.options && pyq.options.length > 0 && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
-                            {pyq.options.map((opt, optIdx) => {
-                              const isSelected = selectedOpt === optIdx;
-                              const isOptionCorrect = pyq.correctOption === optIdx;
-
-                              let cardStyle = 'bg-[#15181F] border-[#2A2F3A] border-b-4 border-b-[#1A1D24] text-[#F3F4F6] hover:bg-[#1A1D24] hover:border-[#3A404F]';
-                              let badgeStyle = 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]';
-
-                              if (isAnswered) {
-                                if (isOptionCorrect) {
-                                  cardStyle = 'bg-[#58CC02]/15 border-[#58CC02] border-b-4 border-b-[#46A302] text-[#F3F4F6] font-bold';
-                                  badgeStyle = 'bg-[#58CC02] text-[#0B2300] font-black';
-                                } else if (isSelected && !isCorrect) {
-                                  cardStyle = 'bg-[#FF4B4B]/15 border-[#FF4B4B] border-b-4 border-b-[#D32F2F] text-[#F3F4F6]';
-                                  badgeStyle = 'bg-[#FF4B4B] text-white font-black';
-                                }
-                              } else if (isSelected) {
-                                cardStyle = 'bg-[#1CB0F6]/15 border-[#1CB0F6] border-b-4 border-b-[#1899D6] text-[#F3F4F6] font-bold';
-                                badgeStyle = 'bg-[#1CB0F6] text-[#052840] font-black';
-                              }
-
-                              return (
-                                <button
-                                  key={optIdx}
-                                  onClick={() => handleSelectOption(pyq.id, optIdx)}
-                                  className={`p-3 min-h-[52px] rounded-xl border text-left text-xs transition-all flex items-center justify-between gap-3 cursor-pointer active:border-b-0 active:translate-y-1 ${cardStyle}`}
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${badgeStyle}`}>
-                                      {String.fromCharCode(65 + optIdx)}
-                                    </span>
-                                    <span className="leading-snug break-words">{opt}</span>
-                                  </div>
-                                  {isAnswered && isOptionCorrect && (
-                                    <CheckCircle2 className="w-4 h-4 text-[#58CC02] shrink-0" />
-                                  )}
-                                  {isAnswered && isSelected && !isCorrect && (
-                                    <XCircle className="w-4 h-4 text-[#FF4B4B] shrink-0" />
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Explanation Toggle */}
-                        {pyq.explanation && (
-                          <div className="pt-1">
-                            <button
-                              onClick={() =>
-                                setShowExplanations((prev) => ({ ...prev, [pyq.id]: !prev[pyq.id] }))
-                              }
-                              className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1 cursor-pointer"
-                            >
-                              <Sparkles className="w-3.5 h-3.5" />
-                              {showExplanations[pyq.id] ? 'Hide Explanation' : 'View Model Solution & Explanation'}
-                            </button>
-
-                            <AccordionTransition isOpen={!!showExplanations[pyq.id]}>
-                              <div className="mt-2.5 p-4 rounded-xl bg-slate-900/40 border border-sky-500/20 text-xs text-sky-200 leading-relaxed">
-                                <strong className="block font-black text-sky-300 mb-1">
-                                  Official Key & Detailed Explanation:
-                                </strong>
-                                {pyq.explanation}
+                          return (
+                            <>
+                              {/* Question Body */}
+                              <div className="text-sm font-semibold text-white whitespace-pre-line leading-relaxed">
+                                <span className="text-[#1CB0F6] font-black mr-2">Q{(page - 1) * limit + index + 1}.</span>
+                                {qText}
                               </div>
-                            </AccordionTransition>
-                          </div>
-                        )}
+
+                              {/* Options */}
+                              {qOpts && qOpts.length > 0 && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 pt-1">
+                                  {qOpts.map((opt, optIdx) => {
+                                    const isSelected = selectedOpt === optIdx;
+                                    const isOptionCorrect = pyq.correctOption === optIdx;
+
+                                    let cardStyle = 'bg-[#15181F] border-[#2A2F3A] border-b-4 border-b-[#1A1D24] text-[#F3F4F6] hover:bg-[#1A1D24] hover:border-[#3A404F]';
+                                    let badgeStyle = 'bg-[#0F1115] text-[#9CA3AF] border border-[#2A2F3A]';
+
+                                    if (isAnswered) {
+                                      if (isOptionCorrect) {
+                                        cardStyle = 'bg-[#58CC02]/15 border-[#58CC02] border-b-4 border-b-[#46A302] text-[#F3F4F6] font-bold';
+                                        badgeStyle = 'bg-[#58CC02] text-[#0B2300] font-black';
+                                      } else if (isSelected && !isCorrect) {
+                                        cardStyle = 'bg-[#FF4B4B]/15 border-[#FF4B4B] border-b-4 border-b-[#D32F2F] text-[#F3F4F6]';
+                                        badgeStyle = 'bg-[#FF4B4B] text-white font-black';
+                                      }
+                                    } else if (isSelected) {
+                                      cardStyle = 'bg-[#1CB0F6]/15 border-[#1CB0F6] border-b-4 border-b-[#1899D6] text-[#F3F4F6] font-bold';
+                                      badgeStyle = 'bg-[#1CB0F6] text-[#052840] font-black';
+                                    }
+
+                                    return (
+                                      <button
+                                        key={optIdx}
+                                        onClick={() => handleSelectOption(pyq.id, optIdx)}
+                                        className={`p-3 min-h-[52px] rounded-xl border text-left text-xs transition-all flex items-center justify-between gap-3 cursor-pointer active:border-b-0 active:translate-y-1 ${cardStyle}`}
+                                      >
+                                        <div className="flex items-center gap-2.5 min-w-0">
+                                          <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${badgeStyle}`}>
+                                            {String.fromCharCode(65 + optIdx)}
+                                          </span>
+                                          <span className="leading-snug break-words">{opt}</span>
+                                        </div>
+                                        {isAnswered && isOptionCorrect && (
+                                          <CheckCircle2 className="w-4 h-4 text-[#58CC02] shrink-0" />
+                                        )}
+                                        {isAnswered && isSelected && !isCorrect && (
+                                          <XCircle className="w-4 h-4 text-[#FF4B4B] shrink-0" />
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Explanation Toggle */}
+                              {qExpl && (
+                                <div className="pt-1">
+                                  <button
+                                    onClick={() =>
+                                      setShowExplanations((prev) => ({ ...prev, [pyq.id]: !prev[pyq.id] }))
+                                    }
+                                    className="text-xs text-sky-400 hover:text-sky-300 underline font-semibold flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    {showExplanations[pyq.id] 
+                                      ? (isHindi ? 'व्याख्या छिपाएं' : 'Hide Explanation') 
+                                      : (isHindi ? 'विस्तृत मॉडल समाधान व व्याख्या देखें' : 'View Model Solution & Explanation')}
+                                  </button>
+
+                                  <AccordionTransition isOpen={!!showExplanations[pyq.id]}>
+                                    <div className="mt-2.5 p-4 rounded-xl bg-slate-900/40 border border-sky-500/20 text-xs text-sky-200 leading-relaxed">
+                                      <strong className="block font-black text-sky-300 mb-1">
+                                        {isHindi ? 'आधिकारिक उत्तर कुंजी व विस्तृत समाधान:' : 'Official Key & Detailed Explanation:'}
+                                      </strong>
+                                      {qExpl}
+                                    </div>
+                                  </AccordionTransition>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </StaggerItem>
                     );
                   })}

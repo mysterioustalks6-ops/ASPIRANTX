@@ -38,6 +38,9 @@ import { loadWorkspaceConfig, ALL_WORKSPACE_FEATURES } from '../lib/workspacePre
 import { ExamSelectModal } from './ExamSelectModal';
 import { CANONICAL_APP_RELEASE } from '../config/appRelease';
 
+import { useLanguage } from '../lib/i18n/LanguageContext';
+import { LanguageToggle } from './LanguageToggle';
+
 interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -69,6 +72,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   selectedExam,
   onExamChange,
 }) => {
+  const { isHindi } = useLanguage();
   const customExams = getCustomExamsFromStorage();
   const [isExamModalOpen, setIsExamModalOpen] = React.useState(false);
   const workspaceConfig = loadWorkspaceConfig(user?.id);
@@ -80,53 +84,53 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
   const navCategories = [
     {
-      title: 'Learn & Resources',
+      title: isHindi ? 'अध्ययन व संसाधन' : 'Learn & Resources',
       items: [
-        { id: 'syllabus' as ActiveTab, label: 'Syllabus Tracker', icon: BookOpen, badge: 'AI' },
-        { id: 'library' as ActiveTab, label: 'Digital Library & Notes', icon: BookOpen, badge: 'PDF' },
-        { id: 'flashcards' as ActiveTab, label: 'Active Recall Decks', icon: Sparkles },
-        { id: 'podcasts' as ActiveTab, label: 'Audio Lecture Series', icon: Mic },
+        { id: 'syllabus' as ActiveTab, label: isHindi ? 'पाठ्यक्रम ट्रैकर' : 'Syllabus Tracker', icon: BookOpen, badge: 'AI' },
+        { id: 'library' as ActiveTab, label: isHindi ? 'डिजिटल पुस्तकालय व नोट्स' : 'Digital Library & Notes', icon: BookOpen, badge: 'PDF' },
+        { id: 'flashcards' as ActiveTab, label: isHindi ? 'स्मरण फ्लैशकार्ड' : 'Active Recall Decks', icon: Sparkles },
+        { id: 'podcasts' as ActiveTab, label: isHindi ? 'ऑडियो व्याख्यान श्रृंखला' : 'Audio Lecture Series', icon: Mic },
       ]
     },
     {
-      title: 'Practice Engines',
+      title: isHindi ? 'अभ्यास इंजन' : 'Practice Engines',
       items: [
-        { id: 'cbt' as ActiveTab, label: 'CBT Test Series', icon: Award, badge: 'NTA' },
-        { id: 'pyq' as ActiveTab, label: 'Previous Year Papers', icon: BookMarked, badge: '35 Yrs' },
-        { id: 'question_bank' as ActiveTab, label: 'Question Bank', icon: HelpCircle, badge: '4000+' },
+        { id: 'cbt' as ActiveTab, label: isHindi ? 'सीबीटी मॉक टेस्ट' : 'CBT Test Series', icon: Award, badge: 'NTA' },
+        { id: 'pyq' as ActiveTab, label: isHindi ? 'गत वर्ष प्रश्न (PYQ)' : 'Previous Year Papers', icon: BookMarked, badge: '35 Yrs' },
+        { id: 'question_bank' as ActiveTab, label: isHindi ? 'विषयवार प्रश्न बैंक' : 'Question Bank', icon: HelpCircle, badge: '4000+' },
       ]
     },
     {
-      title: 'Plan & Focus',
+      title: isHindi ? 'योजना व एकाग्रता' : 'Plan & Focus',
       items: [
-        { id: 'focus_shield' as ActiveTab, label: 'Focus Shield & App Lock', icon: ShieldCheck, badge: 'Shield' },
-        { id: 'tasks' as ActiveTab, label: 'Daily Study Tasks', icon: CheckSquare },
-        { id: 'timer' as ActiveTab, label: 'Pomodoro Focus Timer', icon: Timer, badge: '25/50m' },
-        { id: 'mountain_ride' as ActiveTab, label: 'Mountain Ride', icon: Compass, badge: 'Soon' },
-        { id: 'study_buddy' as ActiveTab, label: 'Study Buddy', icon: Users },
+        { id: 'focus_shield' as ActiveTab, label: isHindi ? 'फोकस शील्ड व ऍप लॉक' : 'Focus Shield & App Lock', icon: ShieldCheck, badge: 'Shield' },
+        { id: 'tasks' as ActiveTab, label: isHindi ? 'दैनिक अध्ययन लक्ष्य' : 'Daily Study Tasks', icon: CheckSquare },
+        { id: 'timer' as ActiveTab, label: isHindi ? 'पोमोडोरो फोकस टाइमर' : 'Pomodoro Focus Timer', icon: Timer, badge: '25/50m' },
+        { id: 'mountain_ride' as ActiveTab, label: isHindi ? 'माउंटेन राइड' : 'Mountain Ride', icon: Compass, badge: 'Soon' },
+        { id: 'study_buddy' as ActiveTab, label: isHindi ? 'अध्ययन साथी' : 'Study Buddy', icon: Users },
       ]
     },
     {
-      title: 'Improve & Analytics',
+      title: isHindi ? 'सुधार व विश्लेषण' : 'Improve & Analytics',
       items: [
-        { id: 'weakness' as ActiveTab, label: 'Weakness Detector', icon: BarChart3, badge: 'AI' },
-        { id: 'leaderboard' as ActiveTab, label: 'All-India Rank', icon: Flame, badge: 'AIR' },
-        { id: 'eligibility' as ActiveTab, label: 'Exam Eligibility Check', icon: ShieldCheck },
+        { id: 'weakness' as ActiveTab, label: isHindi ? 'कमजोरी पहचान तंत्र' : 'Weakness Detector', icon: BarChart3, badge: 'AI' },
+        { id: 'leaderboard' as ActiveTab, label: isHindi ? 'अखिल भारतीय रैंक' : 'All-India Rank', icon: Flame, badge: 'AIR' },
+        { id: 'eligibility' as ActiveTab, label: isHindi ? 'परीक्षा पात्रता जांच' : 'Exam Eligibility Check', icon: ShieldCheck },
       ]
     },
     {
-      title: 'Connect & Mentorship',
+      title: isHindi ? 'सम्पर्क व मार्गदर्शन' : 'Connect & Mentorship',
       items: [
-        { id: 'chat' as ActiveTab, label: 'AI Study Mentor', icon: MessageSquare, badge: 'AI' },
-        { id: 'community' as ActiveTab, label: 'Peer Study Community', icon: Users },
+        { id: 'chat' as ActiveTab, label: isHindi ? 'एआई अध्ययन मार्गदर्शक' : 'AI Study Mentor', icon: MessageSquare, badge: 'AI' },
+        { id: 'community' as ActiveTab, label: isHindi ? 'सहपाठी समुदाय' : 'Peer Study Community', icon: Users },
       ]
     },
     {
-      title: 'Account & Perks',
+      title: isHindi ? 'खाता व सुविधाएं' : 'Account & Perks',
       items: [
-        { id: 'premium' as ActiveTab, label: 'StudyRide PRO Access', icon: Crown, badge: 'PRO' },
-        { id: 'reward_milestones' as ActiveTab, label: 'Study Milestones', icon: Gift },
-        { id: 'wallpaper' as ActiveTab, label: 'Habit Wallpaper', icon: Smartphone, badge: 'HD' },
+        { id: 'premium' as ActiveTab, label: isHindi ? 'StudyRide प्रो एक्सेस' : 'StudyRide PRO Access', icon: Crown, badge: 'PRO' },
+        { id: 'reward_milestones' as ActiveTab, label: isHindi ? 'उपलब्धि मील के पत्थर' : 'Study Milestones', icon: Gift },
+        { id: 'wallpaper' as ActiveTab, label: isHindi ? 'अभ्यास वॉलपेपर' : 'Habit Wallpaper', icon: Smartphone, badge: 'HD' },
       ]
     }
   ];
@@ -173,13 +177,16 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                 </div>
               </div>
 
-              <button
-                onClick={onClose}
-                className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
-                aria-label="Close navigation"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <LanguageToggle />
+                <button
+                  onClick={onClose}
+                  className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+                  aria-label="Close navigation"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Content */}
